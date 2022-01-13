@@ -26,6 +26,8 @@
 *.a
 *.lib
 
+*.test.cpp
+
 # Executables
 *.exe
 *.out
@@ -34,5 +36,7 @@
 # Other
 .DS_Store
 .vscode
-obj
+.obj/
+.obj
 .idea
+*.out

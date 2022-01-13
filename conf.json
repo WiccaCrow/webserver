@@ -1,0 +1,28 @@
+{
+    "http": {
+        "type": "server",
+        "port": 80,
+        "server_name": "localhost",
+        "/about": {
+            "type": "location",
+            "autoindex": true
+        },
+        "/feedback": {
+            "type": "location",
+            "autoindex": false
+        }
+    },
+    "https": {
+        "type": "server",
+        "port": 443,
+        "server_name": "localhost",
+        "/about": {
+            "type": "location",
+            "autoindex": true
+        },
+        "/feedback": {
+            "type": "location",
+            "autoindex": false
+        }
+    }
+}
