@@ -10,14 +10,16 @@
 #include <poll.h>   // poll настройка
 #include <netdb.h>  // для struct addrinfo hints;
 #include <arpa/inet.h>
+#include <vector>
 
 
-#include "JSON.hpp"
+// #include "JSON.hpp"
 
 #ifndef SOMAXCONN
 # define SOMAXCONN 128
 #endif 
 
+#define TCP_SIZE 65536//максимальный размер пакета в TCP
 
 class Response {};
 class Request {};
@@ -38,6 +40,7 @@ class Server {
         uint16_t    _port; 
         int32_t     _servfd;
         std::vector<struct pollfd> _pollfds;
+void    recvServ(struct pollfd & pollCli);
 
     public:
 
@@ -55,5 +58,7 @@ class Server {
         /* other methods */
         void    startServ(void);
         void    acceptNewClient(void);
+        void    disconnectClient(int i);
+        void    recvServ(struct pollfd pollCli, int i);
+        void    sendServ(struct pollfd pollCli, int i);
 };
-

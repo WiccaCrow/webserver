@@ -56,7 +56,7 @@ Server::Server(const std::string &ipaddr = "127.0.0.1", const uint16_t port = 76
 
 	_pollfds.push_back((struct pollfd) {
 		_servfd,
-		POLLIN, // | POLLOUT, 
+		POLLIN,
 		0
 	});
 }
@@ -118,40 +118,15 @@ void    Server::startServ(void)
 
 		if (pollResult > 0) {
 			
-			// пройтись по всем fd
+			// пройтись по всем fd // отслеживаю изменения у клиентов
 			const size_t size = _pollfds.size();
 	        for (size_t i = 1 ; i < size ; i++) {
-
-				// отслеживаю изменения у клиентов
-				if (_pollfds[i].revents & POLLIN) {
-					// Read data by line (recv)
-                    // Replace \r\n with \n (???)
-					// Validate line
-
-                    /*
-					// Parse first line
-					// getting method
-					// getting path 
-					// getting protocol
-					
-					// Parse headers
-					header (struct maybe): key, value
-					split header line by ':' and trim whitespaces of each part
-					then insert into hash-table or list or tree
-					
-					// Parse body (if exist)
-
-					Request:  method, path, protocol, headers, [body], 
-					Reponse:  protocol, status(code), status(message)  headers, [body]
-
-					// hashtable -> location
-
-					// если от клиента пришел запрос, обработать 
-                    // флажок revents сменится на POLLOUT для выдачи ответа recv
-					*/
+				if (_pollfds[i].revents & POLLIN) {					
+					recvServ(_pollfds[i], (int)i);
 				} 
 				else if (_pollfds[i].revents & POLLOUT) {
 					// выдача ответа send
+					sendServ(_pollfds[i], (int)i);
 				}
 			}
 
@@ -166,9 +141,73 @@ void    Server::startServ(void)
 	}
 }
 
+void    Server::recvServ(struct pollfd pollCli, int i)
+{
+	pollCli.revents = 0;
+	char	buf[TCP_SIZE];
+	memset(&buf[TCP_SIZE], 0, TCP_SIZE);
+	int	recvByte = recv(pollCli.fd, buf, TCP_SIZE - 1, 0);
+	if (recvByte == 0) {
+		disconnectClient(i);
+	}
+	if (recvByte < 0) {
+		disconnectClient(i);
+		; //error case
+	}
+	if (recvByte > 0) {
+	// принять запрос и сформировать ответ
+
+		// Read data by line (recv)
+		// Replace \r\n with \n (???)
+		// Validate line
+
+		/*
+		// Parse first line
+		// getting method
+		// getting path 
+		// getting protocol
+		
+		// Parse headers
+		header (struct maybe): key, value
+		split header line by ':' and trim whitespaces of each part
+		then insert into hash-table or list or tree
+		
+		// Parse body (if exist)
+
+		Request:  method, path, protocol, headers, [body], 
+		Reponse:  protocol, status(code), status(message)  headers, [body]
+
+		// hashtable -> location
+
+		// если от клиента пришел запрос, обработать 
+		// флажок revents сменится на POLLOUT для выдачи ответа recv
+		*/
+	}
+}
+
+void    Server::sendServ(struct pollfd pollCli, int i)
+{
+	// определить размер данных, которые надо отправить 
+	// sendByte (по аналогии с recvServ) или sendSize
+    int sendSize;
+    if (sendSize > TCP_SIZE)
+        sendSize = TCP_SIZE;
+    int	send_byte = ::send(pollCli.fd, "сообщение для отправки", sendSize, 0);
+    if (send_byte < 0){
+        disconnectClient(i);
+    }
+    if (send_byte == 0) {
+        disconnectClient(i);
+        ; // error case
+    }
+	if (send_byte > 0) {
+        // disconnectClient(i)
+		;// выдача ответа send
+	}
+}
+
 void Server::acceptNewClient(void)
 {
-	// если что-то изменилось на общем fd
 	struct sockaddr_in cliaddr;
 	socklen_t addrlen = sizeof(cliaddr);
 
@@ -181,4 +220,10 @@ void Server::acceptNewClient(void)
 			0
 		});
 	}
+}
+
+void Server::disconnectClient(int i)
+{
+	close(_pollfds[i].fd);
+	_pollfds.erase(_pollfds.begin() + i);
 }

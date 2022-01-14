@@ -27,6 +27,7 @@
 *.lib
 
 *.test.cpp
+# json-parser/
 
 # Executables
 *.exe
