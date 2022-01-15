@@ -37,6 +37,7 @@
 *.app
 
 # Other
+serv
 .DS_Store
 .vscode
 .obj/

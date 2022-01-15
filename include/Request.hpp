@@ -12,14 +12,14 @@ class Request {
     std::string                         _body;
     
 	public:
-	Request(const std::string &line);
-	~Request();
+		Request(const std::string &line);
+		~Request();
 	
 	private:
-	void parseFirstLine(const std::string &line);
-	bool isValidMethod(const std::string &method);
-	bool isValidPath(const std::string &path);
-	bool isValidProtocol(const std::string &protocol);
-    std::pair<std::string, std::string> &parseHeader(const std::string &line);
+		void parseFirstLine(const std::string &line);
+		bool isValidMethod(const std::string &method);
+		bool isValidPath(const std::string &path);
+		bool isValidProtocol(const std::string &protocol);
+		std::pair<std::string, std::string> &parseHeader(const std::string &line);
 
 };

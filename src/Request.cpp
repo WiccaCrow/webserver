@@ -1,5 +1,11 @@
 #include "Request.hpp"
 
+Request::Request(const std::string &line) {
+	parseFirstLine(line);
+}
+
+Request::~Request() {}
+
 // Hide these methods
 static void skipSpaces(const std::string &line, size_t &pos) {
 	for (; line[pos] == ' '; pos++);
@@ -33,13 +39,16 @@ void Request::parseFirstLine(const std::string &line) {
 
 
 bool Request::isValidMethod(const std::string &method) {
+	(void)method;
 	return true;
 }
 
 bool Request::isValidPath(const std::string &path) {
+	(void)path;
 	return true;
 }
 
 bool Request::isValidProtocol(const std::string &protocol) {
+	(void)protocol;
 	return true;
 }

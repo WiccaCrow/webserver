@@ -27,10 +27,10 @@
 class Response {};
 
 
-class Client {
-    private:
-        int  _fd;           // переделано из HTTPreq
-};
+// class Client {
+//     private:
+//         int  _fd;           // переделано из HTTPreq
+// };
 
 class Server {
 
@@ -42,14 +42,23 @@ class Server {
         std::vector<struct pollfd>  _pollfds;
     	int                         _pollResult;
 
+		 /* Methods */
+		void	assignPollFds(void);
+		void	createListenSock(void);
+		void	reuseAddr(void);
+		void	bindAddr(void);
+		void	listenSock(void);
+
     public:
 
         /* Constructs and destructs*/
+		Server();
         Server(const std::string &_addr, const uint16_t _port);
         Server(const Server &obj);
         ~Server();
 
         /* Operators */
+		Server	&operator=(const Server &obj);
         /* Set atributs */
         void    resetPollEvents(void);
 
