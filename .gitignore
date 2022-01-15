@@ -26,7 +26,7 @@
 *.a
 *.lib
 
-*.test.cpp
+#*.test.cpp
 # json-parser/
 
 # Executables
