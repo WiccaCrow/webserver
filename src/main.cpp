@@ -8,11 +8,11 @@ void	checkArgs(int &ac, char **av) {
 	}
 }
 
-void	*startServInThread(void *ptr) {
+void	*startInThread(void *ptr) {
 	Server *serv = reinterpret_cast<Server *>(ptr);
 	
 	if (serv != NULL)
-		serv->startServ();
+		serv->start();
 }
 
 int	main(int ac, char **av)
@@ -29,7 +29,7 @@ int	main(int ac, char **av)
         pthread_t thread[serverBlocksCount];
         for (size_t i = 0; i < servers.size(); i++)
         {
-            pthread_create(&thread[i], NULL, startServInThread, (void *)servers[i]);
+            pthread_create(&thread[i], NULL, startInThread, (void *)servers[i]);
         }
 
         for (size_t i = 0; i < servers.size(); i++)
@@ -39,7 +39,7 @@ int	main(int ac, char **av)
     }
     else {
         // Just a plain realization of the server
-        servers[0]->startServ();
+        servers[0]->start();
     }
 
     return 0;

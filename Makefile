@@ -21,7 +21,7 @@ INCLUDEFOLDER   =   include/
 SOURCE          =   $(addprefix $(SOURCEFOLDER), $(SOURCEFILES))
 OSOURCE         =   $(addprefix $(OSOURCEFOLDER), $(SOURCEFILES:.cpp=.o))
 
-all: objdir libjson $(NAME)
+all: objdir $(NAME)
 
 objdir:
 	@if ! [ -d ${OSOURCEFOLDER} ] ; then mkdir ${OSOURCEFOLDER} ; fi

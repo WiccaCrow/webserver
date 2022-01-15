@@ -1,5 +1,7 @@
 #include "Server.hpp"
 
+//typedef struct pollfd pollfd;
+
 enum ServerError { 
 	// WINSOCK_ERR = -1,
 	// GETADDRINFO_ERR = -1,
@@ -20,7 +22,12 @@ Server::Server(const std::string &ipaddr = "127.0.0.1", const uint16_t port = 76
 	_port(port)
 {
 /**** заполнить переменные ****/
-	_pollfds.reserve(128);
+	_pollfds.assign(128, (struct pollfd) {
+		-1,
+		POLLIN | POLLOUT,
+		0
+	});
+	_pollResult = 0;
 
 /**** сокет ****/
 	_servfd = socket(PF_INET, SOCK_STREAM, 0);
@@ -62,6 +69,11 @@ Server::Server(const std::string &ipaddr = "127.0.0.1", const uint16_t port = 76
 }
 
 //      copy
+Server::Server(const Server &obj)
+{
+    operator=(obj);
+}
+
 
 /******************************************************************************/
 /* Destructors */
@@ -76,6 +88,18 @@ Server::~Server()
 /* Operators */
 
 //      =
+Server & Server::operator=(const Server &obj)
+{
+    if (this != &obj)
+    {
+        _addr = obj._addr;   // Потом будет браться из конфига
+        _port = obj._port; 
+        _servfd = obj._servfd;
+    	_pollResult = obj._pollResult;
+        _pollfds = obj._pollfds;
+    }
+    return (*this);
+}
 
 /******************************************************************************/
 /* Private functions */
@@ -88,9 +112,13 @@ Server::~Server()
 
 void    Server::resetPollEvents(void)
 {
-	const size_t size = _pollfds.size();
-	for (size_t i = 0 ; i < size ; i++)
-		_pollfds[i].revents = 0;
+    // <Wicca> : У кого не 0, сбрасываю на 0.
+    if (_pollResult) {
+        const size_t size = _pollfds.size();
+        for (size_t i = 0 ; i < size ; i++)
+            _pollfds[i].revents = 0;
+        _pollResult = 0;
+    }
 }
 
 	/* Get and show atributs */
@@ -100,130 +128,166 @@ int    Server::getServFd(void)
 }
 
 	/* other methods */
-void    Server::startServ(void)
+void    Server::start(void)
 {
-	int pollResult = 0;
-	while (1)
-	{
-		if (pollResult) {
-            // <Wicca> : в дальнейшем контейнер серверов, 
-            // массив pollResult [total_nb_serv]. У кого не 0, сбрасываю на 0.
-			resetPollEvents();
-			pollResult = 0; 
-		}
-
-		while (pollResult == 0) {
-			pollResult = poll(&_pollfds.front(), _pollfds.size(), 0);
-		}
-
-		if (pollResult > 0) {
-			
-			// пройтись по всем fd // отслеживаю изменения у клиентов
-			const size_t size = _pollfds.size();
-	        for (size_t i = 1 ; i < size ; i++) {
-				if (_pollfds[i].revents & POLLIN) {					
-					recvServ(_pollfds[i], (int)i);
-				} 
-				else if (_pollfds[i].revents & POLLOUT) {
-					// выдача ответа send
-					sendServ(_pollfds[i], (int)i);
-				}
+    //int pollResult = 0;
+    while (1)
+    {
+    	resetPollEvents();
+        pollServ();
+        const size_t size = _pollfds.size();
+        for (size_t id = 1; id < size; id++) {
+			if (_pollfds[id].revents & POLLHUP) {
+				std::cerr << "Cannot read from " << _pollfds[id].fd << " fd" << std::endl;
 			}
-
-			// если что-то изменилось на общем fd (cлушающем сокете)
-			if (_pollfds[0].revents & POLLIN) {
-				acceptNewClient();
+            else if (_pollfds[id].revents & POLLIN) {					
+                recvServ(id);
+            } 
+            else if (_pollfds[id].revents & POLLOUT) {
+                sendServ(id);
+            }
+			else if (_pollfds[id].revents & POLLERR) {
+				std::cerr << "Poll internal error" << std::endl;
+				// close all fds
+				exit(1);
 			}
-		}
-		else {
-			// выдать ошибку
-		} 
-	}
+        }
+        if (_pollfds[0].revents & POLLIN) {
+            acceptNewClient();
+        }
+    }
 }
 
-void    Server::recvServ(struct pollfd pollCli, int i)
+void    Server::pollServ(void)
 {
-	pollCli.revents = 0;
-	char	buf[TCP_SIZE];
-	memset(&buf[TCP_SIZE], 0, TCP_SIZE);
-	int	recvByte = recv(pollCli.fd, buf, TCP_SIZE - 1, 0);
-	if (recvByte == 0) {
+    while (_pollResult == 0) {
+        _pollResult = poll(&_pollfds.front(), _pollfds.size(), 0);
+    }
+    if (_pollResult < 0) {
+		std::cerr << "Poll internal error" << std::endl;
+		// close all fds
+		exit(1);
+		
+        // выдать ошибку
+    }
+}
+
+void    Server::recvServ(size_t i)
+{
+	_pollfds[i].revents = 0;
+	char	buf[PACKET_SIZE] = {0};
+	
+	if (_pollfds[i].fd == -1) {
+		return ;
+	}
+
+	int	recvBytes = recv(_pollfds[i].fd, buf, PACKET_SIZE - 1, 0);
+	if (recvBytes == 0) {
 		disconnectClient(i);
 	}
-	if (recvByte < 0) {
+	if (recvBytes < 0) {
 		disconnectClient(i);
 		; //error case
 	}
-	if (recvByte > 0) {
+	if (recvBytes > 0) {
 	// принять запрос и сформировать ответ
-
-		// Read data by line (recv)
-		// Replace \r\n with \n (???)
-		// Validate line
-
-		/*
-		// Parse first line
-		// getting method
-		// getting path 
-		// getting protocol
 		
-		// Parse headers
-		header (struct maybe): key, value
-		split header line by ':' and trim whitespaces of each part
-		then insert into hash-table or list or tree
+
+		std::string _remainder = "";
+		// buf -> to_lower (only headers)
+		// replace \r\n with \n
+		_remainder += buf;
+		// Get line		   <---| while _remainder != ""
+		// Parse & Validate ---|
+
+		// Parse first line
+		std::string line = "GET / HTTP/1.1";
+		Request req(line); // <---|
+                           //     |
+		// Parse headers ---------| inside this class 
+		//header (struct maybe): key, value
+		//split header line by ':' and trim whitespaces of each part
+		//then insert into hash-table or list or tree
 		
 		// Parse body (if exist)
 
-		Request:  method, path, protocol, headers, [body], 
-		Reponse:  protocol, status(code), status(message)  headers, [body]
+		//Request:  method, path, protocol, headers, [body], 
+		//Reponse:  protocol, status(code), status(message)  headers, [body]
 
-		// hashtable -> location
+		// hashtable -> location ???
 
 		// если от клиента пришел запрос, обработать 
 		// флажок revents сменится на POLLOUT для выдачи ответа recv
-		*/
+		
 	}
 }
 
-void    Server::sendServ(struct pollfd pollCli, int i)
+void    Server::sendServ(size_t id)
 {
-	// определить размер данных, которые надо отправить 
+
+	if (_pollfds[id].fd == -1) {
+		return ;
+	}
+
+	// определить размер данных, которые надо отправить
 	// sendByte (по аналогии с recvServ) или sendSize
-    int sendSize;
-    if (sendSize > TCP_SIZE)
-        sendSize = TCP_SIZE;
-    int	send_byte = ::send(pollCli.fd, "сообщение для отправки", sendSize, 0);
-    if (send_byte < 0){
-        disconnectClient(i);
-    }
-    if (send_byte == 0) {
-        disconnectClient(i);
+	char	buf[PACKET_SIZE] = "message to send\n";
+    int sendSize = strlen(buf);
+    if (sendSize > PACKET_SIZE)
+        sendSize = PACKET_SIZE;
+	// если нет каких-то полей с указанием окончания отправки ответа,
+	// клиент будет продолжать стоять в ожидании окончания ответа - POLLOUT
+    int	send_byte = send(_pollfds[id].fd, buf, sendSize, 0);
+    if (send_byte < 0) {
+        disconnectClient(id);
         ; // error case
     }
+    if (send_byte == 0) {
+        disconnectClient(id);
+    }
 	if (send_byte > 0) {
-        // disconnectClient(i)
+
 		;// выдача ответа send
 	}
 }
 
 void Server::acceptNewClient(void)
 {
+	struct isFreeFd {
+		int operator()(struct pollfd pfd) const { 
+			return pfd.fd == -1; 
+		}
+	} isFree;
+
 	struct sockaddr_in cliaddr;
 	socklen_t addrlen = sizeof(cliaddr);
 
 	int client_socket = accept(getServFd(), (struct sockaddr *)&cliaddr, &addrlen);
 	if (client_socket > -1)
 	{
-		_pollfds.push_back((struct pollfd) {
-			client_socket,
-			POLLIN | POLLOUT,
-			0
-		});
+		std::vector<struct pollfd>::iterator it = std::find_if(_pollfds.begin(), _pollfds.end(), isFree);
+		
+		if (it != _pollfds.end()) {
+			it->fd = client_socket;
+			it->events = POLLIN | POLLOUT;
+			it->revents = 0;
+		}
+		else {
+			_pollfds.push_back((struct pollfd) {
+				client_socket,
+				POLLIN | POLLOUT,
+				0
+			});
+		}
 	}
 }
 
-void Server::disconnectClient(int i)
+void Server::disconnectClient(size_t id)
 {
-	close(_pollfds[i].fd);
-	_pollfds.erase(_pollfds.begin() + i);
+	if (_pollfds[id].fd != -1) {
+		close(_pollfds[id].fd);
+		_pollfds[id].fd = -1;
+		_pollfds[id].events = 0;
+		_pollfds[id].revents = 0;
+	}
 }
