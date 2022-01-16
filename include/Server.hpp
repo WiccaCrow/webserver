@@ -15,6 +15,7 @@
 
 // #include "JSON.hpp"
 #include "Request.hpp"
+#include "ServerBlock.hpp"
 
 #ifndef SOMAXCONN
 # define SOMAXCONN 128
@@ -36,19 +37,23 @@ class Server {
 
     private:
         /* Variables */
-        std::string                 _addr;
-        uint16_t                    _port;
+        // std::string                 _addr;
+        // uint16_t                    _port;
         // std::string                 _url; //from config
-        int32_t                     _servfd;
+        // int32_t                     _servfd;
+        int                         _nbServBlocks;
+        std::vector<ServerBlock>    _ServBlocks;
         std::vector<struct pollfd>  _pollfds;
     	int                         _pollResult;
 
 		 /* Methods */
 		void	assignPollFds(void);
-		void	createListenSock(void);
-		void	reuseAddr(void);
-		void	bindAddr(void);
-		void	listenSock(void);
+        void    fillServBlocksFds(void);
+
+		// void	createListenSock(void);
+		// void	reuseAddr(void);
+		// void	bindAddr(void);
+		// void	listenSock(void);
 
     public:
 
@@ -64,12 +69,15 @@ class Server {
         void    resetPollEvents(void);
 
         /* Get and show atributs */
-        int     getServFd(void);
+        // int     getServFd(void);
 
         /* other methods */
+        void    addServerBlocks(ServerBlock &servBlock);
+        void    addServerBlocks(const std::string &ipaddr, const uint16_t port);
+
         void    start(void);
         void    pollServ(void);
-        void    acceptNewClient(void);
+        void    acceptNewClient(size_t id);
         void    disconnectClient(size_t id);
         void    recvServ(size_t id);
         void    sendServ(size_t id);
