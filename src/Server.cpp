@@ -209,8 +209,6 @@ void    Server::recvServ(size_t i) {
 	}
 	if (recvBytes > 0) {
 	// принять запрос и сформировать ответ
-		
-
 		std::string _remainder = "";
 		// buf -> to_lower (only headers)
 		// replace \r\n with \n
@@ -220,7 +218,7 @@ void    Server::recvServ(size_t i) {
 
 		// Parse first line
 		std::string line = "GET / HTTP/1.1";
-		Request req(line); // <---|
+		Request req();     // <---|
                            //     |
 		// Parse headers ---------| inside this class 
 		//header (struct maybe): key, value

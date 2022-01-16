@@ -3,6 +3,11 @@
 #include <string>
 #include <map>
 
+#define PARSED_NONE     0x0
+#define PARSED_SL       0x1
+#define PARSED_HEADERS  0x2
+#define PARSED_BODY     0x3
+
 class Request {
 
     std::string                         _method;
@@ -10,13 +15,18 @@ class Request {
     std::string                         _protocol;
     std::map<std::string, std::string>  _headers;
     std::string                         _body;
+	unsigned char						_parseFlags;
     
 	public:
-		Request(const std::string &line);
+		Request();
 		~Request();
 	
+		int				parseStartLine(const std::string &line);
+		void			setFlag(unsigned char flag);
+		void			removeFlag(unsigned char flag);
+		unsigned char	getFlags() const;
+
 	private:
-		void parseFirstLine(const std::string &line);
 		bool isValidMethod(const std::string &method);
 		bool isValidPath(const std::string &path);
 		bool isValidProtocol(const std::string &protocol);
