@@ -8,10 +8,11 @@ CPPFLAGS        =   -Wall -Wextra -Werror -g -std=c++98
 
 SOURCEFILES     =	main.cpp \
 				    Server.cpp \
+					Request.cpp
 				
-LIBJSONFOLDER   =   json-parser
-LIBJSONINCLUDE  =   -I ./$(LIBJSONFOLDER)/src
-LIBJSONFLAGS    =   -ljson -L ./$(LIBJSONFOLDER) ${LIBJSONINCLUDE}
+LIBJSONFOLDER   =   #json-parser
+LIBJSONINCLUDE  =   #-I ./$(LIBJSONFOLDER)/src
+LIBJSONFLAGS    =   #-ljson -L ./$(LIBJSONFOLDER) ${LIBJSONINCLUDE}
 
 PAGES           =   pages/
 SOURCEFOLDER    =   src/
@@ -37,11 +38,11 @@ $(NAME): $(OSOURCE)
 	$(CXX) $(CPPFLAGS) $^ -o $(NAME) $(LIBJSONFLAGS)
 
 clean:
-	$(MAKE) -C $(LIBJSONFOLDER) clean
+	# $(MAKE) -C $(LIBJSONFOLDER) clean
 	rm -rf $(OSOURCEFOLDER)
 
 fclean: clean
-	$(MAKE) -C $(LIBJSONFOLDER) fclean
+	# $(MAKE) -C $(LIBJSONFOLDER) fclean
 	rm -rf $(NAME)
 
 re: fclean all

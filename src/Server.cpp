@@ -1,5 +1,8 @@
 #include "Server.hpp"
 
+// COUNT_SERVERS - количество серверов
+#define COUNT_SERVERS 1
+
 //typedef struct pollfd pollfd;
 
 enum ServerError { 
@@ -16,69 +19,49 @@ enum ServerError {
 /******************************************************************************/
 /* Constructors */
 
+Server::Server() :
+_addr("127.0.0.1"), _port(7676) {
+	/**** заполнить переменные ****/
+	assignPollFds();
+	/**** сокет ****/
+	createListenSock();
+	/**** повторно использовать порт ****/
+	reuseAddr();
+	/**** связать порт и ip, чтобы listen происходил через этот порт ****/
+	bindAddr();
+	listenSock();
+
+	_pollfds[0].fd = _servfd;
+	_pollfds[0].events = POLLIN;
+};
+
+
 //      init
-Server::Server(const std::string &ipaddr = "127.0.0.1", const uint16_t port = 7676) :
-	_addr(ipaddr),                       
-	_port(port)
-{
-/**** заполнить переменные ****/
-	_pollfds.assign(128, (struct pollfd) {
-		-1,
-		POLLIN | POLLOUT,
-		0
-	});
-	_pollResult = 0;
+Server::Server(const std::string &ipaddr, const uint16_t port) :
+_addr(ipaddr), _port(port) {
+	/**** заполнить переменные ****/
+	assignPollFds();
+	/**** сокет ****/
+	createListenSock();
+	/**** повторно использовать порт ****/
+	reuseAddr();
+	/**** связать порт и ip, чтобы listen происходил через этот порт ****/
+	bindAddr();
+	listenSock();
 
-/**** сокет ****/
-	_servfd = socket(PF_INET, SOCK_STREAM, 0);
-	if (_servfd < 0)
-	{
-		std::cerr << "Cannot create listening socket" << std::endl; 
-		exit(SOCKET_ERR);
-	}
-
-/**** повторно использовать порт ****/
-	int i = 1;
-	if (setsockopt(_servfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) < 0) {
-		std::cerr << "Cannot set options of the listening socket" << std::endl;
-		exit(SETOPT_ERR);
-	}
-
-/**** связать порт и ip, чтобы listen происходил через этот порт ****/
-	struct sockaddr_in addr;
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(_port);
-	addr.sin_addr.s_addr = inet_addr(_addr.c_str());
-	if (bind(_servfd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-		std::cerr << "Cannot bind listening socket" << std::endl; 
-		exit(BIND_ERR);
-	}
-
-	if (listen(_servfd, SOMAXCONN) < 0) {
-		std::cerr << "Listen failed" << std::endl; 
-		exit(LISTEN_ERR);
-	}
-
-/**** подготовить данные для дальнейших опросов poll ****/
-
-	_pollfds.push_back((struct pollfd) {
-		_servfd,
-		POLLIN,
-		0
-	});
+	_pollfds[0].fd = _servfd;
+	_pollfds[0].events = POLLIN;
 }
 
 //      copy
-Server::Server(const Server &obj)
-{
+Server::Server(const Server &obj) {
     operator=(obj);
 }
 
 
 /******************************************************************************/
 /* Destructors */
-Server::~Server()
-{	
+Server::~Server() {	
 	const size_t size = _pollfds.size();
 	for (size_t i = 0 ; i < size ; i++)
 		close(_pollfds[i].fd);
@@ -88,10 +71,8 @@ Server::~Server()
 /* Operators */
 
 //      =
-Server & Server::operator=(const Server &obj)
-{
-    if (this != &obj)
-    {
+Server & Server::operator=(const Server &obj) {
+    if (this != &obj) {
         _addr = obj._addr;   // Потом будет браться из конфига
         _port = obj._port; 
         _servfd = obj._servfd;
@@ -104,14 +85,56 @@ Server & Server::operator=(const Server &obj)
 /******************************************************************************/
 /* Private functions */
 
+void	Server::assignPollFds(void) {
+	// _pollfds.reserve()
+	_pollfds.assign(128, (struct pollfd) {
+		-1,
+		POLLIN | POLLOUT,
+		0
+	});
+	_pollResult = 0;
+}
+
+void	Server::createListenSock(void) {
+	_servfd = socket(PF_INET, SOCK_STREAM, 0);
+	if (_servfd < 0) {
+		std::cerr << "Cannot create listening socket" << std::endl; 
+		exit(SOCKET_ERR);
+	}
+}
+
+void	Server::reuseAddr(void) {
+	int i = 1;
+	if (setsockopt(_servfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) < 0) {
+		std::cerr << "Cannot set options of the listening socket" << std::endl;
+		exit(SETOPT_ERR);
+	}
+}
+
+void	Server::bindAddr(void) {
+	struct sockaddr_in addr;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(_port);
+	addr.sin_addr.s_addr = inet_addr(_addr.c_str());
+	if (bind(_servfd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+		std::cerr << "Cannot bind listening socket" << std::endl; 
+		exit(BIND_ERR);
+	}
+}
+
+void	Server::listenSock(void) {
+	if (listen(_servfd, SOMAXCONN) < 0) {
+		std::cerr << "Listen failed" << std::endl; 
+		exit(LISTEN_ERR);
+	}
+}
 
 /******************************************************************************/
 /* Public functions */
 
 	/* Set atributs */
 
-void    Server::resetPollEvents(void)
-{
+void    Server::resetPollEvents(void) {
     // <Wicca> : У кого не 0, сбрасываю на 0.
     if (_pollResult) {
         const size_t size = _pollfds.size();
@@ -122,29 +145,29 @@ void    Server::resetPollEvents(void)
 }
 
 	/* Get and show atributs */
-int    Server::getServFd(void)
-{
+int    Server::getServFd(void) {
 	return (_servfd);
 }
 
 	/* other methods */
-void    Server::start(void)
-{
-    //int pollResult = 0;
-    while (1)
-    {
+void    Server::start(void) {
+    
+    while (1) {
     	resetPollEvents();
         pollServ();
         const size_t size = _pollfds.size();
-        for (size_t id = 1; id < size; id++) {
-			if (_pollfds[id].revents & POLLHUP) {
+        for (size_t id = 0; id < size; id++) {
+			if (id < COUNT_SERVERS && _pollfds[id].revents & POLLIN) {
+            	acceptNewClient();
+        	}
+			else if (_pollfds[id].revents & POLLHUP) {
 				std::cerr << "Cannot read from " << _pollfds[id].fd << " fd" << std::endl;
 			}
+			else if (_pollfds[id].revents & POLLOUT) {
+                sendServ(id);
+            }
             else if (_pollfds[id].revents & POLLIN) {					
                 recvServ(id);
-            } 
-            else if (_pollfds[id].revents & POLLOUT) {
-                sendServ(id);
             }
 			else if (_pollfds[id].revents & POLLERR) {
 				std::cerr << "Poll internal error" << std::endl;
@@ -152,16 +175,12 @@ void    Server::start(void)
 				exit(1);
 			}
         }
-        if (_pollfds[0].revents & POLLIN) {
-            acceptNewClient();
-        }
     }
 }
 
-void    Server::pollServ(void)
-{
+void    Server::pollServ(void) {
     while (_pollResult == 0) {
-        _pollResult = poll(&_pollfds.front(), _pollfds.size(), 0);
+        _pollResult = poll(_pollfds.data(), _pollfds.size(), 10000);
     }
     if (_pollResult < 0) {
 		std::cerr << "Poll internal error" << std::endl;
@@ -172,8 +191,7 @@ void    Server::pollServ(void)
     }
 }
 
-void    Server::recvServ(size_t i)
-{
+void    Server::recvServ(size_t i) {
 	_pollfds[i].revents = 0;
 	char	buf[PACKET_SIZE] = {0};
 	
@@ -222,8 +240,7 @@ void    Server::recvServ(size_t i)
 	}
 }
 
-void    Server::sendServ(size_t id)
-{
+void    Server::sendServ(size_t id) {
 
 	if (_pollfds[id].fd == -1) {
 		return ;
@@ -251,21 +268,19 @@ void    Server::sendServ(size_t id)
 	}
 }
 
+static int isFreeFD(struct pollfd pfd) { 
+	return pfd.fd == -1; 
+}
+
 void Server::acceptNewClient(void)
 {
-	struct isFreeFd {
-		int operator()(struct pollfd pfd) const { 
-			return pfd.fd == -1; 
-		}
-	} isFree;
-
 	struct sockaddr_in cliaddr;
 	socklen_t addrlen = sizeof(cliaddr);
 
 	int client_socket = accept(getServFd(), (struct sockaddr *)&cliaddr, &addrlen);
 	if (client_socket > -1)
 	{
-		std::vector<struct pollfd>::iterator it = std::find_if(_pollfds.begin(), _pollfds.end(), isFree);
+		std::vector<struct pollfd>::iterator it = std::find_if(_pollfds.begin(), _pollfds.end(), isFreeFD);
 		
 		if (it != _pollfds.end()) {
 			it->fd = client_socket;

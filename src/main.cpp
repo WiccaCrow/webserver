@@ -13,6 +13,7 @@ void	*startInThread(void *ptr) {
 	
 	if (serv != NULL)
 		serv->start();
+	 return NULL;
 }
 
 int	main(int ac, char **av)
@@ -24,7 +25,6 @@ int	main(int ac, char **av)
 
     std::vector<Server *> servers(serverBlocksCount);
     // Fill array with servers
-
     if (serverBlocksCount > 1) {
         pthread_t thread[serverBlocksCount];
         for (size_t i = 0; i < servers.size(); i++)
@@ -39,6 +39,7 @@ int	main(int ac, char **av)
     }
     else {
         // Just a plain realization of the server
+		servers[0] = new Server;
         servers[0]->start();
     }
 
