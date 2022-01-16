@@ -33,7 +33,15 @@ void Request::parseFirstLine(const std::string &line) {
 
 
 bool Request::isValidMethod(const std::string &method) {
-	return true;
+	char method_valid[9][8] = {"GET", "DELETE", "POST"
+                                // , "PUT", "HEAD", "CONNECT", 
+                                // "OPTIONS", "TRACE", "PATCH"
+                                };
+    for (int i = 0; i < 9; ++i) {
+        if (method_valid[i] == method)
+	        return true;    
+    }
+    return false;
 }
 
 bool Request::isValidPath(const std::string &path) {
@@ -41,5 +49,8 @@ bool Request::isValidPath(const std::string &path) {
 }
 
 bool Request::isValidProtocol(const std::string &protocol) {
-	return true;
+    char protocol_valid[] = "HTTP 1.1";
+    if (protocol_valid == protocol)
+        return true;
+	return false;
 }

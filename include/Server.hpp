@@ -37,7 +37,8 @@ class Server {
     private:
         /* Variables */
         std::string                 _addr;
-        uint16_t                    _port; 
+        uint16_t                    _port;
+        // std::string                 _url; //from config
         int32_t                     _servfd;
         std::vector<struct pollfd>  _pollfds;
     	int                         _pollResult;
