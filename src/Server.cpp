@@ -180,7 +180,6 @@ void Server::recvServ(size_t i) {
     // если от клиента пришел запрос, обработать
     // флажок revents сменится на POLLOUT для выдачи ответа recv
 }
-}
 
 void Server::sendServ(size_t id) {
     if (_pollfds[id].fd == -1) {

@@ -17,6 +17,7 @@
 #include "ReadSock.hpp"
 #include "Request.hpp"
 #include "ServerBlock.hpp"
+#include "ReadSock.hpp"
 
 #ifndef SOMAXCONN
 #define SOMAXCONN 128
