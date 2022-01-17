@@ -135,78 +135,51 @@ void Server::pollServ(void) {
 }
 
 void Server::recvServ(size_t i) {
+    std::string line;
+    Request     req;
+
+    struct s_sock s = {_pollfds[i].fd, ReadSock::PERM_READ}; // temporal
     _pollfds[i].revents = 0;
-    char buf[PACKET_SIZE] = {0};
+    while (true) {
+        line = "";
+        ReadSock::Status stat = ReadSock::getline(s, line);
 
-    if (_pollfds[i].fd == -1) {
-        return;
-    }
-
-    int recvBytes = recv(_pollfds[i].fd, buf, PACKET_SIZE - 1, 0);
-    if (recvBytes == 0) {
-        disconnectClient(i);
-    }
-    if (recvBytes < 0) {
-        disconnectClient(i);
-        ; //error case
-    }
-    if (recvBytes > 0) {
-        // принять запрос и сформировать ответ
-
-        std::string _remainder = "";
-        // buf -> to_lower (only headers)
-        // replace \r\n with \n
-        _remainder += buf;
-        // Get line		   <---| while _remainder != ""
-        // Parse & Validate ---|
-
-        // Parse first line
-        std::string line;
-        Request     req();
-        switch (ReadSock::getline(s, line)) {
-            case ReadSock::RECV_END: {
-                break;
-            }
-
+        switch (stat) {
+            case ReadSock::RECV_END:
             case ReadSock::RECV_FAIL: {
-                break;
-            }
-
-            case ReadSock::RECV_DONE: {
-                break;
+                disconnectClient(i);
+                return;
             }
 
             case ReadSock::INVALID_FD: {
-                break;
-            }
-
-            case ReadSock::LINE_FOUND: {
-                break;
+                return;
             }
 
             case ReadSock::LINE_NOT_FOUND: {
-                break;
+                return;
             }
 
-            default: {
+            case ReadSock::LINE_FOUND: {
+                // req.parseLine(line);
                 break;
             }
         }
-
-        //header (struct maybe): key, value
-        //split header line by ':' and trim whitespaces of each part
-        //then insert into hash-table or list or tree
-
-        // Parse body (if exist)
-
-        //Request:  method, path, protocol, headers, [body],
-        //Reponse:  protocol, status(code), status(message)  headers, [body]
-
-        // hashtable -> location ???
-
-        // если от клиента пришел запрос, обработать
-        // флажок revents сменится на POLLOUT для выдачи ответа recv
     }
+
+    //header (struct maybe): key, value
+    //split header line by ':' and trim whitespaces of each part
+    //then insert into hash-table or list or tree
+
+    // Parse body (if exist)
+
+    //Request:  method, path, protocol, headers, [body],
+    //Reponse:  protocol, status(code), status(message)  headers, [body]
+
+    // hashtable -> location ???
+
+    // если от клиента пришел запрос, обработать
+    // флажок revents сменится на POLLOUT для выдачи ответа recv
+}
 }
 
 void Server::sendServ(size_t id) {
