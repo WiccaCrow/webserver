@@ -39,10 +39,3 @@ std::string addrFromEtcHosts(std::string servName) {
     filename.close();
     return ("");
 }
-
-int main() {
-    std::cout << fromEtcHosts("localhost") << std::endl;
-    return (0);
-}
-
-127.0.0.1 hjk fghj localhost ghj 127.0.0.2 hjklocalhost ghj 127.0.0.3 hjk localhos ghj 127.0.0.1 localhost
