@@ -17,7 +17,6 @@
 #include "ReadSock.hpp"
 #include "Request.hpp"
 #include "ServerBlock.hpp"
-#include "ReadSock.hpp"
 
 #ifndef SOMAXCONN
 #define SOMAXCONN 128
@@ -36,23 +35,16 @@ class Response {};
 class Server {
     private:
     /* Variables */
-    // std::string                 _addr;
-    // uint16_t                    _port;
-    // std::string                 _url; //from config
-    // int32_t                     _servfd;
-    int                        _nbServBlocks;
+    size_t                     _nbServBlocks;
     std::vector<ServerBlock>   _ServBlocks;
     std::vector<struct pollfd> _pollfds;
     int                        _pollResult;
 
+    ReadSock _reader;
+
     /* Methods */
     void assignPollFds(void);
     void fillServBlocksFds(void);
-
-    // void	createListenSock(void);
-    // void	reuseAddr(void);
-    // void	bindAddr(void);
-    // void	listenSock(void);
 
     public:
     /* Constructs and destructs*/
@@ -67,7 +59,6 @@ class Server {
     void resetPollEvents(void);
 
     /* Get and show atributs */
-    // int     getServFd(void);
 
     /* other methods */
     void addServerBlocks(ServerBlock &servBlock);

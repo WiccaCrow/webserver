@@ -2,7 +2,7 @@
 
 static const size_t MAX_PACKET_SIZE = 65536;
 
-int ReadSock::readSocket(int fd) {
+ReadSock::Status ReadSock::readSocket(int fd) {
     char buf[MAX_PACKET_SIZE + 1];
 
     int recvBytes = recv(fd, buf, MAX_PACKET_SIZE, 0);
@@ -21,14 +21,14 @@ int ReadSock::readSocket(int fd) {
     }
 }
 
-int ReadSock::getline(struct s_sock &sock, std::string &line) {
+ReadSock::Status ReadSock::getline(struct s_sock &sock, std::string &line) {
     int fd = sock.fd;
     if (fd < 0) {
         return INVALID_FD;
     }
 
     if (sock.perm & PERM_READ) {
-        int status = readSocket(fd);
+        ReadSock::Status status = readSocket(fd);
 
         if (status <= 0) {
             return status;

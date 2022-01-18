@@ -1,47 +1,47 @@
 #include "Server.hpp"
 
-void	checkArgs(int &ac, char **av) {
-	if (ac > 2)
-	{
-		std::cerr << "Usage: " << av[0] << "config.json" << std::endl;
-		exit(1);
-	}
+void checkArgs(int &ac, char **av) {
+    if (ac > 2) {
+        std::cerr << "Usage: " << av[0] << " config.json" << std::endl;
+        exit(1);
+    }
 }
 
-void	*startInThread(void *ptr) {
-	Server *serv = reinterpret_cast<Server *>(ptr);
-	
-	if (serv != NULL)
-		serv->start();
-	 return NULL;
-}
+//void *startInThread(void *ptr) {
+//    Server *serv = reinterpret_cast<Server *>(ptr);
+//
+//    if (serv != NULL)
+//        serv->start();
+//    return NULL;
+//}
 
-int	main(int ac, char **av)
-{
-	checkArgs(ac, av);
+int main(int ac, char **av) {
+    checkArgs(ac, av);
 
-	// Reading config file
-	const int serverBlocksCount = 1;
+    // Reading config file
+    // Create threads (main + nbservBlock)
 
-    std::vector<Server *> servers(serverBlocksCount);
-    // Fill array with servers
-    if (serverBlocksCount > 1) {
-        pthread_t thread[serverBlocksCount];
-        for (size_t i = 0; i < servers.size(); i++)
-        {
-            pthread_create(&thread[i], NULL, startInThread, (void *)servers[i]);
-        }
+    // main - poll. read/write ops
+    // other - permorm request and send res to main
 
-        for (size_t i = 0; i < servers.size(); i++)
-        {
-            pthread_join(thread[i], NULL);
-        }
-    }
-    else {
-        // Just a plain realization of the server
-		servers[0] = new Server;
-        servers[0]->start();
-    }
+    Server server;
+    // Fill array with server blocks from config
+    server.addServerBlocks("127.0.0.1", 8080);
+    server.start();
+
+    // if (serverBlocksCount > 1) {
+    //        pthread_t thread[serverBlocksCount];
+    //        for (size_t i = 0; i < servers.size(); i++) {
+    //            pthread_create(&thread[i], NULL, startInThread, (void *)servers[i]);
+    //        }
+    //
+    //        for (size_t i = 0; i < servers.size(); i++) {
+    //            pthread_join(thread[i], NULL);
+    //        }
+    //    }
+    //
+    // Just a plain realization of the server
+    //
 
     return 0;
 }

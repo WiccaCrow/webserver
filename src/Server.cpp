@@ -30,7 +30,7 @@ Server::Server(const Server &obj) {
 /* Destructors */
 Server::~Server() {
     const size_t size = _pollfds.size();
-    for (size_t i = _nbServBlocks; i < size; i++)
+    for (size_t i = 0; i < size; i++)
         close(_pollfds[i].fd);
 }
 
@@ -51,16 +51,12 @@ Server &Server::operator=(const Server &obj) {
 /* Private functions */
 
 void Server::assignPollFds(void) {
-    // _pollfds.reserve()
-    _pollfds.assign(128, (struct pollfd){
-                             -1,
-                             POLLIN | POLLOUT,
-                             0});
+    _pollfds.assign(128, (struct pollfd){-1, POLLIN | POLLOUT, 0});
     _pollResult = 0;
 }
 
 void Server::fillServBlocksFds(void) {
-    for (int i = 0; i < _nbServBlocks; ++i) {
+    for (size_t i = 0; i < _nbServBlocks; ++i) {
         _pollfds[i].fd = _ServBlocks[i].getServFd();
         _pollfds[i].events = POLLIN;
         _pollfds[i].revents = 0;
@@ -87,13 +83,13 @@ void Server::resetPollEvents(void) {
 
 void Server::addServerBlocks(ServerBlock &servBlock) {
     _ServBlocks.push_back(servBlock);
-    _ServBlocks.back().start();
+    _ServBlocks.back().createListenSock();
     _nbServBlocks++;
 }
 
 void Server::addServerBlocks(const std::string &ipaddr, const uint16_t port) {
     _ServBlocks.push_back(ServerBlock(ipaddr, port));
-    _ServBlocks.back().start();
+    _ServBlocks.back().createListenSock();
     _nbServBlocks++;
 }
 
@@ -104,17 +100,21 @@ void Server::start(void) {
         pollServ();
         const size_t size = _pollfds.size();
         for (size_t id = 0; id < size; id++) {
-            if (id < COUNT_SERVERS && _pollfds[id].revents & POLLIN) {
+            if (id < _nbServBlocks && _pollfds[id].revents & POLLIN) {
                 acceptNewClient(id);
             } else if (_pollfds[id].revents & POLLHUP) {
                 std::cerr << "Cannot read from " << _pollfds[id].fd << " fd" << std::endl;
+                // Basically occurs when client closes his socket
+                if (id >= _nbServBlocks)
+                    disconnectClient(id);
             } else if (_pollfds[id].revents & POLLOUT) {
+                // Need extra check to see if data is waiting to be send
                 sendServ(id);
             } else if (_pollfds[id].revents & POLLIN) {
-                recvServ(id);
+                //recvServ(id);
             } else if (_pollfds[id].revents & POLLERR) {
                 std::cerr << "Poll internal error" << std::endl;
-                // close all fds
+                // close all fds ?
                 exit(1);
             }
         }
@@ -129,8 +129,6 @@ void Server::pollServ(void) {
         std::cerr << "Poll internal error" << std::endl;
         // close all fds
         exit(1);
-
-        // выдать ошибку
     }
 }
 
@@ -142,7 +140,7 @@ void Server::recvServ(size_t i) {
     _pollfds[i].revents = 0;
     while (true) {
         line = "";
-        ReadSock::Status stat = ReadSock::getline(s, line);
+        ReadSock::Status stat = _reader.getline(s, line);
 
         switch (stat) {
             case ReadSock::RECV_END:
@@ -163,6 +161,8 @@ void Server::recvServ(size_t i) {
                 // req.parseLine(line);
                 break;
             }
+            default:
+                break;
         }
     }
 
@@ -186,24 +186,39 @@ void Server::sendServ(size_t id) {
         return;
     }
 
+    static bool canSend = true;
     // определить размер данных, которые надо отправить
     // sendByte (по аналогии с recvServ) или sendSize
-    char buf[PACKET_SIZE] = "message to send\n";
+    char buf[PACKET_SIZE] = "";
     int  sendSize = strlen(buf);
     if (sendSize > PACKET_SIZE)
         sendSize = PACKET_SIZE;
-    // если нет каких-то полей с указанием окончания отправки ответа,
-    // клиент будет продолжать стоять в ожидании окончания ответа - POLLOUT
-    int send_byte = send(_pollfds[id].fd, buf, sendSize, 0);
-    if (send_byte < 0) {
-        disconnectClient(id);
-        ; // error case
-    }
-    if (send_byte == 0) {
-        disconnectClient(id);
-    }
-    if (send_byte > 0) {
-        ; // выдача ответа send
+
+    std::string res;
+    std::string body = "<html><body> Hello, Ilnur!!! </body></html>";
+    res += "HTTP/1.1 200 OK\r\n";
+    res += "Content-type: text/html; charset=utf-8\r\n";
+    res += "Connection: keep-alive\r\n";
+    res += "Keep-Alive: timeout=5, max=1000\r\n";
+    res += "Content-length: " + std::to_string(body.length()) + "\r\n\r\n";
+    res += body;
+
+    if (canSend) {
+        canSend = false;
+        size_t send_byte = send(_pollfds[id].fd, res.c_str(), res.length(), 0);
+
+        // если нет каких-то полей с указанием окончания отправки ответа,
+        // клиент будет продолжать стоять в ожидании окончания ответа - POLLOUT
+        if (send_byte < 0) {
+            disconnectClient(id);
+            ; // error case
+        }
+        if (send_byte == 0) {
+            disconnectClient(id);
+        }
+        if (send_byte != res.length()) {
+            ; // not all bytes were sent
+        }
     }
 }
 
@@ -215,19 +230,18 @@ void Server::acceptNewClient(size_t id) {
     struct sockaddr_in cliaddr;
     socklen_t          addrlen = sizeof(cliaddr);
 
-    int client_socket = accept(_ServBlocks[id].getServFd(), (struct sockaddr *)&cliaddr, &addrlen);
-    if (client_socket > -1) {
+    int fd = accept(_ServBlocks[id].getServFd(), (struct sockaddr *)&cliaddr, &addrlen);
+    // checkErrno(); некритические в основном
+    if (fd > -1) {
         std::vector<struct pollfd>::iterator it = std::find_if(_pollfds.begin(), _pollfds.end(), isFreeFD);
+        std::cout << fd << ": client accepted" << std::endl;
 
         if (it != _pollfds.end()) {
-            it->fd = client_socket;
+            it->fd = fd;
             it->events = POLLIN | POLLOUT;
             it->revents = 0;
         } else {
-            _pollfds.push_back((struct pollfd){
-                client_socket,
-                POLLIN | POLLOUT,
-                0});
+            _pollfds.push_back((struct pollfd){fd, POLLIN | POLLOUT, 0});
         }
     }
 }

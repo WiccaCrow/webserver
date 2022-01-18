@@ -23,12 +23,13 @@ class ReadSock {
         LINE_NOT_FOUND = -3
     };
 
-    static int getline(struct s_sock &sock, std::string &line);
-
     private:
-    static std::map<int, std::string> _rems;
+    std::map<int, std::string> _rems;
 
-    static int readSocket(int fd);
+    Status readSocket(int fd);
+
+    public:
+    Status getline(struct s_sock &sock, std::string &line);
 };
 
 // Where should I put this ... ?
