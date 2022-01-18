@@ -8,7 +8,10 @@ CPPFLAGS        =   -Wall -Wextra -Werror -g -std=c++98
 
 SOURCEFILES     =	main.cpp \
 				    Server.cpp \
-					Request.cpp
+					Request.cpp \
+					ReadSock.cpp \
+					Request.cpp \
+					ServerBlock.cpp
 				
 LIBJSONFOLDER   =   #json-parser
 LIBJSONINCLUDE  =   #-I ./$(LIBJSONFOLDER)/src
