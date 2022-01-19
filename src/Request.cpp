@@ -16,18 +16,20 @@ static std::string getData(const std::string &line, size_t &pos) {
     return line.substr(tmp, end - tmp);
 }
 
+using namespace HTTP;
+
 int Request::parseStartLine(const std::string &line) {
     size_t pos = 0;
 
     _method = getData(line, pos);
     if (!isValidMethod(_method)) {
-        return 501;
+        return NOT_IMPLEMENTED;
     }
 
     skipSpaces(line, pos);
     _path = getData(line, pos);
     if (!isValidPath(_path)) {
-        return 404;
+        return BAD_REQUEST;
     }
 
     skipSpaces(line, pos);
@@ -35,22 +37,23 @@ int Request::parseStartLine(const std::string &line) {
 
     skipSpaces(line, pos);
     if (line[pos]) {
-        return 400;
+        return BAD_REQUEST;
     }
     if (!isValidProtocol(_protocol)) {
-        return 400;
+        // Or 505, need to improve
+        return BAD_REQUEST;
     }
 
     setFlag(PARSED_SL);
-    return 100;
+    return CONTINUE;
 }
 
 bool Request::isValidMethod(const std::string &method) {
-    char method_valid[9][8] = {
-        "GET", "DELETE", "POST"
-        // , "PUT", "HEAD", "CONNECT",
-        // "OPTIONS", "TRACE", "PATCH"
-    };
+    char *method_valid[9] = {
+        "GET", "DELETE", "POST",
+        "PUT", "HEAD", "CONNECT",
+        "OPTIONS", "TRACE", "PATCH"};
+
     for (int i = 0; i < 9; ++i) {
         if (method_valid[i] == method)
             return true;
@@ -59,15 +62,11 @@ bool Request::isValidMethod(const std::string &method) {
 }
 
 bool Request::isValidPath(const std::string &path) {
-    (void)path;
-    return true;
+    return path[0] == '/';
 }
 
 bool Request::isValidProtocol(const std::string &protocol) {
-    char protocol_valid[] = "HTTP/1.1";
-    if (protocol_valid == protocol)
-        return true;
-    return false;
+    return protocol == "HTTP/1.1";
 }
 
 void Request::setFlag(unsigned char flag) {

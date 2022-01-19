@@ -1,7 +1,11 @@
 #pragma once
 
+#include <cstdlib>
+#include <cstring>
 #include <map>
 #include <string>
+
+#include "HttpStatusCodes.hpp"
 
 #define PARSED_NONE    0x0
 #define PARSED_SL      0x1
