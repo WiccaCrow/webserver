@@ -49,13 +49,13 @@ int Request::parseStartLine(const std::string &line) {
 }
 
 bool Request::isValidMethod(const std::string &method) {
-    char *method_valid[9] = {
+    std::string validMethods[9] = {
         "GET", "DELETE", "POST",
         "PUT", "HEAD", "CONNECT",
         "OPTIONS", "TRACE", "PATCH"};
 
     for (int i = 0; i < 9; ++i) {
-        if (method_valid[i] == method)
+        if (validMethods[i] == method)
             return true;
     }
     return false;

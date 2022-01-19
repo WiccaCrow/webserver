@@ -185,7 +185,7 @@ void Server::sendServ(size_t id) {
     res += "Content-type: text/html; charset=utf-8\r\n";
     res += "Connection: keep-alive\r\n";
     res += "Keep-Alive: timeout=5, max=1000\r\n";
-    res += "Content-length: " + std::to_string(body.length()) + "\r\n\r\n";
+    res += "Content-length: " + to_string(body.length()) + "\r\n\r\n";
     res += body;
 
     if (canSend) {

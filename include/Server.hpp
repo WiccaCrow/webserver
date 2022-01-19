@@ -7,16 +7,22 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
+//#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <vector>
 
+//typedef unsigned char      uint8_t;
+//typedef unsigned short     uint16_t;
+//typedef unsigned int       uint32_t;
+//typedef unsigned long long uint64_t;
+
 // #include "JSON.hpp"
 #include "ReadSock.hpp"
 #include "Request.hpp"
 #include "ServerBlock.hpp"
+#include "Utils.hpp"
 
 #ifndef SOMAXCONN
 #define SOMAXCONN 128
