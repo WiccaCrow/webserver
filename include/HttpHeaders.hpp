@@ -6,9 +6,10 @@
 namespace HTTP {
 
 struct HeaderPair {
-    std::string value;
     typedef void (HeaderPair::*method)(const std::string &str);
-    method handler;
+
+    std::string value;
+    method      handler;
 
     void AcceptEncoding(const std::string &str);
     void AcceptLanguage(const std::string &str);
@@ -33,4 +34,4 @@ struct HeaderPair {
     void ContentType(const std::string &str);
 };
 
-};
+}; // namespace HTTP

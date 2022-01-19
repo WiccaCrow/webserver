@@ -117,8 +117,8 @@ void Server::pollServ(void) {
 }
 
 void Server::recvServ(size_t i) {
-    std::string line;
-    Request     req;
+    std::string   line;
+    HTTP::Request req;
 
     // temporal
     struct s_sock s = {_pollfds[i].fd, ReadSock::PERM_READ};

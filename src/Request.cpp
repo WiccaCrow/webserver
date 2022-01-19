@@ -72,7 +72,7 @@ StatusCode Request::parseStartLine(const std::string &line) {
     return CONTINUE;
 }
 
-bool Request::isValidMethod(const std::string &method) {
+StatusCode Request::isValidMethod(const std::string &method) {
     std::string validMethods[9] = {
         "GET", "DELETE", "POST",
         "PUT", "HEAD", "CONNECT",
@@ -80,13 +80,15 @@ bool Request::isValidMethod(const std::string &method) {
 
     for (int i = 0; i < 9; ++i) {
         if (validMethods[i] == method)
-            return true;
+            return CONTINUE;
     }
     return NOT_IMPLEMENTED;
 }
 
 StatusCode Request::isValidPath(const std::string &path) {
-    (void)path;
+    if (path[0] != '/') {
+        return BAD_REQUEST;
+    }
     return CONTINUE;
 }
 
@@ -97,15 +99,15 @@ StatusCode Request::isValidProtocol(const std::string &protocol) {
     return HTTP_VERSION_NOT_SUPPORTED;
 }
 
-void Request::setFlag(uint8_t flag) {
+void Request::setFlag(uint8 flag) {
     _parseFlags |= flag;
 }
 
-void Request::removeFlag(uint8_t flag) {
+void Request::removeFlag(uint8 flag) {
     _parseFlags &= ~flag;
 }
 
-const uint8_t &Request::getFlags() const {
+const uint8 &Request::getFlags() const {
     return _parseFlags;
 }
 
