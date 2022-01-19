@@ -175,9 +175,8 @@ class StatusDescription {
     }
 
     const std::string &operator[](int code) {
-        return _descriptions[(StatusCode)code];
+        return _descriptions[static_cast<StatusCode>(code)];
     }
-
-} _descr;
+};
 
 }; // namespace HTTP
