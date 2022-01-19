@@ -1,10 +1,5 @@
 #include "Server.hpp"
 
-// COUNT_SERVERS - количество серверов
-#define COUNT_SERVERS 1
-
-//typedef struct pollfd pollfd;
-
 enum ServerError {
     PARSE_ERR = -4,  //не использ
     CONNECT_ERR = -7 //не использ
@@ -13,20 +8,15 @@ enum ServerError {
 /******************************************************************************/
 /* Constructors */
 
-//      init
-
 Server::Server() {
-    /**** заполнить переменные ****/
     _nbServBlocks = 0;
     assignPollFds();
 };
 
-//      copy
 Server::Server(const Server &obj) {
     operator=(obj);
 }
 
-/******************************************************************************/
 /* Destructors */
 Server::~Server() {
     const size_t size = _pollfds.size();
@@ -34,10 +24,7 @@ Server::~Server() {
         close(_pollfds[i].fd);
 }
 
-/******************************************************************************/
 /* Operators */
-
-//      =
 Server &Server::operator=(const Server &obj) {
     if (this != &obj) {
         _ServBlocks = obj._ServBlocks;
@@ -47,9 +34,7 @@ Server &Server::operator=(const Server &obj) {
     return (*this);
 }
 
-/******************************************************************************/
 /* Private functions */
-
 void Server::assignPollFds(void) {
     _pollfds.assign(128, (struct pollfd){-1, POLLIN | POLLOUT, 0});
     _pollResult = 0;
@@ -63,10 +48,9 @@ void Server::fillServBlocksFds(void) {
     }
 }
 
-/******************************************************************************/
 /* Public functions */
 
-/* Set atributs */
+/* Set attributes */
 
 void Server::resetPollEvents(void) {
     if (_pollResult) {
@@ -77,9 +61,9 @@ void Server::resetPollEvents(void) {
     }
 }
 
-/* Get and show atributs */
+/* Get and show attributes */
 
-/* other methods */
+/* Other methods */
 
 void Server::addServerBlocks(ServerBlock &servBlock) {
     _ServBlocks.push_back(servBlock);
@@ -136,7 +120,8 @@ void Server::recvServ(size_t i) {
     std::string line;
     Request     req;
 
-    struct s_sock s = {_pollfds[i].fd, ReadSock::PERM_READ}; // temporal
+    // temporal
+    struct s_sock s = {_pollfds[i].fd, ReadSock::PERM_READ};
     _pollfds[i].revents = 0;
     while (true) {
         line = "";
@@ -200,7 +185,7 @@ void Server::sendServ(size_t id) {
     res += "Content-type: text/html; charset=utf-8\r\n";
     res += "Connection: keep-alive\r\n";
     res += "Keep-Alive: timeout=5, max=1000\r\n";
-    res += "Content-length: " + std::to_string(body.length()) + "\r\n\r\n";
+    res += "Content-length: " + to_string(body.length()) + "\r\n\r\n";
     res += body;
 
     if (canSend) {

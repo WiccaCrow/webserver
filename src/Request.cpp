@@ -53,7 +53,7 @@ StatusCode Request::parseStartLine(const std::string &line) {
     skipSpaces(line, pos);
     _path = getData(line, ' ', pos);
     if (!isValidPath(_path)) {
-        return NOT_FOUND;
+        return BAD_REQUEST;
     }
 
     skipSpaces(line, pos);
@@ -64,6 +64,7 @@ StatusCode Request::parseStartLine(const std::string &line) {
         return BAD_REQUEST;
     }
     if (!isValidProtocol(_protocol)) {
+        // Or 505, need to improve
         return BAD_REQUEST;
     }
 
@@ -71,15 +72,15 @@ StatusCode Request::parseStartLine(const std::string &line) {
     return CONTINUE;
 }
 
-StatusCode Request::isValidMethod(const std::string &method) {
-    char method_valid[9][8] = {
-        "GET", "DELETE", "POST"
-        // , "PUT", "HEAD", "CONNECT",
-        // "OPTIONS", "TRACE", "PATCH"
-    };
+bool Request::isValidMethod(const std::string &method) {
+    std::string validMethods[9] = {
+        "GET", "DELETE", "POST",
+        "PUT", "HEAD", "CONNECT",
+        "OPTIONS", "TRACE", "PATCH"};
+
     for (int i = 0; i < 9; ++i) {
-        if (method_valid[i] == method)
-            return CONTINUE;
+        if (validMethods[i] == method)
+            return true;
     }
     return NOT_IMPLEMENTED;
 }

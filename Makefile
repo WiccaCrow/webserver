@@ -11,7 +11,9 @@ SOURCEFILES     =	main.cpp \
 					Request.cpp \
 					ReadSock.cpp \
 					Request.cpp \
-					ServerBlock.cpp
+					ServerBlock.cpp \
+					Utils.cpp \
+					HttpStatusCodes.cpp
 				
 LIBJSONFOLDER   =   #json-parser
 LIBJSONINCLUDE  =   #-I ./$(LIBJSONFOLDER)/src

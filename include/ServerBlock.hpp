@@ -4,7 +4,9 @@
 #include <netdb.h>
 #include <unistd.h>
 
-#include <cstdint>
+#include <cstdlib>
+
+//#include <cstdint>
 #include <iostream>
 
 //enum AllowedMethods
