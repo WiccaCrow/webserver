@@ -7,20 +7,16 @@
 
 #include <algorithm>
 #include <cstddef>
-//#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <vector>
 
-//typedef unsigned char      uint8_t;
-//typedef unsigned short     uint16_t;
-//typedef unsigned int       uint32_t;
-//typedef unsigned long long uint64_t;
-
 // #include "JSON.hpp"
+#include "Client.hpp"
 #include "ReadSock.hpp"
 #include "Request.hpp"
+#include "Response.hpp"
 #include "ServerBlock.hpp"
 #include "Utils.hpp"
 
@@ -31,42 +27,33 @@
 // максимальный размер пакета в TCP
 #define PACKET_SIZE 65536
 
-class Response {};
-
-// class Client {
-//     private:
-//         int  _fd;           // переделано из HTTPreq
-// };
-
 class Server {
     private:
-    /* Variables */
+    // Variables
     size_t                     _nbServBlocks;
     std::vector<ServerBlock>   _ServBlocks;
     std::vector<struct pollfd> _pollfds;
+    std::vector<Client>        _clients;
     int                        _pollResult;
 
     ReadSock _reader;
 
-    /* Methods */
+    // Methods
     void assignPollFds(void);
     void fillServBlocksFds(void);
 
     public:
-    /* Constructs and destructs*/
     Server();
     Server(const std::string &_addr, const uint16_t _port);
     Server(const Server &obj);
     ~Server();
 
-    /* Operators */
     Server &operator=(const Server &obj);
-    /* Set atributs */
+
     void resetPollEvents(void);
 
-    /* Get and show atributs */
+    // Get and show atributs
 
-    /* other methods */
     void addServerBlocks(ServerBlock &servBlock);
     void addServerBlocks(const std::string &ipaddr, const uint16_t port);
 

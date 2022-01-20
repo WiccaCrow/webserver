@@ -6,6 +6,7 @@ Content-Length: 95
 Accept-Language: en-us
 Accept-Encoding: gzip, deflate
 Connection: Keep-Alive
+Accept-Mhufflep: aboba
 
 <?xml version="1.0" encoding="utf-8"?>
 <string xmlns="http://clearforest.com/">string</string>

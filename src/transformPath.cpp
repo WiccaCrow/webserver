@@ -30,19 +30,19 @@ std::string transformPath(const std::string &path, std::vector<Location> &locati
 
 //#include <iostream>
 
-//struct Location {
-//    std::string path;
-//    std::string root;
-//};
+// struct Location {
+//     std::string path;
+//     std::string root;
+// };
 //
-//int main() {
-//    std::vector<Location> locs;
-//    locs.push_back((Location){"/ponys/red", "/var/red/"});
-//    locs.push_back((Location){"/ponys/white", "/var/white/"});
-//    locs.push_back((Location){"/ponys", "/var/ponys/"});
-//    locs.push_back((Location){"/", "/root/"});
-//    //locs.push_back((Location){"", "/var/www/"});
-//    //locs.push_back((Location){"", "/var/www/"});
+// int main() {
+//     std::vector<Location> locs;
+//     locs.push_back((Location){"/ponys/red", "/var/red/"});
+//     locs.push_back((Location){"/ponys/white", "/var/white/"});
+//     locs.push_back((Location){"/ponys", "/var/ponys/"});
+//     locs.push_back((Location){"/", "/root/"});
+//     //locs.push_back((Location){"", "/var/www/"});
+//     //locs.push_back((Location){"", "/var/www/"});
 //
-//    std::cout << transformPath("/ponys/red/pony.py", locs) << std::endl;
-//}
+//     std::cout << transformPath("/ponys/red/pony.py", locs) << std::endl;
+// }

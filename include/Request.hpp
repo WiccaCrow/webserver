@@ -5,10 +5,12 @@
 #include <map>
 #include <string>
 
+#include "CRC.h"
 #include "HttpHeaders.hpp"
 #include "HttpStatusCodes.hpp"
 #include "Types.hpp"
 #include "Utils.hpp"
+#include "ValidateHeaders.hpp"
 
 #define PARSED_NONE    0x0
 #define PARSED_SL      0x1
@@ -17,25 +19,29 @@
 
 namespace HTTP {
 
+// TODO: придумать как инициализировать заголовки
+// std::map<uint32, method> handlers;
+
 class Request {
     private:
-    std::string                       _method;
-    std::string                       _path;
-    std::string                       _protocol;
-    std::map<std::string, HeaderPair> _headers;
-    std::string                       _body;
-    uint8                             _parseFlags;
+    std::string                   _method;
+    std::string                   _path;
+    std::string                   _protocol;
+    std::map<uint32, std::string> _headers;
+
+    std::string _body;
+    uint8       _parseFlags;
 
     public:
     Request();
     ~Request();
 
-    const std::string &                      getMethod() const;
-    const std::string &                      getPath() const;
-    const std::string &                      getProtocol() const;
+    const std::string                       &getMethod() const;
+    const std::string                       &getPath() const;
+    const std::string                       &getProtocol() const;
     const std::map<std::string, HeaderPair> &getHeaders() const;
-    const std::string &                      getBody() const;
-    const uint8 &                            getFlags() const;
+    const std::string                       &getBody() const;
+    const uint8                             &getFlags() const;
 
     void setFlag(uint8 flag);
     void removeFlag(uint8 flag);

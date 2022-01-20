@@ -7,30 +7,16 @@ enum ServerBlockError {
     LISTEN_ERR = -6,
 };
 
-/******************************************************************************/
-/* Constructors */
-
 ServerBlock::ServerBlock() : _addr("127.0.0.1"), _port(7676){};
 
-//      init
-ServerBlock::ServerBlock(const std::string &ipaddr, const uint16_t port) : _addr(ipaddr), _port(port) {
-}
+ServerBlock::ServerBlock(const std::string &ipaddr, const uint16_t port) : _addr(ipaddr), _port(port) {}
 
-//      copy
 ServerBlock::ServerBlock(const ServerBlock &obj) {
     operator=(obj);
 }
 
-/******************************************************************************/
-/* Destructors */
-ServerBlock::~ServerBlock() {
-    //close(_servfd);
-}
+ServerBlock::~ServerBlock() {}
 
-/******************************************************************************/
-/* Operators */
-
-//      =
 ServerBlock &ServerBlock::operator=(const ServerBlock &obj) {
     if (this != &obj) {
         _addr = obj._addr; // Потом будет браться из конфига
@@ -39,9 +25,6 @@ ServerBlock &ServerBlock::operator=(const ServerBlock &obj) {
     }
     return (*this);
 }
-
-/******************************************************************************/
-/* Private functions */
 
 void ServerBlock::createSock(void) {
     _servfd = socket(PF_INET, SOCK_STREAM, 0);
@@ -77,24 +60,13 @@ void ServerBlock::listenSock(void) {
     }
 }
 
-/******************************************************************************/
-/* Public functions */
-
-/* Set atributs */
-
-/* Get and show atributs */
 int ServerBlock::getServFd(void) {
     return (_servfd);
 }
 
-/* other methods */
-
 void ServerBlock::createListenSock(void) {
-    /**** сокет ****/
     createSock();
-    /**** повторно использовать порт ****/
     reuseAddr();
-    /**** связать порт и ip, чтобы listen происходил через этот порт ****/
     bindAddr();
     listenSock();
 }

@@ -1,17 +1,22 @@
 #include <fstream>
 #include <iostream>
 
-/**********************
- *  addrFromEtcHosts  *
- **********************
-*/
-/* Description:
- *      addrFromEtcHosts - finds a line in file "/etc/hosts" containing 
- *      substring servName.
- * Return value:
- *      If the string was found - IP address.
- *      If the string was not found, an empty string.    
-*/
+/*********************
+ * addrFromEtcHosts *
+ **********************/
+// Description:
+//  addrFromEtcHosts - finds a line in file "/etc/hosts" containing
+//        substring  servName.
+// Return value :
+//    If the string was found - IP address.
+//    If the string was not found, an empty string.
+
+//  nginx 'daemon off;'     -> process created
+//  nginx -s reload         -> another process created
+
+// GET http://domain.com/first/test.py HTTP/1.1
+// GET http://34.45.45.45/first/test.py HTTP/1.1
+// GET http://34.45.45.45:4567/first/test.py HTTP/1.1
 
 std::string addrFromEtcHosts(std::string servName) {
     std::ifstream filename("/etc/hosts", std::ifstream::in);

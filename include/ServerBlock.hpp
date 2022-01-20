@@ -9,57 +9,57 @@
 //#include <cstdint>
 #include <iostream>
 
-//enum AllowedMethods
+// enum AllowedMethods
 //{
-//    GET = 1,
-//    PUT = 2,
-//    POST = 4,
-//    HEAD = 8,
-//    TRACE = 16,
-//    PATCH = 32,
-//    DELETE = 64,
-//    CONNECT = 128,
-//    OPTIONS = 256
-//};
+//     GET = 1,
+//     PUT = 2,
+//     POST = 4,
+//     HEAD = 8,
+//     TRACE = 16,
+//     PATCH = 32,
+//     DELETE = 64,
+//     CONNECT = 128,
+//     OPTIONS = 256
+// };
 
-//class Location
+// class Location
 //{
-//    int16_t allowedMethods;
-//    std::string path;
-//    bool autoindex;
-//    std::string defaultResponseFile;
-//    CGI
-//};
+//     int16_t allowedMethods;
+//     std::string path;
+//     bool autoindex;
+//     std::string defaultResponseFile;
+//     CGI
+// };
 
 class ServerBlock {
     private:
-    /* Variables */
+    // Variables
     std::string _addr;
     uint16_t    _port;
     // std::string                 _uri; //from config
     int32_t _servfd;
     // std::vector<Location> locations;
 
-    /* Methods */
+    // Methods
     void createSock(void);
     void reuseAddr(void);
     void bindAddr(void);
     void listenSock(void);
 
     public:
-    /* Constructs and destructs*/
+    // Constructs and destructs
     ServerBlock();
     ServerBlock(const std::string &ipaddr, const uint16_t port);
     ServerBlock(const ServerBlock &obj);
     ~ServerBlock();
 
-    /* Operators */
+    // Operators
     ServerBlock &operator=(const ServerBlock &obj);
-    /* Set atributs */
+    // Set atributs
 
-    /* Get and show atributs */
+    // Get and show atributs
     int getServFd(void);
 
-    /* other methods */
+    // other methods
     void createListenSock();
 };

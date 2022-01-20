@@ -89,13 +89,15 @@ void Server::start(void) {
             } else if (_pollfds[id].revents & POLLHUP) {
                 std::cerr << "Cannot read from " << _pollfds[id].fd << " fd" << std::endl;
                 // Basically occurs when client closes his socket
-                if (id >= _nbServBlocks)
+                if (id >= _nbServBlocks) {
                     disconnectClient(id);
-            } else if (_pollfds[id].revents & POLLOUT) {
+                }
+            } else if (_pollfds[id].revents & POLLOUT && client[id].hasResponse) {
                 // Need extra check to see if data is waiting to be send
                 sendServ(id);
+                c
             } else if (_pollfds[id].revents & POLLIN) {
-                //recvServ(id);
+                // recvServ(id);
             } else if (_pollfds[id].revents & POLLERR) {
                 std::cerr << "Poll internal error" << std::endl;
                 // close all fds ?
@@ -151,14 +153,14 @@ void Server::recvServ(size_t i) {
         }
     }
 
-    //header (struct maybe): key, value
-    //split header line by ':' and trim whitespaces of each part
-    //then insert into hash-table or list or tree
+    // header (struct maybe): key, value
+    // split header line by ':' and trim whitespaces of each part
+    // then insert into hash-table or list or tree
 
     // Parse body (if exist)
 
-    //Request:  method, path, protocol, headers, [body],
-    //Reponse:  protocol, status(code), status(message)  headers, [body]
+    // Request:  method, path, protocol, headers, [body],
+    // Reponse:  protocol, status(code), status(message)  headers, [body]
 
     // hashtable -> location ???
 

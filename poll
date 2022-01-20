@@ -6,9 +6,9 @@ DESCRIPTION
        array of structures of the following form:
 
            struct pollfd {
-               int   fd;         /* file descriptor */
-               short events;     /* requested events */
-               short revents;    /* returned events */
+               int   fd;         // file descriptor 
+               short events;     // requested events 
+               short revents;    // returned events 
            };
 
        The caller should specify the number of items in the fds array in nfds.

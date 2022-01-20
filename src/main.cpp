@@ -7,13 +7,13 @@ void checkArgs(int &ac, char **av) {
     }
 }
 
-//void *startInThread(void *ptr) {
-//    Server *serv = reinterpret_cast<Server *>(ptr);
+// void *startInThread(void *ptr) {
+//     Server *serv = reinterpret_cast<Server *>(ptr);
 //
-//    if (serv != NULL)
-//        serv->start();
-//    return NULL;
-//}
+//     if (serv != NULL)
+//         serv->start();
+//     return NULL;
+// }
 
 int main(int ac, char **av) {
     checkArgs(ac, av);

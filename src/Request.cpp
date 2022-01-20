@@ -4,9 +4,7 @@
 
 namespace HTTP {
 
-Request::Request() : _parseFlags(PARSED_NONE) {
-    // _headers["accept-encoding"] = (HeaderPair){"", HeaderPair::AcceptEncoding};
-}
+Request::Request() : _parseFlags(PARSED_NONE) {}
 
 Request::~Request() {}
 
@@ -77,7 +75,6 @@ StatusCode Request::isValidMethod(const std::string &method) {
         "GET", "DELETE", "POST",
         "PUT", "HEAD", "CONNECT",
         "OPTIONS", "TRACE", "PATCH"};
-
     for (int i = 0; i < 9; ++i) {
         if (validMethods[i] == method)
             return CONTINUE;
@@ -113,21 +110,24 @@ const uint8 &Request::getFlags() const {
 
 StatusCode Request::parseHeaders(const std::string &line) {
     if (line == "\r\n") {
-        std::cout << "yes";
         setFlag(PARSED_HEADERS);
-    } else {
-        size_t      pos = 0;
-        size_t      delimiter = line.find(':', pos);
-        std::string key;
-        std::string value;
-
-        key = getData(line, ':', pos);
-        value = line.substr(delimiter + 1, line.length() - delimiter);
-        trim(value, " \t\n\r");
-        toLowerCase(value);
-        std::cout << value << "|" << std::endl;
+        return CONTINUE;
     }
+
+    size_t pos = 0;
+    size_t delimiter = line.find(':', pos);
+
+    std::string key = getData(line, ':', pos);
+    std::string value = line.substr(delimiter + 1, line.length() - delimiter);
+
+    trim(value, " \t\n\r");
+    toLowerCase(key);
+    toLowerCase(value);
+
+    if (!validHeaders[crc(key.c_str(), key.length()) % tableSize]) {
+        return BAD_REQUEST;
+    }
+
     return CONTINUE;
 }
-
 }; // namespace HTTP
