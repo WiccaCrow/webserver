@@ -2,7 +2,7 @@
 
 namespace HTTP {
 
-static const uint32 hashHeaders[] = {
+static const uint32 headerHashes[] = {
     360142786,  // a-im
     3005279540, // accept
     379737127,  // accept-charset
@@ -43,20 +43,18 @@ static const uint32 hashHeaders[] = {
     3276872746  // x-csrf-token
 };
 
-std::vector<bool> initHashTable(void);
+//const size_t            tableSize = 193;
 
-const size_t            headersCount = sizeof(hashHeaders) / sizeof(hashHeaders[0]);
-const std::vector<bool> validHeaders = initHashTable();
-const size_t            tableSize = 193;
+std::map<uint32, bool> initHashMap(void) {
+    std::map<uint32, bool> m;
 
-std::vector<bool> initHashTable(void) {
-    std::vector<bool> vec(tableSize, false);
-
+    const size_t headersCount = sizeof(headerHashes) / sizeof(headerHashes[0]);
     for (size_t i = 0; i < headersCount; ++i) {
-        size_t index = hashHeaders[i] % tableSize;
-        vec[index] = true;
+        m.insert(std::make_pair(headerHashes[i], true));
     }
-    return vec;
+    return m;
 }
+
+const std::map<uint32, bool> validHeaders = initHashMap();
 
 }; // namespace HTTP

@@ -13,6 +13,8 @@ SOURCEFILES     =	main.cpp \
 					Request.cpp \
 					ServerBlock.cpp \
 					Utils.cpp \
+					CRC.cpp \
+					ValidateHeaders.cpp \
 					HttpStatusCodes.cpp
 				
 LIBJSONFOLDER   =   #json-parser

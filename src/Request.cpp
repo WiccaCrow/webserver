@@ -20,7 +20,7 @@ const std::string &Request::getProtocol() const {
     return _protocol;
 }
 
-const std::map<std::string, HeaderPair> &Request::getHeaders() const {
+const std::map<uint32, Header> &Request::getHeaders() const {
     return _headers;
 }
 
@@ -37,6 +37,9 @@ static void skipSpaces(const std::string &line, size_t &pos) {
 static std::string getData(const std::string &line, char delimiter, size_t &pos) {
     size_t tmp = pos;
     size_t end = pos = line.find(delimiter, pos);
+
+    if (end == std::string::npos)
+        end = line.length();
     return line.substr(tmp, end - tmp);
 }
 
@@ -114,17 +117,18 @@ StatusCode Request::parseHeaders(const std::string &line) {
         return CONTINUE;
     }
 
-    size_t pos = 0;
-    size_t delimiter = line.find(':', pos);
-
+    size_t      pos = 0;
     std::string key = getData(line, ':', pos);
-    std::string value = line.substr(delimiter + 1, line.length() - delimiter);
 
-    trim(value, " \t\n\r");
+    size_t valueBeg = line.find_first_not_of(" \t\n\r", pos);
+    size_t valueEnd = line.find_last_not_of(" \t\n\r", valueBeg) + 1;
+
+    std::string value = line.substr(valueBeg, valueEnd - valueBeg);
     toLowerCase(key);
     toLowerCase(value);
 
-    if (!validHeaders[crc(key.c_str(), key.length()) % tableSize]) {
+    uint32 headerHash = crc(key.c_str(), key.length());
+    if (validHeaders.find(headerHash) == validHeaders.end()) {
         return BAD_REQUEST;
     }
 

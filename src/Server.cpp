@@ -92,10 +92,9 @@ void Server::start(void) {
                 if (id >= _nbServBlocks) {
                     disconnectClient(id);
                 }
-            } else if (_pollfds[id].revents & POLLOUT && client[id].hasResponse) {
+            } else if (_pollfds[id].revents & POLLOUT && _clients[id].hasResponse) {
                 // Need extra check to see if data is waiting to be send
                 sendServ(id);
-                c
             } else if (_pollfds[id].revents & POLLIN) {
                 // recvServ(id);
             } else if (_pollfds[id].revents & POLLERR) {
@@ -227,8 +226,12 @@ void Server::acceptNewClient(size_t id) {
             it->fd = fd;
             it->events = POLLIN | POLLOUT;
             it->revents = 0;
+
+            //std::vector<struct pollfd>::difference_type diff = std::distance(_pollfds.begin(), it);
+            //_clients[diff] = //Some settings
         } else {
             _pollfds.push_back((struct pollfd){fd, POLLIN | POLLOUT, 0});
+            //_clients.push_back((Client){});
         }
     }
 }

@@ -11,7 +11,7 @@ static const std::string header = "Content-Length=" + to_string(body.length());
 static const char *      env[] = {header.c_str(), "VAR1=mhufflep", 0, 0};
 static const char *      args[] = {"/usr/bin/python3.8", "/var/www/scripts/test.py", "args", 0, 0};
 
-// rename function
+// rename function to CGI
 int main() {
     int inPipe[2] = {-1};
     int outPipe[2] = {-1};
@@ -21,7 +21,6 @@ int main() {
         return 1;
     }
 
-    // Check dup too
     int stdinCopy = dup(fileno(stdin));
     int stdoutCopy = dup(fileno(stdout));
 
@@ -31,7 +30,6 @@ int main() {
         return 1;
     }
 
-    // Spawning child process and passing env to it
     int childPID = fork();
 
     if (childPID < 0) {
@@ -45,20 +43,16 @@ int main() {
         exit(1);
     }
 
-    // Close original end of pipe
     close(inPipe[0]);
     close(outPipe[1]);
 
-    // Reset stdin and stdout
     // Check for errors
     dup2(stdinCopy, fileno(stdin));
     dup2(stdoutCopy, fileno(stdout));
 
-    // Close copy of stdin and stdout
     close(stdinCopy);
     close(stdoutCopy);
 
-    // Passing request to child process
     // Safe maybe
     write(inPipe[1], body.c_str(), body.length());
 

@@ -5,8 +5,8 @@
 
 namespace HTTP {
 
-struct HeaderPair {
-    typedef void (HeaderPair::*method)(const std::string &str);
+struct Header {
+    typedef void (Header::*method)(const std::string &str);
 
     std::string value;
     method      handler;

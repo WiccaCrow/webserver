@@ -42,11 +42,7 @@ ReadSock::Status ReadSock::getline(struct s_sock &sock, std::string &line) {
     }
 
     line = _rems[fd].substr(0, pos);
-    try {
-        _rems[fd] = _rems[fd].substr(pos + 2);
-    } catch (std::out_of_range &e) {
-        _rems[fd] = "";
-    }
+    _rems[fd].erase(0, pos + 2);
 
     return LINE_FOUND;
 }

@@ -1,12 +1,14 @@
 #pragma once
 
-#include <vector>
+#include <stddef.h>
+
+#include <map>
 
 #include "Types.hpp"
 
 namespace HTTP {
 
-extern const std::vector<bool> validHeaders;
-extern const size_t            tableSize;
+extern const std::map<uint32, bool> validHeaders;
+extern const size_t                 tableSize;
 
 }; // namespace HTTP

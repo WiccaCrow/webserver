@@ -24,10 +24,10 @@ namespace HTTP {
 
 class Request {
     private:
-    std::string                   _method;
-    std::string                   _path;
-    std::string                   _protocol;
-    std::map<uint32, std::string> _headers;
+    std::string              _method;
+    std::string              _path;
+    std::string              _protocol;
+    std::map<uint32, Header> _headers;
 
     std::string _body;
     uint8       _parseFlags;
@@ -36,12 +36,12 @@ class Request {
     Request();
     ~Request();
 
-    const std::string                       &getMethod() const;
-    const std::string                       &getPath() const;
-    const std::string                       &getProtocol() const;
-    const std::map<std::string, HeaderPair> &getHeaders() const;
-    const std::string                       &getBody() const;
-    const uint8                             &getFlags() const;
+    const std::string &             getMethod() const;
+    const std::string &             getPath() const;
+    const std::string &             getProtocol() const;
+    const std::map<uint32, Header> &getHeaders() const;
+    const std::string &             getBody() const;
+    const uint8 &                   getFlags() const;
 
     void setFlag(uint8 flag);
     void removeFlag(uint8 flag);
