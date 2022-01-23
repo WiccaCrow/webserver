@@ -92,11 +92,11 @@ void Server::start(void) {
                 if (id >= _nbServBlocks) {
                     disconnectClient(id);
                 }
-            } else if (_pollfds[id].revents & POLLOUT && _clients[id].hasResponse) {
+            } else if (_pollfds[id].revents & POLLOUT && _clients[id].hasResponse) { // SEGFAULT here, because clients array not filling with values yet
                 // Need extra check to see if data is waiting to be send
                 sendServ(id);
             } else if (_pollfds[id].revents & POLLIN) {
-                // recvServ(id);
+                recvServ(id);
             } else if (_pollfds[id].revents & POLLERR) {
                 std::cerr << "Poll internal error" << std::endl;
                 // close all fds ?
@@ -123,28 +123,22 @@ void Server::recvServ(size_t i) {
 
     // temporal
     struct s_sock s = {_pollfds[i].fd, ReadSock::PERM_READ};
-    _pollfds[i].revents = 0;
+    _pollfds[i].revents = 0; // why?
     while (true) {
         line = "";
         ReadSock::Status stat = _reader.getline(s, line);
 
         switch (stat) {
             case ReadSock::RECV_END:
-            case ReadSock::RECV_FAIL: {
+            case ReadSock::RECV_FAIL:
                 disconnectClient(i);
-                return;
-            }
-
-            case ReadSock::INVALID_FD: {
-                return;
-            }
-
+            case ReadSock::INVALID_FD:
             case ReadSock::LINE_NOT_FOUND: {
                 return;
             }
 
             case ReadSock::LINE_FOUND: {
-                // req.parseLine(line);
+                req.parseLine(line);
                 break;
             }
             default:

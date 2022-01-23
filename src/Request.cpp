@@ -43,6 +43,26 @@ static std::string getData(const std::string &line, char delimiter, size_t &pos)
     return line.substr(tmp, end - tmp);
 }
 
+void Request::parseLine(std::string line) {
+    HTTP::StatusCode status;
+
+    if (!(getFlags() & PARSED_SL)) {
+        if ((status = parseStartLine(line)) != HTTP::CONTINUE) {
+            std::cerr << "Error" << std::endl; // for test
+            // return HTTP::Response(status);
+        }
+    } else if (!(getFlags() & PARSED_HEADERS)) {
+        if ((status = parseHeader(line)) != HTTP::CONTINUE) {
+            std::cerr << "Error" << std::endl; // for test
+            // return HTTP::Response(status);
+        }
+    } else if (!(getFlags() & PARSED_BODY)) {
+        std::cout << "parse body" << std::endl;
+    } else if (getFlags() & PARSED_BODY) {
+        return;
+    }
+}
+
 StatusCode Request::parseStartLine(const std::string &line) {
     size_t pos = 0;
 
@@ -111,26 +131,33 @@ const uint8 &Request::getFlags() const {
     return _parseFlags;
 }
 
-StatusCode Request::parseHeaders(const std::string &line) {
-    if (line == "\r\n") {
+StatusCode Request::parseHeader(std::string line) {
+    if (line == "") {
         setFlag(PARSED_HEADERS);
         return CONTINUE;
     }
 
-    size_t      pos = 0;
-    std::string key = getData(line, ':', pos);
+    Header header;
+    header.line.swap(line);
 
-    size_t valueBeg = line.find_first_not_of(" \t\n\r", pos);
-    size_t valueEnd = line.find_last_not_of(" \t\n\r", valueBeg) + 1;
+    size_t sepPos = line.find(':');
+    header.line[sepPos] = '\0';
+    header.keyLen = sepPos;
+    //
+    // Some errors skipped with this method... (Maybe should be rewritten with nginx parser)
+    header.valStart = line.find_first_not_of(" \t\n\r", sepPos);
+    size_t valEnd = line.find_last_not_of(" \t\n\r", sepPos);
+    header.valLen = valEnd - header.valStart;
 
-    std::string value = line.substr(valueBeg, valueEnd - valueBeg);
-    toLowerCase(key);
-    toLowerCase(value);
+    toLowerCase(header.line);
 
-    uint32 headerHash = crc(key.c_str(), key.length());
-    if (validHeaders.find(headerHash) == validHeaders.end()) {
+    header.hash = crc(header.line.data(), header.keyLen);
+    if (validHeaders.find(header.hash) == validHeaders.end()) {
         return BAD_REQUEST;
     }
+
+    // Copying here need to replace
+    _headers.insert(std::make_pair(header.hash, header));
 
     return CONTINUE;
 }

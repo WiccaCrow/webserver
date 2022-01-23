@@ -7,8 +7,8 @@
 #include "Request.hpp"
 
 int main(int argc, char *argv[]) {
-    FILE   *stream;
-    char   *line = NULL;
+    FILE *  stream;
+    char *  line = NULL;
     size_t  len = 0;
     ssize_t nread;
 
@@ -33,19 +33,17 @@ int main(int argc, char *argv[]) {
                 std::cerr << "Error" << std::endl; // for test
                 // return HTTP::Response(status);
             }
-        }
-        else if (!(req.getFlags() & PARSED_HEADERS)) {
-        	if ((status = req.parseHeaders(line)) != HTTP::CONTINUE) {
+        } else if (!(req.getFlags() & PARSED_HEADERS)) {
+            if ((status = req.parseHeader(line)) != HTTP::CONTINUE) {
                 std::cerr << "Error" << std::endl; // for test
-        		// return HTTP::Response(status);
-        	}
-        }
-        else if (!(req.getFlags() & PARSED_BODY)) {
+                                                   // return HTTP::Response(status);
+            }
+        } else if (!(req.getFlags() & PARSED_BODY)) {
             std::cout << "parse body" << std::endl;
-        	// if ((status = req.parseBody(line)) != HTTP::CONTINUE) {
+            // if ((status = req.parseBody(line)) != HTTP::CONTINUE) {
             //     std::cerr << "Error" << std::endl; // for test
-        	// 	// return HTTP::Response(status);
-        	// }
+            // 	// return HTTP::Response(status);
+            // }
         }
     }
 

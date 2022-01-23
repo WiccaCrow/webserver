@@ -47,8 +47,9 @@ class Request {
     void removeFlag(uint8 flag);
 
     StatusCode parseStartLine(const std::string &line);
-    StatusCode parseHeaders(const std::string &line);
+    StatusCode parseHeader(std::string line);
     StatusCode parseBody(const std::string &line);
+    void       parseLine(std::string line);
 
     private:
     StatusCode isValidMethod(const std::string &method);

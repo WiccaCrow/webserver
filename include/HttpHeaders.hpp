@@ -5,12 +5,7 @@
 
 namespace HTTP {
 
-struct Header {
-    typedef void (Header::*method)(const std::string &str);
-
-    std::string value;
-    method      handler;
-
+struct HeaderHandler {
     void AcceptEncoding(const std::string &str);
     void AcceptLanguage(const std::string &str);
     void Authorization(const std::string &str);
@@ -32,6 +27,27 @@ struct Header {
     void ContentLength(const std::string &str);
     void SetCookie(const std::string &str);
     void ContentType(const std::string &str);
+};
+
+struct Header {
+    typedef void (HeaderHandler::*method)(const std::string &str);
+
+    std::string line;
+
+    size_t valStart;
+    size_t keyLen;
+    size_t valLen;
+
+    method handler;
+    uint32 hash; // ?
+
+    const char *getKey() {
+        return line.data();
+    }
+
+    const char *getVal() {
+        return &line.data()[valStart];
+    }
 };
 
 }; // namespace HTTP
