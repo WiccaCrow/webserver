@@ -40,31 +40,33 @@ bool Client::responseFormed() {
 }
 
 void Client::receive(void) {
-    std::string   line;
-    HTTP::Request req;
+    std::string line;
+    //HTTP::Request req;
 
     struct s_sock s = {_pfd.fd, ReadSock::PERM_READ};
     while (true) {
         line = "";
-        ReadSock::Status stat = Client::_reader.getline(s, line);
+        ReadSock::Status stat = _reader.getline(s, line);
         //std::cout << "|" << line << "|" << std::endl;
         switch (stat) {
             case ReadSock::RECV_END:
                 disconnect();
             case ReadSock::INVALID_FD:
+
                 return;
             case ReadSock::LINE_NOT_FOUND:
                 _responseFormed = 1;
                 return;
 
             case ReadSock::RECV_END_NB: {
+                //std::cout << "Here\n";
                 // Need to parse maybe
                 // because the data could remain from the previous requests
-                break;
+                return;
             }
 
             case ReadSock::LINE_FOUND: {
-                //req.parseLine(line);
+                //_req.parseLine(line);
                 break;
             }
             default: {

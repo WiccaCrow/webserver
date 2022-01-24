@@ -39,7 +39,6 @@ class Server {
     int                        _pollResult;
 
     // Methods
-    void assignPollFds(void);
     void fillServBlocksFds(void);
 
     public:
@@ -59,4 +58,9 @@ class Server {
     void pollServ(void);
     void acceptNewClient(size_t id);
     void handleAcceptError();
+    void handlePollError();
+    int  pollInHandler(size_t id);
+    void pollHupHandler(size_t id);
+    void pollOutHandler(size_t id);
+    void pollErrHandler(size_t id);
 };

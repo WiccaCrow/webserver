@@ -4,8 +4,8 @@ const size_t reservedClients = 128;
 
 Server::Server() {
     _nbServBlocks = 0;
-    assignPollFds();
-};
+    _pollfds.reserve(reservedClients);
+}
 
 Server::Server(const Server &obj) {
     operator=(obj);
@@ -31,21 +31,13 @@ Server &Server::operator=(const Server &obj) {
 }
 
 // Private functions
-void Server::assignPollFds(void) {
-    _pollfds.assign(reservedClients, (struct pollfd){-1, POLLIN | POLLOUT, 0});
-
-    for (size_t i = _nbServBlocks; i < reservedClients; i++) {
-        _clients.push_back(Client(_pollfds[i]));
-    }
-
-    _pollResult = 0;
-}
 
 void Server::fillServBlocksFds(void) {
     for (size_t i = 0; i < _nbServBlocks; ++i) {
-        _pollfds[i].fd = _ServBlocks[i].getServFd();
-        _pollfds[i].events = POLLIN;
-        _pollfds[i].revents = 0;
+        _pollfds.push_back((struct pollfd){
+            _ServBlocks[i].getServFd(),
+            POLLIN,
+            0});
     }
 }
 
@@ -69,6 +61,35 @@ void Server::addServerBlocks(const std::string &ipaddr, const uint16_t port) {
     _nbServBlocks++;
 }
 
+int Server::pollInHandler(size_t id) {
+    _pollfds[id].revents = 0;
+    if (id < _nbServBlocks) {
+        acceptNewClient(id);
+        return 1;
+    } else {
+        _clients[id].receive();
+        return 0;
+    }
+}
+
+void Server::pollHupHandler(size_t id) {
+    std::cerr << _pollfds[id].fd << ": POLLHUP" << std::endl;
+    if (id >= _nbServBlocks) {
+        _clients[id].disconnect();
+    }
+}
+
+void Server::pollOutHandler(size_t id) {
+    if (_clients[id].responseFormed()) {
+        _clients[id].reply();
+    }
+}
+
+void Server::pollErrHandler(size_t id) {
+    std::cerr << _pollfds[id].fd << ": POLLERR" << std::endl;
+    exit(1);
+}
+
 void Server::start(void) {
     fillServBlocksFds();
     while (1) {
@@ -77,64 +98,56 @@ void Server::start(void) {
         const size_t size = _pollfds.size();
         for (size_t id = 0; id < size; id++) {
             if (_pollfds[id].revents & POLLIN) {
-                if (id < _nbServBlocks) {
-                    acceptNewClient(id);
+                //std::cout << "pollin\n";
+                if (pollInHandler(id))
                     break;
-                } else {
-                    _pollfds[id].revents = 0;
-                    _clients[id].receive();
-                }
             } else if (_pollfds[id].revents & POLLHUP) {
-                std::cerr << _pollfds[id].fd << ": POLLHUP" << std::endl;
-                // Basically occurs when client closes his socket
-                if (id >= _nbServBlocks) {
-                    _clients[id].disconnect();
-                }
+                pollHupHandler(id);
             } else if (_pollfds[id].revents & POLLOUT) {
-                if (_clients[id].responseFormed()) {
-                    _clients[id].reply();
-                }
+                pollOutHandler(id);
             } else if (_pollfds[id].revents & POLLERR) {
-                std::cerr << _pollfds[id].fd << ": POLLERR" << std::endl;
-                // Close all fds ? throw exception
-                exit(1);
+                pollErrHandler(id);
             }
         }
     }
+}
+
+void Server::handlePollError() {
+    std::cerr << "POLL: " << strerror(errno) << std::endl;
+    switch (errno) {
+        case EFAULT: {
+            break;
+        }
+        case EINTR: {
+            break;
+        }
+        case EINVAL: {
+            struct rlimit rlim;
+            getrlimit(RLIMIT_NOFILE, &rlim);
+            std::cerr << "ndfs: " << _pollfds.size() << std::endl;
+            std::cerr << "limits (soft, hard): ";
+            std::cerr << "(" << rlim.rlim_cur << ", " << rlim.rlim_max << ")" << std::endl;
+            break;
+        }
+        case ENOMEM: {
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    // close all fds
+    exit(1);
 }
 
 void Server::pollServ(void) {
     while (_pollResult == 0) {
-        _pollResult = poll(_pollfds.data(), _pollfds.size(), 10000);
+        _pollResult = poll(_pollfds.data(), _pollfds.size(), 1000000);
     }
     if (_pollResult < 0) {
-        std::cerr << "POLL: " << strerror(errno) << std::endl;
-        switch (errno) {
-            case EFAULT: {
-                break;
-            }
-            case EINTR: {
-                break;
-            }
-            case EINVAL: {
-                struct rlimit rlim;
-                getrlimit(RLIMIT_NOFILE, &rlim);
-                std::cerr << "ndfs: " << _pollfds.size() << std::endl;
-                std::cerr << "limits (soft, hard): (" << rlim.rlim_cur << ", " << rlim.rlim_max << ")" << std::endl;
-                break;
-            }
-            case ENOMEM: {
-                break;
-            }
-        }
-
-        // close all fds
-        exit(1);
+        handlePollError();
     }
-}
-
-static int fdNotTaken(struct pollfd pfd) {
-    return pfd.fd == -1;
 }
 
 void Server::handleAcceptError() {
@@ -186,23 +199,27 @@ void Server::handleAcceptError() {
     }
 }
 
-void Server::acceptNewClient(size_t id) {
-    struct sockaddr_in cliaddr;
-    socklen_t          addrlen = sizeof(cliaddr);
+static int fdNotTaken(struct pollfd pfd) {
+    return pfd.fd == -1;
+}
 
-    _pollfds[id].revents = 0;
-    int fd = accept(_pollfds[id].fd, (struct sockaddr *)&cliaddr, &addrlen);
+void Server::acceptNewClient(size_t id) {
+    struct sockaddr_in addr;
+    socklen_t          len = sizeof(addr);
+
+    int fd = accept(_pollfds[id].fd, (struct sockaddr *)&addr, &len);
 
     if (fd < 0) {
         handleAcceptError();
         return;
     }
 
-    // checkErrno(); некритические в основном
     if (fd > -1) {
         fcntl(fd, F_SETFL, O_NONBLOCK);
+
         std::vector<struct pollfd>::iterator it;
         it = std::find_if(_pollfds.begin(), _pollfds.end(), fdNotTaken);
+
         std::cout << fd << ": client accepted" << std::endl;
 
         if (it != _pollfds.end()) {

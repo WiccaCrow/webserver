@@ -8,7 +8,7 @@ ReadSock::Status ReadSock::readSocket(int fd) {
     char buf[MAX_PACKET_SIZE + 1];
 
     int recvBytes = recv(fd, buf, MAX_PACKET_SIZE, 0);
-    //std::cout << buf << std::endl;
+
     if (recvBytes < 0) {
         //_rems.erase(fd); // Not needed with nonblocking sockets
         return RECV_END_NB;
