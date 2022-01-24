@@ -108,27 +108,22 @@ void Server::pollServ(void) {
         _pollResult = poll(_pollfds.data(), _pollfds.size(), 10000);
     }
     if (_pollResult < 0) {
+        std::cerr << "POLL: " << strerror(errno) << std::endl;
         switch (errno) {
             case EFAULT: {
-                std::cerr << "POLL: pollfds array was not contained";
-                std::cerr << "in the calling program's address space" << std::endl;
                 break;
             }
             case EINTR: {
-                std::cerr << "POLL: A signal occurred before any ";
-                std::cerr << "requested event" << std::endl;
                 break;
             }
             case EINVAL: {
                 struct rlimit rlim;
                 getrlimit(RLIMIT_NOFILE, &rlim);
-                std::cerr << "POLL: The nfds value exceeds the RLIMIT_NOFILE ";
-                std::cerr << "(" << rlim.rlim_cur << ", " << rlim.rlim_max << ") value" << std::endl;
+                std::cerr << "ndfs: " << _pollfds.size() << std::endl;
+                std::cerr << "limits (soft, hard): (" << rlim.rlim_cur << ", " << rlim.rlim_max << ")" << std::endl;
                 break;
             }
             case ENOMEM: {
-                std::cerr << "POLL: There was no space ";
-                std::cerr << "to allocate file descriptor tables" << std::endl;
                 break;
             }
         }
@@ -142,12 +137,67 @@ static int fdNotTaken(struct pollfd pfd) {
     return pfd.fd == -1;
 }
 
+void Server::handleAcceptError() {
+    switch (errno) {
+        std::cerr << "ACCEPT: " << strerror(errno) << std::endl;
+        case EWOULDBLOCK: {
+            // OK, as we use non-blocking sockets
+            break;
+        }
+
+        case EBADF: {
+        }
+
+        case ECONNABORTED: {
+        }
+
+        case EFAULT: {
+        }
+
+        case EINTR: {
+        }
+
+        case EINVAL: {
+        }
+
+        case EMFILE: {
+        }
+
+        case ENFILE: {
+        }
+
+        case ENOMEM: {
+        }
+
+        case ENOTSOCK: {
+        }
+
+        case EOPNOTSUPP: {
+        }
+
+        case EPROTO: {
+        }
+
+        case EPERM: {
+        }
+
+        default:
+            break;
+    }
+}
+
 void Server::acceptNewClient(size_t id) {
     struct sockaddr_in cliaddr;
     socklen_t          addrlen = sizeof(cliaddr);
 
     _pollfds[id].revents = 0;
     int fd = accept(_pollfds[id].fd, (struct sockaddr *)&cliaddr, &addrlen);
+
+    if (fd < 0) {
+        handleAcceptError();
+        return;
+    }
+
     // checkErrno(); некритические в основном
     if (fd > -1) {
         fcntl(fd, F_SETFL, O_NONBLOCK);

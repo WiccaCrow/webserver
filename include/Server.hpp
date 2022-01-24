@@ -58,4 +58,5 @@ class Server {
     void start(void);
     void pollServ(void);
     void acceptNewClient(size_t id);
+    void handleAcceptError();
 };
