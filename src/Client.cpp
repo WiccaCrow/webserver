@@ -1,6 +1,6 @@
 #include "Client.hpp"
 
-const ReadSock Client::_reader;
+ReadSock Client::_reader;
 
 Client::Client(struct pollfd& pfd) : _pfd(pfd), _responseFormed(0) {
 }

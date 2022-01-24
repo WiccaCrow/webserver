@@ -1,4 +1,4 @@
-#include "HttpStatusCodes.hpp"
+#include "StatusCodes.hpp"
 
 namespace HTTP {
 

@@ -15,7 +15,7 @@ class Client {
     HTTP::Response _res;
     int            _responseFormed : 1;
 
-    static const ReadSock _reader;
+    static ReadSock _reader;
 
     public:
     Client(struct pollfd &pfd);
