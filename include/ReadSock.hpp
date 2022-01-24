@@ -19,7 +19,7 @@ class ReadSock {
         LINE_FOUND = 1,
         RECV_END = 0,
         INVALID_FD = -1,
-        RECV_FAIL = -2,
+        RECV_END_NB = -2,
         LINE_NOT_FOUND = -3
     };
 

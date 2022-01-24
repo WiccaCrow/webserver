@@ -1,6 +1,7 @@
 #pragma once
 
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <poll.h>
 #include <unistd.h>
@@ -12,7 +13,6 @@
 #include <iostream>
 #include <vector>
 
-// #include "JSON.hpp"
 #include "Client.hpp"
 #include "ReadSock.hpp"
 #include "Request.hpp"
@@ -36,8 +36,6 @@ class Server {
     std::vector<Client>        _clients;
     int                        _pollResult;
 
-    ReadSock _reader;
-
     // Methods
     void assignPollFds(void);
     void fillServBlocksFds(void);
@@ -50,8 +48,6 @@ class Server {
 
     Server &operator=(const Server &obj);
 
-    void resetPollEvents(void);
-
     // Get and show atributs
 
     void addServerBlocks(ServerBlock &servBlock);
@@ -60,7 +56,4 @@ class Server {
     void start(void);
     void pollServ(void);
     void acceptNewClient(size_t id);
-    void disconnectClient(size_t id);
-    void recvServ(size_t id);
-    void sendServ(size_t id);
 };

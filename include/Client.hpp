@@ -1,14 +1,30 @@
 #pragma once
 
 #include <poll.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
+#include "ReadSock.hpp"
 #include "Request.hpp"
-//#include "Response.hpp"
+#include "Response.hpp"
 
 class Client {
-    //int           fd;
-    //HTTP::Request req;
-    // HTTP::Response      res;
+    private:
+    struct pollfd &_pfd;
+    HTTP::Request  _req;
+    HTTP::Response _res;
+    int            _responseFormed : 1;
+
+    static const ReadSock _reader;
+
     public:
-    bool hasResponse;
+    Client(struct pollfd &pfd);
+    ~Client();
+
+    void disconnect(void);
+    void receive(void);
+    void reply(void);
+    void changeFd(int fd);
+    void changeResponseFlag(bool f);
+    bool responseFormed(void);
 };

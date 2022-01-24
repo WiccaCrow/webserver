@@ -43,8 +43,6 @@ static const uint32 headerHashes[] = {
     3276872746  // x-csrf-token
 };
 
-//const size_t            tableSize = 193;
-
 std::map<uint32, bool> initHashMap(void) {
     std::map<uint32, bool> m;
 

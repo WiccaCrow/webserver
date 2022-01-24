@@ -6,8 +6,8 @@
 #include <string>
 
 #include "CRC.h"
-#include "HttpHeaders.hpp"
-#include "HttpStatusCodes.hpp"
+#include "Header.hpp"
+#include "StatusCodes.hpp"
 #include "Types.hpp"
 #include "Utils.hpp"
 #include "ValidateHeaders.hpp"
