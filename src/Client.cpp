@@ -8,6 +8,25 @@ Client::Client(struct pollfd& pfd) : _pfd(pfd), _responseFormed(0) {
 Client::~Client() {
 }
 
+Client::Client(const Client& client) : _pfd(client._pfd) {
+    *this = client;
+}
+
+Client& Client::operator=(const Client& client) {
+    if (this != &client) {
+        _responseFormed = client._responseFormed;
+        _req = client._req;
+        _res = client._res;
+        // Not think it is correct
+        _pfd = client._pfd;
+    }
+    return *this;
+}
+
+int Client::getFd(void) {
+    return _pfd.fd;
+}
+
 void Client::changeFd(int fd) {
     _pfd.fd = fd;
 }

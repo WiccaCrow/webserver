@@ -20,10 +20,14 @@ class Client {
     public:
     Client(struct pollfd &pfd);
     ~Client();
+    Client(const Client &client);
+
+    Client &operator=(const Client &client);
 
     void disconnect(void);
     void receive(void);
     void reply(void);
+    int  getFd(void);
     void changeFd(int fd);
     void changeResponseFlag(bool f);
     bool responseFormed(void);

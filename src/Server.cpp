@@ -72,6 +72,7 @@ void Server::addServerBlocks(const std::string &ipaddr, const uint16_t port) {
 void Server::start(void) {
     fillServBlocksFds();
     while (1) {
+        _pollResult = 0;
         pollServ();
         const size_t size = _pollfds.size();
         for (size_t id = 0; id < size; id++) {
@@ -94,7 +95,7 @@ void Server::start(void) {
                     _clients[id].reply();
                 }
             } else if (_pollfds[id].revents & POLLERR) {
-                std::cerr << "POLLERR" << std::endl;
+                std::cerr << _pollfds[id].fd << ": POLLERR" << std::endl;
                 // Close all fds ? throw exception
                 exit(1);
             }
@@ -107,13 +108,37 @@ void Server::pollServ(void) {
         _pollResult = poll(_pollfds.data(), _pollfds.size(), 10000);
     }
     if (_pollResult < 0) {
-        std::cerr << "Poll internal error" << std::endl;
+        switch (errno) {
+            case EFAULT: {
+                std::cerr << "POLL: pollfds array was not contained";
+                std::cerr << "in the calling program's address space" << std::endl;
+                break;
+            }
+            case EINTR: {
+                std::cerr << "POLL: A signal occurred before any ";
+                std::cerr << "requested event" << std::endl;
+                break;
+            }
+            case EINVAL: {
+                struct rlimit rlim;
+                getrlimit(RLIMIT_NOFILE, &rlim);
+                std::cerr << "POLL: The nfds value exceeds the RLIMIT_NOFILE ";
+                std::cerr << "(" << rlim.rlim_cur << ", " << rlim.rlim_max << ") value" << std::endl;
+                break;
+            }
+            case ENOMEM: {
+                std::cerr << "POLL: There was no space ";
+                std::cerr << "to allocate file descriptor tables" << std::endl;
+                break;
+            }
+        }
+
         // close all fds
         exit(1);
     }
 }
 
-static int isFreeFD(struct pollfd pfd) {
+static int fdNotTaken(struct pollfd pfd) {
     return pfd.fd == -1;
 }
 
@@ -122,17 +147,16 @@ void Server::acceptNewClient(size_t id) {
     socklen_t          addrlen = sizeof(cliaddr);
 
     _pollfds[id].revents = 0;
-    int fd = accept(_ServBlocks[id].getServFd(), (struct sockaddr *)&cliaddr, &addrlen);
+    int fd = accept(_pollfds[id].fd, (struct sockaddr *)&cliaddr, &addrlen);
     // checkErrno(); некритические в основном
     if (fd > -1) {
         fcntl(fd, F_SETFL, O_NONBLOCK);
         std::vector<struct pollfd>::iterator it;
-        it = std::find_if(_pollfds.begin(), _pollfds.end(), isFreeFD);
+        it = std::find_if(_pollfds.begin(), _pollfds.end(), fdNotTaken);
         std::cout << fd << ": client accepted" << std::endl;
 
         if (it != _pollfds.end()) {
             it->fd = fd;
-            //it->revents = 0;
         } else {
             _pollfds.push_back((struct pollfd){fd, POLLIN | POLLOUT, 0});
             _clients.push_back(Client(_pollfds.back()));
