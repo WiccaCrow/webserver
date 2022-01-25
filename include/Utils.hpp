@@ -2,8 +2,11 @@
 
 #include <iostream>
 
-//void trim(std::string &s, const char *t);
+void trim(std::string &s, const char *t);
 void toLowerCase(std::string &s);
+void skipSpaces(const std::string &line, size_t &pos);
+
+std::string getWord(const std::string &line, char delimiter, size_t &pos);
 
 #if __cplusplus < 201103L
 

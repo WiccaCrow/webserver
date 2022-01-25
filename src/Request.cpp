@@ -28,21 +28,6 @@ const std::string &Request::getBody() const {
     return _body;
 }
 
-// Hide these methods
-static void skipSpaces(const std::string &line, size_t &pos) {
-    for (; line[pos] == ' '; pos++)
-        ;
-}
-
-static std::string getData(const std::string &line, char delimiter, size_t &pos) {
-    size_t tmp = pos;
-    size_t end = pos = line.find(delimiter, pos);
-
-    if (end == std::string::npos)
-        end = line.length();
-    return line.substr(tmp, end - tmp);
-}
-
 void Request::parseLine(std::string line) {
     HTTP::StatusCode status;
 
@@ -66,19 +51,19 @@ void Request::parseLine(std::string line) {
 StatusCode Request::parseStartLine(const std::string &line) {
     size_t pos = 0;
 
-    _method = getData(line, ' ', pos);
+    _method = getWord(line, ' ', pos);
     if (!isValidMethod(_method)) {
         return NOT_IMPLEMENTED;
     }
 
     skipSpaces(line, pos);
-    _path = getData(line, ' ', pos);
+    _path = getWord(line, ' ', pos);
     if (!isValidPath(_path)) {
         return BAD_REQUEST;
     }
 
     skipSpaces(line, pos);
-    _protocol = getData(line, ' ', pos);
+    _protocol = getWord(line, ' ', pos);
 
     skipSpaces(line, pos);
     if (line[pos]) {

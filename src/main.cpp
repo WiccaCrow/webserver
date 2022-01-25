@@ -18,6 +18,8 @@ void checkArgs(int &ac, char **av) {
 int main(int ac, char **av) {
     checkArgs(ac, av);
 
+    //Conf::load(av[1]);
+
     Log.setFlags(INFO | ERROR);
     Log.setLogFile("test.log");
 
