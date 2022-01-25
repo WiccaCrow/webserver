@@ -19,7 +19,7 @@ int main(int ac, char **av) {
     checkArgs(ac, av);
 
     Log.setFlags(INFO | ERROR);
-    Log.setLogFile("logs");
+    Log.setLogFile("test.log");
 
     // Reading config file
     // Create threads (main + nbservBlock)
