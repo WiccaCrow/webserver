@@ -67,8 +67,6 @@ int Server::pollInHandler(size_t id) {
         acceptNewClient(id);
         return 1;
     } else {
-std::cout << _clients[id - _nbServBlocks].getFd() << std::endl; // wicca
-std::cout << id << "|" << _nbServBlocks << std::endl; // wicca
         _clients[id - _nbServBlocks].receive();
         return 0;
     }
@@ -77,13 +75,13 @@ std::cout << id << "|" << _nbServBlocks << std::endl; // wicca
 void Server::pollHupHandler(size_t id) {
     std::cerr << _pollfds[id].fd << ": POLLHUP" << std::endl;
     if (id >= _nbServBlocks) {
-        // _clients[id].disconnect();
-        _clients[id - _nbServBlocks].disconnect(); // wicca
+        _clients[id - _nbServBlocks].disconnect();
     }
 }
 
 void Server::pollOutHandler(size_t id) {
     if (_clients[id - _nbServBlocks].responseFormed()) {
+        _clients[id - _nbServBlocks].changeResponseFlag(0);
         _clients[id - _nbServBlocks].reply();
     }
 }
@@ -107,11 +105,7 @@ void Server::start(void) {
             } else if (_pollfds[id].revents & POLLHUP) {
                 pollHupHandler(id);
             } else if (_pollfds[id].revents & POLLOUT) {
-                if (_clients[id - _nbServBlocks]._hasResponse == true) { // wicca
-std::cout << "test POLLOUT\n"; // wicca
                 pollOutHandler(id);
-                _clients[id - _nbServBlocks]._hasResponse = false; // wicca
-                } // wicca
             } else if (_pollfds[id].revents & POLLERR) {
                 pollErrHandler(id);
             }
@@ -231,7 +225,7 @@ void Server::acceptNewClient(size_t id) {
 
         if (it != _pollfds.end()) {
             it->fd = fd;
-            it->events = POLLIN | POLLOUT; // wicca
+            it->events = POLLIN | POLLOUT;
         } else {
             _pollfds.push_back((struct pollfd){fd, POLLIN | POLLOUT, 0});
             _clients.push_back(Client(_pollfds.back()));

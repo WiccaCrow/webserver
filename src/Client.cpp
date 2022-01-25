@@ -3,7 +3,6 @@
 ReadSock Client::_reader;
 
 Client::Client(struct pollfd& pfd) : _pfd(pfd), _responseFormed(0) {
-    _hasResponse = false; // wicca
 }
 
 Client::~Client() {
@@ -42,21 +41,20 @@ bool Client::responseFormed() {
 
 void Client::receive(void) {
     std::string line;
-    //HTTP::Request req;
 
-    _hasResponse = true; // wicca
+    _responseFormed = 1;
     struct s_sock s = {_pfd.fd, ReadSock::PERM_READ};
     while (true) {
         line = "";
         ReadSock::Status stat = _reader.getline(s, line);
-        std::cout << "|" << line << "|" << std::endl;
+        //std::cout << "|" << line << "|" << std::endl;
         switch (stat) {
             case ReadSock::RECV_END:
                 disconnect();
             case ReadSock::INVALID_FD:
-                return ;
+                return;
             case ReadSock::LINE_NOT_FOUND:
-                _responseFormed = 1;
+                //_responseFormed = 1;
                 return;
 
             case ReadSock::RECV_END_NB: {
@@ -71,7 +69,7 @@ void Client::receive(void) {
                 break;
             }
             default: {
-                return ;
+                return;
             }
         }
     }
