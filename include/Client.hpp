@@ -31,4 +31,5 @@ class Client {
     void changeFd(int fd);
     void changeResponseFlag(bool f);
     bool responseFormed(void);
+    bool    _hasResponse; // wicca
 };

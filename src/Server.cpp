@@ -67,7 +67,9 @@ int Server::pollInHandler(size_t id) {
         acceptNewClient(id);
         return 1;
     } else {
-        _clients[id].receive();
+std::cout << _clients[id - _nbServBlocks].getFd() << std::endl; // wicca
+std::cout << id << "|" << _nbServBlocks << std::endl; // wicca
+        _clients[id - _nbServBlocks].receive();
         return 0;
     }
 }
@@ -75,13 +77,14 @@ int Server::pollInHandler(size_t id) {
 void Server::pollHupHandler(size_t id) {
     std::cerr << _pollfds[id].fd << ": POLLHUP" << std::endl;
     if (id >= _nbServBlocks) {
-        _clients[id].disconnect();
+        // _clients[id].disconnect();
+        _clients[id - _nbServBlocks].disconnect(); // wicca
     }
 }
 
 void Server::pollOutHandler(size_t id) {
-    if (_clients[id].responseFormed()) {
-        _clients[id].reply();
+    if (_clients[id - _nbServBlocks].responseFormed()) {
+        _clients[id - _nbServBlocks].reply();
     }
 }
 
@@ -98,14 +101,21 @@ void Server::start(void) {
         const size_t size = _pollfds.size();
         for (size_t id = 0; id < size; id++) {
             if (_pollfds[id].revents & POLLIN) {
-                //std::cout << "pollin\n";
-                if (pollInHandler(id))
+std::cout << "test POLLIN\n"; // wicca
+                if (pollInHandler(id)) {
                     break;
+                }
             } else if (_pollfds[id].revents & POLLHUP) {
+std::cout << "test POLLHUP\n"; // wicca
                 pollHupHandler(id);
             } else if (_pollfds[id].revents & POLLOUT) {
+                if (_clients[id - _nbServBlocks]._hasResponse == true) { // wicca
+std::cout << "test POLLOUT\n"; // wicca
                 pollOutHandler(id);
+                _clients[id - _nbServBlocks]._hasResponse = false; // wicca
+                } // wicca
             } else if (_pollfds[id].revents & POLLERR) {
+std::cout << "test POLLERR\n"; // wicca
                 pollErrHandler(id);
             }
         }
@@ -224,6 +234,7 @@ void Server::acceptNewClient(size_t id) {
 
         if (it != _pollfds.end()) {
             it->fd = fd;
+            it->events = POLLIN | POLLOUT; // wicca
         } else {
             _pollfds.push_back((struct pollfd){fd, POLLIN | POLLOUT, 0});
             _clients.push_back(Client(_pollfds.back()));
