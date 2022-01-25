@@ -221,7 +221,7 @@ void Server::acceptNewClient(size_t id) {
         std::vector<struct pollfd>::iterator it;
         it = std::find_if(_pollfds.begin(), _pollfds.end(), fdNotTaken);
 
-        std::cout << fd << ": client accepted" << std::endl;
+        Log.info(to_string(fd) + ": client accepted");
 
         if (it != _pollfds.end()) {
             it->fd = fd;

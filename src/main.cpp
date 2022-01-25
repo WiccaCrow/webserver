@@ -18,6 +18,9 @@ void checkArgs(int &ac, char **av) {
 int main(int ac, char **av) {
     checkArgs(ac, av);
 
+    Log.setFlags(INFO | ERROR);
+    Log.setLogFile("logs");
+
     // Reading config file
     // Create threads (main + nbservBlock)
 
@@ -25,7 +28,6 @@ int main(int ac, char **av) {
     // other - permorm request and send res to main
 
     Server server;
-    // Fill array with server blocks from config
     server.addServerBlocks("127.0.0.1", 8080);
     server.start();
 

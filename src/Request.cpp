@@ -48,16 +48,16 @@ void Request::parseLine(std::string line) {
 
     if (!(getFlags() & PARSED_SL)) {
         if ((status = parseStartLine(line)) != HTTP::CONTINUE) {
-            std::cerr << "Error" << std::endl; // for test
+            Log.error("Request::parseLine, parsing SL");
             // return HTTP::Response(status);
         }
     } else if (!(getFlags() & PARSED_HEADERS)) {
         if ((status = parseHeader(line)) != HTTP::CONTINUE) {
-            std::cerr << "Error" << std::endl; // for test
+            Log.error("Request::parseLine, parsing Headers");
             // return HTTP::Response(status);
         }
     } else if (!(getFlags() & PARSED_BODY)) {
-        std::cout << "parse body" << std::endl;
+        Log.error("Request::parseLine, parsing Body");
     } else if (getFlags() & PARSED_BODY) {
         return;
     }

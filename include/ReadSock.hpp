@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "Logger.hpp"
+
 class ReadSock {
     public:
     enum Perm {

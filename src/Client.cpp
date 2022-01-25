@@ -47,7 +47,7 @@ void Client::receive(void) {
     while (true) {
         line = "";
         ReadSock::Status stat = _reader.getline(s, line);
-        //std::cout << "|" << line << "|" << std::endl;
+        Log.debug(line);
         switch (stat) {
             case ReadSock::RECV_END:
                 disconnect();
@@ -58,7 +58,6 @@ void Client::receive(void) {
                 return;
 
             case ReadSock::RECV_END_NB: {
-                //std::cout << "Here\n";
                 // Need to parse maybe
                 // because the data could remain from the previous requests
                 return;
@@ -111,7 +110,7 @@ void Client::reply(void) {
 
 void Client::disconnect(void) {
     if (_pfd.fd != -1) {
-        std::cout << "client " << _pfd.fd << " left" << std::endl;
+        Log.info(to_string(_pfd.fd) + ": client left");
 
         close(_pfd.fd);
         _pfd.fd = -1;

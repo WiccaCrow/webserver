@@ -31,9 +31,9 @@ ReadSock::Status ReadSock::getline(struct s_sock &sock, std::string &line) {
     }
 
     if (sock.perm & PERM_READ) {
-        //std::cout << "beforeSocket" << std::endl;
+        Log.debug("Readsock:34, before readSocket");
         ReadSock::Status status = readSocket(fd);
-        //std::cout << "afterSocket" << std::endl;
+        Log.debug("Readsock:36, after readSocket");
 
         if (status == ReadSock::RECV_END) {
             return status; // ???

@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "Client.hpp"
+#include "Logger.hpp"
 #include "ReadSock.hpp"
 #include "Request.hpp"
 #include "Response.hpp"

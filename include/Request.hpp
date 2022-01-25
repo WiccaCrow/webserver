@@ -7,6 +7,7 @@
 
 #include "CRC.h"
 #include "Header.hpp"
+#include "Logger.hpp"
 #include "StatusCodes.hpp"
 #include "Types.hpp"
 #include "Utils.hpp"
