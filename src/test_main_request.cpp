@@ -30,18 +30,18 @@ int main(int argc, char *argv[]) {
         // std::cout << line;
         if (!(req.getFlags() & PARSED_SL)) {
             if ((status = req.parseStartLine(line)) != HTTP::CONTINUE) {
-                std::cerr << "Error" << std::endl; // for test
+                Log.error("Error"); // for test
                 // return HTTP::Response(status);
             }
         } else if (!(req.getFlags() & PARSED_HEADERS)) {
             if ((status = req.parseHeader(line)) != HTTP::CONTINUE) {
-                std::cerr << "Error" << std::endl; // for test
-                                                   // return HTTP::Response(status);
+                Log.error("Error"); // for test
+                                    // return HTTP::Response(status);
             }
         } else if (!(req.getFlags() & PARSED_BODY)) {
-            std::cout << "parse body" << std::endl;
+            std::cout << "parse body");
             // if ((status = req.parseBody(line)) != HTTP::CONTINUE) {
-            //     std::cerr << "Error" << std::endl; // for test
+            //     Log.error("Error"); // for test
             // 	// return HTTP::Response(status);
             // }
         }

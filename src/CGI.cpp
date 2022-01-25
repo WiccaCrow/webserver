@@ -17,7 +17,7 @@ int main() {
     int outPipe[2] = {-1};
 
     if (pipe(inPipe) != 0 || pipe(outPipe) != 0) {
-        std::cerr << "CGI: Cannot create pipes" << std::endl;
+        Log.error("CGI: Cannot create pipes");
         return 1;
     }
 
@@ -26,14 +26,14 @@ int main() {
 
     // Redirect for child process
     if ((dup2(outPipe[1], fileno(stdout)) == -1) || (dup2(inPipe[0], fileno(stdin)) == -1)) {
-        std::cerr << "CGI: dup2 function failed (main proc)" << std::endl;
+        Log.error("CGI: dup2 function failed (main proc)");
         return 1;
     }
 
     int childPID = fork();
 
     if (childPID < 0) {
-        std::cerr << "CGI: fork failed" << std::endl;
+        Log.error("CGI: fork failed");
         // Restore fds and close pipes
         return 1;
     }

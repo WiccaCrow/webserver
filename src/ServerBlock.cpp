@@ -29,7 +29,7 @@ ServerBlock &ServerBlock::operator=(const ServerBlock &obj) {
 void ServerBlock::createSock(void) {
     _servfd = socket(PF_INET, SOCK_STREAM, 0);
     if (_servfd < 0) {
-        std::cerr << "Cannot create listening socket" << std::endl;
+        Log.error("Cannot create listening socket");
         exit(SOCKET_ERR);
     }
 }
@@ -37,7 +37,7 @@ void ServerBlock::createSock(void) {
 void ServerBlock::reuseAddr(void) {
     int i = 1;
     if (setsockopt(_servfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) < 0) {
-        std::cerr << "Cannot set options of the listening socket" << std::endl;
+        Log.error("Cannot set options of the listening socket");
         exit(SETOPT_ERR);
     }
 }
@@ -48,14 +48,14 @@ void ServerBlock::bindAddr(void) {
     addr.sin_port = htons(_port);
     addr.sin_addr.s_addr = inet_addr(_addr.c_str());
     if (bind(_servfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        std::cerr << "Cannot bind listening socket" << std::endl;
+        Log.error("Cannot bind listening socket");
         exit(BIND_ERR);
     }
 }
 
 void ServerBlock::listenSock(void) {
     if (listen(_servfd, SOMAXCONN) < 0) {
-        std::cerr << "Listen failed" << std::endl;
+        Log.error("Listen failed");
         exit(LISTEN_ERR);
     }
 }

@@ -44,5 +44,5 @@ std::string transformPath(const std::string &path, std::vector<Location> &locati
 //     //locs.push_back((Location){"", "/var/www/"});
 //     //locs.push_back((Location){"", "/var/www/"});
 //
-//     std::cout << transformPath("/ponys/red/pony.py", locs) << std::endl;
+//     std::cout << transformPath("/ponys/red/pony.py", locs));
 // }

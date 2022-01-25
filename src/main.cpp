@@ -2,7 +2,7 @@
 
 void checkArgs(int &ac, char **av) {
     if (ac != 2) {
-        std::cerr << "Usage: " << av[0] << " config.json" << std::endl;
+        Log.error("Usage: " + std::string(av[0]) + " config.json");
         exit(1);
     }
 }

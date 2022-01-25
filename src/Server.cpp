@@ -73,7 +73,7 @@ int Server::pollInHandler(size_t id) {
 }
 
 void Server::pollHupHandler(size_t id) {
-    std::cerr << _pollfds[id].fd << ": POLLHUP" << std::endl;
+    Log.error("POLLHUP occured on the " + to_string(_pollfds[id].fd) + "socket");
     if (id >= _nbServBlocks) {
         _clients[id - _nbServBlocks].disconnect();
     }
@@ -87,7 +87,7 @@ void Server::pollOutHandler(size_t id) {
 }
 
 void Server::pollErrHandler(size_t id) {
-    std::cerr << _pollfds[id].fd << ": POLLERR" << std::endl;
+    Log.error("POLLERR occured on the " + to_string(_pollfds[id].fd) + "socket");
     exit(1);
 }
 
@@ -114,7 +114,7 @@ void Server::start(void) {
 }
 
 void Server::handlePollError() {
-    std::cerr << "POLL: " << strerror(errno) << std::endl;
+    Log.error(std::string("POLL: ") + strerror(errno));
     switch (errno) {
         case EFAULT: {
             break;
@@ -125,9 +125,10 @@ void Server::handlePollError() {
         case EINVAL: {
             struct rlimit rlim;
             getrlimit(RLIMIT_NOFILE, &rlim);
-            std::cerr << "ndfs: " << _pollfds.size() << std::endl;
-            std::cerr << "limits (soft, hard): ";
-            std::cerr << "(" << rlim.rlim_cur << ", " << rlim.rlim_max << ")" << std::endl;
+            Log.error("ndfs: " + to_string(_pollfds.size()));
+            Log.error("limits (soft, hard): (" +
+                      to_string(rlim.rlim_cur) + ", " +
+                      to_string(rlim.rlim_max) + ") ");
             break;
         }
         case ENOMEM: {
@@ -153,7 +154,6 @@ void Server::pollServ(void) {
 
 void Server::handleAcceptError() {
     switch (errno) {
-        std::cerr << "ACCEPT: " << strerror(errno) << std::endl;
         case EWOULDBLOCK: {
             // OK, as we use non-blocking sockets
             break;
@@ -193,6 +193,7 @@ void Server::handleAcceptError() {
         }
 
         case EPERM: {
+            Log.error(std::string("ACCEPT: ") + strerror(errno));
         }
 
         default:

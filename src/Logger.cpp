@@ -12,7 +12,7 @@ void Logger::setLogFile(const std::string &logfile) {
     _out.open(logfile.c_str(), std::ios_base::out | std::ios_base::trunc);
 
     if (!_out.good()) {
-        std::cerr << "Logger: cannot open file " << logfile << std::endl;
+        std::cerr << "Logger: cannot open file " << logfile;
     }
 }
 

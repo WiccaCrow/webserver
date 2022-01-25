@@ -9,6 +9,8 @@
 //#include <cstdint>
 #include <iostream>
 
+#include "Logger.hpp"
+
 // enum AllowedMethods
 //{
 //     GET = 1,
