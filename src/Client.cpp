@@ -44,6 +44,7 @@ void Client::receive(void) {
     std::string line;
     //HTTP::Request req;
 
+    _hasResponse = true; // wicca
     struct s_sock s = {_pfd.fd, ReadSock::PERM_READ};
     while (true) {
         line = "";

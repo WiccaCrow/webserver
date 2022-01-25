@@ -101,12 +101,10 @@ void Server::start(void) {
         const size_t size = _pollfds.size();
         for (size_t id = 0; id < size; id++) {
             if (_pollfds[id].revents & POLLIN) {
-std::cout << "test POLLIN\n"; // wicca
                 if (pollInHandler(id)) {
                     break;
                 }
             } else if (_pollfds[id].revents & POLLHUP) {
-std::cout << "test POLLHUP\n"; // wicca
                 pollHupHandler(id);
             } else if (_pollfds[id].revents & POLLOUT) {
                 if (_clients[id - _nbServBlocks]._hasResponse == true) { // wicca
@@ -115,7 +113,6 @@ std::cout << "test POLLOUT\n"; // wicca
                 _clients[id - _nbServBlocks]._hasResponse = false; // wicca
                 } // wicca
             } else if (_pollfds[id].revents & POLLERR) {
-std::cout << "test POLLERR\n"; // wicca
                 pollErrHandler(id);
             }
         }
