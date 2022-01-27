@@ -53,12 +53,14 @@ StatusCode Request::parseStartLine(const std::string &line) {
 
     _method = getWord(line, ' ', pos);
     if (!isValidMethod(_method)) {
+        Log.debug("Method is not implemented");
         return NOT_IMPLEMENTED;
     }
 
     skipSpaces(line, pos);
     _path = getWord(line, ' ', pos);
     if (!isValidPath(_path)) {
+        Log.debug("Invalid URI");
         return BAD_REQUEST;
     }
 
@@ -67,9 +69,12 @@ StatusCode Request::parseStartLine(const std::string &line) {
 
     skipSpaces(line, pos);
     if (line[pos]) {
+        std::cout << "|" << (int)line[pos] << "|" << std::endl;
+        Log.debug("Forbidden symbols at the end of the line");
         return BAD_REQUEST;
     }
     if (!isValidProtocol(_protocol)) {
+        Log.debug("Protocol is not supported or invalid");
         // Or 505, need to improve
         return BAD_REQUEST;
     }
@@ -123,7 +128,8 @@ StatusCode Request::parseHeader(std::string line) {
     }
 
     Header header;
-    header.line.swap(line);
+    // header.line.swap(line);
+    header.line = line;
 
     size_t sepPos = line.find(':');
     header.line[sepPos] = '\0';
@@ -138,6 +144,9 @@ StatusCode Request::parseHeader(std::string line) {
 
     header.hash = crc(header.line.data(), header.keyLen);
     if (validHeaders.find(header.hash) == validHeaders.end()) {
+        Log.debug("Maybe header is not supported");
+        Log.debug(header.line.data() + std::string("    |    ") + to_string(header.hash));
+        std::cout << header.line.data() + std::string("    |    ") + to_string(header.hash) << std::endl;
         return BAD_REQUEST;
     }
 

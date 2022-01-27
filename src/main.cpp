@@ -20,7 +20,7 @@ int main(int ac, char **av) {
 
     //Conf::load(av[1]);
 
-    Log.setFlags(INFO | ERROR);
+    Log.setFlags(INFO | ERROR | DEBUG);
     Log.setLogFile("test.log");
 
     // Reading config file

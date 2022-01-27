@@ -64,7 +64,7 @@ void Client::receive(void) {
             }
 
             case ReadSock::LINE_FOUND: {
-                //_req.parseLine(line);
+                _req.parseLine(line);
                 break;
             }
             default: {
