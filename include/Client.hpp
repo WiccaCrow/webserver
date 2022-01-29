@@ -7,6 +7,7 @@
 #include "ReadSock.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
+#include "StatusCodes.hpp"
 
 class Client {
     private:

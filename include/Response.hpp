@@ -2,34 +2,35 @@
 
 #include <Utils.hpp>
 
-
 namespace HTTP {
 
 class Response {
-    std::string res;
+    std::string        _res;
+    static std::string _bodyStyle;
 
     public:
-    Response() {}
+    Response();
     ~Response() {}
 
     const char *getData(void) {
         std::string body = "<html><body> Hello from the other side! </body></html>";
-        res += "HTTP/1.1 200 OK\r\n";
-        res += "Content-type: text/html; charset=utf-8\r\n";
-        res += "Connection: keep-alive\r\n";
-        res += "Keep-Alive: timeout=55, max=1000\r\n";
-        res += "Content-length: " + to_string(body.length()) + "\r\n\r\n";
-        res += body;
+        _res += "HTTP/1.1 200 OK\r\n";
+        _res += "Content-type: text/html; charset=utf-8\r\n";
+        _res += "Connection: keep-alive\r\n";
+        _res += "Keep-Alive: timeout=55, max=1000\r\n";
+        _res += "Content-length: " + to_string(body.length()) + "\r\n\r\n";
+        _res += body;
 
-        return res.c_str();
+        return _res.c_str();
     }
+    static void SetBodyStyle();
     // Errors:
-    const char *    ErrorCli400(void);
-    const char *    ErrorCli404(std::string HTTPvers);
+    const char *ErrorCli400(void);
+    const char *ErrorCli404(std::string HTTPvers);
+    const char *ErrorCli405(std::string HTTPvers);
+    const char *    ErrorCli408(std::string protocol);
 
-    // const char *    ErrorCli405(void);
     // const char *    ErrorCli406(void);
-    // const char *    ErrorCli408(void);
     // const char *    ErrorCli409(void);
     // const char *    ErrorCli410(void);
     // const char *    ErrorCli411(void);
@@ -43,7 +44,6 @@ class Response {
     // const char *    ErrorServ503(void);
     // const char *    ErrorServ504(void);
     // const char *    ErrorServ505(void);
-
 };
 
 }; // namespace HTTP
