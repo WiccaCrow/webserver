@@ -2,7 +2,7 @@
 
 ReadSock Client::_reader;
 
-Client::Client(struct pollfd& pfd) : _pfd(pfd), _responseFormed(0) {
+Client::Client(struct pollfd& pfd) : _pfd(pfd) {
 }
 
 Client::~Client() {
@@ -14,7 +14,7 @@ Client::Client(const Client& client) : _pfd(client._pfd) {
 
 Client& Client::operator=(const Client& client) {
     if (this != &client) {
-        _responseFormed = client._responseFormed;
+        _res.setFormed(false);
         _req = client._req;
         _res = client._res;
         // Not think it is correct
@@ -31,18 +31,18 @@ void Client::changeFd(int fd) {
     _pfd.fd = fd;
 }
 
-void Client::changeResponseFlag(bool f) {
-    _responseFormed = f;
-}
+// void Client::changeResponseFlag(bool f) {
+//     _responseFormed = f;
+// }
 
 bool Client::responseFormed() {
-    return _responseFormed;
+    return _res.isFormed();
 }
 
 void Client::receive(void) {
     std::string line;
 
-    _responseFormed = 1;
+    // _responseFormed = 1;
     struct s_sock s = {_pfd.fd, ReadSock::PERM_READ};
     while (true) {
         line = "";
@@ -64,7 +64,10 @@ void Client::receive(void) {
             }
 
             case ReadSock::LINE_FOUND: {
-                _req.parseLine(line);
+                if (_req.parseLine(line) == HTTP::PROCESSING) {
+                    _res.setFormed(true);
+                    return;
+                }
                 break;
             }
             default: {
@@ -85,9 +88,9 @@ void Client::reply(void) {
     const char*  response = _res.getData();
     const size_t responseLength = strlen(response);
 
+    _res.setFormed(false);
     size_t sentBytes = send(_pfd.fd, response, responseLength, 0);
 
-    _responseFormed = 0;
     // если нет каких-то полей с указанием окончания отправки ответа,
     // клиент будет продолжать стоять в ожидании окончания ответа - POLLOUT
 

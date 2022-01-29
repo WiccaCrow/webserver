@@ -40,7 +40,17 @@ static const uint32 headerHashes[] = {
     1078893766, // warning
     478759394,  // dnt
     14045689,   // x-requested-with
-    3276872746  // x-csrf-token
+    3276872746, // x-csrf-token
+
+    // HTTPS, experimental, etc...
+    1781535743, // sec-fetch-dest
+    1973190087, // sec-fetch-mode
+    2333422472, // sec-fetch-site
+    1875242021, // sec-fetch-user
+    1981514622, // upgrade-insecure-requests
+    3458784846, // sec-ch-ua
+    3851717610, // sec-ch-ua-mobile
+    464571004,  // sec-ch-ua-platform
 };
 
 std::map<uint32, bool> initHashMap(void) {

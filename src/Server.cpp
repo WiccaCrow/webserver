@@ -81,7 +81,7 @@ void Server::pollHupHandler(size_t id) {
 
 void Server::pollOutHandler(size_t id) {
     if (_clients[id - _nbServBlocks].responseFormed()) {
-        _clients[id - _nbServBlocks].changeResponseFlag(0);
+        // _clients[id - _nbServBlocks].changeResponseFlag(0);
         _clients[id - _nbServBlocks].reply();
     }
 }

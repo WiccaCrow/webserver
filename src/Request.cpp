@@ -28,24 +28,28 @@ const std::string &Request::getBody() const {
     return _body;
 }
 
-void Request::parseLine(std::string line) {
-    HTTP::StatusCode status;
-
+StatusCode Request::parseLine(std::string line) {
     if (!(getFlags() & PARSED_SL)) {
-        if ((status = parseStartLine(line)) != HTTP::CONTINUE) {
+        if ((_status = parseStartLine(line)) != HTTP::CONTINUE) {
             Log.error("Request::parseLine, parsing SL");
-            // return HTTP::Response(status);
+            // return HTTP::Response(_status);
+            return _status;
         }
     } else if (!(getFlags() & PARSED_HEADERS)) {
-        if ((status = parseHeader(line)) != HTTP::CONTINUE) {
+        if ((_status = parseHeader(line)) != HTTP::CONTINUE) {
             Log.error("Request::parseLine, parsing Headers");
-            // return HTTP::Response(status);
+            // return HTTP::Response(_status);
+            return _status;
         }
-    } else if (!(getFlags() & PARSED_BODY)) {
-        Log.error("Request::parseLine, parsing Body");
-    } else if (getFlags() & PARSED_BODY) {
-        return;
     }
+    // else if (!(getFlags() & PARSED_BODY)) {
+    //     Log.error("Request::parseLine, parsing Body");
+    //     return PROCESSING;
+    // }
+    else {
+        return PROCESSING;
+    }
+    return CONTINUE;
 }
 
 StatusCode Request::parseStartLine(const std::string &line) {
@@ -124,7 +128,15 @@ const uint8 &Request::getFlags() const {
 StatusCode Request::parseHeader(std::string line) {
     if (line == "") {
         setFlag(PARSED_HEADERS);
-        return CONTINUE;
+        Log.debug("Headers were parsed");
+
+        _method = "";
+        _protocol = "";
+        _path = "";
+        _parseFlags = 0;
+        _headers.clear();
+
+        return PROCESSING;
     }
 
     Header header;
@@ -136,8 +148,8 @@ StatusCode Request::parseHeader(std::string line) {
     header.keyLen = sepPos;
     //
     // Some errors skipped with this method... (Maybe should be rewritten with nginx parser)
-    header.valStart = line.find_first_not_of(" \t\n\r", sepPos);
-    size_t valEnd = line.find_last_not_of(" \t\n\r", sepPos);
+    header.valStart = line.find_first_not_of(" \t\n\r", sepPos + 1);
+    size_t valEnd = line.find_last_not_of(" \t\n\r", sepPos + 1);
     header.valLen = valEnd - header.valStart;
 
     toLowerCase(header.line);
@@ -146,7 +158,6 @@ StatusCode Request::parseHeader(std::string line) {
     if (validHeaders.find(header.hash) == validHeaders.end()) {
         Log.debug("Maybe header is not supported");
         Log.debug(header.line.data() + std::string("    |    ") + to_string(header.hash));
-        std::cout << header.line.data() + std::string("    |    ") + to_string(header.hash) << std::endl;
         return BAD_REQUEST;
     }
 

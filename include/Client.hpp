@@ -13,7 +13,7 @@ class Client {
     struct pollfd &_pfd;
     HTTP::Request  _req;
     HTTP::Response _res;
-    int            _responseFormed : 1;
+    // int            _responseFormed : 1;
 
     static ReadSock _reader;
 
@@ -29,6 +29,6 @@ class Client {
     void reply(void);
     int  getFd(void);
     void changeFd(int fd);
-    void changeResponseFlag(bool f);
+    // void changeResponseFlag(bool f);
     bool responseFormed(void);
 };

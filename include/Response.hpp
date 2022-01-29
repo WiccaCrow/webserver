@@ -3,7 +3,8 @@
 namespace HTTP {
 
 class Response {
-    std::string res;
+    std::string _res;
+    bool        _responseFormed;
 
     public:
     Response() {}
@@ -11,14 +12,22 @@ class Response {
 
     const char *getData(void) {
         std::string body = "<html><body> Hello from the other side! </body></html>";
-        res += "HTTP/1.1 200 OK\r\n";
-        res += "Content-type: text/html; charset=utf-8\r\n";
-        res += "Connection: keep-alive\r\n";
-        res += "Keep-Alive: timeout=55, max=1000\r\n";
-        res += "Content-length: " + to_string(body.length()) + "\r\n\r\n";
-        res += body;
+        _res += "HTTP/1.1 200 OK\r\n";
+        _res += "Content-type: text/html; charset=utf-8\r\n";
+        _res += "Connection: keep-alive\r\n";
+        _res += "Keep-Alive: timeout=55, max=1000\r\n";
+        _res += "Content-length: " + to_string(body.length()) + "\r\n\r\n";
+        _res += body;
 
-        return res.c_str();
+        return _res.c_str();
+    }
+
+    bool    isFormed() const {
+        return _responseFormed;
+    }
+
+    void    setFormed(bool formed) {
+        _responseFormed = formed;
     }
 };
 
