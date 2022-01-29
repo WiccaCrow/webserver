@@ -85,11 +85,36 @@ void Client::reply(void) {
     // определить размер данных, которые надо отправить
     // sendByte (по аналогии с recvServ) или sendSize
 
-    const char*  response = _res.getData();
-    const size_t responseLength = strlen(response);
+    // _req.getStatus() еще не написано, но уже обговорено.
+    // это будет либо status в pubic у Request, либо геттер на него
+    const char* response;
+    switch (HTTP::OK) {
+            // switch (_req.getStatus()) {
+        case HTTP::OK:
+            response = _res.getData();
+            break;
+        case HTTP::BAD_REQUEST:
+            response = _res.ErrorCli400();
+            break;
+        case HTTP::NOT_FOUND:
+            response = _res.ErrorCli404(_req.getProtocol());
+            break;
+        case HTTP::METHOD_NOT_ALLOWED:
+            response = _res.ErrorCli405(_req.getProtocol());
+            break;
+        case HTTP::REQUEST_TIMEOUT:
+            response = _res.ErrorCli408(_req.getProtocol());
+            disconnect();
+            break;
+        default:
+            // временная строка, чтобы был response
+            response = _res.getData();
+            break;
+    }
 
+    const size_t responseLength = strlen(response);
+    size_t       sentBytes = send(_pfd.fd, response, responseLength, 0);
     _res.setFormed(false);
-    size_t sentBytes = send(_pfd.fd, response, responseLength, 0);
 
     // если нет каких-то полей с указанием окончания отправки ответа,
     // клиент будет продолжать стоять в ожидании окончания ответа - POLLOUT

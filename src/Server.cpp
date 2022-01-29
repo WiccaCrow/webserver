@@ -95,7 +95,10 @@ void Server::start(void) {
     fillServBlocksFds();
     while (1) {
         _pollResult = 0;
+        // std::cout << "test 1\n";
+
         pollServ();
+        // std::cout << "test 2\n";
         const size_t size = _pollfds.size();
         for (size_t id = 0; id < size; id++) {
             if (_pollfds[id].revents & POLLIN) {

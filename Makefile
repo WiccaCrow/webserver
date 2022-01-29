@@ -17,6 +17,7 @@ SOURCEFILES     =	main.cpp \
 					ValidateHeaders.cpp \
 					Client.cpp \
 					Logger.cpp \
+					Response.cpp
 				
 LIBJSONFOLDER   =   #json-parser
 LIBJSONINCLUDE  =   #-I ./$(LIBJSONFOLDER)/src
