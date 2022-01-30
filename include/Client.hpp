@@ -4,6 +4,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <map>
+
 #include "ReadSock.hpp"
 #include "Request.hpp"
 #include "Response.hpp"

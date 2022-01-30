@@ -4,7 +4,7 @@ NAME 			= 	serv
 
 CXX             =   clang++
 CPPFLAGS        =   -Wall -Wextra -Werror -g -std=c++98
-#CPPFLAGS       =   -Wall -Wextra -Werror -g -Wpedantic -std=c++98
+# CPPFLAGS       =   -Wall -Wextra -Werror -g -Wpedantic -std=c++98
 
 SOURCEFILES     =	main.cpp \
 				    Server.cpp \

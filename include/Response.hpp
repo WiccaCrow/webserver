@@ -1,6 +1,9 @@
 #pragma once
 
 #include <Utils.hpp>
+#include <map>
+
+#include "StatusCodes.hpp"
 
 namespace HTTP {
 
@@ -12,9 +15,14 @@ class Response {
     Response();
     ~Response() {}
 
+    static const std::map<int, const char *> _ErrorCode;
+
+    const char *                       findErr(int nbErr);
+    static std::map<int, const char *> initErrorCode();
+
     const char *getData(void) {
         std::string body = "<html><body> Hello from the other side! </body></html>";
-        _res += "HTTP/1.1 200 OK\r\n";
+        _res = "HTTP/1.1 200 OK\r\n";
         _res += "Content-type: text/html; charset=utf-8\r\n";
         _res += "Connection: keep-alive\r\n";
         _res += "Keep-Alive: timeout=55, max=1000\r\n";
@@ -23,27 +31,6 @@ class Response {
 
         return _res.c_str();
     }
-    static void SetBodyStyle();
-    // Errors:
-    const char *ErrorCli400(void);
-    const char *ErrorCli404(std::string HTTPvers);
-    const char *ErrorCli405(std::string HTTPvers);
-    const char *    ErrorCli408(std::string protocol);
-
-    // const char *    ErrorCli406(void);
-    // const char *    ErrorCli409(void);
-    // const char *    ErrorCli410(void);
-    // const char *    ErrorCli411(void);
-    // const char *    ErrorCli412(void); // ??
-    // const char *    ErrorCli413(void);
-    // const char *    ErrorCli414(void);
-    // const char *    ErrorCli415(void);
-
-    // const char *    ErrorServ500(void);
-    // const char *    ErrorServ502(void);
-    // const char *    ErrorServ503(void);
-    // const char *    ErrorServ504(void);
-    // const char *    ErrorServ505(void);
 };
 
 }; // namespace HTTP

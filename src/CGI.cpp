@@ -1,5 +1,7 @@
 #include "CGI.hpp"
 
+#include "Logger.hpp"
+
 //Different fields (e.g. name value pairs are separated by a ampersand (&).
 //Name/value pair assignments are denoted by an equals sign (=). The format is name=value.
 //Blank spaces must be denoted by a plus sign +.
