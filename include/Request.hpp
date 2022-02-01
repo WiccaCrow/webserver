@@ -20,15 +20,13 @@
 
 namespace HTTP {
 
-// TODO: придумать как инициализировать заголовки
-// std::map<uint32, method> handlers;
-
 class Request {
     private:
     std::string              _method;
     std::string              _path;
     std::string              _protocol;
     std::map<uint32, Header> _headers;
+    HTTP::StatusCode         _status;
 
     std::string _body;
     uint8       _parseFlags;
@@ -50,7 +48,7 @@ class Request {
     StatusCode parseStartLine(const std::string &line);
     StatusCode parseHeader(std::string line);
     StatusCode parseBody(const std::string &line);
-    void       parseLine(std::string line);
+    StatusCode parseLine(std::string line);
 
     private:
     StatusCode isValidMethod(const std::string &method);

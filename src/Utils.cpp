@@ -25,9 +25,9 @@ std::string getWord(const std::string& line, char delimiter, size_t& pos) {
     size_t tmp = pos;
     pos = line.find(delimiter, pos);
 
-    if (pos == std::string::npos)
-        pos = line.length();
-    return line.substr(tmp, pos - tmp);
+    if (end == std::string::npos)
+        end = pos = line.length();
+    return line.substr(tmp, end - tmp);
 }
 
 //std::string getWord(const std::string& line, char delimiter, size_t& pos) {
@@ -49,6 +49,12 @@ void skipSpaces(const std::string& line, size_t& pos) {
 std::string to_string(int val) {
     char buf[25];
     snprintf(buf, 25, "%d", val);
+    return std::string(buf);
+}
+
+std::string to_string(unsigned long val) {
+    char buf[25];
+    snprintf(buf, 25, "%lu", val);
     return std::string(buf);
 }
 

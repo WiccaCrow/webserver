@@ -46,7 +46,7 @@ struct Header {
     }
 
     const char *getVal() {
-        return &line.data()[valStart];
+        return &(line.data()[valStart]);
     }
 };
 
