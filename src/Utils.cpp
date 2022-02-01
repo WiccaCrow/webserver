@@ -21,23 +21,23 @@ void toLowerCase(std::string& s) {
     }
 }
 
+//std::string getWord(const std::string& line, char delimiter, size_t& pos) {
+//    size_t tmp = pos;
+//    pos = line.find(delimiter, pos);
+//
+//    if (pos == std::string::npos)
+//        pos = line.length();
+//    return line.substr(tmp, pos - tmp);
+//}
+
 std::string getWord(const std::string& line, char delimiter, size_t& pos) {
     size_t tmp = pos;
-    pos = line.find(delimiter, pos);
+    size_t end = pos = line.find(delimiter, pos);
 
-    if (pos == std::string::npos)
-        pos = line.length();
-    return line.substr(tmp, pos - tmp);
+    if (end == std::string::npos)
+        end = pos = line.length();
+    return line.substr(tmp, end - tmp);
 }
-
-// std::string getWord(const std::string& line, char delimiter, size_t& pos) {
-//     size_t tmp = pos;
-//     size_t end = pos = line.find(delimiter, pos);
-//
-//     if (end == std::string::npos)
-//         end = pos = line.length();
-//     return line.substr(tmp, end - tmp);
-// }
 
 void skipSpaces(const std::string& line, size_t& pos) {
     for (; line[pos] == ' '; pos++)

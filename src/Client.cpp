@@ -103,6 +103,12 @@ void Client::reply(void) {
     size_t       sentBytes = send(_pfd.fd, response, responseLength, 0);
     _res.setFormed(false);
 
+    _req.getMethod() = "";
+    _req.getProtocol() = "";
+    _req.getPath() = "";
+    _req.getFlags() = 0;
+    _req.getHeaders().clear();
+
     // если нет каких-то полей с указанием окончания отправки ответа,
     // клиент будет продолжать стоять в ожидании окончания ответа - POLLOUT
 

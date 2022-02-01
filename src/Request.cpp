@@ -8,23 +8,23 @@ Request::Request() : _parseFlags(PARSED_NONE) {}
 
 Request::~Request() {}
 
-const std::string &Request::getMethod() const {
+std::string &Request::getMethod() {
     return _method;
 }
 
-const std::string &Request::getPath() const {
+std::string &Request::getPath() {
     return _path;
 }
 
-const std::string &Request::getProtocol() const {
+std::string &Request::getProtocol() {
     return _protocol;
 }
 
-const std::map<uint32, Header> &Request::getHeaders() const {
+std::map<uint32, Header> &Request::getHeaders() {
     return _headers;
 }
 
-const std::string &Request::getBody() const {
+std::string &Request::getBody() {
     return _body;
 }
 
@@ -56,6 +56,7 @@ StatusCode Request::parseStartLine(const std::string &line) {
     size_t pos = 0;
 
     _method = getWord(line, ' ', pos);
+    Log.debug("METHOD: " + _method);
     if (!isValidMethod(_method)) {
         Log.debug("Method is not implemented");
         return NOT_IMPLEMENTED;
@@ -63,6 +64,7 @@ StatusCode Request::parseStartLine(const std::string &line) {
 
     skipSpaces(line, pos);
     _path = getWord(line, ' ', pos);
+    Log.debug("PATH: " + _path);
     if (!isValidPath(_path)) {
         Log.debug("Invalid URI");
         return BAD_REQUEST;
@@ -121,7 +123,7 @@ void Request::removeFlag(uint8 flag) {
     _parseFlags &= ~flag;
 }
 
-const uint8 &Request::getFlags() const {
+uint8 &Request::getFlags() {
     return _parseFlags;
 }
 
@@ -129,12 +131,6 @@ StatusCode Request::parseHeader(std::string line) {
     if (line == "") {
         setFlag(PARSED_HEADERS);
         Log.debug("Headers were parsed");
-
-        _method = "";
-        _protocol = "";
-        _path = "";
-        _parseFlags = 0;
-        _headers.clear();
 
         return PROCESSING;
     }

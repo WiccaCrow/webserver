@@ -349,7 +349,7 @@ const char* HTTP::Response::GETautoindexOn(std::string resourcePath) {
         "Connection: keep-alive\r\n"
         "Keep-Alive: timeout=55, max=1000\r\n"
         "Content-length: ";
-    std::ifstream filename(resourcePath, std::ios_base::in);
+    std::ifstream filename(resourcePath.c_str(), std::ios_base::in);
     if (!filename.is_open()) {
         return (findErr(INTERNAL_SERVER_ERROR));
     }
