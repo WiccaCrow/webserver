@@ -15,10 +15,29 @@ std::string _bodyStyle =
     "margin-top:0;max-width:none;padding-right:0}}\n"
     "</style>\n";
 
+bool checkExtention(std::string extention, std::string resourcePath) {
+    int resLength = resourcePath.length();
+    for (int i = extention.length() - 1; i; --i) {
+        if (resourcePath[--resLength] != extention[i]) {
+            return (false);
+        }
+    }
+    return (true);
+}
+
 int main() {
-    _bodyStyle +=
-        "<title>Error 505 (HTTP Version Not Supported)</title>\n"
-        "<p><b>505.</b> HTTP Version Not Supported."
-        "<p><err_text>HTTP version not supported.</err_text>";
-    std::cout << _bodyStyle.length() << std::endl;
+    // _bodyStyle +=
+    //     "<title>Error 505 (HTTP Version Not Supported)</title>\n"
+    //     "<p><b>505.</b> HTTP Version Not Supported."
+    //     "<p><err_text>HTTP version not supported.</err_text>";
+    // std::cout << _bodyStyle.length() << std::endl;
+    if (checkExtention(".css", "dhgjjknbcvb.css")) {
+        std::cout << "yes" << std::endl;
+    } else
+        std::cout << "no" << std::endl;
+
+    if (checkExtention(".css", "dhgjjknbcvb.sss")) {
+        std::cout << "yes" << std::endl;
+    } else
+        std::cout << "no" << std::endl;
 }

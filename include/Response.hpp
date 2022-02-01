@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Utils.hpp>
+#include <fstream>
+#include <iostream>
 #include <map>
 
 #include "StatusCodes.hpp"
@@ -17,7 +19,7 @@ class Response {
 
     static const std::map<int, const char *> _ErrorCode;
 
-    const char *                       findErr(int nbErr);
+    const char                        *findErr(int nbErr);
     static std::map<int, const char *> initErrorCode();
 
     const char *getData(void) {
@@ -31,6 +33,8 @@ class Response {
 
         return _res.c_str();
     }
+
+    const char *GETautoindexOn(std::string resourcePath);
 };
 
 }; // namespace HTTP
