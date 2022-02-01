@@ -25,9 +25,9 @@ std::string getWord(const std::string& line, char delimiter, size_t& pos) {
     size_t tmp = pos;
     pos = line.find(delimiter, pos);
 
-    if (end == std::string::npos)
-        end = pos = line.length();
-    return line.substr(tmp, end - tmp);
+    if (pos == std::string::npos)
+        pos = line.length();
+    return line.substr(tmp, pos - tmp);
 }
 
 // std::string getWord(const std::string& line, char delimiter, size_t& pos) {
