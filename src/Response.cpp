@@ -319,3 +319,49 @@ const char* HTTP::Response::findErr(int nbErr) {
 // const char *    ErrorCli412(void); // ??
 
 // const char *    ErrorServ503(void);
+
+bool checkExtention(std::string extention, std::string resourcePath) {
+    int resLength = resourcePath.length();
+    for (int i = extention.length() - 1; i; --i) {
+        if (resourcePath[--resLength] != extention[i]) {
+            return (false);
+        }
+    }
+    return (true);
+}
+
+const char* HTTP::Response::GETautoindexOn(std::string resourcePath) {
+    _res =
+        "HTTP/1.1 200 OK\r\n";
+    if (checkExtention(".html", resourcePath)) {
+        _res += "Content-type: text/html; charset=utf-8\r\n";
+        std::cout << "html: " << resourcePath << std::endl;
+    }
+    if (checkExtention(".css", resourcePath)) {
+        _res += "Content-type: text/css; charset=utf-8\r\n";
+        std::cout << "css: " << resourcePath << std::endl;
+    }
+    if (checkExtention(".jpeg", resourcePath)) {
+        _res += "Content-type: image/jpeg; charset=utf-8\r\n";
+        std::cout << "jpeg: " << resourcePath << std::endl;
+    }
+    _res +=
+        "Connection: keep-alive\r\n"
+        "Keep-Alive: timeout=55, max=1000\r\n"
+        "Content-length: ";
+    std::ifstream filename(resourcePath, std::ios_base::in);
+    if (!filename.is_open()) {
+        return (findErr(INTERNAL_SERVER_ERROR));
+    }
+    std::string body;
+    std::string buf;
+    while (!filename.eof()) {
+        getline(filename, buf);
+        body += buf;
+        if (!filename.eof())
+            body += "\r\n";
+    }
+    filename.close();
+    _res += to_string(body.length()) + "\r\n\r\n" + body;
+    return _res.c_str();
+}

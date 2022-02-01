@@ -17,11 +17,10 @@ void checkArgs(int &ac, char **av) {
 
 int main(int ac, char **av) {
     checkArgs(ac, av);
-    //Conf::load(av[1]);
+    // Conf::load(av[1]);
 
     Log.setFlags(INFO | ERROR | DEBUG);
     Log.setLogFile("test.log");
-
     // Reading config file
     // Create threads (main + nbservBlock)
 
@@ -30,6 +29,7 @@ int main(int ac, char **av) {
 
     Server server;
     server.addServerBlocks("127.0.0.1", 8080);
+
     server.start();
 
     // if (serverBlocksCount > 1) {

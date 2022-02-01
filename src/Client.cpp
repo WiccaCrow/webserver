@@ -94,7 +94,11 @@ void Client::reply(void) {
         if (_req_getStatus == 408 || _req_getStatus == HTTP::PAYLOAD_TOO_LARGE)
             disconnect();
     } else if (_req_getStatus == 200) {
-        response = _res.getData();
+        std::cout << std::endl
+                  << std::endl
+                  << "res URI: " << _req.getPath() << std::endl;
+        response = _res.GETautoindexOn(_req.getPath());
+        // response = _res.getData();
     }
     const size_t responseLength = strlen(response);
     size_t       sentBytes = send(_pfd.fd, response, responseLength, 0);

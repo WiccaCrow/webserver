@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Utils.hpp>
+#include <fstream>
+#include <iostream>
 #include <map>
 
 #include "StatusCodes.hpp"
@@ -61,6 +63,7 @@ class Response {
     // const char *    ErrorServ503(void);
     // const char *    ErrorServ504(void);
     // const char *    ErrorServ505(void);
+    const char *GETautoindexOn(std::string resourcePath);
 };
 
 }; // namespace HTTP
