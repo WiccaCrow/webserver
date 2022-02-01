@@ -81,7 +81,7 @@ void Client::reply(void) {
     if (_pfd.fd == -1) {
         return;
     }
-
+    std::cout << "res URI: " << _req.getPath() << std::endl;
     // определить размер данных, которые надо отправить
     // sendByte (по аналогии с recvServ) или sendSize
 
@@ -94,9 +94,8 @@ void Client::reply(void) {
         if (_req_getStatus == 408 || _req_getStatus == HTTP::PAYLOAD_TOO_LARGE)
             disconnect();
     } else if (_req_getStatus == 200) {
-        std::cout << std::endl
-                  << std::endl
-                  << "res URI: " << _req.getPath() << std::endl;
+        std::cout << "res URI: " << _req.getPath() << std::endl;
+
         response = _res.GETautoindexOn(_req.getPath());
         // response = _res.getData();
     }
