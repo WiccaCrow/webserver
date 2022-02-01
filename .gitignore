@@ -46,3 +46,4 @@ serv
 .obj
 .idea
 *.out
+*.out.dSYM

@@ -21,27 +21,23 @@ void toLowerCase(std::string& s) {
     }
 }
 
-// wicca func
-std::string getWord_wicca(const std::string& line, char delimiter, size_t& pos) {
-    size_t tmp = pos;
-    size_t end = pos = line.find(delimiter, pos);
-    std::cout << "getWord: test1" << std::endl; // wicca
-    if (end == std::string::npos)
-        end = line.length();
-    std::cout << "getWord: test2" << std::endl;                                          // wicca
-    std::cout << "PATH parseLine getWord: " << line.substr(tmp, end - tmp) << std::endl; // wicca
-    return line.substr(tmp, end - tmp);
-}
-
 std::string getWord(const std::string& line, char delimiter, size_t& pos) {
     size_t tmp = pos;
-    size_t end = pos = line.find(delimiter, pos);
+    pos = line.find(delimiter, pos);
 
-    if (end == std::string::npos)
-        end = line.length();
-    std::cout << "PATH parseLine getWord: " << line.substr(tmp, end - tmp) << std::endl; // wicca
-    return line.substr(tmp, end - tmp);
+    if (pos == std::string::npos)
+        pos = line.length();
+    return line.substr(tmp, pos - tmp);
 }
+
+// std::string getWord(const std::string& line, char delimiter, size_t& pos) {
+//     size_t tmp = pos;
+//     size_t end = pos = line.find(delimiter, pos);
+//
+//     if (end == std::string::npos)
+//         end = pos = line.length();
+//     return line.substr(tmp, end - tmp);
+// }
 
 void skipSpaces(const std::string& line, size_t& pos) {
     for (; line[pos] == ' '; pos++)
