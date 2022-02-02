@@ -87,20 +87,20 @@ void Client::reply(void) {
 
     // _req.getStatus() еще не написано, но уже обговорено.
     // это будет либо status в pubic у Request, либо геттер на него
-    int         _req_getStatus = HTTP::OK;
-    const char* response;
-    if (_req_getStatus >= 400) {
-        response = _res.findErr(_req_getStatus);
-        if (_req_getStatus == 408 || _req_getStatus == HTTP::PAYLOAD_TOO_LARGE)
-            disconnect();
-    } else if (_req_getStatus == 200) {
-        std::cout << "res URI: " << _req.getPath() << std::endl;
+    // int         _req_getStatus = HTTP::OK;
+    // const char* response;
+    // if (_req_getStatus >= 400) {
+    //     response = _res.findErr(_req_getStatus);
+    //     if (_req_getStatus == 408 || _req_getStatus == HTTP::PAYLOAD_TOO_LARGE)
+    //         disconnect();
+    // } else if (_req_getStatus == 200) {
+    //     std::cout << "res URI: " << _req.getPath() << std::endl;
 
-        response = _res.GETautoindexOn(_req.getPath());
-        // response = _res.getData();
-    }
-    const size_t responseLength = strlen(response);
-    size_t       sentBytes = send(_pfd.fd, response, responseLength, 0);
+    //     response = _res.GETautoindexOn(_req.getPath());
+    //     // response = _res.getData();
+    // }
+    const size_t responseLength = strlen(_res.getData());
+    size_t       sentBytes = send(_pfd.fd, _res.getData(), responseLength, 0);
     _res.setFormed(false);
 
     _req.getMethod() = "";

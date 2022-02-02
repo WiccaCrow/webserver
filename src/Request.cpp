@@ -156,7 +156,11 @@ StatusCode Request::parseHeader(std::string line) {
         Log.debug(header.line.data() + std::string("    |    ") + to_string(header.hash));
         return BAD_REQUEST;
     }
-
+    
+    // if host already exists
+    if (header.hash == 3475444733 && _headers.find(header.hash) != _headers.end()) {
+        return BAD_REQUEST;
+    }
     // Copying here need to replace
     _headers.insert(std::make_pair(header.hash, header));
 
