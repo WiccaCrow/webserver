@@ -94,7 +94,7 @@ void Client::reply(void) {
         if (_req_getStatus == 408 || _req_getStatus == HTTP::PAYLOAD_TOO_LARGE)
             disconnect();
     } else if (_req_getStatus == 200) {
-        std::string pathHtml = "./pages/";
+        std::string pathHtml = "./pages/site/";
         if (_req.getPath() == "/")
             pathHtml += "index.html";
 
