@@ -2,26 +2,30 @@
 
 #include <Utils.hpp>
 #include <fstream>
+#include <sstream>
 #include <iostream>
 #include <map>
+// #include <vector>
 
 #include "StatusCodes.hpp"
 
 namespace HTTP {
 
 class Response {
-    std::string        _res;
-    bool               _responseFormed;
-    static std::string _bodyStyle;
+    std::string     _res;
+    bool            _responseFormed;
+    // static std::string          _bodyStyle;
 
     public:
     Response();
     ~Response() {}
 
-    static const std::map<int, const char *> _ErrorCode;
+    static const std::map<std::string, std::string>     _ContType;
+    static const std::map<int, const char *>            _ErrorCode;
 
-    const char *                       findErr(int nbErr);
-    static std::map<int, const char *> initErrorCode();
+    const char *                                findErr(int nbErr);
+    static std::map<int, const char *>          initErrorCode();
+    static std::map<std::string, std::string>   initContType();
 
     const char *getData(void) {
         std::string body = "<html><body> Hello from the other side! </body></html>";
@@ -64,6 +68,12 @@ class Response {
     // const char *    ErrorServ504(void);
     // const char *    ErrorServ505(void);
     const char *GETautoindexOn(std::string resourcePath);
+const char* GETautoindexOn_HtmlCss(std::string resourcePath);
+std::string GetContentType(std::string resourcePath);
+
+
+size_t  GetResSize();
+
 };
 
 }; // namespace HTTP
