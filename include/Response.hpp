@@ -10,7 +10,7 @@
 #include "StatusCodes.hpp"
 
 namespace HTTP {
-
+# define SIZE_FOR_CHUNKED 4096
 class Response {
     std::string     _res;
     bool            _responseFormed;
@@ -67,13 +67,12 @@ class Response {
     // const char *    ErrorServ503(void);
     // const char *    ErrorServ504(void);
     // const char *    ErrorServ505(void);
-    const char *GETautoindexOn(std::string resourcePath);
-const char* GETautoindexOn_HtmlCss(std::string resourcePath);
-std::string GetContentType(std::string resourcePath);
+    const char* GETautoindexOn(std::string resourcePath);
+    const char* GETautoindexOn_HtmlCss(std::string resourcePath);
+    std::string GetContentType(std::string resourcePath);
+    size_t  GetResSize();
 
-
-size_t  GetResSize();
-
+    void TransferEncodingChunked(std::string buffer, size_t bufSize);
 };
 
 }; // namespace HTTP

@@ -97,7 +97,6 @@ void Client::reply(void) {
         std::string pathHtml = "./pages/site/";
         if (_req.getPath() == "/")
             pathHtml += "index.html";
-
         else
             pathHtml += _req.getPath();
         response = _res.GETautoindexOn(pathHtml);

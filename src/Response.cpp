@@ -28,6 +28,20 @@ std::string HTTP::Response::GetContentType(std::string resourcePath)
     return (contType);
 }
 
+void HTTP::Response::TransferEncodingChunked(std::string buffer, size_t bufSize) {
+    size_t i = 0;
+    std::string sizeChunck = itoh(SIZE_FOR_CHUNKED) + "\r\n";
+    while (bufSize > i + SIZE_FOR_CHUNKED) {
+        _res += sizeChunck;
+        _res += buffer.substr(i, (size_t)SIZE_FOR_CHUNKED) + "\r\n";
+        i += SIZE_FOR_CHUNKED;
+    }
+    _res += itoh(bufSize - i) + "\r\n";
+    _res += buffer.substr(i, bufSize - i) + "\r\n"
+            "0\r\n\r\n";
+}
+
+
 // Errors:
 
 // const char *    ErrorCli406(void);
@@ -41,8 +55,7 @@ const char* HTTP::Response::GETautoindexOn(std::string resourcePath) {
         "HTTP/1.1 200 OK\r\n" + GetContentType(resourcePath);
     _res +=
         "connection: keep-alive\r\n"
-        "keep-Alive: timeout=55, max=1000\r\n"
-        "content-length: ";
+        "keep-Alive: timeout=55, max=1000\r\n";
 
     std::ifstream		resourceFile;
     std::stringstream	buffer;
@@ -55,8 +68,13 @@ const char* HTTP::Response::GETautoindexOn(std::string resourcePath) {
     if (bufSize == -1) {
         return (findErr(INTERNAL_SERVER_ERROR));
     }
-    _res += to_string(bufSize) + "\r\n\r\n";
-    _res += buffer.str();
+    if (bufSize > SIZE_FOR_CHUNKED) {
+        _res += "Transfer-Encoding: chunked\r\n\r\n";
+        TransferEncodingChunked(buffer.str(), bufSize);
+    } else {
+        _res += "content-length: " + to_string(bufSize) + "\r\n\r\n";
+        _res += buffer.str();
+    }
     resourceFile.close();
     return _res.c_str();
 }

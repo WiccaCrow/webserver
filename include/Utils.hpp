@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+std::string itoh(int nb);
 void trim(std::string &s, const char *t);
 void toLowerCase(std::string &s);
 void skipSpaces(const std::string &line, size_t &pos);
