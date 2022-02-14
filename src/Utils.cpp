@@ -74,3 +74,19 @@ std::string to_string(unsigned long val) {
 }
 
 #endif
+
+int		isFile(const std::string& fileName)
+{
+    struct stat buf;
+    if (stat(fileName.c_str(), &buf) == 0 ) {
+        if (buf.st_mode & S_IFREG)
+            return (0);
+        else if (buf.st_mode & S_IFDIR || buf.st_mode & S_IFLNK)
+            return (1);
+        else
+            return (2);
+    }
+    else {
+        return (-1);
+    }
+}

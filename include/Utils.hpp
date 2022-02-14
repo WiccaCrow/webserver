@@ -2,6 +2,10 @@
 
 #include <iostream>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 std::string itoh(int nb);
 void trim(std::string &s, const char *t);
 void toLowerCase(std::string &s);
@@ -19,3 +23,5 @@ std::string getWord_wicca(const std::string &line, char delimiter, size_t &pos);
 std::string to_string(int val);
 
 #endif
+
+int		isFile(const std::string& fileName);

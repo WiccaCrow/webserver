@@ -1,20 +1,20 @@
 #pragma once
 
 #include <Utils.hpp>
+#include <dirent.h>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <map>
-// #include <vector>
 
 #include "StatusCodes.hpp"
+#include "Request.hpp"
 
 namespace HTTP {
-# define SIZE_FOR_CHUNKED 4096
+// # define SIZE_FOR_CHUNKED 4096
 class Response {
     std::string     _res;
     bool            _responseFormed;
-    // static std::string          _bodyStyle;
 
     public:
     Response();
@@ -27,17 +27,17 @@ class Response {
     static std::map<int, const char *>          initErrorCode();
     static std::map<std::string, std::string>   initContType();
 
-    const char *getData(void) {
-        std::string body = "<html><body> Hello from the other side! </body></html>";
-        _res = "HTTP/1.1 200 OK\r\n";
-        _res += "Content-type: text/html; charset=utf-8\r\n";
-        _res += "Connection: keep-alive\r\n";
-        _res += "Keep-Alive: timeout=55, max=1000\r\n";
-        _res += "Content-length: " + to_string(body.length()) + "\r\n\r\n";
-        _res += body;
+    // const char *getData(void) {
+    //     std::string body = "<html><body> Hello from the other side! </body></html>";
+    //     _res = "HTTP/1.1 200 OK\r\n";
+    //     _res += "Content-type: text/html; charset=utf-8\r\n";
+    //     _res += "Connection: keep-alive\r\n";
+    //     _res += "Keep-Alive: timeout=55, max=1000\r\n";
+    //     _res += "Content-length: " + to_string(body.length()) + "\r\n\r\n";
+    //     _res += body;
 
-        return _res.c_str();
-    }
+    //     return _res.c_str();
+    // }
 
     bool isFormed() const {
         return _responseFormed;
@@ -46,33 +46,22 @@ class Response {
     void setFormed(bool formed) {
         _responseFormed = formed;
     }
-    static void SetBodyStyle();
     // Errors:
-    const char *ErrorCli400(void);
-    const char *ErrorCli404(std::string HTTPvers);
-    const char *ErrorCli405(std::string HTTPvers);
-    const char *ErrorCli408(std::string protocol);
-
+    // 400 404 405 408 411 413 414 415
+    // 500 501 502 504 505
     // const char *    ErrorCli406(void);
     // const char *    ErrorCli409(void);
     // const char *    ErrorCli410(void);
-    // const char *    ErrorCli411(void);
     // const char *    ErrorCli412(void); // ??
-    // const char *    ErrorCli413(void);
-    // const char *    ErrorCli414(void);
-    // const char *    ErrorCli415(void);
-
-    // const char *    ErrorServ500(void);
-    // const char *    ErrorServ502(void);
     // const char *    ErrorServ503(void);
-    // const char *    ErrorServ504(void);
-    // const char *    ErrorServ505(void);
-    const char* GETautoindexOn(std::string resourcePath);
-    const char* GETautoindexOn_HtmlCss(std::string resourcePath);
+    void        GETmethod(Request &req);
+    void        fileToResponse(std::string &resourcePath);
+    void        listToResponse(std::string &resourcePath, Request &req);
     std::string GetContentType(std::string resourcePath);
-    size_t  GetResSize();
+    size_t      GetResSize(void);
+    const char  *GetResponse(void);
 
-    void TransferEncodingChunked(std::string buffer, size_t bufSize);
+    // void        TransferEncodingChunked(std::string buffer, size_t bufSize);
 };
 
 }; // namespace HTTP

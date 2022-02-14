@@ -94,16 +94,15 @@ void Client::reply(void) {
         if (_req_getStatus == 408 || _req_getStatus == HTTP::PAYLOAD_TOO_LARGE)
             disconnect();
     } else if (_req_getStatus == 200) {
-        std::string pathHtml = "./pages/site/";
-        if (_req.getPath() == "/")
-            pathHtml += "index.html";
-        else
-            pathHtml += _req.getPath();
-        response = _res.GETautoindexOn(pathHtml);
+        _res.GETmethod(_req);
     }
-    const size_t responseLength = strlen(response);
-    // std::cout << responseLength << std::endl;
-    size_t       sentBytes = send(_pfd.fd, response, _res.GetResSize(), 0);
+    size_t       sentBytes = 0;
+    do {
+        sentBytes += send(_pfd.fd, _res.GetResponse(), _res.GetResSize(), 0);
+        if (sentBytes <= 0) {
+            disconnect();
+        }
+    } while (sentBytes < _res.GetResSize());
     _res.setFormed(false);
     _req.getMethod() = "";
     _req.getProtocol() = "";
@@ -118,17 +117,17 @@ void Client::reply(void) {
     // Most likely current function should return the value (or set some flag)
     // to the server class and it should disconnect the client
 
-    if (sentBytes < 0) {
-        disconnect();
-        // Error case
-    }
-    if (sentBytes == 0) {
-        disconnect();
-    }
-    if (sentBytes != responseLength) {
-        // Not all bytes were sent
-        // Chucked response or error
-    }
+    // if (sentBytes < 0) {
+    //     disconnect();
+    //     // Error case
+    // }
+    // if (sentBytes == 0) {
+    //     disconnect();
+    // }
+    // if (sentBytes != responseLength) {
+    //     // Not all bytes were sent
+    //     // Chucked response or error
+    // }
 }
 
 void Client::disconnect(void) {
