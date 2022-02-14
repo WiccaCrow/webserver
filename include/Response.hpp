@@ -14,6 +14,7 @@ namespace HTTP {
 // # define SIZE_FOR_CHUNKED 4096
 class Response {
     std::string     _res;
+    std::string     _resLeftToSend;    
     bool            _responseFormed;
 
     public:
@@ -60,6 +61,10 @@ class Response {
     std::string GetContentType(std::string resourcePath);
     size_t      GetResSize(void);
     const char  *GetResponse(void);
+    const char  *GetLeftToSend(void);
+    size_t      GetLeftToSendSize(void);
+    
+    void        SetLeftToSend(size_t n);
 
     // void        TransferEncodingChunked(std::string buffer, size_t bufSize);
 };

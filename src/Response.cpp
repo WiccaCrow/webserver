@@ -1,6 +1,7 @@
 #include "Response.hpp"
 
 HTTP::Response::Response() {
+    _responseFormed = false;
 }
 
 const char* HTTP::Response::findErr(int nbErr) {
@@ -165,4 +166,17 @@ const char * HTTP::Response::GetResponse() {
 
 size_t  HTTP::Response::GetResSize() {
     return (_res.size());
+}
+
+const char    *HTTP::Response::GetLeftToSend() {
+    return (_resLeftToSend.c_str());
+}
+
+void    HTTP::Response::SetLeftToSend(size_t n) {
+    _resLeftToSend = _res.substr(n);
+}
+
+
+size_t  HTTP::Response::GetLeftToSendSize() {
+    return (_resLeftToSend.size());
 }

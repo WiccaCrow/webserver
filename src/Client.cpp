@@ -98,7 +98,8 @@ void Client::reply(void) {
     }
     size_t       sentBytes = 0;
     do {
-        sentBytes += send(_pfd.fd, _res.GetResponse(), _res.GetResSize(), 0);
+        _res.SetLeftToSend(sentBytes);
+        sentBytes += send(_pfd.fd, _res.GetLeftToSend(), _res.GetLeftToSendSize(), 0);
         if (sentBytes <= 0) {
             disconnect();
         }
