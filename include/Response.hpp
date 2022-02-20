@@ -47,6 +47,11 @@ class Response {
     void setFormed(bool formed) {
         _responseFormed = formed;
     }
+
+    // void resetResponse() {
+    //     _res = "";
+    // }
+
     // Errors:
     // 400 404 405 408 411 413 414 415
     // 500 501 502 504 505
@@ -55,10 +60,18 @@ class Response {
     // const char *    ErrorCli410(void);
     // const char *    ErrorCli412(void); // ??
     // const char *    ErrorServ503(void);
+
+    std::string doCGI(Request &req);
+
+    void        HEADmethod(Request &req);
     void        GETmethod(Request &req);
-    void        fileToResponse(std::string &resourcePath);
-    void        listToResponse(std::string &resourcePath, Request &req);
+    std::string contentForGetHead(Request &req);
     std::string GetContentType(std::string resourcePath);
+    std::string fileToResponse(std::string &resourcePath);
+    std::string listToResponse(std::string &resourcePath, Request &req);
+
+    void        POSTmethod(Request &req);
+
     size_t      GetResSize(void);
     const char  *GetResponse(void);
     const char  *GetLeftToSend(void);
@@ -66,7 +79,7 @@ class Response {
     
     void        SetLeftToSend(size_t n);
 
-    // void        TransferEncodingChunked(std::string buffer, size_t bufSize);
+    // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);
 };
 
 }; // namespace HTTP

@@ -85,16 +85,29 @@ void Client::reply(void) {
     // определить размер данных, которые надо отправить
     // sendByte (по аналогии с recvServ) или sendSize
 
+// std::cout << "_req.getMethod()" << _req.getMethod() << std::endl;
+// getMethod() иногда возвращает неверный метод, так что хард код:
+// этот геттер будет закомментирован после строки 
+// } else if (_req_getStatus == 200) {
+
+// std::cout << << std::endl;
+// std::cout << << std::endl;
+
+
     // _req.getStatus() еще не написано, но уже обговорено.
     // это будет либо status в pubic у Request, либо геттер на него
     int         _req_getStatus = HTTP::OK;
-    const char* response;
     if (_req_getStatus >= 400) {
-        response = _res.findErr(_req_getStatus);
+        _res.findErr(_req_getStatus);
         if (_req_getStatus == 408 || _req_getStatus == HTTP::PAYLOAD_TOO_LARGE)
             disconnect();
     } else if (_req_getStatus == 200) {
-        _res.GETmethod(_req);
+        // if (_req.getMethod() == "HEAD")
+            _res.HEADmethod(_req);
+        // if (_req.getMethod() == "GET")
+            // _res.GETmethod(_req);
+        // else if (_req.getMethod() == "POST")
+            // _res.POSTmethod(_req);
     }
     size_t       sentBytes = 0;
     do {
@@ -110,6 +123,8 @@ void Client::reply(void) {
     _req.getPath() = "";
     _req.getFlags() = 0;
     _req.getHeaders().clear();
+
+    // _res.resetResponse();
 
     // если нет каких-то полей с указанием окончания отправки ответа,
     // клиент будет продолжать стоять в ожидании окончания ответа - POLLOUT

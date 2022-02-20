@@ -23,13 +23,35 @@ std::string HTTP::Response::GetContentType(std::string resourcePath)
                         contType += "; charset=utf-8";
                     }
                     contType += "\r\n";
-                }     
+                }
+            break ;
         }
     }
     return (contType);
 }
 
-// void HTTP::Response::TransferEncodingChunked(std::string buffer, size_t bufSize) {
+std::string         HTTP::Response::doCGI(Request &req) {
+    // две строки ниже убрать, когда будет использован в коде req
+    if (req.getMethod() != "")
+        ;
+    std::string body;
+    // раскомментировать, когда  будет готов глобальный объект для конфига
+    // добавить в объект конфига функцию, которая принимает строку с URI req.getPath(),
+    // которую будет сравнивать с map для cgi, например такой: map<окончание для url, путь к cgi> cgiMap;
+    // и возвращает std::string путь к cgi для принятия функцией
+    // executeCGI(необходимые параметры).
+    //      std::string путь к cgi = объект конфига  conf.cmpCGI(req.getPath());
+    //      if (путь к cgi != "") {
+    //          std::string resCGI = executeCGI(необходимые параметры);
+    //          _res += "content length: ";
+    //          _res += to_string(resCGI.length()) + "\r\n\r\n";
+    //          body = resCGI;
+    //      }
+    return (body);
+}
+
+
+// std::string HTTP::Response::TransferEncodingChunked(std::string buffer, size_t bufSize) {
 //     size_t i = 0;
 //     std::string sizeChunck = itoh(SIZE_FOR_CHUNKED) + "\r\n";
 //     while (bufSize > i + SIZE_FOR_CHUNKED) {
@@ -40,14 +62,15 @@ std::string HTTP::Response::GetContentType(std::string resourcePath)
 //     _res += itoh(bufSize - i) + "\r\n";
 //     _res += buffer.substr(i, bufSize - i) + "\r\n"
 //             "0\r\n\r\n";
+//     return ("");
 // }
 
-void HTTP::Response::fileToResponse(std::string &resourcePath) {
+std::string HTTP::Response::fileToResponse(std::string &resourcePath) {
     std::ifstream		resourceFile;
     resourceFile.open(resourcePath.c_str(), std::ifstream::in);
     if (!resourceFile.is_open()) {
         _res = findErr(NOT_FOUND);
-        return ;
+        return "";
     }
 
     std::stringstream	buffer;
@@ -55,19 +78,19 @@ void HTTP::Response::fileToResponse(std::string &resourcePath) {
     long bufSize = buffer.tellp();
     if (bufSize == -1) {
         _res = findErr(INTERNAL_SERVER_ERROR);
-        return ;
+        return "";
     }
+    resourceFile.close();
     // if (bufSize > SIZE_FOR_CHUNKED) {
     //     _res += "Transfer-Encoding: chunked\r\n\r\n";
-    //     TransferEncodingChunked(buffer.str(), bufSize);
+    //     return (TransferEncodingChunked(buffer.str(), bufSize));
     // } else {
     _res += "content-length: " + to_string(bufSize) + "\r\n\r\n";
-    _res += buffer.str();
+    return (buffer.str());
     // }
-    resourceFile.close();
 }
 
-void HTTP::Response::listToResponse(std::string &resourcePath, Request &req) {
+std::string HTTP::Response::listToResponse(std::string &resourcePath, Request &req) {
     std::string pathToDir;
     std::string body =     
         "<!DOCTYPE html>\n"
@@ -85,7 +108,7 @@ void HTTP::Response::listToResponse(std::string &resourcePath, Request &req) {
 	if (NULL == r_opndir)
 	{
         _res = findErr(INTERNAL_SERVER_ERROR);
-        return ;
+        return "";
 	}
 	else
 	{
@@ -94,7 +117,7 @@ void HTTP::Response::listToResponse(std::string &resourcePath, Request &req) {
         while (r_readdir) {
             if (NULL == r_readdir) {
                 _res = findErr(INTERNAL_SERVER_ERROR);
-                return ;
+                return "";
             }
 
             body += "   <a href=\"" + req.getPath();
@@ -111,10 +134,10 @@ void HTTP::Response::listToResponse(std::string &resourcePath, Request &req) {
 	}
 	closedir(r_opndir);
     _res += "content-length: " + to_string(body.length()) + "\r\n\r\n";
-    _res += body;
+    return (body);
 }
 
-void HTTP::Response::GETmethod(Request &req) {
+std::string HTTP::Response::contentForGetHead(Request &req) {
     // resourcePath (часть root) будет браться из конфига
     // root
     // если в конфиге без /, то добавить /,
@@ -132,7 +155,9 @@ void HTTP::Response::GETmethod(Request &req) {
     bool autoindex = false;
 
     _res =
-        "HTTP/1.1 200 OK\r\n";
+        "HTTP/1.1 200 OK\r\n"
+        "connection: keep-alive\r\n"
+        "keep-Alive: timeout=55, max=1000\r\n";
     if (autoindex == true && 1 == isFile(resourcePath)) {
         if (resourcePath[resourcePath.length() - 1] != '/') {
             resourcePath += "/";
@@ -144,20 +169,33 @@ void HTTP::Response::GETmethod(Request &req) {
     }
     int isItFile = isFile(resourcePath);
     if (0 == isItFile) {
-        _res +=
-            GetContentType(resourcePath) +
-            "connection: keep-alive\r\n"
-            "keep-Alive: timeout=55, max=1000\r\n";
-        fileToResponse(resourcePath);
+        std::string isCGI = doCGI(req);
+        if (isCGI != "") {
+            return (isCGI);
+        }
+        _res += GetContentType(resourcePath);
+        return (fileToResponse(resourcePath));
     } else if (autoindex == false && 1 == isItFile) {
-        _res +=
-            "content-type: text/html; charset=utf-8\r\n"
-            "connection: keep-alive\r\n"
-            "keep-Alive: timeout=55, max=1000\r\n";
-        listToResponse(resourcePath, req);
+        _res += "content-type: text/html; charset=utf-8\r\n";
+std::cout << "_res:" + _res << std::endl << std::endl;
+        return (listToResponse(resourcePath, req));
     } else {
         _res = findErr(NOT_FOUND);
+        return "";
     }
+}
+
+void HTTP::Response::GETmethod(Request &req) {
+    _res += contentForGetHead(req);
+}
+
+void HTTP::Response::HEADmethod(Request &req) {
+    contentForGetHead(req);
+}
+
+void HTTP::Response::POSTmethod(Request &req) {
+    if (req.getMethod()[0])
+        std::cout << "test text: you are in POST\n";
 }
 
 const char * HTTP::Response::GetResponse() {

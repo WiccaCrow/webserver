@@ -1663,6 +1663,7 @@ std::map<std::string, std::string>   HTTP::Response::initContType() {
     ContType.insert(std::make_pair("jls", "image/jls"));
     ContType.insert(std::make_pair("jp2", "image/jp2"));
     ContType.insert(std::make_pair("jpeg", "image/jpeg"));
+    ContType.insert(std::make_pair("jpg", "image/jpeg"));
     ContType.insert(std::make_pair("jph", "image/jph"));
     ContType.insert(std::make_pair("jphc", "image/jphc"));
     ContType.insert(std::make_pair("jpm", "image/jpm"));
