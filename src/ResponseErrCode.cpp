@@ -27,6 +27,28 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<title>Error 400 (Bad Request)</title>\n"
                               "<p><b>400.</b> That's an error.\n"
                               "<p><err_text>Invalid or illegal request.</err_text>"));
+    Err.insert(std::make_pair(FORBIDDEN,
+                              "HTTP/1.1 403 Forbidden\r\n"
+                              "Content-Type: text/html; charset=UTF-8\r\n"
+                              "Referrer-Policy: no-referrer\r\n"
+                              "Content-length: 573\r\n"
+                              "\r\n"
+                              "<!DOCTYPE html>\n"
+                              "<html lang=en>\n"
+                              "<meta charset=utf-8>\n"
+                              "<style>\n"
+                              "*{margin:0;padding:0}html{font:15px/22px arial,"
+                              "sans-serif}html{background:#fff;color:#222;"
+                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "390px;min-height:180px;padding:30px 0 15px}p"
+                              "{margin:11px 0 22px;overflow:hidden}err_text"
+                              "{color:#777;text-decoration:none}"
+                              "@media screen and (max-width:772px){body{background:none;"
+                              "margin-top:0;max-width:none;padding-right:0}}\n"
+                              "</style>\n"
+                              "<title>Error 403 (Forbidden)</title>\n"
+                              "<p><b>403.</b> Forbidden.\n"
+                              "<p><err_text>You may not have sufficient rights to perform the action..</err_text>"));
     Err.insert(std::make_pair(NOT_FOUND,
                               "HTTP/1.1 404 Not Found\r\n"
                               "Content-Type: text/html; charset=UTF-8\r\n"

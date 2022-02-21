@@ -137,18 +137,25 @@ std::string HTTP::Response::listToResponse(std::string &resourcePath, Request &r
     return (body);
 }
 
-std::string HTTP::Response::contentForGetHead(Request &req) {
-    // resourcePath (часть root) будет браться из конфига
-    // root
-    // если в конфиге без /, то добавить /,
-    // чтобы мне уже с этим приходило
+std::string HTTP::Response::resoursePathTaker(Request &req) {
     std::string resourcePath;
+    // если URI начинается с /
     if (req.getPath()[0] == '/') {
         resourcePath = "./pages/site";
     } else {
         resourcePath += "./pages/site/";
     }
+    // root из конфигурации + URI
     resourcePath += req.getPath();
+    return (resourcePath);
+}
+
+std::string HTTP::Response::contentForGetHead(Request &req) {
+    // resourcePath (часть root) будет браться из конфига
+    // root
+    // если в конфиге без /, то добавить /,
+    // чтобы мне уже с этим приходило
+    std::string resourcePath = resoursePathTaker(req);
     // req.getAutoindex();
     // bool autoindex будет из вышеуказанного геттера
     // bool autoindex = true;
@@ -196,6 +203,29 @@ void HTTP::Response::HEADmethod(Request &req) {
 void HTTP::Response::POSTmethod(Request &req) {
     if (req.getMethod()[0])
         std::cout << "test text: you are in POST\n";
+}
+
+void HTTP::Response::DELETEmethod(Request &req) {
+    std::string resourcePath = resoursePathTaker(req);
+    // чтобы не удалить чистовой сайт я временно добавляю следующую строку:
+    resourcePath += "test_empty/1111";
+
+    int isItFile = isFile(resourcePath);
+    if (isItFile == -1) {
+        _res = findErr(NOT_FOUND);
+        return ;
+    } else if (isItFile == 2 || std::remove(resourcePath.c_str())) {
+        _res = findErr(FORBIDDEN);
+        return ;
+    }
+    _res = 
+        "HTTP/1.1 200 OK\r\n"
+        "content-length: 60\r\n\r\n"
+        "<html>\n"
+        "  <body>\n"
+        "    <h1>File deleted.</h1>\n"
+        "  </body>\n"
+        "</html>";
 }
 
 const char * HTTP::Response::GetResponse() {

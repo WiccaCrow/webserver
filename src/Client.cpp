@@ -103,11 +103,13 @@ void Client::reply(void) {
             disconnect();
     } else if (_req_getStatus == 200) {
         // if (_req.getMethod() == "HEAD")
-            _res.HEADmethod(_req);
+            // _res.HEADmethod(_req);
         // if (_req.getMethod() == "GET")
-            // _res.GETmethod(_req);
-        // else if (_req.getMethod() == "POST")
+            _res.GETmethod(_req);
+        // if (_req.getMethod() == "POST")
             // _res.POSTmethod(_req);
+        // if (_req.getMethod() == "DELETE")
+            // _res.DELETEmethod(_req);
     }
     size_t       sentBytes = 0;
     do {

@@ -1,14 +1,15 @@
 #pragma once
 
 #include <Utils.hpp>
+#include <unistd.h>
 #include <dirent.h>
+#include <StatusCodes.hpp>
+#include <Request.hpp>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <map>
-
-#include "StatusCodes.hpp"
-#include "Request.hpp"
+#include <cstdio>
 
 namespace HTTP {
 // # define SIZE_FOR_CHUNKED 4096
@@ -53,7 +54,7 @@ class Response {
     // }
 
     // Errors:
-    // 400 404 405 408 411 413 414 415
+    // 400 403 404 405 408 411 413 414 415
     // 500 501 502 504 505
     // const char *    ErrorCli406(void);
     // const char *    ErrorCli409(void);
@@ -65,7 +66,9 @@ class Response {
 
     void        HEADmethod(Request &req);
     void        GETmethod(Request &req);
+    void        DELETEmethod(Request &req);
     std::string contentForGetHead(Request &req);
+    std::string resoursePathTaker(Request &req);
     std::string GetContentType(std::string resourcePath);
     std::string fileToResponse(std::string &resourcePath);
     std::string listToResponse(std::string &resourcePath, Request &req);

@@ -81,7 +81,7 @@ int		isFile(const std::string& fileName)
     if (stat(fileName.c_str(), &buf) == 0 ) {
         if (buf.st_mode & S_IFREG)
             return (0);
-        else if (buf.st_mode & S_IFDIR || buf.st_mode & S_IFLNK)
+        else if (buf.st_mode & S_IFDIR)
             return (1);
         else
             return (2);
