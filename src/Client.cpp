@@ -105,9 +105,9 @@ void Client::reply(void) {
         // if (_req.getMethod() == "HEAD")
             // _res.HEADmethod(_req);
         // if (_req.getMethod() == "GET")
-            _res.GETmethod(_req);
+            // _res.GETmethod(_req);
         // if (_req.getMethod() == "POST")
-            // _res.POSTmethod(_req);
+            _res.POSTmethod(_req);
         // if (_req.getMethod() == "DELETE")
             // _res.DELETEmethod(_req);
     }

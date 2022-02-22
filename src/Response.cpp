@@ -43,6 +43,18 @@ std::string         HTTP::Response::doCGI(Request &req) {
     //      std::string путь к cgi = объект конфига  conf.cmpCGI(req.getPath());
     //      if (путь к cgi != "") {
     //          std::string resCGI = executeCGI(необходимые параметры);
+    //
+    // _req.getStatus() еще не написано, но уже обговорено.
+    // это будет либо status в pubic у Request, либо геттер на него
+    // Используется также в reply  в Client.cpp
+    //      Внутри executeCGI(...) в случае ошибки, необходимо изменить значение 
+    //      этого кода, например написать для этого SetStatus(int statusCode) в Request
+    //          int _req_getStatus = HTTP::OK;
+    //          if (_req_getStatus >= 400) {
+    //              _res = "";
+    //              return (findErr(_req_getStatus));
+    //          }
+    //              
     //          _res += "content length: ";
     //          _res += to_string(resCGI.length()) + "\r\n\r\n";
     //          body = resCGI;
@@ -200,11 +212,6 @@ void HTTP::Response::HEADmethod(Request &req) {
     contentForGetHead(req);
 }
 
-void HTTP::Response::POSTmethod(Request &req) {
-    if (req.getMethod()[0])
-        std::cout << "test text: you are in POST\n";
-}
-
 void HTTP::Response::DELETEmethod(Request &req) {
     std::string resourcePath = resoursePathTaker(req);
     // чтобы не удалить чистовой сайт я временно добавляю следующую строку:
@@ -226,6 +233,13 @@ void HTTP::Response::DELETEmethod(Request &req) {
         "    <h1>File deleted.</h1>\n"
         "  </body>\n"
         "</html>";
+}
+
+void HTTP::Response::POSTmethod(Request &req) {
+    std::string isCGI = doCGI(req);
+    if (isCGI == "") {
+        _res = "HTTP/1.1 204 No Content\r\n\r\n";
+    }
 }
 
 const char * HTTP::Response::GetResponse() {
