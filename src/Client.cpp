@@ -91,8 +91,6 @@ void Client::reply(void) {
 // } else if (_req_getStatus == 200) {
 
 // std::cout << << std::endl;
-// std::cout << << std::endl;
-
 
     // _req.getStatus() еще не написано, но уже обговорено.
     // это будет либо status в pubic у Request, либо геттер на него
@@ -104,10 +102,10 @@ void Client::reply(void) {
     } else if (_req_getStatus == 200) {
         // if (_req.getMethod() == "HEAD")
             // _res.HEADmethod(_req);
-        // if (_req.getMethod() == "GET")
-            // _res.GETmethod(_req);
+        if (_req.getMethod() == "GET")
+            _res.GETmethod(_req);
         // if (_req.getMethod() == "POST")
-            _res.POSTmethod(_req);
+            // _res.POSTmethod(_req);
         // if (_req.getMethod() == "DELETE")
             // _res.DELETEmethod(_req);
     }
@@ -120,11 +118,7 @@ void Client::reply(void) {
         }
     } while (sentBytes < _res.GetResSize());
     _res.setFormed(false);
-    _req.getMethod() = "";
-    _req.getProtocol() = "";
-    _req.getPath() = "";
-    _req.getFlags() = 0;
-    _req.getHeaders().clear();
+    _req.clear();
 
     // _res.resetResponse();
 

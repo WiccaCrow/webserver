@@ -109,10 +109,12 @@ std::string HTTP::Response::listToResponse(std::string &resourcePath, Request &r
         "<html>\n"
         "   <head>\n"
         "       <meta charset=\"UTF-8\">\n"
-        "       <title> " + req.getPath() + " </title>\n"
+        "       <title> ";
+        body += req.getPath() + " </title>\n"
         "   </head>\n"
         "<body>\n"
-        "   <h1> Index of " + req.getPath() + " </h1>\n"
+        "   <h1> Index of ";
+        body += req.getPath() + " </h1>\n"
         "   <p>\n"
         "   <hr>\n";
     DIR *r_opndir;

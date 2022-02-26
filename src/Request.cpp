@@ -8,24 +8,48 @@ Request::Request() : _parseFlags(PARSED_NONE) {}
 
 Request::~Request() {}
 
-std::string &Request::getMethod() {
+const std::string &Request::getMethod() const {
     return _method;
 }
 
-std::string &Request::getPath() {
+const std::string &Request::getPath() const{
     return _path;
 }
 
-std::string &Request::getProtocol() {
+const std::string &Request::getProtocol() const {
     return _protocol;
 }
 
-std::map<uint32, Header> &Request::getHeaders() {
+const std::map<uint32, Header> &Request::getHeaders() const {
     return _headers;
 }
 
-std::string &Request::getBody() {
+const std::string &Request::getBody() const {
     return _body;
+}
+
+const uint8 &Request::getFlags() const {
+    return _parseFlags;
+}
+
+const HTTP::StatusCode &Request::getStatus() const {
+    return _status;
+}
+
+void Request::setFlag(uint8 flag) {
+    _parseFlags |= flag;
+}
+
+void Request::removeFlag(uint8 flag) {
+    _parseFlags &= ~flag;
+}
+
+void Request::clear() {
+    _method = "";
+    _protocol = "";
+    _path = "";
+    _parseFlags = 0;
+    _headers.clear();
 }
 
 StatusCode Request::parseLine(std::string line) {
@@ -113,18 +137,6 @@ StatusCode Request::isValidProtocol(const std::string &protocol) {
     if (protocol_valid == protocol)
         return CONTINUE;
     return HTTP_VERSION_NOT_SUPPORTED;
-}
-
-void Request::setFlag(uint8 flag) {
-    _parseFlags |= flag;
-}
-
-void Request::removeFlag(uint8 flag) {
-    _parseFlags &= ~flag;
-}
-
-uint8 &Request::getFlags() {
-    return _parseFlags;
 }
 
 StatusCode Request::parseHeader(std::string line) {
