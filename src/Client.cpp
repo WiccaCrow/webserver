@@ -81,33 +81,46 @@ void Client::reply(void) {
     if (_pfd.fd == -1) {
         return;
     }
-    std::cout << "res URI: " << _req.getPath() << std::endl;
+    // std::cout << "res URI: " << _req.getPath() << std::endl;
     // определить размер данных, которые надо отправить
     // sendByte (по аналогии с recvServ) или sendSize
 
+// std::cout << "_req.getMethod()" << _req.getMethod() << std::endl;
+// getMethod() иногда возвращает неверный метод, так что хард код:
+// этот геттер будет закомментирован после строки 
+// } else if (_req_getStatus == 200) {
+
+// std::cout << << std::endl;
+
     // _req.getStatus() еще не написано, но уже обговорено.
     // это будет либо status в pubic у Request, либо геттер на него
-    // int         _req_getStatus = HTTP::OK;
-    // const char* response;
-    // if (_req_getStatus >= 400) {
-    //     response = _res.findErr(_req_getStatus);
-    //     if (_req_getStatus == 408 || _req_getStatus == HTTP::PAYLOAD_TOO_LARGE)
-    //         disconnect();
-    // } else if (_req_getStatus == 200) {
-    //     std::cout << "res URI: " << _req.getPath() << std::endl;
-
-    //     response = _res.GETautoindexOn(_req.getPath());
-    //     // response = _res.getData();
-    // }
-    const size_t responseLength = strlen(_res.getData());
-    size_t       sentBytes = send(_pfd.fd, _res.getData(), responseLength, 0);
+    int         _req_getStatus = HTTP::OK;
+    if (_req_getStatus >= 400) {
+        _res.findErr(_req_getStatus);
+        if (_req_getStatus == 408 || _req_getStatus == HTTP::PAYLOAD_TOO_LARGE)
+            disconnect();
+    } else if (_req_getStatus == 200) {
+        // if (_req.getMethod() == "HEAD")
+            // _res.HEADmethod(_req);
+        if (_req.getMethod() == "GET")
+            _res.GETmethod(_req);
+        // if (_req.getMethod() == "POST")
+            // _res.POSTmethod(_req);
+        // if (_req.getMethod() == "DELETE")
+            // _res.DELETEmethod(_req);
+    }
+    size_t       sentBytes = 0;
+    do {
+        _res.SetLeftToSend(sentBytes);
+        sentBytes += send(_pfd.fd, _res.GetLeftToSend(), _res.GetLeftToSendSize(), 0);
+        if (sentBytes <= 0) {
+            disconnect();
+        }
+    } while (sentBytes < _res.GetResSize());
     _res.setFormed(false);
+    _req.clear();
 
-    _req.getMethod() = "";
-    _req.getProtocol() = "";
-    _req.getPath() = "";
-    _req.getFlags() = 0;
-    _req.getHeaders().clear();
+    // _res.resetResponse();
 
     // если нет каких-то полей с указанием окончания отправки ответа,
     // клиент будет продолжать стоять в ожидании окончания ответа - POLLOUT
@@ -116,17 +129,17 @@ void Client::reply(void) {
     // Most likely current function should return the value (or set some flag)
     // to the server class and it should disconnect the client
 
-    if (sentBytes < 0) {
-        disconnect();
-        // Error case
-    }
-    if (sentBytes == 0) {
-        disconnect();
-    }
-    if (sentBytes != responseLength) {
-        // Not all bytes were sent
-        // Chucked response or error
-    }
+    // if (sentBytes < 0) {
+    //     disconnect();
+    //     // Error case
+    // }
+    // if (sentBytes == 0) {
+    //     disconnect();
+    // }
+    // if (sentBytes != responseLength) {
+    //     // Not all bytes were sent
+    //     // Chucked response or error
+    // }
 }
 
 void Client::disconnect(void) {

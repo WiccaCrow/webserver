@@ -1,5 +1,20 @@
 #include "Utils.hpp"
 
+std::string itoh(int nb)
+{
+    std::string inhex;
+    for (int hexDig = nb % 16; nb; hexDig = nb % 16) {
+        if (hexDig > 9) {
+            hexDig += 'A' - 10;
+        } else {
+            hexDig += '0';
+        }
+        inhex = (char)hexDig + inhex;
+        nb /= 16;
+    }
+    return inhex;
+}
+
 static inline std::string& rtrim(std::string& s, const char* t) {
     s.erase(s.find_last_not_of(t) + 1);
     return s;
@@ -59,3 +74,19 @@ std::string to_string(unsigned long val) {
 }
 
 #endif
+
+int		isFile(const std::string& fileName)
+{
+    struct stat buf;
+    if (stat(fileName.c_str(), &buf) == 0 ) {
+        if (buf.st_mode & S_IFREG)
+            return (0);
+        else if (buf.st_mode & S_IFDIR)
+            return (1);
+        else
+            return (2);
+    }
+    else {
+        return (-1);
+    }
+}

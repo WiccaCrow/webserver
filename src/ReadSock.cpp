@@ -5,7 +5,7 @@ static const size_t MAX_PACKET_SIZE = 65536;
 #include <iostream>
 
 ReadSock::Status ReadSock::readSocket(int fd) {
-    char buf[MAX_PACKET_SIZE + 1];
+    char buf[MAX_PACKET_SIZE + 1] = {0};
 
     int recvBytes = recv(fd, buf, MAX_PACKET_SIZE, 0);
 

@@ -35,15 +35,17 @@ class Request {
     Request();
     ~Request();
 
-    std::string &             getMethod();
-    std::string &             getPath();
-    std::string &             getProtocol();
-    std::map<uint32, Header> &getHeaders();
-    std::string &             getBody();
-    uint8 &                   getFlags();
+    const std::string &             getMethod() const;
+    const std::string &             getPath() const ;
+    const std::string &             getProtocol() const ;
+    const std::map<uint32, Header> &getHeaders() const ;
+    const std::string &             getBody() const ;
+    const uint8 &                   getFlags() const ;
+    const HTTP::StatusCode &        getStatus() const ;
 
     void setFlag(uint8 flag);
     void removeFlag(uint8 flag);
+    void clear(void);
 
     StatusCode parseStartLine(const std::string &line);
     StatusCode parseHeader(std::string line);
