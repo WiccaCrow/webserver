@@ -81,42 +81,38 @@ void Client::reply(void) {
     if (_pfd.fd == -1) {
         return;
     }
-    // std::cout << "res URI: " << _req.getPath() << std::endl;
-    // определить размер данных, которые надо отправить
-    // sendByte (по аналогии с recvServ) или sendSize
-
-// std::cout << "_req.getMethod()" << _req.getMethod() << std::endl;
-// getMethod() иногда возвращает неверный метод, так что хард код:
-// этот геттер будет закомментирован после строки 
-// } else if (_req_getStatus == 200) {
 
 // std::cout << << std::endl;
 
     // _req.getStatus() еще не написано, но уже обговорено.
     // это будет либо status в pubic у Request, либо геттер на него
-    int         _req_getStatus = HTTP::OK;
-    if (_req_getStatus >= 400) {
-        _res.findErr(_req_getStatus);
-        if (_req_getStatus == 408 || _req_getStatus == HTTP::PAYLOAD_TOO_LARGE)
+    int         reqStatus = HTTP::OK;
+
+    // int         reqStatus = _req.getStatus();
+    // std::cout << "reply reqStatus: " << reqStatus << std::endl;
+
+    if (reqStatus >= 400) {
+        _res.getErr(reqStatus);
+        if (reqStatus == 408 || reqStatus == HTTP::PAYLOAD_TOO_LARGE)
             disconnect();
-    } else if (_req_getStatus == 200) {
-        // if (_req.getMethod() == "HEAD")
-            // _res.HEADmethod(_req);
+    } else if (reqStatus == 200) {
+        if (_req.getMethod() == "HEAD")
+            _res.HEADmethod(_req);
         if (_req.getMethod() == "GET")
             _res.GETmethod(_req);
-        // if (_req.getMethod() == "POST")
-            // _res.POSTmethod(_req);
-        // if (_req.getMethod() == "DELETE")
-            // _res.DELETEmethod(_req);
+        if (_req.getMethod() == "POST")
+            _res.POSTmethod(_req);
+        if (_req.getMethod() == "DELETE")
+            _res.DELETEmethod(_req);
     }
     size_t       sentBytes = 0;
     do {
         _res.SetLeftToSend(sentBytes);
-        sentBytes += send(_pfd.fd, _res.GetLeftToSend(), _res.GetLeftToSendSize(), 0);
+        sentBytes += send(_pfd.fd, _res.getLeftToSend(), _res.getLeftToSendSize(), 0);
         if (sentBytes <= 0) {
             disconnect();
         }
-    } while (sentBytes < _res.GetResSize());
+    } while (sentBytes < _res.getResSize());
     _res.setFormed(false);
     _req.clear();
 
