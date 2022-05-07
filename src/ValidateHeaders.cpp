@@ -33,6 +33,7 @@ static const uint32 headerHashes[] = {
     146921266,  // proxy-authorization
     2475121225, // range
     1440495237, // referer
+    1470906230, // transfer-encoding
     928136154,  // te
     2191772431, // user-agent
     3076944922, // upgrade
