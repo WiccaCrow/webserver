@@ -66,12 +66,13 @@ StatusCode Request::parseLine(std::string line) {
             return _status;
         }
     }
-    // else if (!(getFlags() & PARSED_BODY)) {
-    //     if ((_status = parseBody(line)) != HTTP::CONTINUE) {
-    //         Log.error("Request::parseLine, parsing Body");
-    //         return _status;
-    //     }
-    // }
+    else if (!(getFlags() & PARSED_BODY)) {
+        std::cout << "test PARSED_BODY \n";
+        if ((_status = parseBody(line)) != HTTP::CONTINUE) {
+            Log.error("Request::parseLine, parsing Body");
+            return _status;
+        }
+    }
     else {
         return PROCESSING;
     }
@@ -146,7 +147,9 @@ StatusCode Request::parseHeader(std::string line) {
         setFlag(PARSED_HEADERS);
         Log.debug("Headers were parsed");
 
-        return PROCESSING;
+        // return PROCESSING;
+        return CONTINUE;
+
     }
 
     Header header;
@@ -191,6 +194,9 @@ StatusCode Request::parseHeader(std::string line) {
 }
 
 StatusCode Request::parseBody(const std::string &line) {
+
+        return PROCESSING;
+
     // if transfer-encoding
     if (_headers.find(1470906230) != _headers.end()) {
         // parse chunked
@@ -203,6 +209,8 @@ StatusCode Request::parseBody(const std::string &line) {
     else {
         setFlag(PARSED_BODY);
     }
-    return ;
+    // return ;
+    return CONTINUE;
+
 }
 }; // namespace HTTP

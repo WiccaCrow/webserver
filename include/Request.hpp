@@ -16,7 +16,7 @@
 #define PARSED_NONE    0x0
 #define PARSED_SL      0x1
 #define PARSED_HEADERS 0x2
-#define PARSED_BODY    0x3
+#define PARSED_BODY    0x4
 
 namespace HTTP {
 
