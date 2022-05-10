@@ -64,7 +64,8 @@ void Client::receive(void) {
             }
 
             case ReadSock::LINE_FOUND: {
-                if (_req.parseLine(line) == HTTP::PROCESSING) {
+                _req.parseLine(line);
+                if (_req.getStatus() != HTTP::CONTINUE) {
                     _res.setFormed(true);
                     return;
                 }
@@ -78,48 +79,51 @@ void Client::receive(void) {
 }
 
 void Client::reply(void) {
+    // std::cout << "test 1 reply response : status: " << _req.getStatus() << std::endl;
     if (_pfd.fd == -1) {
         return;
     }
+    // std::cout << "test 2 reply response" << std::endl;
+
     // std::cout << "res URI: " << _req.getPath() << std::endl;
     // определить размер данных, которые надо отправить
     // sendByte (по аналогии с recvServ) или sendSize
 
-// std::cout << "_req.getMethod()" << _req.getMethod() << std::endl;
-// getMethod() иногда возвращает неверный метод, так что хард код:
-// этот геттер будет закомментирован после строки 
-// } else if (_req_getStatus == 200) {
-
 // std::cout << << std::endl;
 
-    // _req.getStatus() еще не написано, но уже обговорено.
-    // это будет либо status в pubic у Request, либо геттер на него
-    int         _req_getStatus = HTTP::OK;
-    if (_req_getStatus >= 400) {
+    int         _req_getStatus = _req.getStatus();
+    if (_req.getStatus() == HTTP::PROCESSING) {
+        _req_getStatus = HTTP::OK;
+    }
+    if (_req_getStatus >= HTTP::BAD_REQUEST) {
         _res.findErr(_req_getStatus);
+    // std::cout << "test 3 reply response " << _req_getStatus << std::endl;
         if (_req_getStatus == 408 || _req_getStatus == HTTP::PAYLOAD_TOO_LARGE)
             disconnect();
     } else if (_req_getStatus == 200) {
-        // if (_req.getMethod() == "HEAD")
-            // _res.HEADmethod(_req);
+        // std::cout << "test 4 reply response " << _req.getMethod() << std::endl;
+        if (_req.getMethod() == "HEAD")
+            _res.HEADmethod(_req);
         if (_req.getMethod() == "GET")
             _res.GETmethod(_req);
-        // if (_req.getMethod() == "POST")
-            // _res.POSTmethod(_req);
-        // if (_req.getMethod() == "DELETE")
-            // _res.DELETEmethod(_req);
+        if (_req.getMethod() == "POST")
+            _res.POSTmethod(_req);
+        if (_req.getMethod() == "DELETE")
+            _res.DELETEmethod(_req);
     }
     size_t       sentBytes = 0;
+    // std::cout << "test 5 reply response" << std::endl;
     do {
         _res.SetLeftToSend(sentBytes);
         sentBytes += send(_pfd.fd, _res.GetLeftToSend(), _res.GetLeftToSendSize(), 0);
-        if (sentBytes <= 0) {
+        if (sentBytes < 0) {
+            // std::cout << "Disconnect 3" << std::endl;
             disconnect();
         }
     } while (sentBytes < _res.GetResSize());
-    _res.setFormed(false);
+    _res.clear();
     _req.clear();
-
+    // std::cout << "test 6 reply response" << std::endl;
     // _res.resetResponse();
 
     // если нет каких-то полей с указанием окончания отправки ответа,

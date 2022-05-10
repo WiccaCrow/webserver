@@ -62,6 +62,8 @@ class Response {
     // const char *    ErrorCli412(void); // ??
     // const char *    ErrorServ503(void);
 
+    void        clear();
+
     std::string doCGI(Request &req);
 
     void        HEADmethod(Request &req);

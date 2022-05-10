@@ -28,6 +28,8 @@ class Request {
     std::map<uint32, Header> _headers;
     HTTP::StatusCode         _status;
 
+    bool        _isSizeChunk;
+    long        _sizeChunk;
     std::string _body;
     uint8       _parseFlags;
 
@@ -43,12 +45,15 @@ class Request {
     const uint8 &                   getFlags() const ;
     const HTTP::StatusCode &        getStatus() const ;
 
+    bool    empty();
+
     void setFlag(uint8 flag);
     void removeFlag(uint8 flag);
     void clear(void);
 
     StatusCode parseStartLine(const std::string &line);
     StatusCode parseHeader(std::string line);
+    StatusCode parseChunked(const std::string &line);
     StatusCode parseBody(const std::string &line);
     StatusCode parseLine(std::string line);
 

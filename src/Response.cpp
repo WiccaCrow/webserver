@@ -4,9 +4,16 @@ HTTP::Response::Response() {
     _responseFormed = false;
 }
 
+void    HTTP::Response::clear() {
+    _res.clear();
+    _resLeftToSend.clear();    
+    _responseFormed = false;
+}
+
 const char* HTTP::Response::findErr(int nbErr) {
     std::map<int, const char*>::const_iterator iter = _ErrorCode.find(nbErr);
-    return ((*iter).second);
+    _res = (*iter).second;
+    return (_res.c_str());
 }
 
 std::string HTTP::Response::GetContentType(std::string resourcePath)
