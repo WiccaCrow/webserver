@@ -52,11 +52,19 @@ $(NAME): $(OSOURCE)
 
 clean:
 	# $(MAKE) -C $(LIBJSONFOLDER) clean
-	rm -rf $(OSOURCEFOLDER)
+	rm -rf $(OSOURCEFOLDER) YoupiBanane
 
 fclean: clean
 	# $(MAKE) -C $(LIBJSONFOLDER) fclean
 	rm -rf $(NAME)
 
 re: fclean all
+
+# for tests
+
+YoupiBanane:
+				mkdir -p YoupiBanane/nop YoupiBanane/Yeah
+				touch ./YoupiBanane/youpi.bad_extension ./YoupiBanane/youpi.bla
+				touch ./YoupiBanane/nop/youpi.bad_extension ./YoupiBanane/nop/other.pouic
+				touch ./YoupiBanane/Yeah/not_happy.bad_extension
 

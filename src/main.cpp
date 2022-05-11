@@ -15,7 +15,8 @@ void checkArgs(int &ac, char **av) {
 //     return NULL;
 // }
 
-int main(int ac, char **av) {
+int main(int ac, char **av, char **env) {
+
     checkArgs(ac, av);
     // Conf::load(av[1]);
 
@@ -28,6 +29,7 @@ int main(int ac, char **av) {
     // other - permorm request and send res to main
 
     Server server;
+    server.env = env;
     server.addServerBlocks("127.0.0.1", 8080);
 
     server.start();
