@@ -103,11 +103,13 @@ StatusCode Request::parseLine(std::string line) {
 }
 
 StatusCode Request::parseStartLine(const std::string &line) {
+    if (line.empty()) {
+        return CONTINUE;
+    }
     size_t pos = 0;
-
     _method = getWord(line, ' ', pos);
     Log.debug("METHOD: " + _method);
-    if (!isValidMethod(_method)) {
+    if (isValidMethod(_method) == NOT_IMPLEMENTED) {
         Log.debug("Method is not implemented");
         return NOT_IMPLEMENTED;
     }
@@ -115,7 +117,7 @@ StatusCode Request::parseStartLine(const std::string &line) {
     skipSpaces(line, pos);
     _path = getWord(line, ' ', pos);
     Log.debug("PATH: " + _path);
-    if (!isValidPath(_path)) {
+    if (isValidPath(_path) == BAD_REQUEST) {
         Log.debug("Invalid URI");
         return BAD_REQUEST;
     }
@@ -129,7 +131,7 @@ StatusCode Request::parseStartLine(const std::string &line) {
         Log.debug("Forbidden symbols at the end of the line");
         return BAD_REQUEST;
     }
-    if (!isValidProtocol(_protocol)) {
+    if (isValidProtocol(_protocol) == HTTP_VERSION_NOT_SUPPORTED) {
         Log.debug("Protocol is not supported or invalid");
         // Or 505, need to improve
         return BAD_REQUEST;
@@ -169,10 +171,12 @@ StatusCode Request::parseHeader(std::string line) {
     if (line == "") {
         setFlag(PARSED_HEADERS);
         Log.debug("Headers were parsed");
-
-        // return PROCESSING;
+        // transfer-encoding && content-length not find
+        if (_headers.find(1470906230) == _headers.end() &&
+            _headers.find(314322716) == _headers.end()) {
+                return PROCESSING;
+        }
         return CONTINUE;
-
     }
 
     Header header;
