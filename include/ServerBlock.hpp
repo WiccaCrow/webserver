@@ -20,9 +20,9 @@ class ServerBlock {
     std::string         _addr;
     uint16_t            _port;
     int32_t             _servfd;
-    Location            _location_base;
-    std::map<std::string, Location> _locations;
-    std::list<std::pair<std::string, std::string>> _cgiPaths;
+    // Location            _location_base;
+    // std::map<std::string, Location> _locations;
+    std::list<std::pair<std::string, std::string> > _cgiPaths;
     std::string _root;
 
     // Methods

@@ -67,6 +67,7 @@ void Client::receive(void) {
                 _req.parseLine(line);
                 if (_req.getStatus() != HTTP::CONTINUE) {
                     _res.setFormed(true);
+                    _req.parseBody(line);
                     return;
                 }
                 break;

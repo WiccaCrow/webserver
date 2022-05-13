@@ -23,7 +23,8 @@
                 "CGI": {
                     ".js": "/etc/bin/node"
                 },
-                "autoindex": true
+                "autoindex": true,
+                "index": "index.html"
             },
             "/feedback": {
                 "autoindex": false

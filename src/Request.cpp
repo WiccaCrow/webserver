@@ -88,14 +88,14 @@ StatusCode Request::parseLine(std::string line) {
             return _status;
         }
     }
-    else if (!(getFlags() & PARSED_BODY)) {
-        // std::cout << "test PARSED_BODY \n";
-        if ((_status = parseBody(line)) != HTTP::CONTINUE) {
-            // std::cout << "test PARSED_BODY " << (int)_status << "\n";
-            Log.error("Request::parseLine, parsing Body");
-            return _status;
-        }
-    }
+    // else if (!(getFlags() & PARSED_BODY)) {
+    //     // std::cout << "test PARSED_BODY \n";
+    //     if ((_status = parseBody(line)) != HTTP::CONTINUE) {
+    //         // std::cout << "test PARSED_BODY " << (int)_status << "\n";
+    //         Log.error("Request::parseLine, parsing Body");
+    //         return _status;
+    //     }
+    // }
     else {
         return PROCESSING;
     }
@@ -221,6 +221,7 @@ StatusCode Request::parseHeader(std::string line) {
 }
 
 StatusCode Request::parseChunked(const std::string &line) {
+    // getline_for_body_req();
     if (_isSizeChunk) {
         if (line.empty() == true || 
             line.find_first_not_of("0123456789ABCDEFabcdef") != line.npos) {

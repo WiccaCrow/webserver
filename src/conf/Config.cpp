@@ -16,7 +16,7 @@ const std::vector<char>   tokens(tokensProto, tokensProto + sizeof(tokensProto))
 const std::vector<char *> keywords(keywordsProto, keywordsProto + keywordsCount);
 
 int Conf::processKeyword(Server &server, const std::string &keyword) {
-    if (keywords == "server") {
+    if (keyword == "server") {
         ServerBlock serverBlock;
 
         server.addServerBlocks(serverBlock);

@@ -53,3 +53,13 @@ ReadSock::Status ReadSock::getline(struct s_sock &sock, std::string &line) {
 
     return LINE_FOUND;
 }
+
+
+
+// Location /index.html {
+//     rewrite ^/oldURL$ https://www.your_domain.com/newURL redirect;
+// }
+// if (rewrite.empty() == false) {
+//     func();
+//     return 301;
+// }

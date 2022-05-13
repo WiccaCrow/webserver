@@ -11,9 +11,9 @@ private:
     std::string _path;
     std::string _root;
     bool _autoindex;
-    std::list<std::pair<std::string, std::string>> _cgiPaths;
+    std::list<std::pair<std::string, std::string> > _cgiPaths;
 
 public:
-    Location();
-    ~Location();
+    Location() {}
+    ~Location() {}
 };
