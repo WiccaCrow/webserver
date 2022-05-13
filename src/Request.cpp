@@ -88,16 +88,16 @@ StatusCode Request::parseLine(std::string line) {
             return _status;
         }
     }
-    // else if (!(getFlags() & PARSED_BODY)) {
-    //     // std::cout << "test PARSED_BODY \n";
-    //     if ((_status = parseBody(line)) != HTTP::CONTINUE) {
-    //         // std::cout << "test PARSED_BODY " << (int)_status << "\n";
-    //         Log.error("Request::parseLine, parsing Body");
-    //         return _status;
-    //     }
-    // }
+    else if (!(getFlags() & PARSED_BODY)) {
+        std::cout << "test PARSED_BODY \n";
+        if ((_status = parseBody(line)) != HTTP::CONTINUE) {
+            // std::cout << "test PARSED_BODY " << (int)_status << "\n";
+            Log.error("Request::parseLine, parsing Body");
+            return _status;
+        }
+    }
     else {
-        return PROCESSING;
+        return (_status = PROCESSING);
     }
     return CONTINUE;
 }

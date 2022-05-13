@@ -44,9 +44,16 @@ void Client::receive(void) {
 
     // _responseFormed = 1;
     struct s_sock s = {_pfd.fd, ReadSock::PERM_READ};
+    ReadSock::Status stat;
     while (true) {
         line = "";
-        ReadSock::Status stat = _reader.getline(s, line);
+        // if ( !(_req.getFlags() & PARSED_HEADERS) || !(_req.getFlags() & PARSED_SL) ) {
+            stat = _reader.getline(s, line);
+        // }
+        // else {
+        //     std::cout << "test getline_for_chunked" << std::endl;
+        //     stat = _reader.getline_for_chunked(s, line);
+        // }
         Log.debug(line);
         switch (stat) {
             case ReadSock::RECV_END:
@@ -65,9 +72,11 @@ void Client::receive(void) {
 
             case ReadSock::LINE_FOUND: {
                 _req.parseLine(line);
+                    std::cout << "test status " << _req.getStatus() << std::endl;
                 if (_req.getStatus() != HTTP::CONTINUE) {
                     _res.setFormed(true);
-                    _req.parseBody(line);
+                    std::cout << "test\n";
+                    // _req.parseBody(line);
                     return;
                 }
                 break;

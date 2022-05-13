@@ -32,6 +32,8 @@ class ReadSock {
 
     public:
     Status getline(struct s_sock &sock, std::string &line);
+    Status getline_for_chunked(struct s_sock &sock, std::string &line);
+    
 };
 
 // Where should I put this ... ?
