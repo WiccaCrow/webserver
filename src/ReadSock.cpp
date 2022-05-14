@@ -24,7 +24,8 @@ ReadSock::Status ReadSock::readSocket(int fd) {
     }
 }
 
-ReadSock::Status ReadSock::getline_for_chunked(struct s_sock &sock, std::string &line) {
+ReadSock::Status ReadSock::getline_for_chunked(struct s_sock &sock, std::string &line,
+                                                HTTP::Request &req) {
     int fd = sock.fd;
     if (fd < 0) {
         return INVALID_FD;
@@ -44,7 +45,7 @@ ReadSock::Status ReadSock::getline_for_chunked(struct s_sock &sock, std::string 
     }
 
     size_t pos = _rems[fd].find("\r\n");
-    if (pos == std::string::npos) {
+    if (pos == std::string::npos && ) {
         return LINE_NOT_FOUND;
     }
 

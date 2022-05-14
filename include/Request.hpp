@@ -61,6 +61,14 @@ class Request {
     StatusCode isValidMethod(const std::string &method);
     StatusCode isValidPath(const std::string &path);
     StatusCode isValidProtocol(const std::string &protocol);
+
+
+
+    // for chunked
+    bool        getChunked_isSizeChunk();
+    void        setChunked_isSizeChunk(bool isSize);
+
+
 };
 
 }; // namespace HTTP

@@ -271,4 +271,14 @@ StatusCode Request::parseBody(const std::string &line) {
     return CONTINUE;
 
 }
+
+// for chunked
+bool        Request::getChunked_isSizeChunk() {
+    return (_isSizeChunk);
+}
+
+void        Request::setChunked_isSizeChunk(bool isSize) {
+    _isSizeChunk = isSize;
+}
+
 }; // namespace HTTP

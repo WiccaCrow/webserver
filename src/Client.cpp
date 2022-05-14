@@ -47,13 +47,13 @@ void Client::receive(void) {
     ReadSock::Status stat;
     while (true) {
         line = "";
-        // if ( !(_req.getFlags() & PARSED_HEADERS) || !(_req.getFlags() & PARSED_SL) ) {
+        if ( !(_req.getFlags() & PARSED_HEADERS) || !(_req.getFlags() & PARSED_SL) ) {
             stat = _reader.getline(s, line);
-        // }
-        // else {
-        //     std::cout << "test getline_for_chunked" << std::endl;
-        //     stat = _reader.getline_for_chunked(s, line);
-        // }
+        }
+        else {
+            std::cout << "test getline_for_chunked" << std::endl;
+            stat = _reader.getline_for_chunked(s, line, _req);
+        }
         Log.debug(line);
         switch (stat) {
             case ReadSock::RECV_END:
