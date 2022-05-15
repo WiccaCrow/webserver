@@ -224,6 +224,7 @@ StatusCode Request::parseChunked(const std::string &line) {
         if (line.empty() == true ||
             line.find_first_not_of("0123456789ABCDEFabcdef") != line.npos) {
             // bad chunk length
+            _isSizeChunk = false;
             return (BAD_REQUEST);
         }
         std::string chunk(line.c_str());
@@ -239,15 +240,13 @@ StatusCode Request::parseChunked(const std::string &line) {
         return (CONTINUE);
     }
 
-    // if (line.length() > _sizeChunk) {
-    //     // bad chunk body
-    //     return (BAD_REQUEST);
-    // }
+    _isSizeChunk = true;
+    if (line.length() > _sizeChunk) {
+        // bad chunk body
+        return (BAD_REQUEST);
+    }
+    _sizeChunk = 0;
     _body += line;
-    // _sizeChunk -= line.length();
-    // if (_sizeChunk == 0) {
-    //     _isSizeChunk = true;
-    // }
     return (CONTINUE);
 }
 
@@ -283,6 +282,10 @@ long Request::getChunked_Size() {
 }
 void Request::setChunked_Size(long size) {
     _sizeChunk = size;
+}
+
+void Request::setStatus(const HTTP::StatusCode &status) {
+    _status = status;
 }
 
 }; // namespace HTTP

@@ -24,26 +24,6 @@ ReadSock::Status ReadSock::readSocket(int fd) {
     }
 }
 
-// ReadSock::Status ReadSock::readSocket_chunked(int fd) {
-//     char buf[MAX_PACKET_SIZE + 1] = {0};
-//
-//     int recvBytes = recv(fd, buf, MAX_PACKET_SIZE, 0);
-//
-//     if (recvBytes < 0) {
-//         //_rems.erase(fd); // Not needed with nonblocking sockets
-//         return RECV_END_NB;
-//
-//     } else if (recvBytes == 0) {
-//         _rems.erase(fd);
-//         return RECV_END;
-//
-//     } else {
-//         buf[recvBytes + 1] = '\0';
-//         _rems[fd] += buf;
-//         return RECV_DONE;
-//     }
-// }
-
 int ReadSock::readSocket_for_chunked(struct s_sock &sock, int fd) {
     if (sock.perm & PERM_READ) {
         ReadSock::Status status = readSocket(fd);
@@ -64,13 +44,15 @@ ReadSock::Status ReadSock::getline_for_chunked(struct s_sock &sock, std::string 
         return INVALID_FD;
     }
 
-    if (!readSocket_for_chunked(sock, fd)) {
-        return ReadSock::RECV_END;
-    }
-
     if (req.getChunked_isSizeChunk()) {
+        if (!readSocket_for_chunked(sock, fd)) {
+            return ReadSock::RECV_END;
+        }
         size_t pos = _rems[fd].find("\r\n");
         if (pos == std::string::npos) {
+            req.setStatus(HTTP::BAD_REQUEST);
+            _rems[fd].clear();
+            // req.setFlag(PARSED_BODY);
             return LINE_NOT_FOUND;
         }
         line = _rems[fd].substr(0, pos);
@@ -78,32 +60,25 @@ ReadSock::Status ReadSock::getline_for_chunked(struct s_sock &sock, std::string 
         return LINE_FOUND;
     } else {
         long chunkSize = req.getChunked_Size();
-        std::cout << chunkSize << "test getline chunked body 1 " << _rems[fd].length() << std::endl;
+        // std::cout << chunkSize << " test getline chunked body 1 " << _rems[fd].length() << std::endl;
         size_t remsLength = _rems[fd].length();
-        for (; remsLength <= chunkSize + 2;
-             remsLength += _rems[fd].length()) {
-            // std::cout << "test getline chunked body " << remsLength << std::endl;
-
-            line = _rems[fd];
-            _rems[fd].clear();
+        while (remsLength < chunkSize + 2) {
             if (!readSocket_for_chunked(sock, fd)) {
                 return ReadSock::RECV_END;
             }
+            remsLength = _rems[fd].length();
         }
-        std::cout << "test getline chunked body 2 " << std::endl;
-        if (_rems[fd][_rems[fd].length() - (remsLength - req.getChunked_Size())] == '\n') {
-            std::cout << "test n" << std::endl;
-        } else if (_rems[fd][_rems[fd].length() - (remsLength - req.getChunked_Size()) - 1] == '\r') {
-            std::cout << "test r" << std::endl;
-        }
+        // std::cout << "test getline chunked body 2 " << std::endl;
 
         if (_rems[fd][chunkSize] != '\r' &&
             _rems[fd][chunkSize + 1] != '\n') {
-            return LINE_NOT_FOUND;
+            // std::cout << "test getline chunked body BAD_REQUEST " << std::endl;
+            line = _rems[fd].substr(0, chunkSize + 2);
+            _rems[fd].clear();
+        } else {
+            _rems[fd].erase(0, chunkSize + 2);
+            line = _rems[fd].substr(0, chunkSize);
         }
-        line = _rems[fd].substr(0, chunkSize);
-        req.setChunked_isSizeChunk(true);
-        req.setChunked_Size(0);
     }
 
     return LINE_FOUND;

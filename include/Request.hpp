@@ -68,6 +68,8 @@ class Request {
     void setChunked_isSizeChunk(bool isSize);
     long getChunked_Size();
     void setChunked_Size(long size);
+    void setStatus(const HTTP::StatusCode &status);
+
 };
 
 }; // namespace HTTP
