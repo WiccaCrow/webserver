@@ -37,15 +37,15 @@ class Request {
     Request();
     ~Request();
 
-    const std::string &             getMethod() const;
-    const std::string &             getPath() const ;
-    const std::string &             getProtocol() const ;
-    const std::map<uint32, Header> &getHeaders() const ;
-    const std::string &             getBody() const ;
-    const uint8 &                   getFlags() const ;
-    const HTTP::StatusCode &        getStatus() const ;
+    const std::string              &getMethod() const;
+    const std::string              &getPath() const;
+    const std::string              &getProtocol() const;
+    const std::map<uint32, Header> &getHeaders() const;
+    const std::string              &getBody() const;
+    const uint8                    &getFlags() const;
+    const HTTP::StatusCode         &getStatus() const;
 
-    bool    empty();
+    bool empty();
 
     void setFlag(uint8 flag);
     void removeFlag(uint8 flag);
@@ -62,13 +62,12 @@ class Request {
     StatusCode isValidPath(const std::string &path);
     StatusCode isValidProtocol(const std::string &protocol);
 
-
-
+    public:
     // for chunked
-    bool        getChunked_isSizeChunk();
-    void        setChunked_isSizeChunk(bool isSize);
-
-
+    bool getChunked_isSizeChunk();
+    void setChunked_isSizeChunk(bool isSize);
+    long getChunked_Size();
+    void setChunked_Size(long size);
 };
 
 }; // namespace HTTP
