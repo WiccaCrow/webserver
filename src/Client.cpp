@@ -52,7 +52,6 @@ void Client::receive(void) {
         }
         else {
             stat = _reader.getline_for_chunked(s, line, _req);
-            std::cout << "test getline_for_chunked" << std::endl;
         }
         Log.debug(line);
         switch (stat) {
@@ -72,11 +71,8 @@ void Client::receive(void) {
 
             case ReadSock::LINE_FOUND: {
                 _req.parseLine(line);
-                std::cout << "test status " << _req.getStatus() << std::endl;
                 if (_req.getStatus() != HTTP::CONTINUE) {
                     _res.setFormed(true);
-                    std::cout << "test\n";
-                    // _req.parseBody(line);
                     return;
                 }
                 break;
@@ -89,7 +85,6 @@ void Client::receive(void) {
 }
 
 void Client::reply(void) {
-    // std::cout << "test 1 reply response : status: " << _req.getStatus() << std::endl;
     if (_pfd.fd == -1) {
         return;
     }
@@ -102,14 +97,12 @@ void Client::reply(void) {
     // std::cout << << std::endl;
 
     int _req_getStatus = _req.getStatus();
-    std::cout << "test 1 reply response " << _req_getStatus << std::endl;
+    // std::cout << "test 1 reply response " << _req_getStatus << std::endl;
     if (_req.getStatus() == HTTP::PROCESSING) {
         _req_getStatus = HTTP::OK;
     }
     if (_req_getStatus >= HTTP::BAD_REQUEST) {
         _res.findErr(_req_getStatus);
-        if (_req_getStatus == 408 || _req_getStatus == HTTP::PAYLOAD_TOO_LARGE)
-            disconnect();
     } else if (_req_getStatus == 200) {
         // std::cout << "test 4 reply response " << _req.getMethod() << std::endl;
         if (_req.getMethod() == "HEAD")
@@ -133,6 +126,12 @@ void Client::reply(void) {
     } while (sentBytes < _res.GetResSize());
     _res.clear();
     _req.clear();
+
+    if (_req_getStatus == HTTP::BAD_REQUEST ||
+        _req_getStatus == HTTP::REQUEST_TIMEOUT || 
+        _req_getStatus == HTTP::PAYLOAD_TOO_LARGE) {
+        disconnect();
+    }
     // std::cout << "test 6 reply response" << std::endl;
     // _res.resetResponse();
 
