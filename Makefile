@@ -3,8 +3,8 @@
 NAME 			= 	serv
 
 CXX             =   clang++
-CPPFLAGS        =   -g -std=c++98
-# CPPFLAGS       =   -Wall -Wextra -Werror -g -std=c++98
+CPPFLAGS        =   -g -fstandalone-debug -std=c++98
+# CPPFLAGS        =   -Wall -Wextra -Werror -g -std=c++98
 # CPPFLAGS       =   -Wall -Wextra -Werror -g -Wpedantic -std=c++98
 
 SOURCEFILES     =	main.cpp \
