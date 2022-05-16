@@ -53,8 +53,8 @@ class Server {
 
     // Get and show atributs
 
-    void addServerBlocks(ServerBlock &servBlock);
-    void addServerBlocks(const std::string &ipaddr, const uint16_t port);
+    void addServerBlock(ServerBlock &servBlock);
+    void addServerBlock(const std::string &ipaddr, const uint16_t port);
 
     void start(void);
     void pollServ(void);

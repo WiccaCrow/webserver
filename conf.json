@@ -1,33 +1,42 @@
 {
-    "error_pages": {
-        "404": "./pages/404.html",
-        "400": "./pages/400.html"
-    },
-    "server": {
-        "port": 80,
-        "server_name": "localhost", 
-        
-        "root": "/var/www",
-        "CGI": {
-            ".py": "/etc/bin/python",
-            ".php": "/etc/bin/phpfpm"
-        },
-        "method-allowed": "GET POST",
-        "max-body-size": {
-            "GET": "100",
-            "POST": "200"
-        },
-        "locations": {
-            "/about": {   
-                "root": "/var/123/",
-                "CGI": {
-                    ".js": "/etc/bin/node"
-                },
-                "autoindex": true,
-                "index": "index.html"
+    "servers": {
+        "http": {
+            "port": 8080,
+            "server_name": "localhost", 
+            "error_pages": {
+                "404": "./pages/404.html",
+                "400": "./pages/400.html"
             },
-            "/feedback": {
-                "autoindex": false
+            "root": "/var/www",
+            "CGI": {
+                ".py": "/etc/bin/python",
+                ".php": "/etc/bin/phpfpm"
+            },
+            "methods-allowed": "GET POST",
+            "post_max_body": 200,
+            "autoindex": true,
+            "index": "index.html",
+            "locations": {
+                "/about": {   
+                    "root": "/var/123/",
+                    "CGI": {
+                        ".js": "/etc/bin/node"
+                    },
+                    "autoindex": true,
+                    "index": "index.html",
+                    "post_max_body": 200,
+                    "methods-allowed": "GET POST"
+                },
+                "/feedback": {
+                    "root": "/var/123/",
+                    "CGI": {
+                        ".js": "/etc/bin/node"
+                    },
+                    "autoindex": false,
+                    "index": "index.html",
+                    "methods-allowed": "GET",
+                    "post_max_body": 300
+                }
             }
         }
     }
