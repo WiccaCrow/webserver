@@ -76,8 +76,8 @@ ReadSock::Status ReadSock::getline_for_chunked(struct s_sock &sock, std::string 
             line = _rems[fd].substr(0, chunkSize + 2);
             _rems[fd].clear();
         } else {
-            _rems[fd].erase(0, chunkSize + 2);
             line = _rems[fd].substr(0, chunkSize);
+            _rems[fd].erase(0, chunkSize + 2);
         }
     }
 
