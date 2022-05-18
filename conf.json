@@ -12,10 +12,10 @@
                 ".py": "/etc/bin/python",
                 ".php": "/etc/bin/phpfpm"
             },
-            "methods-allowed": "GET POST",
-            "post_max_body": 200,
+            "methods-allowed": [ "GET", "POST" ], 
+            "post_max_body": -100,
             "autoindex": true,
-            "index": "index.html",
+            "index": [ "index.html" ],
             "locations": {
                 "/about": {   
                     "root": "/var/123/",
@@ -23,18 +23,18 @@
                         ".js": "/etc/bin/node"
                     },
                     "autoindex": true,
-                    "index": "index.html",
+                    "index": [ "index.php" ],
                     "post_max_body": 200,
-                    "methods-allowed": "GET POST"
+                    "methods-allowed": [ "GET", "POST" ]                 
                 },
                 "/feedback": {
-                    "root": "/var/123/",
+                    "root": "/var/456/",
                     "CGI": {
                         ".js": "/etc/bin/node"
                     },
                     "autoindex": false,
-                    "index": "index.html",
-                    "methods-allowed": "GET",
+                    "index": [ "index.html", "index.php" ],
+                    "methods-allowed": [ "GET" ],
                     "post_max_body": 300
                 }
             }

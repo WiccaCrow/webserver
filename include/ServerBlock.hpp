@@ -17,20 +17,15 @@
 class ServerBlock {
     private:
     // Variables
+    std::string         _blockname;
     std::string         _addr;
     int                 _port;
     int32_t             _servfd;
     std::string         _server_name;
-    std::map<int, std::string> _errorPagesPaths;
-
     
-    std::string         _root;
-    int                 _post_max_body;
     Location            _locationBase;
-    std::map<std::string, std::string> _cgiPaths;
+    std::map<int, std::string> _errorPagesPaths;
     std::map<std::string, Location> _locations;
-    std::vector<std::string> _allowedMethods;
-    std::vector<std::string> _index;
 
     // Methods
     void createSock(void);
@@ -50,23 +45,17 @@ class ServerBlock {
 
     // Set atributs
     void setAddr(const std::string &);
+    void setBlockname(const std::string &);
 
     // Get and show atributs
     int getServFd(void);
+    std::string &getAddrRef(void);
 
     int &getPortRef(void);
-    std::string &getServerNameRef(void);
-    std::map<std::string, Location> &getLocationsRef(void);
     Location &getLocationBaseRef(void);
+    std::string &getServerNameRef(void);
     std::map<int, std::string> &getErrPathsRef(void);
-
-
-    // std::string &getRootRef(void);
-    // int &getPostMaxBodyRef(void);
-    // std::map<std::string, std::string> &getCGIPathsRef(void);
-    // std::vector<std::string> &getAllowedMethodsRef(void);
-    // std::vector<std::string> &getIndexRef(void);
-    // bool &getAutoindexRef(void);
+    std::map<std::string, Location> &getLocationsRef(void);
 
     // other methods
     void createListenSock();

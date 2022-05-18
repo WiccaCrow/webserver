@@ -5,10 +5,10 @@
 
 Server *loadConfig(const string filename);
 
-int checkInt(double &num);
-int checkUInt(double &num);
+int isInteger(double &num);
+int isUInteger(double &num);
 
-int getUintField(JSON::Object *src, const std::string &key, int &value);
+int getUIntegerField(JSON::Object *src, const std::string &key, int &value);
 int getStringField(JSON::Object *src, const std::string &key, std::string &value);
 int getBooleanField(JSON::Object *src, const std::string &key, bool &value);
 

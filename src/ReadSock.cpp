@@ -87,9 +87,9 @@ ReadSock::Status ReadSock::getline(struct s_sock &sock, std::string &line) {
     }
 
     if (sock.perm & PERM_READ) {
-        Log.debug("Readsock:34, before readSocket");
+        Log.debug("before readSocket");
         ReadSock::Status status = readSocket(fd);
-        Log.debug("Readsock:36, after readSocket");
+        Log.debug("after readSocket");
 
         if (status == ReadSock::RECV_END) {
             return status; // ???
@@ -109,11 +109,3 @@ ReadSock::Status ReadSock::getline(struct s_sock &sock, std::string &line) {
 
     return LINE_FOUND;
 }
-
-// Location /index.html {
-//     rewrite ^/oldURL$ https://www.your_domain.com/newURL redirect;
-// }
-// if (rewrite.empty() == false) {
-//     func();
-//     return 301;
-// }

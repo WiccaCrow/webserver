@@ -76,6 +76,14 @@ void ServerBlock::setAddr(const std::string &ipaddr) {
     this->_addr = ipaddr;
 }
 
+void ServerBlock::setBlockname(const std::string &blockname) {
+    this->_blockname = blockname;
+}
+
+std::string &ServerBlock::getAddrRef(void) {
+    return _addr;
+}
+
 std::string &ServerBlock::getServerNameRef(void) {
     return _server_name;
 }

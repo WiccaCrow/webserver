@@ -45,7 +45,8 @@ $(OSOURCEFOLDER)%.o: $(SOURCEFOLDER)%.cpp
 	$(CXX) $(CPPFLAGS) -c $< -o $@ -I $(INCLUDEFOLDER) -I $(LIBJSONINCLUDE)
 
 libjson:
-	@if ! [ "$(ls $(LIBJSONFOLDER))" ] ; then git submodule update --init; fi
+# --remote takes the last commit ?
+	@if ! [ "$(ls $(LIBJSONFOLDER))" ] ; then git submodule update --remote; fi
 	$(MAKE) -C $(LIBJSONFOLDER) all
 
 $(NAME): $(OSOURCE)
