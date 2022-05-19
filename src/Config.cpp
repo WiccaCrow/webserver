@@ -5,41 +5,51 @@ int isInteger(double &num) {
 }
 
 int isUInteger(double &num) {
-    return (isInteger(num) && num >= 0); 
+    return (isInteger(num) && num >= 0);
 }
 
 std::string getDataTypeName(ExpectedType type) {
     switch (type) {
-        case ARRAY : return "array";
-        case NUMBER : return "number";
-        case OBJECT : return "object";
-        case STRING : return "string"; 
-        case BOOLEAN : return "boolean";
-        default: return "unknown";
+        case ARRAY:
+            return "array";
+        case NUMBER:
+            return "number";
+        case OBJECT:
+            return "object";
+        case STRING:
+            return "string";
+        case BOOLEAN:
+            return "boolean";
+        default:
+            return "unknown";
     }
 }
 
-int typeExpected(JSON::AType *ptr, ExpectedType type) {    
+int typeExpected(JSON::AType *ptr, ExpectedType type) {
     switch (type) {
-        case STRING : return ptr->isStr();
-        case BOOLEAN : return ptr->isBool();
-        case NUMBER : return ptr->isNum();
-        case OBJECT : return ptr->isObj();
-        case ARRAY : return ptr->isArr();
+        case STRING:
+            return ptr->isStr();
+        case BOOLEAN:
+            return ptr->isBool();
+        case NUMBER:
+            return ptr->isNum();
+        case OBJECT:
+            return ptr->isObj();
+        case ARRAY:
+            return ptr->isArr();
     }
     return 0;
 }
 
 template <typename T>
 int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res, T def) {
-    
     JSON::AType *ptr = src->get(key);
     if (ptr->isNull()) {
         res = def;
         Log.info("Optional parameter \"" + key + "\" is not found (default used).");
         return 2;
     }
-    
+
     if (!typeExpected(ptr, type)) {
         Log.error("\"" + key + "\": expected " + getDataTypeName(type) + ", got " + ptr->getType());
         return 0;
@@ -48,13 +58,12 @@ int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &r
 }
 
 int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type) {
-    
     JSON::AType *ptr = src->get(key);
     if (ptr->isNull()) {
         Log.error("\"" + key + "\" does not exist.");
         return 0;
     }
-    
+
     if (!typeExpected(ptr, type)) {
         Log.error("\"" + key + "\": expected " + getDataTypeName(type) + ", got " + ptr->getType());
         return 0;
@@ -63,15 +72,18 @@ int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type) {
 }
 
 int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, int &res, int def) {
-    
     switch (baseCheck(src, key, type, res, def)) {
-        case 0: return 0;
-        case 1: break;
-        case 2: return 1;
-        default: return 0;
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
     }
 
-    double num = src->get(key)->toNum();    
+    double num = src->get(key)->toNum();
     if (isUInteger(num)) {
         res = static_cast<unsigned int>(num);
         return 1;
@@ -82,15 +94,18 @@ int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, in
 }
 
 int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, int &res) {
-    
     switch (baseCheck(src, key, type)) {
-        case 0: return 0;
-        case 1: break;
-        case 2: return 1;
-        default: return 0;
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
     }
 
-    double num = src->get(key)->toNum();    
+    double num = src->get(key)->toNum();
     if (isUInteger(num)) {
         res = static_cast<unsigned int>(num);
         return 1;
@@ -101,12 +116,15 @@ int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, in
 }
 
 int getString(JSON::Object *src, const std::string &key, ExpectedType type, std::string &res, std::string def) {
-    
     switch (baseCheck(src, key, type, res, def)) {
-        case 0: return 0;
-        case 1: break;
-        case 2: return 1;
-        default: return 0;
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
     }
 
     res = src->get(key)->toStr();
@@ -114,12 +132,15 @@ int getString(JSON::Object *src, const std::string &key, ExpectedType type, std:
 }
 
 int getString(JSON::Object *src, const std::string &key, ExpectedType type, std::string &res) {
-    
     switch (baseCheck(src, key, type)) {
-        case 0: return 0;
-        case 1: break;
-        case 2: return 1;
-        default: return 0;
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
     }
 
     res = src->get(key)->toStr();
@@ -127,12 +148,15 @@ int getString(JSON::Object *src, const std::string &key, ExpectedType type, std:
 }
 
 int getBoolean(JSON::Object *src, const std::string &key, ExpectedType type, bool &res, bool def) {
-   
     switch (baseCheck(src, key, type, res, def)) {
-        case 0: return 0;
-        case 1: break;
-        case 2: return 1;
-        default: return 0;
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
     }
 
     res = src->get(key)->toBool();
@@ -140,12 +164,15 @@ int getBoolean(JSON::Object *src, const std::string &key, ExpectedType type, boo
 }
 
 int getBoolean(JSON::Object *src, const std::string &key, ExpectedType type, bool &res) {
-   
     switch (baseCheck(src, key, type)) {
-        case 0: return 0;
-        case 1: break;
-        case 2: return 1;
-        default: return 0;
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
     }
 
     res = src->get(key)->toBool();
@@ -156,7 +183,7 @@ template <typename T>
 int isSubset(std::vector<T> set, std::vector<T> subset) {
     typename std::vector<T>::iterator it = subset.begin();
     typename std::vector<T>::iterator end = subset.end();
-    for (;it != end; it++) {
+    for (; it != end; it++) {
         if (std::find(set.begin(), set.end(), *it) == set.end()) {
             return 0;
         }
@@ -165,15 +192,18 @@ int isSubset(std::vector<T> set, std::vector<T> subset) {
 }
 
 int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::vector<std::string> &res, std::vector<std::string> def) {
-    
     switch (baseCheck(src, key, type, res, def)) {
-        case 0: return 0;
-        case 1: break;
-        case 2: return 1;
-        default: return 0;
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
     }
 
-    JSON::Array *arr = src->get(key)->toArr();
+    JSON::Array          *arr = src->get(key)->toArr();
     JSON::Array::iterator it = arr->begin();
     JSON::Array::iterator end = arr->end();
     for (; it != end; it++) {
@@ -187,15 +217,18 @@ int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::
 }
 
 int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::vector<std::string> &res) {
-    
     switch (baseCheck(src, key, type)) {
-        case 0: return 0;
-        case 1: break;
-        case 2: return 1;
-        default: return 0;
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
     }
 
-    JSON::Array *arr = src->get(key)->toArr();
+    JSON::Array          *arr = src->get(key)->toArr();
     JSON::Array::iterator it = arr->begin();
     JSON::Array::iterator end = arr->end();
     for (; it != end; it++) {
@@ -227,20 +260,17 @@ std::vector<std::string> getDefaultAllowedMethods() {
 
 std::vector<std::string> getDefaultIndex() {
     std::vector<std::string> def(0);
-    
+
     return def;
 }
 
 // Object parsing
 int parseCGI(JSON::Object *src, std::map<std::string, std::string> &res) {
     JSON::Object *obj = src->get("CGI")->toObj();
+
     JSON::Object::iterator it = obj->begin();
     JSON::Object::iterator end = obj->end();
     for (; it != end; it++) {
-        if (it->first[0] != '.') {
-            // Invalid extension in CGI
-            return 0;
-        }
         std::string value = it->second->toStr();
         res.insert(std::make_pair(it->first, value));
     }
@@ -264,9 +294,9 @@ int isValidCGI(std::map<std::string, std::string> &res) {
     return true;
 }
 
-
 int parseErrorPages(JSON::Object *src, std::map<int, std::string> &res) {
     JSON::Object *errObj = src->get("error_pages")->toObj();
+
     JSON::Object::iterator it = errObj->begin();
     JSON::Object::iterator end = errObj->end();
     for (; it != end; it++) {
@@ -300,9 +330,8 @@ int isValidErrorPages(std::map<int, std::string> &res) {
     return true;
 }
 
-
 int parseLocation(JSON::Object *src, Location &dst) {
-    if (!getString(src, "root", STRING, dst.getRootRef(), "/")) { // optional ?
+    if (!getString(src, "root", STRING, dst.getRootRef(), "/default")) { // optional ?
         Log.error("#### Failed to parse \"root\"");
         return 0;
     } else if (!fileExists(dst.getRootRef())) {
@@ -339,7 +368,7 @@ int parseLocation(JSON::Object *src, Location &dst) {
         return 0;
     }
 
-    if (!getArray(src, "index", ARRAY, dst.getAllowedMethodsRef(), getDefaultIndex())) {
+    if (!getArray(src, "index", ARRAY, dst.getIndexRef(), getDefaultIndex())) {
         Log.error("#### Failed to parse \"index\"");
         return 0;
     }
@@ -348,20 +377,24 @@ int parseLocation(JSON::Object *src, Location &dst) {
     return 1;
 }
 
-int parseLocations(JSON::Object *src, std::map<std::string, Location> &res) {
-
+int parseLocations(JSON::Object *src, std::map<std::string, Location> &res, Location &base) {
     switch (baseCheck(src, "locations", OBJECT, res, res)) {
-        case 0: return 0;
-        case 1: break;
-        case 2: return 1;
-        default: return 0;
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
     }
 
     JSON::Object *locations = src->get("locations")->toObj();
+
     JSON::Object::iterator it = locations->begin();
     JSON::Object::iterator end = locations->end();
     for (; it != end; it++) {
-        Location dst;
+        Location dst = base;
 
         if (!baseCheck(locations, it->first, OBJECT)) {
             return 0;
@@ -369,7 +402,7 @@ int parseLocations(JSON::Object *src, std::map<std::string, Location> &res) {
 
         // Check path of location it->first
 
-        JSON::Object *src = it->second->toObj();        
+        JSON::Object *src = it->second->toObj();
         if (!parseLocation(src, dst)) {
             Log.error("### Failed to parse location \"" + it->first + "\"");
             return 0;
@@ -379,9 +412,7 @@ int parseLocations(JSON::Object *src, std::map<std::string, Location> &res) {
     return 1;
 }
 
-
 int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
-
     // Basic server attributes
     if (!getString(src, "server_name", STRING, dst.getServerNameRef(), "")) {
         Log.error("## Failed to parse \"server_name\"");
@@ -392,12 +423,11 @@ int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
         Log.error("## Failed to parse \"addr\"");
         return 0;
     }
-    
+
     if (!getUInteger(src, "port", NUMBER, dst.getPortRef())) {
         Log.error("## Failed to parse \"port\"");
         return 0;
-    }
-    else if (dst.getPortRef() < 1024 || dst.getPortRef() > 49151) {
+    } else if (dst.getPortRef() < 1024 || dst.getPortRef() > 49151) {
         Log.error("## Port number beyond boundaries");
         return 0;
     }
@@ -415,7 +445,7 @@ int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
         return 0;
     }
 
-    if (!parseLocations(src, dst.getLocationsRef())) {
+    if (!parseLocations(src, dst.getLocationsRef(), dst.getLocationBaseRef())) {
         Log.error("## Failed to parse \"locations\"");
         return 0;
     }
@@ -424,19 +454,23 @@ int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
 }
 
 int parseServerBlocks(JSON::Object *src, Server *serv) {
-
     switch (baseCheck(src, "servers", OBJECT)) {
-        case 0: return 0;
-        case 1: break;
-        case 2: return 1;
-        default: return 0;
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
     }
 
     JSON::Object *servers = src->get("servers")->toObj();
+
     JSON::Object::iterator it = servers->begin();
     JSON::Object::iterator end = servers->end();
     for (; it != end; it++) {
-        ServerBlock block_dst;        
+        ServerBlock block_dst;
         block_dst.setBlockname(it->first);
 
         if (!baseCheck(servers, it->first, OBJECT)) {
@@ -454,7 +488,6 @@ int parseServerBlocks(JSON::Object *src, Server *serv) {
 }
 
 Server *loadConfig(const string filename) {
-
     JSON::Object *ptr;
     try {
         JSON::JSON json(filename);
@@ -482,7 +515,6 @@ Server *loadConfig(const string filename) {
     return serv;
 }
 
-
 // switch (expression)
 // {
 // case 0: // Not exist                                            /// Continue
@@ -500,7 +532,7 @@ Server *loadConfig(const string filename) {
 // case 9: // Exist, not optional, not formatted, but valid        /// Error (bad format)
 // case 10: // Not exist, optional, not formatted, but valid       /// Error (incorrect default value)
 // case 11: // Exist, optional, not formatted, but valid           /// Error (bad format)
-// case 12: // Not exist, not optional, formatted and valid        /// Impossible 
+// case 12: // Not exist, not optional, formatted and valid        /// Impossible
 // case 13: // Exist, not optional, formatted and valid            /// OK
 // case 14: // Not exist, optional, formatted and valid            /// Default
 // case 15: // Exist, optional, formatted and valid                /// OK

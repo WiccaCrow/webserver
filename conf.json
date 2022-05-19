@@ -7,10 +7,9 @@
                 "404": "./pages/404.html",
                 "400": "./pages/400.html"
             },
-            "root": "/var/www",
+            "root": "/Users/mdulcie/",
             "CGI": {
-                ".py": "/etc/bin/python",
-                ".php": "/etc/bin/phpfpm"
+                ".py": "/usr/bin/python"
             },
             "methods-allowed": [ "GET", "POST" ],
             "post_max_body": 100,
@@ -18,9 +17,8 @@
             "index": [ "index.html" ],
             "locations": {
                 "/about": {
-                    "root": "/var/123/",
                     "CGI": {
-                        ".js": "/etc/bin/node"
+                        ".js": "/usr/local/bin/node"
                     },
                     "autoindex": true,
                     "index": [ "index.php" ],
@@ -28,9 +26,8 @@
                     "methods-allowed": [ "GET", "POST" ]                 
                 },
                 "/feedback": {
-                    "root": "/var/456/",
                     "CGI": {
-                        ".js": "/etc/bin/node"
+                        ".js": "/usr/local/bin/node"
                     },
                     "autoindex": false,
                     "index": [ "index.html", "index.php" ],
