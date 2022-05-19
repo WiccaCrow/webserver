@@ -4,7 +4,7 @@ NAME 			= 	serv
 
 CXX             =   clang++
 CPPFLAGS        =   -g -fstandalone-debug -std=c++98
-# CPPFLAGS        =   -Wall -Wextra -Werror -g -std=c++98
+# CPPFLAGS       =   -Wall -Wextra -Werror -g -std=c++98
 # CPPFLAGS       =   -Wall -Wextra -Werror -g -Wpedantic -std=c++98
 
 SOURCEFILES     =	main.cpp \
@@ -23,7 +23,7 @@ SOURCEFILES     =	main.cpp \
 					ResponseErrCode.cpp \
 					Config.cpp \
 					Location.cpp
-				
+
 LIBJSONFOLDER = json-parser
 LIBJSONINCLUDE = ./$(LIBJSONFOLDER)/src
 LIBJSONFLAGS = -ljson -L ./$(LIBJSONFOLDER) -I ${LIBJSONINCLUDE} 

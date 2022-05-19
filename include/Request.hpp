@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 
-#include "CRC.h"
+#include "CRC.hpp"
 #include "Header.hpp"
 #include "Logger.hpp"
 #include "StatusCodes.hpp"

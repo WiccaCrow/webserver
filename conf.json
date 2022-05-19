@@ -2,7 +2,7 @@
     "servers": {
         "http": {
             "port": 8080,
-            "server_name": "localhost", 
+            "server_name": "localhost",
             "error_pages": {
                 "404": "./pages/404.html",
                 "400": "./pages/400.html"
@@ -12,12 +12,12 @@
                 ".py": "/etc/bin/python",
                 ".php": "/etc/bin/phpfpm"
             },
-            "methods-allowed": [ "GET", "POST" ], 
+            "methods-allowed": [ "GET", "POST" ],
             "post_max_body": 100,
             "autoindex": true,
             "index": [ "index.html" ],
             "locations": {
-                "/about": {   
+                "/about": {
                     "root": "/var/123/",
                     "CGI": {
                         ".js": "/etc/bin/node"
