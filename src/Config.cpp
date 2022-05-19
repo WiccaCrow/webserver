@@ -8,14 +8,6 @@ int isUInteger(double &num) {
     return (isInteger(num) && num >= 0); 
 }
 
-enum ExpectedType {
-    STRING,
-    BOOLEAN,
-    NUMBER,
-    OBJECT,
-    ARRAY
-};
-
 std::string getDataTypeName(ExpectedType type) {
     switch (type) {
         case ARRAY : return "array";
@@ -38,7 +30,6 @@ int typeExpected(JSON::AType *ptr, ExpectedType type) {
     return 0;
 }
 
-
 template <typename T>
 int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res, T def) {
     
@@ -56,7 +47,6 @@ int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &r
     return 1;
 }
 
-// template <typename T>
 int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type) {
     
     JSON::AType *ptr = src->get(key);
@@ -274,6 +264,7 @@ int isValidCGI(std::map<std::string, std::string> &res) {
     return true;
 }
 
+
 int parseErrorPages(JSON::Object *src, std::map<int, std::string> &res) {
     JSON::Object *errObj = src->get("error_pages")->toObj();
     JSON::Object::iterator it = errObj->begin();
@@ -309,26 +300,13 @@ int isValidErrorPages(std::map<int, std::string> &res) {
     return true;
 }
 
-int parseLocations(JSON::Object *src, std::map<std::string, Location> &res) {
-    JSON::Object *locations = src->get("locations")->toObj();
-    JSON::Object::iterator it = locations->begin();
-    JSON::Object::iterator end = locations->end();
-    for (; it != end; it++) {
-        Location dst;
-        // Check path of location
-        JSON::Object *src = it->second->toObj();        
-        if (!parseLocation(src, dst)) {
-            Log.error("### Failed to parse location \"" + it->first + "\"");
-            return 0;
-        }
-        res.insert(std::make_pair(it->first, dst));
-    }
-    return 1;
-}
 
 int parseLocation(JSON::Object *src, Location &dst) {
     if (!getString(src, "root", STRING, dst.getRootRef(), "/")) { // optional ?
         Log.error("#### Failed to parse \"root\"");
+        return 0;
+    } else if (!fileExists(dst.getRootRef())) {
+        Log.error("#### \"root\": " + dst.getRootRef() + " does not exist");
         return 0;
     } else if (!isDirectory(dst.getRootRef())) {
         Log.error("#### \"root\" should be a directory");
@@ -369,6 +347,38 @@ int parseLocation(JSON::Object *src, Location &dst) {
 
     return 1;
 }
+
+int parseLocations(JSON::Object *src, std::map<std::string, Location> &res) {
+
+    switch (baseCheck(src, "locations", OBJECT)) {
+        case 0: return 0;
+        case 1: break;
+        case 2: return 1;
+        default: return 0;
+    }
+
+    JSON::Object *locations = src->get("locations")->toObj();
+    JSON::Object::iterator it = locations->begin();
+    JSON::Object::iterator end = locations->end();
+    for (; it != end; it++) {
+        Location dst;
+
+        if (!baseCheck(locations, it->first, OBJECT)) {
+            return 0;
+        }
+
+        // Check path of location it->first
+
+        JSON::Object *src = it->second->toObj();        
+        if (!parseLocation(src, dst)) {
+            Log.error("### Failed to parse location \"" + it->first + "\"");
+            return 0;
+        }
+        res.insert(std::make_pair(it->first, dst));
+    }
+    return 1;
+}
+
 
 int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
 
@@ -460,10 +470,14 @@ Server *loadConfig(const string filename) {
 
     Server *serv = new Server();
     if (!parseServerBlocks(ptr, serv)) {
-        delete ptr;
         delete serv;
-        return NULL;
+        serv = NULL;
+    } else if (serv && !serv->getServerBlocksNum()) {
+        delete serv;
+        serv = NULL;
+        Log.error("At least one server block needed to start the server.");
     }
+
     delete ptr;
     return serv;
 }

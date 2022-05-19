@@ -55,7 +55,8 @@ class Server {
 
     void addServerBlock(ServerBlock &servBlock);
     void addServerBlock(const std::string &ipaddr, const uint16_t port);
-
+    size_t getServerBlocksNum(void);
+    
     void start(void);
     void pollServ(void);
     void acceptNewClient(size_t id);

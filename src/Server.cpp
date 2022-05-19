@@ -30,6 +30,10 @@ Server &Server::operator=(const Server &obj) {
     return (*this);
 }
 
+size_t Server::getServerBlocksNum(void) {
+    return this->_nbServBlocks;
+}
+
 // Private functions
 
 void Server::fillServBlocksFds(void) {
