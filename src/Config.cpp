@@ -350,7 +350,7 @@ int parseLocation(JSON::Object *src, Location &dst) {
 
 int parseLocations(JSON::Object *src, std::map<std::string, Location> &res) {
 
-    switch (baseCheck(src, "locations", OBJECT)) {
+    switch (baseCheck(src, "locations", OBJECT, res, res)) {
         case 0: return 0;
         case 1: break;
         case 2: return 1;
