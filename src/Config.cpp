@@ -397,9 +397,9 @@ int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
         Log.error("## Failed to parse \"port\"");
         return 0;
     }
-    else if (dst.getPortRef() > UINT16_MAX) {
-        Log.error("## Port number exceeds limits");
-        return 0;        
+    else if (dst.getPortRef() < 1024 || dst.getPortRef() > 49151) {
+        Log.error("## Port number beyond boundaries");
+        return 0;
     }
 
     if (!parseErrorPages(src, dst.getErrPathsRef())) {
