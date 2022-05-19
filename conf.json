@@ -13,7 +13,7 @@
                 ".php": "/etc/bin/phpfpm"
             },
             "methods-allowed": [ "GET", "POST" ], 
-            "post_max_body": -100,
+            "post_max_body": 100,
             "autoindex": true,
             "index": [ "index.html" ],
             "locations": {
