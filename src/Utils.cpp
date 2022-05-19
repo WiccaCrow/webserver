@@ -90,3 +90,52 @@ int		isFile(const std::string& fileName)
         return (-1);
     }
 }
+
+bool fileExists(const std::string &filename) {
+    struct stat state;
+    return (stat(filename.c_str(), &state) == 0);
+}
+
+bool isWord(const std::string word) {
+    for (int i = 0; i < word.length(); i++) {
+        if (!isalnum(word[i]))
+            return false;
+    }
+    return true;
+}
+
+bool isExtension(const std::string &ext) {
+    if (ext[0] != '.')
+        return false;
+    return (isWord(&ext[1]));
+}
+
+bool isDirectory(const std::string &dirname) {
+    struct stat state;
+
+    if (stat(dirname.c_str(), &state) < 0)
+        return false;
+    if (!S_ISDIR(state.st_mode))
+        return false;
+    return true;
+}
+
+bool checkRegFilePerms(const std::string &filename, int perm) {
+    struct stat state;
+
+    if (stat(filename.c_str(), &state) < 0)
+        return false;
+    if (!S_ISREG(state.st_mode))
+        return false;
+    if ((state.st_mode & perm) != 0)
+        return true;
+    return false;
+}
+
+bool isReadableFile(const std::string &filename) {
+    return checkRegFilePerms(filename, S_IREAD); // User rights only
+}
+
+bool isExecutableFile(const std::string &filename) {
+    return checkRegFilePerms(filename, S_IEXEC); // User rights only
+}

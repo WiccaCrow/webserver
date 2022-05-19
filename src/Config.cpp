@@ -56,8 +56,8 @@ int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &r
     return 1;
 }
 
-template <typename T>
-int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res) {
+// template <typename T>
+int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type) {
     
     JSON::AType *ptr = src->get(key);
     if (ptr->isNull()) {
@@ -93,7 +93,7 @@ int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, in
 
 int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, int &res) {
     
-    switch (baseCheck(src, key, type, res)) {
+    switch (baseCheck(src, key, type)) {
         case 0: return 0;
         case 1: break;
         case 2: return 1;
@@ -125,7 +125,7 @@ int getString(JSON::Object *src, const std::string &key, ExpectedType type, std:
 
 int getString(JSON::Object *src, const std::string &key, ExpectedType type, std::string &res) {
     
-    switch (baseCheck(src, key, type, res)) {
+    switch (baseCheck(src, key, type)) {
         case 0: return 0;
         case 1: break;
         case 2: return 1;
@@ -151,7 +151,7 @@ int getBoolean(JSON::Object *src, const std::string &key, ExpectedType type, boo
 
 int getBoolean(JSON::Object *src, const std::string &key, ExpectedType type, bool &res) {
    
-    switch (baseCheck(src, key, type, res)) {
+    switch (baseCheck(src, key, type)) {
         case 0: return 0;
         case 1: break;
         case 2: return 1;
@@ -198,7 +198,7 @@ int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::
 
 int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::vector<std::string> &res) {
     
-    switch (baseCheck(src, key, type, res)) {
+    switch (baseCheck(src, key, type)) {
         case 0: return 0;
         case 1: break;
         case 2: return 1;
@@ -257,6 +257,23 @@ int parseCGI(JSON::Object *src, std::map<std::string, std::string> &res) {
     return 1;
 }
 
+int isValidCGI(std::map<std::string, std::string> &res) {
+    std::map<std::string, std::string>::iterator it = res.begin();
+    std::map<std::string, std::string>::iterator end = res.end();
+
+    for (; it != end; it++) {
+        if (!isExtension(it->first)) {
+            Log.error("\"" + it->first + "\": incorrect extension");
+            return false;
+        }
+        if (!isExecutableFile(it->second)) {
+            Log.error("\"" + it->second + "\" is not executable file");
+            return false;
+        }
+    }
+    return true;
+}
+
 int parseErrorPages(JSON::Object *src, std::map<int, std::string> &res) {
     JSON::Object *errObj = src->get("error_pages")->toObj();
     JSON::Object::iterator it = errObj->begin();
@@ -273,6 +290,23 @@ int parseErrorPages(JSON::Object *src, std::map<int, std::string> &res) {
         res.insert(std::make_pair(code, it->second->toStr()));
     }
     return 1;
+}
+
+int isValidErrorPages(std::map<int, std::string> &res) {
+    std::map<int, std::string>::iterator it = res.begin();
+    std::map<int, std::string>::iterator end = res.end();
+
+    for (; it != end; it++) {
+        if (!fileExists(it->second)) {
+            Log.error("\"" + it->second + "\": file does not exist");
+            return false;
+        }
+        if (!isReadableFile(it->second)) {
+            Log.error("\"" + it->second + "\": is not readable file");
+            return false;
+        }
+    }
+    return true;
 }
 
 int parseLocations(JSON::Object *src, std::map<std::string, Location> &res) {
@@ -296,6 +330,9 @@ int parseLocation(JSON::Object *src, Location &dst) {
     if (!getString(src, "root", STRING, dst.getRootRef(), "/")) { // optional ?
         Log.error("#### Failed to parse \"root\"");
         return 0;
+    } else if (!isDirectory(dst.getRootRef())) {
+        Log.error("#### \"root\" should be a directory");
+        return 0;
     }
 
     if (!getUInteger(src, "post_max_body", NUMBER, dst.getPostMaxBodyRef(), 200)) {
@@ -311,13 +348,15 @@ int parseLocation(JSON::Object *src, Location &dst) {
     if (!parseCGI(src, dst.getCGIPathsRef())) {
         Log.error("#### Failed to parse \"CGI\"");
         return 0;
+    } else if (!isValidCGI(dst.getCGIPathsRef())) {
+        Log.error("#### Invalid \"CGI\". Prototype: \"extension\": \"path-to-executable\"");
+        return 0;
     }
 
     if (!getArray(src, "methods-allowed", ARRAY, dst.getAllowedMethodsRef(), getDefaultAllowedMethods())) {
         Log.error("#### Failed to parse \"methods-allowed\"");
         return 0;
-    } 
-    else if (!isSubset(getDefaultAllowedMethods(), dst.getAllowedMethodsRef())) {
+    } else if (!isSubset(getDefaultAllowedMethods(), dst.getAllowedMethodsRef())) {
         Log.error("#### Unrecognized value in \"methods-allowed\"");
         return 0;
     }
@@ -326,7 +365,7 @@ int parseLocation(JSON::Object *src, Location &dst) {
         Log.error("#### Failed to parse \"index\"");
         return 0;
     }
-    // Filename checking among indexes
+    // Filename checking among indexes ?
 
     return 1;
 }
@@ -356,6 +395,9 @@ int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
     if (!parseErrorPages(src, dst.getErrPathsRef())) {
         Log.error("## Failed to parse \"error_pages\"");
         return 0;
+    } else if (!isValidErrorPages(dst.getErrPathsRef())) {
+        Log.error("## Failed to parse \"error_pages\"");
+        return 0;
     }
 
     if (!parseLocation(src, dst.getLocationBaseRef())) {
@@ -373,7 +415,7 @@ int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
 
 int parseServerBlocks(JSON::Object *src, Server *serv) {
 
-    switch (baseCheck(src, "servers", OBJECT, serv)) {
+    switch (baseCheck(src, "servers", OBJECT)) {
         case 0: return 0;
         case 1: break;
         case 2: return 1;
@@ -384,15 +426,19 @@ int parseServerBlocks(JSON::Object *src, Server *serv) {
     JSON::Object::iterator it = servers->begin();
     JSON::Object::iterator end = servers->end();
     for (; it != end; it++) {
-        ServerBlock dst;        
-        dst.setBlockname(it->first);
+        ServerBlock block_dst;        
+        block_dst.setBlockname(it->first);
 
-        JSON::Object *src = it->second->toObj();
-        if (!parseServerBlock(src, dst)) {
+        if (!baseCheck(servers, it->first, OBJECT)) {
+            return 0;
+        }
+
+        JSON::Object *block_src = it->second->toObj();
+        if (!parseServerBlock(block_src, block_dst)) {
             Log.error("# Failed to parse server block \"" + it->first + "\"");
             return 0;
         }
-        serv->addServerBlock(dst);
+        serv->addServerBlock(block_dst);
     }
     return 1;
 }
