@@ -17,8 +17,8 @@ class Location {
     public:
     Location(void);
     ~Location(void);
-    Location(Location &other);
-    Location &operator=(Location &other);
+    // Location(Location &other);
+    // Location &operator=(Location &other);
 
     std::string                        &getPathRef(void);
     bool                               &getAutoindexRef(void);

@@ -3,22 +3,22 @@
 Location::Location() {}
 Location::~Location() {}
 
-Location::Location(Location &other) {
-    *this = other;
-}
+// Location::Location(Location &other) {
+//     *this = other;
+// }
 
-Location &Location::operator=(Location &other) {
-    if (this != &other) {
-        _path = other.getPathRef();
-        _root = other.getRootRef();
-        _index = other.getIndexRef();
-        _cgiPaths = other.getCGIPathsRef();
-        _autoindex = other.getAutoindexRef();
-        _post_max_body = other.getPostMaxBodyRef();
-        _allowedMethods = other.getAllowedMethodsRef();
-    }
-    return *this;
-}
+// Location &Location::operator=(Location &other) {
+//     if (this != &other) {
+//         _path = other.getPathRef();
+//         _root = other.getRootRef();
+//         _index = other.getIndexRef();
+//         _cgiPaths = other.getCGIPathsRef();
+//         _autoindex = other.getAutoindexRef();
+//         _post_max_body = other.getPostMaxBodyRef();
+//         _allowedMethods = other.getAllowedMethodsRef();
+//     }
+//     return *this;
+// }
 
 std::string &Location::getPathRef(void) {
     return _path;

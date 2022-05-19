@@ -330,8 +330,8 @@ int isValidErrorPages(std::map<int, std::string> &res) {
     return true;
 }
 
-int parseLocation(JSON::Object *src, Location &dst) {
-    if (!getString(src, "root", STRING, dst.getRootRef(), "/default")) { // optional ?
+int parseLocation(JSON::Object *src, Location &dst, Location &def) {
+    if (!getString(src, "root", STRING, dst.getRootRef(), def.getRootRef())) { // optional ?
         Log.error("#### Failed to parse \"root\"");
         return 0;
     } else if (!fileExists(dst.getRootRef())) {
@@ -403,7 +403,7 @@ int parseLocations(JSON::Object *src, std::map<std::string, Location> &res, Loca
         // Check path of location it->first
 
         JSON::Object *src = it->second->toObj();
-        if (!parseLocation(src, dst)) {
+        if (!parseLocation(src, dst, base)) {
             Log.error("### Failed to parse location \"" + it->first + "\"");
             return 0;
         }
@@ -440,7 +440,7 @@ int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
         return 0;
     }
 
-    if (!parseLocation(src, dst.getLocationBaseRef())) {
+    if (!parseLocation(src, dst.getLocationBaseRef(), dst.getLocationBaseRef())) {
         Log.error("## Failed to parse \"location base\"");
         return 0;
     }

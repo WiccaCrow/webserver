@@ -15,7 +15,7 @@ enum ExpectedType {
 };
 
 std::string getDataTypeName(ExpectedType type);
-int typeExpected(JSON::AType *ptr, ExpectedType type);
+int         typeExpected(JSON::AType *ptr, ExpectedType type);
 
 template <typename T>
 int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res, T def);
@@ -47,9 +47,9 @@ int isValidCGI(std::map<std::string, std::string> &res);
 int parseErrorPages(JSON::Object *src, std::map<int, std::string> &res);
 int isValidErrorPages(std::map<int, std::string> &res);
 
-int parseLocation(JSON::Object *src, Location &dst);
-int parseLocations(JSON::Object *src, std::map<std::string, Location> &res);
+int parseLocation(JSON::Object *src, Location &dst, Location &def);
+int parseLocations(JSON::Object *src, std::map<std::string, Location> &res, Location &base);
 
-int parseServerBlock(JSON::Object *src, ServerBlock &dst);
-int parseServerBlocks(JSON::Object *src, Server *serv);
+int     parseServerBlock(JSON::Object *src, ServerBlock &dst);
+int     parseServerBlocks(JSON::Object *src, Server *serv);
 Server *loadConfig(const string filename);
