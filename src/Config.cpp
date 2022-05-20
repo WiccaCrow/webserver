@@ -440,6 +440,7 @@ int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
         return 0;
     }
 
+    dst.getLocationBaseRef().getRootRef() = "./"; // Default path for base root
     if (!parseLocation(src, dst.getLocationBaseRef(), dst.getLocationBaseRef())) {
         Log.error("## Failed to parse \"location base\"");
         return 0;
@@ -482,6 +483,9 @@ int parseServerBlocks(JSON::Object *src, Server *serv) {
             Log.error("# Failed to parse server block \"" + it->first + "\"");
             return 0;
         }
+        // std::cout << block_dst.getLocationBaseRef().getRootRef() << std::endl;
+        // std::cout << block_dst.getLocationsRef()["/about"].getRootRef() << std::endl;
+        // std::cout << block_dst.getLocationsRef()["/feedback"].getRootRef() << std::endl;
         serv->addServerBlock(block_dst);
     }
     return 1;
