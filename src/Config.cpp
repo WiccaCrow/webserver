@@ -42,7 +42,7 @@ int typeExpected(JSON::AType *ptr, ExpectedType type) {
 }
 
 template <typename T>
-int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res, T def) {
+int basicCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res, T def) {
     JSON::AType *ptr = src->get(key);
     if (ptr->isNull()) {
         res = def;
@@ -57,7 +57,7 @@ int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &r
     return 1;
 }
 
-int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type) {
+int basicCheck(JSON::Object *src, const std::string &key, ExpectedType type) {
     JSON::AType *ptr = src->get(key);
     if (ptr->isNull()) {
         Log.error("\"" + key + "\" does not exist.");
@@ -72,7 +72,7 @@ int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type) {
 }
 
 int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, int &res, int def) {
-    switch (baseCheck(src, key, type, res, def)) {
+    switch (basicCheck(src, key, type, res, def)) {
         case 0:
             return 0;
         case 1:
@@ -94,7 +94,7 @@ int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, in
 }
 
 int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, int &res) {
-    switch (baseCheck(src, key, type)) {
+    switch (basicCheck(src, key, type)) {
         case 0:
             return 0;
         case 1:
@@ -116,7 +116,7 @@ int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, in
 }
 
 int getString(JSON::Object *src, const std::string &key, ExpectedType type, std::string &res, std::string def) {
-    switch (baseCheck(src, key, type, res, def)) {
+    switch (basicCheck(src, key, type, res, def)) {
         case 0:
             return 0;
         case 1:
@@ -132,7 +132,7 @@ int getString(JSON::Object *src, const std::string &key, ExpectedType type, std:
 }
 
 int getString(JSON::Object *src, const std::string &key, ExpectedType type, std::string &res) {
-    switch (baseCheck(src, key, type)) {
+    switch (basicCheck(src, key, type)) {
         case 0:
             return 0;
         case 1:
@@ -148,7 +148,7 @@ int getString(JSON::Object *src, const std::string &key, ExpectedType type, std:
 }
 
 int getBoolean(JSON::Object *src, const std::string &key, ExpectedType type, bool &res, bool def) {
-    switch (baseCheck(src, key, type, res, def)) {
+    switch (basicCheck(src, key, type, res, def)) {
         case 0:
             return 0;
         case 1:
@@ -164,7 +164,7 @@ int getBoolean(JSON::Object *src, const std::string &key, ExpectedType type, boo
 }
 
 int getBoolean(JSON::Object *src, const std::string &key, ExpectedType type, bool &res) {
-    switch (baseCheck(src, key, type)) {
+    switch (basicCheck(src, key, type)) {
         case 0:
             return 0;
         case 1:
@@ -192,7 +192,7 @@ int isSubset(std::vector<T> set, std::vector<T> subset) {
 }
 
 int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::vector<std::string> &res, std::vector<std::string> def) {
-    switch (baseCheck(src, key, type, res, def)) {
+    switch (basicCheck(src, key, type, res, def)) {
         case 0:
             return 0;
         case 1:
@@ -217,7 +217,7 @@ int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::
 }
 
 int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::vector<std::string> &res) {
-    switch (baseCheck(src, key, type)) {
+    switch (basicCheck(src, key, type)) {
         case 0:
             return 0;
         case 1:
@@ -378,7 +378,7 @@ int parseLocation(JSON::Object *src, Location &dst, Location &def) {
 }
 
 int parseLocations(JSON::Object *src, std::map<std::string, Location> &res, Location &base) {
-    switch (baseCheck(src, "locations", OBJECT, res, res)) {
+    switch (basicCheck(src, "locations", OBJECT, res, res)) {
         case 0:
             return 0;
         case 1:
@@ -396,7 +396,7 @@ int parseLocations(JSON::Object *src, std::map<std::string, Location> &res, Loca
     for (; it != end; it++) {
         Location dst = base;
 
-        if (!baseCheck(locations, it->first, OBJECT)) {
+        if (!basicCheck(locations, it->first, OBJECT)) {
             return 0;
         }
 
@@ -458,7 +458,7 @@ int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
 }
 
 int parseServerBlocks(JSON::Object *src, Server *serv) {
-    switch (baseCheck(src, "servers", OBJECT)) {
+    switch (basicCheck(src, "servers", OBJECT)) {
         case 0:
             return 0;
         case 1:
@@ -477,7 +477,7 @@ int parseServerBlocks(JSON::Object *src, Server *serv) {
         ServerBlock block_dst;
         block_dst.setBlockname(it->first);
 
-        if (!baseCheck(servers, it->first, OBJECT)) {
+        if (!basicCheck(servers, it->first, OBJECT)) {
             return 0;
         }
 

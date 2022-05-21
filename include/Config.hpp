@@ -18,8 +18,8 @@ std::string getDataTypeName(ExpectedType type);
 int         typeExpected(JSON::AType *ptr, ExpectedType type);
 
 template <typename T>
-int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res, T def);
-int baseCheck(JSON::Object *src, const std::string &key, ExpectedType type);
+int basicCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res, T def);
+int basicCheck(JSON::Object *src, const std::string &key, ExpectedType type);
 
 int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, int &res, int def);
 int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, int &res);
