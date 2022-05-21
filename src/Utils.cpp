@@ -91,6 +91,30 @@ int		isFile(const std::string& fileName)
     }
 }
 
+bool isValidPath(const std::string &path) {
+
+    if (path[0] != '/') {
+        return false;
+    } else if (path.find("//") != std::string::npos) {
+        return false;
+    }
+
+    char dst[512];
+    strcpy(dst, path.c_str());
+    
+    char *token = strtok(dst, "/");
+    while (token != NULL) {
+        size_t len = strlen(token);
+        for (size_t i = 1; i < len; i++) {
+            if (!isalnum(token[i])) {
+                return false;
+            }
+        }
+        token = strtok(NULL, "/");
+    }   
+    return true;
+}
+
 bool fileExists(const std::string &filename) {
     struct stat state;
     return (stat(filename.c_str(), &state) == 0);

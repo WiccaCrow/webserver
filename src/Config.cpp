@@ -400,7 +400,10 @@ int parseLocations(JSON::Object *src, std::map<std::string, Location> &res, Loca
             return 0;
         }
 
-        // Check path of location it->first
+        if (!isValidPath(it->first)) {
+            Log.error("### location path \"" + it->first + "\" is incorrect");
+            return 0;
+        }
 
         JSON::Object *src = it->second->toObj();
         if (!parseLocation(src, dst, base)) {
