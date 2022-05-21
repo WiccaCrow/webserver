@@ -43,10 +43,16 @@ void Client::receive(void) {
     std::string line;
 
     // _responseFormed = 1;
-    struct s_sock s = {_pfd.fd, ReadSock::PERM_READ};
+    struct s_sock    s = {_pfd.fd, ReadSock::PERM_READ};
+    ReadSock::Status stat;
     while (true) {
         line = "";
-        ReadSock::Status stat = _reader.getline(s, line);
+        if ( !(_req.getFlags() & PARSED_HEADERS) || !(_req.getFlags() & PARSED_SL) ) {
+            stat = _reader.getline(s, line);
+        }
+        else {
+            stat = _reader.getline_for_chunked(s, line, _req);
+        }
         Log.debug(line);
         switch (stat) {
             case ReadSock::RECV_END:
@@ -64,7 +70,8 @@ void Client::receive(void) {
             }
 
             case ReadSock::LINE_FOUND: {
-                if (_req.parseLine(line) == HTTP::PROCESSING) {
+                _req.parseLine(line);
+                if (_req.getStatus() != HTTP::CONTINUE) {
                     _res.setFormed(true);
                     return;
                 }
@@ -81,21 +88,23 @@ void Client::reply(void) {
     if (_pfd.fd == -1) {
         return;
     }
+    // std::cout << "test 2 reply response" << std::endl;
 
-// std::cout << << std::endl;
+    // std::cout << "res URI: " << _req.getPath() << std::endl;
+    // определить размер данных, которые надо отправить
+    // sendByte (по аналогии с recvServ) или sendSize
 
-    // _req.getStatus() еще не написано, но уже обговорено.
-    // это будет либо status в pubic у Request, либо геттер на него
-    int         reqStatus = HTTP::OK;
+    // std::cout << << std::endl;
 
-    // int         reqStatus = _req.getStatus();
-    // std::cout << "reply reqStatus: " << reqStatus << std::endl;
-
-    if (reqStatus >= 400) {
-        _res.getErr(reqStatus);
-        if (reqStatus == 408 || reqStatus == HTTP::PAYLOAD_TOO_LARGE)
-            disconnect();
-    } else if (reqStatus == 200) {
+    int _req_getStatus = _req.getStatus();
+    // std::cout << "test 1 reply response " << _req_getStatus << std::endl;
+    if (_req.getStatus() == HTTP::PROCESSING) {
+        _req_getStatus = HTTP::OK;
+    }
+    if (_req_getStatus >= HTTP::BAD_REQUEST) {
+        _res.findErr(_req_getStatus);
+    } else if (_req_getStatus == 200) {
+        // std::cout << "test 4 reply response " << _req.getMethod() << std::endl;
         if (_req.getMethod() == "HEAD")
             _res.HEADmethod(_req);
         if (_req.getMethod() == "GET")
@@ -105,17 +114,25 @@ void Client::reply(void) {
         if (_req.getMethod() == "DELETE")
             _res.DELETEmethod(_req);
     }
-    size_t       sentBytes = 0;
+    size_t sentBytes = 0;
+    // std::cout << "test 5 reply response" << std::endl;
     do {
         _res.SetLeftToSend(sentBytes);
-        sentBytes += send(_pfd.fd, _res.getLeftToSend(), _res.getLeftToSendSize(), 0);
-        if (sentBytes <= 0) {
+        sentBytes += send(_pfd.fd, _res.GetLeftToSend(), _res.GetLeftToSendSize(), 0);
+        if (sentBytes < 0) {
+            // std::cout << "Disconnect 3" << std::endl;
             disconnect();
         }
-    } while (sentBytes < _res.getResSize());
-    _res.setFormed(false);
+    } while (sentBytes < _res.GetResSize());
+    _res.clear();
     _req.clear();
 
+    if (_req_getStatus == HTTP::BAD_REQUEST ||
+        _req_getStatus == HTTP::REQUEST_TIMEOUT || 
+        _req_getStatus == HTTP::PAYLOAD_TOO_LARGE) {
+        disconnect();
+    }
+    // std::cout << "test 6 reply response" << std::endl;
     // _res.resetResponse();
 
     // если нет каких-то полей с указанием окончания отправки ответа,

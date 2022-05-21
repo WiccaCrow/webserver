@@ -30,6 +30,10 @@ Server &Server::operator=(const Server &obj) {
     return (*this);
 }
 
+size_t Server::getServerBlocksNum(void) {
+    return this->_nbServBlocks;
+}
+
 // Private functions
 
 void Server::fillServBlocksFds(void) {
@@ -49,13 +53,13 @@ void Server::fillServBlocksFds(void) {
 
 // Other methods
 
-void Server::addServerBlocks(ServerBlock &servBlock) {
+void Server::addServerBlock(ServerBlock &servBlock) {
     _ServBlocks.push_back(servBlock);
     _ServBlocks.back().createListenSock();
     _nbServBlocks++;
 }
 
-void Server::addServerBlocks(const std::string &ipaddr, const uint16_t port) {
+void Server::addServerBlock(const std::string &ipaddr, const uint16_t port) {
     _ServBlocks.push_back(ServerBlock(ipaddr, port));
     _ServBlocks.back().createListenSock();
     _nbServBlocks++;
@@ -232,7 +236,7 @@ void Server::acceptNewClient(size_t id) {
             it->events = POLLIN | POLLOUT;
         } else {
             _pollfds.push_back((struct pollfd){fd, POLLIN | POLLOUT, 0});
-            _clients.push_back(Client(_pollfds.back()));
+            _clients.push_back(Client(_pollfds.back())); // add string with port
         }
     }
 }

@@ -7,9 +7,9 @@ enum ServerBlockError {
     LISTEN_ERR = -6,
 };
 
-ServerBlock::ServerBlock() : _addr("127.0.0.1"), _port(7676){};
+ServerBlock::ServerBlock() : _addr("127.0.0.1"), _port(7676) {};
 
-ServerBlock::ServerBlock(const std::string &ipaddr, const uint16_t port) : _addr(ipaddr), _port(port) {}
+ServerBlock::ServerBlock(const std::string &ipaddr, const int port) : _addr(ipaddr), _port(port) {}
 
 ServerBlock::ServerBlock(const ServerBlock &obj) {
     operator=(obj);
@@ -49,6 +49,7 @@ void ServerBlock::bindAddr(void) {
     addr.sin_addr.s_addr = inet_addr(_addr.c_str());
     if (bind(_servfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         Log.error("Cannot bind listening socket");
+        std::cout << _port << std::endl;
         exit(BIND_ERR);
     }
 }
@@ -69,4 +70,36 @@ void ServerBlock::createListenSock(void) {
     reuseAddr();
     bindAddr();
     listenSock();
+}
+
+void ServerBlock::setAddr(const std::string &ipaddr) {
+    this->_addr = ipaddr;
+}
+
+void ServerBlock::setBlockname(const std::string &blockname) {
+    this->_blockname = blockname;
+}
+
+std::string &ServerBlock::getAddrRef(void) {
+    return _addr;
+}
+
+std::string &ServerBlock::getServerNameRef(void) {
+    return _server_name;
+}
+
+int &ServerBlock::getPortRef(void) {
+    return _port;
+}
+
+std::map<std::string, Location> &ServerBlock::getLocationsRef(void) {
+    return _locations;
+}
+
+std::map<int, std::string> &ServerBlock::getErrPathsRef(void) {
+    return _errorPagesPaths;
+}
+
+Location &ServerBlock::getLocationBaseRef(void) {
+    return _locationBase;
 }

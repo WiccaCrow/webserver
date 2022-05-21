@@ -1,32 +1,41 @@
 {
-    "http": {
-        "error_pages": {
-            "404": "./pages/404.html",
-            "400": "./pages/400.html"
-        },
-        "type": "server",
-        "port": 80,
-        "server_name": "localhost",
-        "/about": {
-            "type": "location",
-            "autoindex": true
-        },
-        "/feedback": {
-            "type": "location",
-            "autoindex": false
-        }
-    },
-    "https": {
-        "type": "server",
-        "port": 443,
-        "server_name": "localhost",
-        "/about": {
-            "type": "location",
-            "autoindex": true
-        },
-        "/feedback": {
-            "type": "location",
-            "autoindex": false
+    "servers": {
+        "http": {
+            "port": 8080,
+            "server_name": "localhost",
+            "error_pages": {
+                "404": "./pages/404.html",
+                "400": "./pages/400.html"
+            },
+            "CGI": {
+                ".py": "/usr/bin/python"
+            },
+            "methods-allowed": [ "GET", "POST" ],
+            "post_max_body": 100,
+            "autoindex": true,
+            "index": [ "index.html" ],
+            "locations": {
+                "/about": {
+                    "root": "/Users/mhufflep/Desktop/",
+                    "CGI": {
+                        ".js": "/usr/local/bin/node"
+                    },
+                    "autoindex": true,
+                    "index": [ "index.php" ],
+                    "post_max_body": 200,
+                    "methods-allowed": [ "GET", "POST" ]                 
+                },
+                "/feedback": {
+                    "CGI": {
+                        ".py": "/usr/bin/python",
+                        ".js": "/usr/local/bin/node"
+                    },
+                    "autoindex": false,
+                    "index": [ "index.html", "index.php" ],
+                    "methods-allowed": [ "GET" ],
+                    "post_max_body": 300
+                }
+            }
         }
     }
 }

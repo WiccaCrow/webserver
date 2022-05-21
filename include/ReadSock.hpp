@@ -7,6 +7,7 @@
 #include <string>
 
 #include "Logger.hpp"
+#include "Request.hpp"
 
 class ReadSock {
     public:
@@ -29,9 +30,13 @@ class ReadSock {
     std::map<int, std::string> _rems;
 
     Status readSocket(int fd);
+    Status readSocket_chunked(int fd);
+    int    readSocket_for_chunked(struct s_sock &sock, int fd);
 
     public:
     Status getline(struct s_sock &sock, std::string &line);
+    Status getline_for_chunked(struct s_sock &sock, std::string &line,
+                               HTTP::Request &req);
 };
 
 // Where should I put this ... ?

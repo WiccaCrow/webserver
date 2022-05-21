@@ -43,6 +43,7 @@ class Server {
     void fillServBlocksFds(void);
 
     public:
+    char **                    env;
     Server();
     Server(const std::string &_addr, const uint16_t _port);
     Server(const Server &obj);
@@ -52,9 +53,10 @@ class Server {
 
     // Get and show atributs
 
-    void addServerBlocks(ServerBlock &servBlock);
-    void addServerBlocks(const std::string &ipaddr, const uint16_t port);
-
+    void addServerBlock(ServerBlock &servBlock);
+    void addServerBlock(const std::string &ipaddr, const uint16_t port);
+    size_t getServerBlocksNum(void);
+    
     void start(void);
     void pollServ(void);
     void acceptNewClient(size_t id);

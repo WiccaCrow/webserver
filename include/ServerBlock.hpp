@@ -6,41 +6,26 @@
 
 #include <cstdlib>
 
-//#include <cstdint>
 #include <iostream>
+#include <list>
+#include <vector>
+#include <map>
 
 #include "Logger.hpp"
-
-// enum AllowedMethods
-//{
-//     GET = 1,
-//     PUT = 2,
-//     POST = 4,
-//     HEAD = 8,
-//     TRACE = 16,
-//     PATCH = 32,
-//     DELETE = 64,
-//     CONNECT = 128,
-//     OPTIONS = 256
-// };
-
-// class Location
-//{
-//     int16_t allowedMethods;
-//     std::string path;
-//     bool autoindex;
-//     std::string defaultResponseFile;
-//     CGI
-// };
+#include "Location.hpp"
 
 class ServerBlock {
     private:
     // Variables
-    std::string _addr;
-    uint16_t    _port;
-    // std::string                 _uri; //from config
-    int32_t _servfd;
-    // std::vector<Location> locations;
+    std::string         _blockname;
+    std::string         _addr;
+    int                 _port;
+    int32_t             _servfd;
+    std::string         _server_name;
+    
+    Location            _locationBase;
+    std::map<int, std::string> _errorPagesPaths;
+    std::map<std::string, Location> _locations;
 
     // Methods
     void createSock(void);
@@ -51,16 +36,26 @@ class ServerBlock {
     public:
     // Constructs and destructs
     ServerBlock();
-    ServerBlock(const std::string &ipaddr, const uint16_t port);
+    ServerBlock(const std::string &ipaddr, const int port);
     ServerBlock(const ServerBlock &obj);
     ~ServerBlock();
 
     // Operators
     ServerBlock &operator=(const ServerBlock &obj);
+
     // Set atributs
+    void setAddr(const std::string &);
+    void setBlockname(const std::string &);
 
     // Get and show atributs
     int getServFd(void);
+    std::string &getAddrRef(void);
+
+    int &getPortRef(void);
+    Location &getLocationBaseRef(void);
+    std::string &getServerNameRef(void);
+    std::map<int, std::string> &getErrPathsRef(void);
+    std::map<std::string, Location> &getLocationsRef(void);
 
     // other methods
     void createListenSock();

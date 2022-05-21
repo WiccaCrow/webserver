@@ -12,7 +12,6 @@ void toLowerCase(std::string &s);
 void skipSpaces(const std::string &line, size_t &pos);
 
 std::string getWord(const std::string &line, char delimiter, size_t &pos);
-std::string getWord_wicca(const std::string &line, char delimiter, size_t &pos); // wicca
 
 #if __cplusplus < 201103L
 
@@ -25,3 +24,11 @@ std::string to_string(int val);
 #endif
 
 int		isFile(const std::string& fileName);
+
+bool isValidPath(const std::string &path);
+bool isExtension(const std::string &ext);
+bool fileExists(const std::string &filename);
+bool isDirectory(const std::string &dirname);
+bool isReadableFile(const std::string &filename);
+bool isExecutableFile(const std::string &filename);
+bool checkRegFilePerms(const std::string &filename, int perm);

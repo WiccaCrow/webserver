@@ -24,6 +24,62 @@ ReadSock::Status ReadSock::readSocket(int fd) {
     }
 }
 
+int ReadSock::readSocket_for_chunked(struct s_sock &sock, int fd) {
+    if (sock.perm & PERM_READ) {
+        ReadSock::Status status = readSocket(fd);
+        if (status == ReadSock::RECV_END) {
+            return 0; // ???
+        }
+        if (status == ReadSock::RECV_DONE) {
+            sock.perm |= ~PERM_READ;
+        }
+    }
+    return (1);
+}
+
+ReadSock::Status ReadSock::getline_for_chunked(struct s_sock &sock, std::string &line,
+                                               HTTP::Request &req) {
+    int fd = sock.fd;
+    if (fd < 0) {
+        return INVALID_FD;
+    }
+
+    if (req.getChunked_isSizeChunk()) {
+        if (!readSocket_for_chunked(sock, fd)) {
+            return ReadSock::RECV_END;
+        }
+        size_t pos = _rems[fd].find("\r\n");
+        if (pos == std::string::npos) {
+            req.setStatus(HTTP::BAD_REQUEST);
+            _rems[fd].clear();
+            return LINE_NOT_FOUND;
+        }
+        line = _rems[fd].substr(0, pos);
+        _rems[fd].erase(0, pos + 2);
+        return LINE_FOUND;
+        
+    } else {
+        long chunkSize = req.getChunked_Size();
+        size_t remsLength = _rems[fd].length();
+        while (remsLength < chunkSize + 2) {
+            if (!readSocket_for_chunked(sock, fd)) {
+                return ReadSock::RECV_END;
+            }
+            remsLength = _rems[fd].length();
+        }
+        if (_rems[fd][chunkSize] != '\r' &&
+            _rems[fd][chunkSize + 1] != '\n') {
+            line = _rems[fd].substr(0, chunkSize + 2);
+            _rems[fd].clear();
+        } else {
+            line = _rems[fd].substr(0, chunkSize);
+            _rems[fd].erase(0, chunkSize + 2);
+        }
+    }
+
+    return LINE_FOUND;
+}
+
 ReadSock::Status ReadSock::getline(struct s_sock &sock, std::string &line) {
     int fd = sock.fd;
     if (fd < 0) {
@@ -31,9 +87,9 @@ ReadSock::Status ReadSock::getline(struct s_sock &sock, std::string &line) {
     }
 
     if (sock.perm & PERM_READ) {
-        Log.debug("Readsock:34, before readSocket");
+        Log.debug("before readSocket");
         ReadSock::Status status = readSocket(fd);
-        Log.debug("Readsock:36, after readSocket");
+        Log.debug("after readSocket");
 
         if (status == ReadSock::RECV_END) {
             return status; // ???

@@ -2,35 +2,14 @@
 
 #include <map>
 #include <string>
+#include "Types.hpp"
 
 namespace HTTP {
 
-struct HeaderHandler {
-    void AcceptEncoding(const std::string &str);
-    void AcceptLanguage(const std::string &str);
-    void Authorization(const std::string &str);
-    void CacheControl(const std::string &str);
-    void Conection(const std::string &str);
-    void Data(const std::string &str);
-    void From(const std::string &str);
-    void Host(const std::string &str);
-    void IfMatch(const std::string &str);
-    void IfModifiedSince(const std::string &str);
-    void IfNoneMatch(const std::string &str);
-    void IfRange(const std::string &str);
-    void IfUnmodifiedSince(const std::string &str);
-    void ProxyAuthorization(const std::string &str);
-    void Range(const std::string &str);
-    void Referer(const std::string &str);
-    void TE(const std::string &str);
-    void UserAgent(const std::string &str);
-    void ContentLength(const std::string &str);
-    void SetCookie(const std::string &str);
-    void ContentType(const std::string &str);
-};
+// struct HeaderHandler {};
 
 struct Header {
-    typedef void (HeaderHandler::*method)(const std::string &str);
+    typedef void (Header::*method)(void);
 
     std::string line;
 
@@ -48,6 +27,32 @@ struct Header {
     const char *getVal() {
         return &(line.data()[valStart]);
     }
+
+    void AcceptEncoding(void);
+    void AcceptLanguage(void);
+    void Authorization(void);
+    void CacheControl(void);
+    void Conection(void);
+    void Data(void);
+    void From(void);
+
+    void Host(void) {
+
+    }
+    
+    void IfMatch(void);
+    void IfModifiedSince(void);
+    void IfNoneMatch(void);
+    void IfRange(void);
+    void IfUnmodifiedSince(void);
+    void ProxyAuthorization(void);
+    void Range(void);
+    void Referer(void);
+    void TE(void);
+    void UserAgent(void);
+    void ContentLength(void);
+    void SetCookie(void);
+    void ContentType(void);
 };
 
 }; // namespace HTTP
