@@ -425,6 +425,9 @@ int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
     if (!getString(src, "addr", STRING, dst.getAddrRef(), "127.0.0.1")) {
         Log.error("## Failed to parse \"addr\"");
         return 0;
+    } else if (!isValidIp(dst.getAddrRef())) {
+        Log.error("## \"addr\" is invalid or not in ipv4 format");
+        return 0;
     }
 
     if (!getUInteger(src, "port", NUMBER, dst.getPortRef())) {

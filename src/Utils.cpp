@@ -91,6 +91,38 @@ int		isFile(const std::string& fileName)
     }
 }
 
+bool isValidOctet(char *octet)
+{
+    if (octet[0] == '0' && octet[1] != '\0')
+        return false;
+
+    for (int i = 0; octet[i] != '\0'; i++) {
+        if (!isnumber(octet[i]))
+            return false;
+    }
+
+    int x = atoi(octet);
+    return (x >= 0 && x <= 255);
+}
+
+bool isValidIp(const std::string &ip)
+{
+    char buf[32];
+    strncpy(buf, ip.c_str(), 32);
+
+    int count = 0;
+    char *octet = strtok(buf, ".");
+    while (octet) {
+        count++;
+        if (!isValidOctet(octet)) {
+            return 0;
+        }
+        octet = strtok(NULL, ".");
+    }
+    return (count == 4);
+}
+ 
+
 bool isValidPath(const std::string &path) {
 
     if (path[0] != '/') {

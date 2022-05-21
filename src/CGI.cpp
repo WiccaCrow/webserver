@@ -78,3 +78,30 @@ int main() {
 
     return 0;
 }
+
+// Web server should send body to stdin of the program (if there is any)
+// and send some of headers and parameters as an env
+
+
+// GATEWAY_INTERFACE The revision of the Common Gateway Interface that the server uses.
+// SERVER_NAME The server's hostname or IP address.
+// SERVER_SOFTWARE The name and version of the server software that is answering the client request.
+// SERVER_PROTOCOL The name and revision of the information protocol the request came in with.
+// SERVER_PORT The port number of the host on which the server is running.
+// REQUEST_METHOD The method with which the information request was issued.
+// PATH_INFO Extra path information passed to a CGI program.
+// PATH_TRANSLATED The translated version of the path given by the variable PATH_INFO.
+// SCRIPT_NAME The virtual path (e.g., /cgi-bin/program.pl) of the script being executed.
+// DOCUMENT_ROOT The directory from which Web documents are served.
+// QUERY_STRING The query information passed to the program. It is appended to the URL with a "?".
+// REMOTE_HOST The remote hostname of the user making the request.
+// REMOTE_ADDR The remote IP address of the user making the request.
+// AUTH_TYPE The authentication method used to validate a user.
+// REMOTE_USER The authenticated name of the user.
+// REMOTE_IDENT The user making the request. This variable will only be set if NCSA IdentityCheck flag is enabled, and the client machine supports the RFC 931 identification scheme (ident daemon).
+// CONTENT_TYPE The MIME type of the query data, such as "text/html".
+// CONTENT_LENGTH The length of the data (in bytes or the number of characters) passed to the CGI program through standard input.
+// HTTP_FROM The email address of the user making the request. Most browsers do not support this variable.
+// HTTP_ACCEPT A list of the MIME types that the client can accept.
+// HTTP_USER_AGENT The browser the client is using to issue the request.
+// HTTP_REFERER The URL of the document that the client points to before accessing the CGI program.
