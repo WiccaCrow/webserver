@@ -73,6 +73,9 @@ void Request::clear() {
     // _parseFlags = 0;
 }
 
+
+// scheme://authority/path/?query_string#fragment
+
 StatusCode Request::parseLine(std::string line) {
     if (!(getFlags() & PARSED_SL)) {
         if ((_status = parseStartLine(line)) != HTTP::CONTINUE) {

@@ -1,80 +1,187 @@
 #include "CGI.hpp"
-
 #include "Logger.hpp"
 
-//Different fields (e.g. name value pairs are separated by a ampersand (&).
-//Name/value pair assignments are denoted by an equals sign (=). The format is name=value.
-//Blank spaces must be denoted by a plus sign +.
-//Some special characters will be replaced by a percent sign (2 digit hexadecimal (ASCII Value) code. For example if you need to input an actual &
+static char * const pyargs[] = {
+    "/usr/bin/python",
+    "/Users/mhufflep/Desktop/webserver/pages/site/printenv.py",
+};
 
-// Should be parsed and passed from server
-static const std::string body = "body\n";
-static const std::string header = "Content-Length=" + to_string(body.length());
-static const char *      env[] = {header.c_str(), "VAR1=mhufflep", 0, 0};
-static const char *      args[] = {"/usr/bin/python3.8", "/var/www/scripts/test.py", "args", 0, 0};
+static char * const phpargs[] = {
+    "/opt/homebrew/bin/php",
+    "/Users/mhufflep/Desktop/webserver/pages/site/printenv.php",
+};
 
-// rename function to CGI
+
+void log_error(const std::string &prefix) {
+    std::cout << prefix << std::endl;
+    //std::cout << "Errno: " + to_string(errno) << std::endl;
+    //std::cout << "Description: " + std::string(strerror(errno)) << std::endl;
+}
+
+void restore_std(int in, int out) {
+    if (in != -1 && dup2(in, fileno(stdin)) == -1) {
+        log_error("CGI::restore::in: ");
+    }
+    if (out != -1 && dup2(out, fileno(stdout)) == -1) {
+        log_error("CGI::restore::out: ");
+    }
+}
+
+void close_pipe(int in, int out) {
+    if (in != -1) {
+        close(in);
+    }
+    if (out != -1) {
+        close(out);
+    }
+}
+
+void prepareEnv() {
+    setenv("AUTH_TYPE", "Basic", 1);         // BASIC, SSL, or null
+    setenv("GATEWAY_INTERFACE", "CGI/1.1", 1); // CGI/revision
+    setenv("CONTENT_TYPE", "", 1);      // MIME-type, if there is, text/html
+    setenv("CONTENT_LENGTH", "", 1);    // Number, 256, how much bytes should script read from stdin, -1 if not known
+    
+    setenv("PATH_INFO", "", 1); 
+    setenv("PATH_TRANSLATED", "", 1);
+   
+    setenv("QUERY_STRING", "", 1);      // all from '?' in the uri to the #
+    
+    setenv("REMOTE_HOST", "", 1);  
+    setenv("REMOTE_ADDR", "", 1);       // ip addr of the request sender
+    setenv("REMOTE_USER", "", 1);
+    setenv("REMOTE_IDENT", "", 1);
+
+    setenv("REQUEST_METHOD", "", 1);    // GET, POST ...
+    setenv("SCRIPT_NAME", "", 1);       // full script name ? hello.py
+
+    setenv("SERVER_NAME", "", 1);       // Server's hostname, DNS alias, or IP address as it appears in self-referencing URLs.
+    setenv("SERVER_SOFTWARE", "webserv/1.0", 1); // our server name and version
+    setenv("SERVER_PROTOCOL", "", 1);   // HTTP/1.1 (proto/revision)
+    setenv("SERVER_PORT", "", 1);       // 80
+    
+    // Standart does not define these vars, but info appeared in different sources
+    // setenv("DOCUMENT_ROOT", "", 1);
+    // setenv("HTTP_FROM", "", 1);
+    // setenv("HTTP_HOST", "", 1);
+    // setenv("HTTP_ACCEPT", "", 1); // Comes from request
+    // setenv("HTTP_ACCEPT_CHARSET", "", 1);
+    // setenv("HTTP_ACCEPT_ENCODING", "", 1);
+    // setenv("HTTP_ACCEPT_LANGUAGE", "", 1);
+    // setenv("HTTP_USER_AGENT", "", 1);
+    // setenv("HTTP_REFERER", "", 1);
+    // setenv("HTTP_COOKIE", "", 1);
+    // setenv("HTTP_FORWARDED", "", 1);
+    // setenv("HTTP_PROXY_AUTHORIZATION", "", 1);
+}
+
+
 int main() {
-    int inPipe[2] = {-1};
-    int outPipe[2] = {-1};
+    
+    int in[2] = {-1};
+    int out[2] = {-1};
 
-    if (pipe(inPipe) != 0 || pipe(outPipe) != 0) {
-        Log.error("CGI: Cannot create pipes");
+    if (pipe(in) != 0) {
+        log_error("CGI::pipe::in: ");
         return 1;
     }
 
-    int stdinCopy = dup(fileno(stdin));
-    int stdoutCopy = dup(fileno(stdout));
+    if (pipe(out) != 0) {
+        log_error("CGI::pipe::out: ");
+        close_pipe(in[0], in[1]);
+        return 1;
+    }
+
+    int tmp[2] = {-1};
+    tmp[0] = dup(fileno(stdin));
+    if (tmp[0] == -1) {
+        log_error("CGI::backup::in: ");
+        close_pipe(tmp[0], tmp[1]);
+        close_pipe(in[0], in[1]);
+        close_pipe(out[0], out[1]);
+        return 1;
+    }
+
+    tmp[1] = dup(fileno(stdout));
+    if (tmp[1] == -1) {
+        log_error("CGI::backup::out: ");
+        close_pipe(tmp[0], tmp[1]);
+        close_pipe(in[0], in[1]);
+        close_pipe(out[0], out[1]);
+        return 1;
+    }
 
     // Redirect for child process
-    if ((dup2(outPipe[1], fileno(stdout)) == -1) || (dup2(inPipe[0], fileno(stdin)) == -1)) {
-        Log.error("CGI: dup2 function failed (main proc)");
+    if (dup2(in[0], fileno(stdin)) == -1) {
+        log_error("CGI::redirect::in: ");
+        close_pipe(tmp[0], tmp[1]);
+        close_pipe(in[0], in[1]);
+        close_pipe(out[0], out[1]);
         return 1;
     }
-
+    
+    if (dup2(out[1], fileno(stdout)) == -1) {
+        log_error("CGI::redirect::out: ");
+        restore_std(tmp[0], -1);
+        close_pipe(tmp[0], tmp[1]);
+        close_pipe(in[0], in[1]);
+        close_pipe(out[0], out[1]);
+        return 1;
+    }
+    
+    
     int childPID = fork();
-
     if (childPID < 0) {
-        Log.error("CGI: fork failed");
-        // Restore fds and close pipes
+        log_error("CGI::fork: ");
+        restore_std(tmp[0], tmp[1]);
+        close_pipe(tmp[0], tmp[1]);
+        close_pipe(in[0], in[1]);
+        close_pipe(out[0], out[1]);
+        // return some message ?
         return 1;
-    }
-
-    if (childPID == 0) {
-        execvpe(args[0], (char *const *)args, (char *const *)env);
-        exit(1);
-    }
-
-    close(inPipe[0]);
-    close(outPipe[1]);
-
-    // Check for errors
-    dup2(stdinCopy, fileno(stdin));
-    dup2(stdoutCopy, fileno(stdout));
-
-    close(stdinCopy);
-    close(stdoutCopy);
-
-    // Safe maybe
-    write(inPipe[1], body.c_str(), body.length());
-
-    while (1) {
-        char buf[100000];
-        // Definitely should be safe
-        // Timeout for response ???
-        int n = read(outPipe[0], buf, 100000);
-        if (n > 0) {
-            // Send response to the client in body
+    } else if (childPID == 0) {
+        prepareEnv();
+        close_pipe(in[1], out[0]);
+        dup2(fileno(stdout), fileno(stderr));
+        if (execv(pyargs[0], (char * const *)pyargs) == -1) {
+            log_error("CGI::execv: ");
+            exit(1);
         }
-
-        int status;
-        if (waitpid(childPID, &status, WNOHANG) > 0)
-            break;
     }
 
-    // Important
-    close(inPipe[1]);
-    close(outPipe[0]);
+    // write(in[1], body.c_str(), body.length());
+    // needs to be protected because internal buffer could overflow with large body
+    restore_std(tmp[0], tmp[1]);
+    close_pipe(tmp[0], tmp[1]);
+    close_pipe(in[0], in[1]);
+
+    int status;
+    waitpid(childPID, &status, 0);
+
+    // Important to close it before reading
+    close_pipe(-1, out[1]);
+    
+    if (WIFEXITED(status)) {
+        std::string res = "";
+        int r = 1;
+        const int size = 300;
+        char buf[size];
+
+        while (r > 0) {
+            r = read(out[0], buf, size - 1);
+            if (r < 0) {
+                std::cout << "read err" << std::endl;
+                break ;
+            }
+            buf[r] = 0;
+            res += buf;
+        }
+        // Send response to the client in body
+        std::cout << res << std::endl;
+    }
+    // Add other macros for handling unexpected termination of child process.
+
+    close_pipe(out[0], -1);
 
     return 0;
 }
