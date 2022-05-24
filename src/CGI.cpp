@@ -13,9 +13,9 @@ static char * const phpargs[] = {
 
 
 void log_error(const std::string &prefix) {
-    std::cout << prefix << std::endl;
-    //std::cout << "Errno: " + to_string(errno) << std::endl;
-    //std::cout << "Description: " + std::string(strerror(errno)) << std::endl;
+    Log.error(prefix);
+    Log.error("Errno: " + to_string(errno));
+    Log.error("Description: " + std::string(strerror(errno)));
 }
 
 void restore_std(int in, int out) {
@@ -150,7 +150,9 @@ int main() {
     }
 
     // write(in[1], body.c_str(), body.length());
-    // needs to be protected because internal buffer could overflow with large body
+    // needs to be protected because internal 
+    // buffer could overflow with large body
+    
     restore_std(tmp[0], tmp[1]);
     close_pipe(tmp[0], tmp[1]);
     close_pipe(in[0], in[1]);

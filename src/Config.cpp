@@ -203,7 +203,8 @@ int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::
             return 0;
     }
 
-    JSON::Array          *arr = src->get(key)->toArr();
+    JSON::Array *arr = src->get(key)->toArr();
+    
     JSON::Array::iterator it = arr->begin();
     JSON::Array::iterator end = arr->end();
     for (; it != end; it++) {
@@ -228,7 +229,8 @@ int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::
             return 0;
     }
 
-    JSON::Array          *arr = src->get(key)->toArr();
+    JSON::Array *arr = src->get(key)->toArr();
+
     JSON::Array::iterator it = arr->begin();
     JSON::Array::iterator end = arr->end();
     for (; it != end; it++) {
@@ -266,6 +268,17 @@ std::vector<std::string> getDefaultIndex() {
 
 // Object parsing
 int parseCGI(JSON::Object *src, std::map<std::string, std::string> &res) {
+    switch (basicCheck(src, "CGI", OBJECT, res, res)) {
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
+    }
+    
     JSON::Object *obj = src->get("CGI")->toObj();
 
     JSON::Object::iterator it = obj->begin();
@@ -295,6 +308,17 @@ int isValidCGI(std::map<std::string, std::string> &res) {
 }
 
 int parseErrorPages(JSON::Object *src, std::map<int, std::string> &res) {
+    switch (basicCheck(src, "error_pages", OBJECT, res, res)) {
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
+    }
+
     JSON::Object *errObj = src->get("error_pages")->toObj();
 
     JSON::Object::iterator it = errObj->begin();
@@ -330,6 +354,44 @@ int isValidErrorPages(std::map<int, std::string> &res) {
     return true;
 }
 
+int parseRedirect(JSON::Object *src, Redirect &res) {
+    switch (basicCheck(src, "redirect", OBJECT, res, res)) {
+        case 1: break;
+        case 2: return 1;
+        default: return 0;
+    }
+
+    JSON::Object *rd = src->get("redirect")->toObj();
+
+    if (!getUInteger(rd, "code", NUMBER, res.getCodeRef()))
+        return 0;
+    
+    if (!getString(rd, "uri", STRING, res.getURIRef()))
+        return 0;
+
+    res.toggle();
+    return 1;
+}
+
+int isValidRedirect(Redirect &res) {
+
+    if (res.isSet()) {
+        if (res.getCodeRef() < 100 && res.getCodeRef() > 999) {
+            Log.error("Redirect code \"" + to_string(res.getCodeRef()) + "\" invalid");
+            return 0;
+        }
+        else if (res.getURIRef() == "") {
+            Log.error("Redirect uri is empty");
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int isValidDefaultPage(const std::string &res) {
+    return (isReadableFile(res));
+}
+
 int parseLocation(JSON::Object *src, Location &dst, Location &def) {
     if (!getString(src, "root", STRING, dst.getRootRef(), def.getRootRef())) { // optional ?
         Log.error("#### Failed to parse \"root\"");
@@ -342,6 +404,13 @@ int parseLocation(JSON::Object *src, Location &dst, Location &def) {
         return 0;
     }
 
+    if (!getString(src, "default_page", STRING, dst.getDefaultPageRef())) {
+        Log.error("#### Failed to parse \"default_page\"");
+        return 0;
+    } else if (!isValidDefaultPage(dst.getDefaultPageRef())) {
+        return 0;
+    }
+
     if (!getUInteger(src, "post_max_body", NUMBER, dst.getPostMaxBodyRef(), 200)) {
         Log.error("#### Failed to parse \"post_max_body\"");
         return 0;
@@ -349,6 +418,13 @@ int parseLocation(JSON::Object *src, Location &dst, Location &def) {
 
     if (!getBoolean(src, "autoindex", BOOLEAN, dst.getAutoindexRef(), false)) {
         Log.error("#### Failed to parse \"autoindex\"");
+        return 0;
+    }
+
+    if (!parseRedirect(src, dst.getRedirectRef())) {
+        Log.error("#### Failed to parse \"redirect\"");
+        return 0;
+    } else if (!isValidRedirect(dst.getRedirectRef())) {
         return 0;
     }
 
@@ -395,7 +471,6 @@ int parseLocations(JSON::Object *src, std::map<std::string, Location> &res, Loca
     JSON::Object::iterator end = locations->end();
     for (; it != end; it++) {
         Location dst = base;
-
         if (!basicCheck(locations, it->first, OBJECT)) {
             return 0;
         }
