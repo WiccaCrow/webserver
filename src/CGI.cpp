@@ -1,5 +1,6 @@
 #include "CGI.hpp"
 #include "Logger.hpp"
+#include "Server.hpp"
 
 static char * const pyargs[] = {
     "/usr/bin/python",
@@ -37,40 +38,44 @@ void close_pipe(int in, int out) {
 }
 
 void prepareEnv() {
-    setenv("AUTH_TYPE", "Basic", 1);         // BASIC, SSL, or null
     setenv("GATEWAY_INTERFACE", "CGI/1.1", 1); // CGI/revision
-    setenv("CONTENT_TYPE", "", 1);      // MIME-type, if there is, text/html
-    setenv("CONTENT_LENGTH", "", 1);    // Number, 256, how much bytes should script read from stdin, -1 if not known
     
     setenv("PATH_INFO", "", 1); 
     setenv("PATH_TRANSLATED", "", 1);
    
-    setenv("QUERY_STRING", "", 1);      // all from '?' in the uri to the #
-    
+    // ?
     setenv("REMOTE_HOST", "", 1);  
     setenv("REMOTE_ADDR", "", 1);       // ip addr of the request sender
     setenv("REMOTE_USER", "", 1);
     setenv("REMOTE_IDENT", "", 1);
 
+    // Request
+    setenv("AUTH_TYPE", "Basic", 1);    // Basic, SSL, or null
+    setenv("QUERY_STRING", "", 1);      // scheme://authority/path?QUERY_STRING#fragment
     setenv("REQUEST_METHOD", "", 1);    // GET, POST ...
     setenv("SCRIPT_NAME", "", 1);       // full script name ? hello.py
-
-    setenv("SERVER_NAME", "", 1);       // Server's hostname, DNS alias, or IP address as it appears in self-referencing URLs.
+    setenv("CONTENT_TYPE", "", 1);      // MIME-type, if there is, text/html
+    setenv("CONTENT_LENGTH", "", 1);    // Number, 256, how much bytes should script read from stdin, -1 if not known
+    
+    setenv("SERVER_NAME", "", 1);                // Server's hostname, DNS alias, or IP address as it appears in self-referencing URLs.
     setenv("SERVER_SOFTWARE", "webserv/1.0", 1); // our server name and version
-    setenv("SERVER_PROTOCOL", "", 1);   // HTTP/1.1 (proto/revision)
+    setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);    // HTTP/1.1 (proto/revision)
+    
+    // Current server block
     setenv("SERVER_PORT", "", 1);       // 80
     
     // Standart does not define these vars, but info appeared in different sources
     // setenv("DOCUMENT_ROOT", "", 1);
-    // setenv("HTTP_FROM", "", 1);
+    // setenv("HTTP_COOKIE", "", 1);
     // setenv("HTTP_HOST", "", 1);
     // setenv("HTTP_ACCEPT", "", 1); // Comes from request
+
+    // setenv("HTTP_FROM", "", 1);
     // setenv("HTTP_ACCEPT_CHARSET", "", 1);
     // setenv("HTTP_ACCEPT_ENCODING", "", 1);
     // setenv("HTTP_ACCEPT_LANGUAGE", "", 1);
     // setenv("HTTP_USER_AGENT", "", 1);
     // setenv("HTTP_REFERER", "", 1);
-    // setenv("HTTP_COOKIE", "", 1);
     // setenv("HTTP_FORWARDED", "", 1);
     // setenv("HTTP_PROXY_AUTHORIZATION", "", 1);
 }
@@ -152,7 +157,7 @@ int main() {
     // write(in[1], body.c_str(), body.length());
     // needs to be protected because internal 
     // buffer could overflow with large body
-    
+
     restore_std(tmp[0], tmp[1]);
     close_pipe(tmp[0], tmp[1]);
     close_pipe(in[0], in[1]);
