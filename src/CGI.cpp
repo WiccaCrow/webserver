@@ -8,11 +8,13 @@
 static char * const pyargs[] = {
     "/usr/bin/python",
     "/Users/mhufflep/Desktop/webserver/pages/site/printenv.py",
+    0
 };
 
 static char * const phpargs[] = {
     "/opt/homebrew/bin/php",
     "/Users/mhufflep/Desktop/webserver/pages/site/printenv.php",
+    0
 };
 
 
@@ -192,8 +194,8 @@ std::string CGI(HTTP::Request &req) {
         return "";
     }
 
-    if (WIFEXITED(status)) {
         std::string res = "";
+    if (WIFEXITED(status)) {
         int r = 1;
         const int size = 300;
         char buf[size];
@@ -214,5 +216,5 @@ std::string CGI(HTTP::Request &req) {
 
     close_pipe(out[0], -1);
 
-    return 0;
+    return res;
 }
