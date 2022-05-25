@@ -87,9 +87,7 @@ ReadSock::Status ReadSock::getline(struct s_sock &sock, std::string &line) {
     }
 
     if (sock.perm & PERM_READ) {
-        Log.debug("before readSocket");
         ReadSock::Status status = readSocket(fd);
-        Log.debug("after readSocket");
 
         if (status == ReadSock::RECV_END) {
             return status; // ???

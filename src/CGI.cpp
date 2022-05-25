@@ -5,15 +5,15 @@
 #include "Request.hpp"
 #include "ValidateHeaders.hpp"
 
-static char * const pyargs[] = {
+static char * pyargs[] = {
     "/usr/bin/python",
-    "/usr/bin/python3.9", // "/Users/mhufflep/Desktop/webserver/pages/site/printenv.py",
+    "./pages/site/printenv.py",
     0
 };
 
-static char * const phpargs[] = {
+static char * phpargs[] = {
     "/opt/homebrew/bin/php",
-    "/Users/mhufflep/Desktop/webserver/pages/site/printenv.php",
+    "./pages/site/printenv.php",
     0
 };
 
@@ -160,7 +160,10 @@ std::string CGI(HTTP::Request &req) {
     } else if (childPID == 0) {
         close_pipe(in[1], out[0]);
         // dup2(out[1], fileno(stderr));
-        if (execv(pyargs[0], (char * const *)phpargs) == -1) {        // if (execv(phpargs[0], (char * const *)phpargs) == -1) {
+        char buf[1000];
+        realpath(pyargs[1], buf);
+        pyargs[1] = buf;
+        if (execv(pyargs[0], (char * const *)pyargs) == -1) {        // if (execv(phpargs[0], (char * const *)phpargs) == -1) {
             exit(3);
         }
     }

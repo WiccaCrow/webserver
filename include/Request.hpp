@@ -13,6 +13,7 @@
 #include "Utils.hpp"
 #include "ValidateHeaders.hpp"
 #include "ServerBlock.hpp"
+#include "Globals.hpp"
 
 #define PARSED_NONE    0x0
 #define PARSED_SL      0x1
@@ -28,7 +29,7 @@ class Request {
     std::string              _protocol;
     std::string              _queryString;
     std::string              _scriptName;
-    std::map<uint32, Header> _headers;
+    std::map<HeaderCode, Header> _headers;
     HTTP::StatusCode         _status;
 
     ServerBlock              &_servBlock;
@@ -50,7 +51,7 @@ class Request {
     const std::string              &getMethod() const;
     const std::string              &getPath() const;
     const std::string              &getProtocol() const;
-    const std::map<uint32, Header> &getHeaders() const;
+    const std::map<HeaderCode, Header> &getHeaders() const;
     const std::string              &getBody() const;
     const uint8                    &getFlags() const;
     const HTTP::StatusCode         &getStatus() const;

@@ -50,7 +50,7 @@ const std::string &Request::getProtocol() const {
     return _protocol;
 }
 
-const std::map<uint32, Header> &Request::getHeaders() const {
+const std::map<HeaderCode, Header> &Request::getHeaders() const {
     return _headers;
 }
 
@@ -110,7 +110,7 @@ const std::string &Request::getScriptName() const {
 }
 
 const char *Request::getHeaderValue(HeaderCode key) const {
-    std::map<uint32_t, Header>::const_iterator it = _headers.find(key);
+    std::map<HeaderCode, Header>::const_iterator it = _headers.find(key);
     if (it == _headers.end()) {
         return "";
     }
@@ -168,7 +168,7 @@ StatusCode Request::parseStartLine(const std::string &line) {
 
     skipSpaces(line, pos);
     if (line[pos]) {
-        std::cout << "|" << (int)line[pos] << "|" << std::endl;
+        // std::cout << "|" << (int)line[pos] << "|" << std::endl;
         Log.debug("Forbidden symbols at the end of the line");
         return BAD_REQUEST;
     }
@@ -213,8 +213,8 @@ StatusCode Request::parseHeader(std::string line) {
         setFlag(PARSED_HEADERS);
         Log.debug("Headers were parsed");
         // transfer-encoding && content-length not find
-        if (_headers.find(1470906230) == _headers.end() &&
-            _headers.find(314322716) == _headers.end()) {
+        if (_headers.find(TRANSFER_ENCODING) == _headers.end() &&
+            _headers.find(CONTENT_LENGTH) == _headers.end()) {
             return PROCESSING;
         }
         return CONTINUE;
@@ -235,26 +235,24 @@ StatusCode Request::parseHeader(std::string line) {
 
     toLowerCase(header.line);
 
-    header.hash = crc(header.line.data(), header.keyLen);
-    std::cout << header.getKey() << std::endl;
-    if (static_cast<std::string>(header.getKey()) == static_cast<std::string>("transfer-encoding")) {
-        std::cout << header.hash << std::endl;
-    }
+    header.hash = static_cast<HeaderCode>(crc(header.line.data(), header.keyLen));
+    // std::cout << header.getKey() << std::endl;
     if (validHeaders.find(header.hash) == validHeaders.end()) {
         Log.debug("Maybe header is not supported");
         Log.debug(header.line.data() + std::string("    |    ") + to_string(header.hash));
         return BAD_REQUEST;
     }
 
-    // // if host already exists
-    // if (header.hash == 3475444733 && _headers.find(header.hash) != _headers.end()) {
-    //     return BAD_REQUEST;
-    // }
-
     // dublicate header
     if (_headers.find(header.hash) != _headers.end()) {
         return BAD_REQUEST;
     }
+    if (header.hash == CONTENT_LENGTH) {
+        size_t length = strtoul(header.getVal(), NULL, 10);
+        setChunked_isSizeChunk(false);
+        setChunked_Size(length);
+    }
+
     // Copying here need to replace
     _headers.insert(std::make_pair(header.hash, header));
 
@@ -292,21 +290,18 @@ StatusCode Request::parseChunked(const std::string &line) {
 }
 
 StatusCode Request::parseBody(const std::string &line) {
-    // if transfer-encoding
-    if (_headers.find(1470906230) != _headers.end()) {
+    std::cout << "body:" << std::endl;
+    std::cout << line << std::endl;
+    if (_headers.find(TRANSFER_ENCODING) != _headers.end()) {
         return (parseChunked(line));
     }
-    return PROCESSING;
-
-    // if content-length
-    if (_headers.find(314322716) != _headers.end()) {
-        long length = atol(_headers[314322716].getVal()); // max content-length?
-        // parse
-    } else {
+    else if (_headers.find(CONTENT_LENGTH) != _headers.end()) {
         setFlag(PARSED_BODY);
+        // parse
+        return PROCESSING;
     }
     // return ;
-    return CONTINUE;
+    return PROCESSING;
 }
 
 // for chunked
