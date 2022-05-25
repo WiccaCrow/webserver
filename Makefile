@@ -47,7 +47,7 @@ $(OSOURCEFOLDER)%.o: $(SOURCEFOLDER)%.cpp
 
 libjson:
 # --remote takes the last commit ?
-	@if ! [ "$(ls $(LIBJSONFOLDER))" ] ; then git submodule update --init; fi
+	@if ! [ "$(ls $(LIBJSONFOLDER))" ] ; then git submodule update --remote; fi
 	$(MAKE) -C $(LIBJSONFOLDER) all
 
 $(NAME): $(OSOURCE)
