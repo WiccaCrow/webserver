@@ -7,7 +7,7 @@
 
 static char * const pyargs[] = {
     "/usr/bin/python",
-    "/Users/mhufflep/Desktop/webserver/pages/site/printenv.py",
+    "/usr/bin/python3.9", // "/Users/mhufflep/Desktop/webserver/pages/site/printenv.py",
     0
 };
 
@@ -160,7 +160,7 @@ std::string CGI(HTTP::Request &req) {
     } else if (childPID == 0) {
         close_pipe(in[1], out[0]);
         // dup2(out[1], fileno(stderr));
-        if (execv(phpargs[0], (char * const *)phpargs) == -1) {
+        if (execv(pyargs[0], (char * const *)phpargs) == -1) {        // if (execv(phpargs[0], (char * const *)phpargs) == -1) {
             exit(3);
         }
     }
