@@ -26,7 +26,6 @@
 #ifndef SOMAXCONN
 #define SOMAXCONN 128
 #endif
-
 // максимальный размер пакета в TCP
 #define PACKET_SIZE 65536
 

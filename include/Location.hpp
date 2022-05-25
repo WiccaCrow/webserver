@@ -4,6 +4,22 @@
 #include <string>
 #include <vector>
 
+class Redirect {
+    
+    bool _set;
+    int _code;
+    std::string _uri;
+
+    public:
+    Redirect(void);
+    ~Redirect(void);
+
+    bool         isSet(void);
+    bool         toggle(void);
+    int          &getCodeRef(void);
+    std::string  &getURIRef(void);
+};
+
 class Location {
     private:
     std::string                        _path;
@@ -13,6 +29,8 @@ class Location {
     int                                _post_max_body;
     std::vector<std::string>           _allowedMethods;
     std::map<std::string, std::string> _cgiPaths;
+    Redirect                           _redirect;
+    std::string                        _defaultPage;
 
     public:
     Location(void);
@@ -20,6 +38,8 @@ class Location {
     // Location(Location &other);
     // Location &operator=(Location &other);
 
+    std::string                        &getDefaultPageRef(void);
+    Redirect                           &getRedirectRef(void);
     std::string                        &getPathRef(void);
     bool                               &getAutoindexRef(void);
     int                                &getPostMaxBodyRef(void);

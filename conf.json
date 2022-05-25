@@ -10,6 +10,7 @@
             "CGI": {
                 ".py": "/usr/bin/python"
             },
+            "default_page": "./pages/404.html",
             "methods-allowed": [ "GET", "POST" ],
             "post_max_body": 100,
             "autoindex": true,
@@ -17,6 +18,7 @@
             "locations": {
                 "/about": {
                     "root": "/Users/mhufflep/Desktop/",
+                    "default_page": "./pages/404.html",
                     "CGI": {
                         ".js": "/usr/local/bin/node"
                     },
@@ -26,6 +28,7 @@
                     "methods-allowed": [ "GET", "POST" ]                 
                 },
                 "/feedback": {
+                    "default_page": "./pages/404.html",
                     "CGI": {
                         ".py": "/usr/bin/python",
                         ".js": "/usr/local/bin/node"

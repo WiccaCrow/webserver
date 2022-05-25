@@ -50,6 +50,6 @@ int isValidErrorPages(std::map<int, std::string> &res);
 int parseLocation(JSON::Object *src, Location &dst, Location &def);
 int parseLocations(JSON::Object *src, std::map<std::string, Location> &res, Location &base);
 
-int     parseServerBlock(JSON::Object *src, ServerBlock &dst);
-int     parseServerBlocks(JSON::Object *src, Server *serv);
+int parseServerBlock(JSON::Object *src, ServerBlock &dst);
+int parseServerBlocks(JSON::Object *src, Server *serv);
 Server *loadConfig(const string filename);

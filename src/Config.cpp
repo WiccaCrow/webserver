@@ -203,7 +203,8 @@ int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::
             return 0;
     }
 
-    JSON::Array          *arr = src->get(key)->toArr();
+    JSON::Array *arr = src->get(key)->toArr();
+    
     JSON::Array::iterator it = arr->begin();
     JSON::Array::iterator end = arr->end();
     for (; it != end; it++) {
@@ -228,7 +229,8 @@ int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::
             return 0;
     }
 
-    JSON::Array          *arr = src->get(key)->toArr();
+    JSON::Array *arr = src->get(key)->toArr();
+
     JSON::Array::iterator it = arr->begin();
     JSON::Array::iterator end = arr->end();
     for (; it != end; it++) {
@@ -266,6 +268,17 @@ std::vector<std::string> getDefaultIndex() {
 
 // Object parsing
 int parseCGI(JSON::Object *src, std::map<std::string, std::string> &res) {
+    switch (basicCheck(src, "CGI", OBJECT, res, res)) {
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
+    }
+    
     JSON::Object *obj = src->get("CGI")->toObj();
 
     JSON::Object::iterator it = obj->begin();
@@ -295,6 +308,17 @@ int isValidCGI(std::map<std::string, std::string> &res) {
 }
 
 int parseErrorPages(JSON::Object *src, std::map<int, std::string> &res) {
+    switch (basicCheck(src, "error_pages", OBJECT, res, res)) {
+        case 0:
+            return 0;
+        case 1:
+            break;
+        case 2:
+            return 1;
+        default:
+            return 0;
+    }
+
     JSON::Object *errObj = src->get("error_pages")->toObj();
 
     JSON::Object::iterator it = errObj->begin();
@@ -330,6 +354,40 @@ int isValidErrorPages(std::map<int, std::string> &res) {
     return true;
 }
 
+int parseRedirect(JSON::Object *src, Redirect &res) {
+    switch (basicCheck(src, "redirect", OBJECT, res, res)) {
+        case 1: break;
+        case 2: return 1;
+        default: return 0;
+    }
+
+    JSON::Object *rd = src->get("redirect")->toObj();
+
+    if (!getUInteger(rd, "code", NUMBER, res.getCodeRef()))
+        return 0;
+    
+    if (!getString(rd, "uri", STRING, res.getURIRef()))
+        return 0;
+
+    res.toggle();
+    return 1;
+}
+
+int isValidRedirect(Redirect &res) {
+
+    if (res.isSet()) {
+        if (res.getCodeRef() < 300 && res.getCodeRef() > 308) {
+            Log.error("Redirect code \"" + to_string(res.getCodeRef()) + "\"is invalid");
+            return 0;
+        }
+        else if (res.getURIRef() == "") {
+            Log.error("Redirect uri is empty");
+            return 0;
+        }
+    }
+    return 1;
+}
+
 int parseLocation(JSON::Object *src, Location &dst, Location &def) {
     if (!getString(src, "root", STRING, dst.getRootRef(), def.getRootRef())) { // optional ?
         Log.error("#### Failed to parse \"root\"");
@@ -342,6 +400,14 @@ int parseLocation(JSON::Object *src, Location &dst, Location &def) {
         return 0;
     }
 
+    if (!getString(src, "default_page", STRING, dst.getDefaultPageRef())) {
+        Log.error("#### Failed to parse \"default_page\"");
+        return 0;
+    } else if (!isReadableFile(dst.getDefaultPageRef())) {
+        Log.error("#### \"default_page\" " + dst.getDefaultPageRef() + "is not regular readable file");
+        return 0;
+    }
+
     if (!getUInteger(src, "post_max_body", NUMBER, dst.getPostMaxBodyRef(), 200)) {
         Log.error("#### Failed to parse \"post_max_body\"");
         return 0;
@@ -349,6 +415,13 @@ int parseLocation(JSON::Object *src, Location &dst, Location &def) {
 
     if (!getBoolean(src, "autoindex", BOOLEAN, dst.getAutoindexRef(), false)) {
         Log.error("#### Failed to parse \"autoindex\"");
+        return 0;
+    }
+
+    if (!parseRedirect(src, dst.getRedirectRef())) {
+        Log.error("#### Failed to parse \"redirect\"");
+        return 0;
+    } else if (!isValidRedirect(dst.getRedirectRef())) {
         return 0;
     }
 
@@ -395,7 +468,6 @@ int parseLocations(JSON::Object *src, std::map<std::string, Location> &res, Loca
     JSON::Object::iterator end = locations->end();
     for (; it != end; it++) {
         Location dst = base;
-
         if (!basicCheck(locations, it->first, OBJECT)) {
             return 0;
         }
@@ -416,7 +488,6 @@ int parseLocations(JSON::Object *src, std::map<std::string, Location> &res, Loca
 }
 
 int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
-    // Basic server attributes
     if (!getString(src, "server_name", STRING, dst.getServerNameRef(), "")) {
         Log.error("## Failed to parse \"server_name\"");
         return 0;
@@ -424,6 +495,9 @@ int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
 
     if (!getString(src, "addr", STRING, dst.getAddrRef(), "127.0.0.1")) {
         Log.error("## Failed to parse \"addr\"");
+        return 0;
+    } else if (!isValidIp(dst.getAddrRef())) {
+        Log.error("## \"addr\" is invalid or not in ipv4 format");
         return 0;
     }
 
@@ -486,9 +560,6 @@ int parseServerBlocks(JSON::Object *src, Server *serv) {
             Log.error("# Failed to parse server block \"" + it->first + "\"");
             return 0;
         }
-        // std::cout << block_dst.getLocationBaseRef().getRootRef() << std::endl;
-        // std::cout << block_dst.getLocationsRef()["/about"].getRootRef() << std::endl;
-        // std::cout << block_dst.getLocationsRef()["/feedback"].getRootRef() << std::endl;
         serv->addServerBlock(block_dst);
     }
     return 1;
@@ -521,26 +592,3 @@ Server *loadConfig(const string filename) {
     delete ptr;
     return serv;
 }
-
-// switch (expression)
-// {
-// case 0: // Not exist                                            /// Continue
-// case 1: // Exist                                                /// Continue
-
-// case 2: // Not exist and optional                               /// Default
-// case 3: // Exist and optional                                   /// Continue
-
-// case 4: // Not exist, not optional, but formatted               /// Impossible
-// case 5: // Exist, not optional and formatted                    /// Continue
-// case 6: // Not exist, optional and formatted                    /// Default
-// case 7: // Exist, optional and formatted                        /// Continue
-
-// case 8: // Not exist, not optional, not formatted, but valid    /// Impossible
-// case 9: // Exist, not optional, not formatted, but valid        /// Error (bad format)
-// case 10: // Not exist, optional, not formatted, but valid       /// Error (incorrect default value)
-// case 11: // Exist, optional, not formatted, but valid           /// Error (bad format)
-// case 12: // Not exist, not optional, formatted and valid        /// Impossible
-// case 13: // Exist, not optional, formatted and valid            /// OK
-// case 14: // Not exist, optional, formatted and valid            /// Default
-// case 15: // Exist, optional, formatted and valid                /// OK
-// }

@@ -36,6 +36,10 @@ std::string &Location::getRootRef(void) {
     return _root;
 }
 
+std::string &Location::getDefaultPageRef(void) {
+    return _defaultPage;
+}
+
 std::vector<std::string> &Location::getIndexRef(void) {
     return _index;
 }
@@ -47,3 +51,30 @@ std::vector<std::string> &Location::getAllowedMethodsRef(void) {
 std::map<std::string, std::string> &Location::getCGIPathsRef(void) {
     return _cgiPaths;
 }
+
+Redirect &Location::getRedirectRef(void) {
+    return _redirect;
+}
+
+
+// Redirect
+Redirect::Redirect(void) : _code(0), _uri(""), _set(false) {}
+Redirect::~Redirect(void) {}
+
+int &Redirect::getCodeRef(void) {
+    return _code;
+}
+
+std::string  &Redirect::getURIRef(void) {
+    return _uri;
+}
+
+bool Redirect::toggle(void) {
+    _set = !_set;
+    return _set;
+}
+
+bool Redirect::isSet(void) {
+    return _set;
+}
+

@@ -26,6 +26,7 @@ std::string to_string(int val);
 
 int		isFile(const std::string& fileName);
 
+bool isValidIp(const std::string &ip);
 bool isValidPath(const std::string &path);
 bool isExtension(const std::string &ext);
 bool fileExists(const std::string &filename);
