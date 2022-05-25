@@ -1,6 +1,7 @@
 #include "CGI.hpp"
 #include "Logger.hpp"
 #include "Server.hpp"
+#include "Globals.hpp"
 
 static char * const pyargs[] = {
     "/usr/bin/python",
@@ -38,6 +39,7 @@ void close_pipe(int in, int out) {
 }
 
 void prepareEnv() {
+    
     setenv("GATEWAY_INTERFACE", "CGI/1.1", 1); // CGI/revision
     
     setenv("PATH_INFO", "", 1); 

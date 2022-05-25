@@ -1,4 +1,7 @@
 #include "Config.hpp"
+#include "Globals.hpp"
+
+Server *g_server;
 
 int main(int ac, char **av, char **env) {
 
@@ -10,15 +13,15 @@ int main(int ac, char **av, char **env) {
     Log.setFlags(INFO | ERROR | DEBUG);
     // Log.setLogFile("test.log");
 
-    Server *server = loadConfig(av[1]);
-    if (!server) {
+    g_server = loadConfig(av[1]);
+    if (!g_server) {
         return 1;
     }
     Log.info("Config is loaded");
 
-    server->env = env;
-    server->start();
+    g_server->env = env;
+    g_server->start();
 
-    delete server;
+    delete g_server;
     return 0;
 }
