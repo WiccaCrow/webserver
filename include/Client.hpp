@@ -18,10 +18,11 @@ class Client {
     HTTP::Response _res;
     // int            _responseFormed : 1;
 
+    ServerBlock    &_servBlock;
     static ReadSock _reader;
 
     public:
-    Client(struct pollfd &pfd);
+    Client(struct pollfd &pfd, ServerBlock &servBlock);
     ~Client();
     Client(const Client &client);
 

@@ -24,7 +24,7 @@ struct Header {
         return line.data();
     }
 
-    const char *getVal() {
+    const char *getVal() const {
         return &(line.data()[valStart]);
     }
 

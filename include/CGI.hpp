@@ -13,3 +13,6 @@
 #include <vector>
 
 #include "Utils.hpp"
+#include "Request.hpp"
+
+std::string CGI(HTTP::Request &req);

@@ -12,6 +12,7 @@
 #include "Types.hpp"
 #include "Utils.hpp"
 #include "ValidateHeaders.hpp"
+#include "ServerBlock.hpp"
 
 #define PARSED_NONE    0x0
 #define PARSED_SL      0x1
@@ -25,8 +26,12 @@ class Request {
     std::string              _method;
     std::string              _path;
     std::string              _protocol;
+    std::string              _queryString;
+    std::string              _scriptName;
     std::map<uint32, Header> _headers;
     HTTP::StatusCode         _status;
+
+    ServerBlock              &_servBlock;
 
     bool        _isSizeChunk;
     long        _sizeChunk;
@@ -34,8 +39,13 @@ class Request {
     uint8       _parseFlags;
 
     public:
-    Request();
+    Request(ServerBlock &servBlock);
     ~Request();
+
+    Request(const Request &other);
+    Request &operator=(const Request &other);
+
+    const ServerBlock              &getServerBlock() const;
 
     const std::string              &getMethod() const;
     const std::string              &getPath() const;
@@ -44,6 +54,11 @@ class Request {
     const std::string              &getBody() const;
     const uint8                    &getFlags() const;
     const HTTP::StatusCode         &getStatus() const;
+
+    // Needed to be improved
+    const std::string              &getQueryString() const;
+    const std::string              &getScriptName() const;
+    const char *  getHeaderValue(HeaderCode key) const;
 
     bool empty();
 

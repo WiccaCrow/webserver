@@ -1,4 +1,5 @@
 #include "Response.hpp"
+#include "CGI.hpp"
 
 HTTP::Response::Response() {
     _responseFormed = false;
@@ -41,7 +42,7 @@ std::string         HTTP::Response::doCGI(Request &req) {
     // две строки ниже убрать, когда будет использован в коде req
     if (req.getMethod() != "")
         ;
-    std::string body;
+    std::string resCGI = CGI(req);
     // раскомментировать, когда  будет готов глобальный объект для конфига
     // добавить в объект конфига функцию, которая принимает строку с URI req.getPath(),
     // которую будет сравнивать с map для cgi, например такой: map<окончание для url, путь к cgi> cgiMap;
@@ -50,7 +51,7 @@ std::string         HTTP::Response::doCGI(Request &req) {
     //      std::string путь к cgi = объект конфига  conf.cmpCGI(req.getPath());
     //      if (путь к cgi != "") {
     //          std::string resCGI = executeCGI(необходимые параметры);
-    //
+     
     // _req.getStatus() еще не написано, но уже обговорено.
     // это будет либо status в pubic у Request, либо геттер на него
     // Используется также в reply  в Client.cpp
@@ -62,11 +63,11 @@ std::string         HTTP::Response::doCGI(Request &req) {
     //              return (findErr(_req_getStatus));
     //          }
     //              
-    //          _res += "content length: ";
-    //          _res += to_string(resCGI.length()) + "\r\n\r\n";
-    //          body = resCGI;
+    _res += "Content-Length: ";
+    _res += to_string(resCGI.length()) + "\r\n\r\n";
+    _res += resCGI;
     //      }
-    return (body);
+    return (resCGI);
 }
 
 

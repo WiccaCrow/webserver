@@ -2,13 +2,13 @@
 
 ReadSock Client::_reader;
 
-Client::Client(struct pollfd& pfd) : _pfd(pfd) {
+Client::Client(struct pollfd& pfd, ServerBlock &servBlock) : _pfd(pfd), _servBlock(servBlock), _req(servBlock) {
 }
 
 Client::~Client() {
 }
 
-Client::Client(const Client& client) : _pfd(client._pfd) {
+Client::Client(const Client& client) : _pfd(client._pfd), _servBlock(client._servBlock), _req(client._servBlock) {
     *this = client;
 }
 
@@ -97,14 +97,14 @@ void Client::reply(void) {
     // std::cout << << std::endl;
 
     int _req_getStatus = _req.getStatus();
-    // std::cout << "test 1 reply response " << _req_getStatus << std::endl;
+    std::cout << "test 1 reply response " << _req_getStatus << std::endl;
     if (_req.getStatus() == HTTP::PROCESSING) {
         _req_getStatus = HTTP::OK;
     }
     if (_req_getStatus >= HTTP::BAD_REQUEST) {
         _res.findErr(_req_getStatus);
     } else if (_req_getStatus == 200) {
-        // std::cout << "test 4 reply response " << _req.getMethod() << std::endl;
+        std::cout << "test 4 reply response " << _req.getMethod() << std::endl;
         if (_req.getMethod() == "HEAD")
             _res.HEADmethod(_req);
         if (_req.getMethod() == "GET")

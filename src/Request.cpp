@@ -4,11 +4,39 @@
 
 namespace HTTP {
 
-Request::Request() : _parseFlags(PARSED_NONE),
+Request::Request(ServerBlock &servBlock) : 
+                     _parseFlags(PARSED_NONE),
                      _isSizeChunk(true),
-                     _sizeChunk(0) {}
+                     _sizeChunk(0),
+                     _servBlock(servBlock) {}
 
 Request::~Request() {}
+
+Request::Request(const Request &other) : _servBlock(other._servBlock) {
+    *this = other;
+}
+
+Request &Request::operator=(const Request &other) {
+    if (this != &other) {
+        _method = other._method;
+        _path = other._path;
+        _protocol = other._protocol;
+        _queryString = other._queryString;
+        _scriptName = other._scriptName;
+        _headers = other._headers;
+        _status = other._status;
+        _servBlock = other._servBlock;
+        _isSizeChunk = other._isSizeChunk;
+        _sizeChunk = other._sizeChunk;
+        _body = other._body;
+        _parseFlags = other._parseFlags;
+    }
+    return *this;
+}
+
+const ServerBlock  &Request::getServerBlock() const {
+    return _servBlock;
+}
 
 const std::string &Request::getMethod() const {
     return _method;
@@ -73,6 +101,21 @@ void Request::clear() {
     // _parseFlags = 0;
 }
 
+const std::string &Request::getQueryString() const {
+    return _queryString;
+}
+
+const std::string &Request::getScriptName() const {
+    return _scriptName;
+}
+
+const char *Request::getHeaderValue(HeaderCode key) const {
+    std::map<uint32_t, Header>::const_iterator it = _headers.find(key);
+    if (it == _headers.end()) {
+        return "";
+    }
+    return it->second.getVal();
+}
 
 // scheme://authority/path/?query_string#fragment
 
