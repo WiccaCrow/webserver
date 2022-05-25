@@ -97,7 +97,7 @@ bool isValidOctet(char *octet)
         return false;
 
     for (int i = 0; octet[i] != '\0'; i++) {
-        if (!isnumber(octet[i]))
+        if (!isdigit(octet[i]))
             return false;
     }
 
