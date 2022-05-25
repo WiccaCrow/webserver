@@ -145,7 +145,6 @@ std::string CGI(HTTP::Request &req) {
         return "";
     }
     
-    
     prepareEnv(req);
     int childPID = fork();
     if (childPID < 0) {
