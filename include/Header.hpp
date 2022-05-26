@@ -3,12 +3,15 @@
 #include <map>
 #include <string>
 #include "Types.hpp"
+#include "HeadersCodes.hpp"
+#include "StatusCodes.hpp"
 
 namespace HTTP {
 
 // struct HeaderHandler {};
 
-struct Header {
+class Header {
+    public:
     typedef void (Header::*method)(void);
 
     std::string line;
@@ -17,42 +20,37 @@ struct Header {
     size_t keyLen;
     size_t valLen;
 
-    method handler;
-    uint32 hash; // ?
+    HeaderCode hash;
 
     const char *getKey() {
         return line.data();
     }
 
-    const char *getVal() {
+    const char *getVal() const {
         return &(line.data()[valStart]);
     }
 
-    void AcceptEncoding(void);
-    void AcceptLanguage(void);
-    void Authorization(void);
-    void CacheControl(void);
-    void Conection(void);
-    void Data(void);
-    void From(void);
-
-    void Host(void) {
-
-    }
-    
-    void IfMatch(void);
-    void IfModifiedSince(void);
-    void IfNoneMatch(void);
-    void IfRange(void);
-    void IfUnmodifiedSince(void);
-    void ProxyAuthorization(void);
-    void Range(void);
-    void Referer(void);
-    void TE(void);
-    void UserAgent(void);
-    void ContentLength(void);
-    void SetCookie(void);
-    void ContentType(void);
+    StatusCode AcceptEncoding(void);
+    StatusCode AcceptLanguage(void);
+    StatusCode Authorization(void);
+    StatusCode CacheControl(void);
+    StatusCode Conection(void);
+    StatusCode Data(void);
+    StatusCode From(void);
+    StatusCode Host(void);
+    StatusCode IfMatch(void);
+    StatusCode IfModifiedSince(void);
+    StatusCode IfNoneMatch(void);
+    StatusCode IfRange(void);
+    StatusCode IfUnmodifiedSince(void);
+    StatusCode ProxyAuthorization(void);
+    StatusCode Range(void);
+    StatusCode Referer(void);
+    StatusCode TE(void);
+    StatusCode UserAgent(void);
+    StatusCode ContentLength(void);
+    StatusCode SetCookie(void);
+    StatusCode ContentType(void);
 };
 
 }; // namespace HTTP

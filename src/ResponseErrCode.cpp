@@ -3,6 +3,12 @@
 const std::map<int, const char*> 
 HTTP::Response::_ErrorCode = HTTP::Response::initErrorCode();
 
+const char* HTTP::Response::findErr(int nbErr) {
+    std::map<int, const char*>::const_iterator iter = _ErrorCode.find(nbErr);
+    _res = (*iter).second;
+    return (_res.c_str());
+}
+
 std::map<int, const char*> HTTP::Response::initErrorCode() {
     std::map<int, const char*> Err;
     Err.insert(std::make_pair(BAD_REQUEST,

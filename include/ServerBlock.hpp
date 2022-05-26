@@ -48,6 +48,7 @@ class ServerBlock {
     void setBlockname(const std::string &);
 
     // Get and show atributs
+    int getPort(void) const;
     int getServFd(void);
     std::string &getAddrRef(void);
 

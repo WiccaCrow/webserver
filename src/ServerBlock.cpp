@@ -88,6 +88,10 @@ std::string &ServerBlock::getServerNameRef(void) {
     return _server_name;
 }
 
+int ServerBlock::getPort(void) const {
+    return _port;
+}
+
 int &ServerBlock::getPortRef(void) {
     return _port;
 }

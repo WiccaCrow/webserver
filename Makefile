@@ -4,8 +4,8 @@ NAME 			= 	serv
 
 CXX             =   clang++
 CPPFLAGS        =   -g -fstandalone-debug -std=c++98
-# CPPFLAGS       =   -Wall -Wextra -Werror -g -std=c++98
-# CPPFLAGS       =   -Wall -Wextra -Werror -g -Wpedantic -std=c++98
+# CPPFLAGS       =   -Wall -Wextra -Werror -g -std=c++98 
+# CPPFLAGS       =   -Wall -Wextra -Werror -Wc++11-extensions -g -Wpedantic -std=c++98 
 
 SOURCEFILES     =	main.cpp \
 				    Server.cpp \
@@ -15,6 +15,7 @@ SOURCEFILES     =	main.cpp \
 					ServerBlock.cpp \
 					Utils.cpp \
 					CRC.cpp \
+					CGI.cpp \
 					ValidateHeaders.cpp \
 					Client.cpp \
 					Logger.cpp \

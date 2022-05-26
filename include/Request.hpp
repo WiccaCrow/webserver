@@ -12,6 +12,8 @@
 #include "Types.hpp"
 #include "Utils.hpp"
 #include "ValidateHeaders.hpp"
+#include "ServerBlock.hpp"
+#include "Globals.hpp"
 
 #define PARSED_NONE    0x0
 #define PARSED_SL      0x1
@@ -25,25 +27,39 @@ class Request {
     std::string              _method;
     std::string              _path;
     std::string              _protocol;
-    std::map<uint32, Header> _headers;
+    std::string              _queryString;
+    std::string              _scriptName;
+    std::map<HeaderCode, Header> _headers;
     HTTP::StatusCode         _status;
 
-    bool        _isSizeChunk;
-    long        _sizeChunk;
-    std::string _body;
-    uint8       _parseFlags;
+    ServerBlock              &_servBlock;
+
+    bool            _flag_getline_bodySize;
+    unsigned long   _bodySize;
+    std::string     _body;
+    uint8           _parseFlags;
 
     public:
-    Request();
+    Request(ServerBlock &servBlock);
     ~Request();
+
+    Request(const Request &other);
+    Request &operator=(const Request &other);
+
+    const ServerBlock              &getServerBlock() const;
 
     const std::string              &getMethod() const;
     const std::string              &getPath() const;
     const std::string              &getProtocol() const;
-    const std::map<uint32, Header> &getHeaders() const;
+    const std::map<HeaderCode, Header> &getHeaders() const;
     const std::string              &getBody() const;
     const uint8                    &getFlags() const;
     const HTTP::StatusCode         &getStatus() const;
+
+    // Needed to be improved
+    const std::string              &getQueryString() const;
+    const std::string              &getScriptName() const;
+    const char *  getHeaderValue(HeaderCode key) const;
 
     bool empty();
 
@@ -64,10 +80,10 @@ class Request {
 
     public:
     // for chunked
-    bool getChunked_isSizeChunk();
-    void setChunked_isSizeChunk(bool isSize);
-    long getChunked_Size();
-    void setChunked_Size(long size);
+    bool getBodySizeFlag();
+    void setBodySizeFlag(bool isSize);
+    long getBodySize();
+    void setBodySize(long size);
     void setStatus(const HTTP::StatusCode &status);
 
 };

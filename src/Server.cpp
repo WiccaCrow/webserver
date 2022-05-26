@@ -1,6 +1,6 @@
 #include "Server.hpp"
 
-const size_t reservedClients = 128;
+const size_t reservedClients = 64;
 
 Server::Server() {
     _nbServBlocks = 0;
@@ -236,7 +236,7 @@ void Server::acceptNewClient(size_t id) {
             it->events = POLLIN | POLLOUT;
         } else {
             _pollfds.push_back((struct pollfd){fd, POLLIN | POLLOUT, 0});
-            _clients.push_back(Client(_pollfds.back())); // add string with port
+            _clients.push_back(Client(_pollfds.back(), _ServBlocks[id])); // add string with port
         }
     }
 }

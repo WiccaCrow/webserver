@@ -2,13 +2,13 @@
 
 ReadSock Client::_reader;
 
-Client::Client(struct pollfd& pfd) : _pfd(pfd) {
+Client::Client(struct pollfd& pfd, ServerBlock &servBlock) : _pfd(pfd), _servBlock(servBlock), _req(servBlock) {
 }
 
 Client::~Client() {
 }
 
-Client::Client(const Client& client) : _pfd(client._pfd) {
+Client::Client(const Client& client) : _pfd(client._pfd), _servBlock(client._servBlock), _req(client._servBlock) {
     *this = client;
 }
 
@@ -138,20 +138,8 @@ void Client::reply(void) {
     // если нет каких-то полей с указанием окончания отправки ответа,
     // клиент будет продолжать стоять в ожидании окончания ответа - POLLOUT
 
-    // Not sure if it should be here.
-    // Most likely current function should return the value (or set some flag)
-    // to the server class and it should disconnect the client
-
-    // if (sentBytes < 0) {
-    //     disconnect();
-    //     // Error case
-    // }
     // if (sentBytes == 0) {
     //     disconnect();
-    // }
-    // if (sentBytes != responseLength) {
-    //     // Not all bytes were sent
-    //     // Chucked response or error
     // }
 }
 
