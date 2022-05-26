@@ -5,10 +5,10 @@
 namespace HTTP {
 
 Request::Request(ServerBlock &servBlock) : 
-                     _parseFlags(PARSED_NONE),
+                     _servBlock(servBlock),
                      _flag_getline_bodySize(true),
                      _bodySize(0),
-                     _servBlock(servBlock) {}
+                     _parseFlags(PARSED_NONE) {}
 
 Request::~Request() {}
 
@@ -297,8 +297,8 @@ StatusCode Request::parseBody(const std::string &line) {
     }
     else if (_headers.find(CONTENT_LENGTH) != _headers.end()) {
         setFlag(PARSED_BODY);
-    std::cout << "body:" << _body << std::endl;
-
+        parseChunked(line);
+    // std::cout << "body:" << _body << std::endl;
         // parse
         return PROCESSING;
     }
