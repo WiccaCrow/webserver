@@ -42,7 +42,7 @@ class Server {
     void fillServBlocksFds(void);
 
     public:
-    char **                    env;
+    char ** env;
     Server();
     Server(const std::string &_addr, const uint16_t _port);
     Server(const Server &obj);

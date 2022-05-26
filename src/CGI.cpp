@@ -162,7 +162,7 @@ std::string CGI(HTTP::Request &req) {
         char buf[1000];
         realpath(pyargs[1], buf);
         pyargs[1] = buf;
-        if (execv(pyargs[0], (char * const *)pyargs) == -1) {        // if (execv(phpargs[0], (char * const *)phpargs) == -1) {
+        if (execv(pyargs[0], (char * const *)pyargs) == -1) {
             exit(3);
         }
     }

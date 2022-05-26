@@ -58,7 +58,7 @@ const std::string &Request::getBody() const {
     return _body;
 }
 
-const uint8 &Request::getFlags() const {
+const uint8_t &Request::getFlags() const {
     return _parseFlags;
 }
 
@@ -73,11 +73,11 @@ bool Request::empty() {
             _headers.empty());
 }
 
-void Request::setFlag(uint8 flag) {
+void Request::setFlag(uint8_t flag) {
     _parseFlags |= flag;
 }
 
-void Request::removeFlag(uint8 flag) {
+void Request::removeFlag(uint8_t flag) {
     _parseFlags &= ~flag;
 }
 

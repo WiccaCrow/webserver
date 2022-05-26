@@ -4,15 +4,11 @@
 
 #include <map>
 
-#include "Types.hpp"
-
 #include "Header.hpp"
-
 #include "HeadersCodes.hpp"
 
 namespace HTTP {
 
-extern const std::map<uint32, bool> validHeaders;
-extern const size_t                 tableSize;
+extern const std::map<uint32_t, bool> validHeaders;
 
 }; // namespace HTTP

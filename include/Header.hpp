@@ -2,7 +2,6 @@
 
 #include <map>
 #include <string>
-#include "Types.hpp"
 #include "HeadersCodes.hpp"
 #include "StatusCodes.hpp"
 

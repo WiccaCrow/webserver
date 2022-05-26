@@ -55,8 +55,8 @@ static const HeaderCode headerHashes[] = {
     SEC_CH_UA_PLATFORM
 };
 
-std::map<uint32, bool> initHashMap(void) {
-    std::map<uint32, bool> m;
+std::map<uint32_t, bool> initHashMap(void) {
+    std::map<uint32_t, bool> m;
 
     const size_t headersCount = sizeof(headerHashes) / sizeof(headerHashes[0]);
     for (size_t i = 0; i < headersCount; ++i) {
@@ -65,6 +65,6 @@ std::map<uint32, bool> initHashMap(void) {
     return m;
 }
 
-const std::map<uint32, bool> validHeaders = initHashMap();
+const std::map<uint32_t, bool> validHeaders = initHashMap();
 
 }; // namespace HTTP
