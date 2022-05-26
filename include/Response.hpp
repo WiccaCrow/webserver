@@ -20,7 +20,11 @@ class Response {
 
     public:
     Response();
-    ~Response() {}
+    ~Response();
+
+    void        clear();
+
+    //  for errors
 
     static const std::map<std::string, std::string>     _ContType;
     static const std::map<int, const char *>            _ErrorCode;
@@ -29,42 +33,15 @@ class Response {
     static std::map<int, const char *>          initErrorCode();
     static std::map<std::string, std::string>   initContType();
 
-    // const char *getData(void) {
-    //     std::string body = "<html><body> Hello from the other side! </body></html>";
-    //     _res = "HTTP/1.1 200 OK\r\n";
-    //     _res += "Content-type: text/html; charset=utf-8\r\n";
-    //     _res += "Connection: keep-alive\r\n";
-    //     _res += "Keep-Alive: timeout=55, max=1000\r\n";
-    //     _res += "Content-length: " + to_string(body.length()) + "\r\n\r\n";
-    //     _res += body;
+    // These functions allow you to get / set 
+    // a flag by which you can find out about 
+    // the need to form a response (the request 
+    // is fully processed)
 
-    //     return _res.c_str();
-    // }
+    bool isFormed() const;
+    void setFormed(bool formed);
 
-    bool isFormed() const {
-        return _responseFormed;
-    }
-
-    void setFormed(bool formed) {
-        _responseFormed = formed;
-    }
-
-    // void resetResponse() {
-    //     _res = "";
-    // }
-
-    // Errors:
-    // 400 403 404 405 408 411 413 414 415
-    // 500 501 502 504 505
-    // const char *    ErrorCli406(void);
-    // const char *    ErrorCli409(void);
-    // const char *    ErrorCli410(void);
-    // const char *    ErrorCli412(void); // ??
-    // const char *    ErrorServ503(void);
-
-    void        clear();
-
-    std::string doCGI(Request &req);
+    // methods
 
     void        HEADmethod(Request &req);
     void        GETmethod(Request &req);
@@ -74,14 +51,15 @@ class Response {
     std::string GetContentType(std::string resourcePath);
     std::string fileToResponse(std::string &resourcePath);
     std::string listToResponse(std::string &resourcePath, Request &req);
-
     void        POSTmethod(Request &req);
 
+    void        doCGI(Request &req);
+
+    // to send response
     size_t      GetResSize(void);
     const char  *GetResponse(void);
     const char  *GetLeftToSend(void);
     size_t      GetLeftToSendSize(void);
-    
     void        SetLeftToSend(size_t n);
 
     // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);

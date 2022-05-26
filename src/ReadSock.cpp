@@ -44,7 +44,7 @@ ReadSock::Status ReadSock::getline_for_chunked(struct s_sock &sock, std::string 
         return INVALID_FD;
     }
 
-    if (req.getChunked_isSizeChunk()) {
+    if (req.getBodySizeFlag()) {
         if (!readSocket_for_chunked(sock, fd)) {
             return ReadSock::RECV_END;
         }
@@ -59,7 +59,7 @@ ReadSock::Status ReadSock::getline_for_chunked(struct s_sock &sock, std::string 
         return LINE_FOUND;
         
     } else {
-        long chunkSize = req.getChunked_Size();
+        long chunkSize = req.getBodySize();
         size_t remsLength = _rems[fd].length();
         while (remsLength < chunkSize + 2) {
             if (!readSocket_for_chunked(sock, fd)) {

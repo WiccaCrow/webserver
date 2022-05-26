@@ -34,10 +34,10 @@ class Request {
 
     ServerBlock              &_servBlock;
 
-    bool        _isSizeChunk;
-    long        _sizeChunk;
-    std::string _body;
-    uint8       _parseFlags;
+    bool            _flag_getline_bodySize;
+    unsigned long   _bodySize;
+    std::string     _body;
+    uint8           _parseFlags;
 
     public:
     Request(ServerBlock &servBlock);
@@ -80,10 +80,10 @@ class Request {
 
     public:
     // for chunked
-    bool getChunked_isSizeChunk();
-    void setChunked_isSizeChunk(bool isSize);
-    long getChunked_Size();
-    void setChunked_Size(long size);
+    bool getBodySizeFlag();
+    void setBodySizeFlag(bool isSize);
+    long getBodySize();
+    void setBodySize(long size);
     void setStatus(const HTTP::StatusCode &status);
 
 };
