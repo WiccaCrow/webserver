@@ -2,8 +2,6 @@
 
 #include <iostream>
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <cstring>
 #include <stdlib.h>
@@ -18,7 +16,6 @@ std::string getWord(const std::string &line, char delimiter, size_t &pos);
 #if __cplusplus < 201103L
 
 #include <stdio.h>
-
 #include <string>
 
 std::string to_string(int val);

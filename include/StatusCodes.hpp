@@ -92,6 +92,6 @@ class StatusDescription {
     const std::string &operator[](int code);
 };
 
-extern StatusDescription descriptions;
+extern const StatusDescription descriptions;
 
 } // namespace HTTP

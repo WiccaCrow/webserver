@@ -15,7 +15,8 @@ SOURCEFILES     =	main.cpp \
 					Utils.cpp \
 					CRC.cpp \
 					CGI.cpp \
-					ValidateHeaders.cpp \
+					Redirect.cpp \
+					ValidHeaders.cpp \
 					Client.cpp \
 					Logger.cpp \
 					Response.cpp \

@@ -2,8 +2,8 @@
 
 #include <map>
 #include <string>
-#include "HeadersCodes.hpp"
 #include "StatusCodes.hpp"
+#include "HeadersCodes.hpp"
 
 namespace HTTP {
 
@@ -79,6 +79,6 @@ class Header {
 
     StatusCode NotSupported(void);
     
-    };
+};
 
 } // namespace HTTP

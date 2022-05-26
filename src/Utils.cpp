@@ -1,4 +1,5 @@
 #include "Utils.hpp"
+#include <sys/stat.h>
 
 std::string itoh(int nb)
 {
@@ -190,6 +191,10 @@ bool checkRegFilePerms(const std::string &filename, int perm) {
 
 bool isReadableFile(const std::string &filename) {
     return checkRegFilePerms(filename, S_IREAD); // User rights only
+}
+
+bool isWritableFile(const std::string &filename) {
+    return checkRegFilePerms(filename, S_IWRITE); // User rights only
 }
 
 bool isExecutableFile(const std::string &filename) {

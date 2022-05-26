@@ -52,4 +52,5 @@ int parseLocations(JSON::Object *src, std::map<std::string, Location> &res, Loca
 
 int parseServerBlock(JSON::Object *src, ServerBlock &dst);
 int parseServerBlocks(JSON::Object *src, Server *serv);
+
 Server *loadConfig(const string filename);

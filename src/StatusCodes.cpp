@@ -94,6 +94,6 @@ const std::string &StatusDescription::operator[](int code) {
     return _descriptions[(StatusCode)code];
 }
 
-StatusDescription descriptions;
+const StatusDescription descriptions;
 
 };

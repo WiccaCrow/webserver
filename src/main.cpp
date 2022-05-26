@@ -10,7 +10,7 @@ int main(int ac, char **av, char **env) {
         return 1;
     }
 
-    Log.setFlags(INFO | ERROR | DEBUG);
+    Log.setFlags(LOG_INFO | LOG_ERROR | LOG_DEBUG);
     // Log.setLogFile("test.log");
 
     g_server = loadConfig(av[1]);

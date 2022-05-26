@@ -10,7 +10,7 @@
 #include "Logger.hpp"
 #include "StatusCodes.hpp"
 #include "Utils.hpp"
-#include "ValidateHeaders.hpp"
+#include "ValidHeaders.hpp"
 #include "ServerBlock.hpp"
 #include "Globals.hpp"
 

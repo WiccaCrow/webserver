@@ -4,22 +4,7 @@
 #include <string>
 #include <vector>
 
-class Redirect {
-    
-    int _code;
-    std::string _uri;
-    
-    bool _set;
-
-    public:
-    Redirect(void);
-    ~Redirect(void);
-
-    bool         isSet(void);
-    bool         toggle(void);
-    int          &getCodeRef(void);
-    std::string  &getURIRef(void);
-};
+#include "Redirect.hpp"
 
 class Location {
     private:
@@ -36,8 +21,6 @@ class Location {
     public:
     Location(void);
     ~Location(void);
-    // Location(Location &other);
-    // Location &operator=(Location &other);
 
     std::string                        &getDefaultPageRef(void);
     Redirect                           &getRedirectRef(void);

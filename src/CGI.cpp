@@ -3,7 +3,7 @@
 #include "Server.hpp"
 #include "Globals.hpp"
 #include "Request.hpp"
-#include "ValidateHeaders.hpp"
+#include "ValidHeaders.hpp"
 
 static const char * pyargs[] = {
     static_cast<const char *>("/usr/bin/python"),
