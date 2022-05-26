@@ -71,8 +71,8 @@ int basicCheck(JSON::Object *src, const std::string &key, ExpectedType type) {
     return 1;
 }
 
-int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, int &res, int def) {
-    switch (basicCheck(src, key, type, res, def)) {
+int getUInteger(JSON::Object *src, const std::string &key, int &res, int def) {
+    switch (basicCheck(src, key, NUMBER, res, def)) {
         case 0:
             return 0;
         case 1:
@@ -93,8 +93,8 @@ int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, in
     }
 }
 
-int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, int &res) {
-    switch (basicCheck(src, key, type)) {
+int getUInteger(JSON::Object *src, const std::string &key, int &res) {
+    switch (basicCheck(src, key, NUMBER)) {
         case 0:
             return 0;
         case 1:
@@ -115,8 +115,8 @@ int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, in
     }
 }
 
-int getString(JSON::Object *src, const std::string &key, ExpectedType type, std::string &res, std::string def) {
-    switch (basicCheck(src, key, type, res, def)) {
+int getString(JSON::Object *src, const std::string &key, std::string &res, std::string def) {
+    switch (basicCheck(src, key, STRING, res, def)) {
         case 0:
             return 0;
         case 1:
@@ -131,8 +131,8 @@ int getString(JSON::Object *src, const std::string &key, ExpectedType type, std:
     return 1;
 }
 
-int getString(JSON::Object *src, const std::string &key, ExpectedType type, std::string &res) {
-    switch (basicCheck(src, key, type)) {
+int getString(JSON::Object *src, const std::string &key, std::string &res) {
+    switch (basicCheck(src, key, STRING)) {
         case 0:
             return 0;
         case 1:
@@ -147,8 +147,8 @@ int getString(JSON::Object *src, const std::string &key, ExpectedType type, std:
     return 1;
 }
 
-int getBoolean(JSON::Object *src, const std::string &key, ExpectedType type, bool &res, bool def) {
-    switch (basicCheck(src, key, type, res, def)) {
+int getBoolean(JSON::Object *src, const std::string &key, bool &res, bool def) {
+    switch (basicCheck(src, key, BOOLEAN, res, def)) {
         case 0:
             return 0;
         case 1:
@@ -163,8 +163,8 @@ int getBoolean(JSON::Object *src, const std::string &key, ExpectedType type, boo
     return 1;
 }
 
-int getBoolean(JSON::Object *src, const std::string &key, ExpectedType type, bool &res) {
-    switch (basicCheck(src, key, type)) {
+int getBoolean(JSON::Object *src, const std::string &key, bool &res) {
+    switch (basicCheck(src, key, BOOLEAN)) {
         case 0:
             return 0;
         case 1:
@@ -191,8 +191,8 @@ int isSubset(std::vector<T> set, std::vector<T> subset) {
     return 1;
 }
 
-int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::vector<std::string> &res, std::vector<std::string> def) {
-    switch (basicCheck(src, key, type, res, def)) {
+int getArray(JSON::Object *src, const std::string &key, std::vector<std::string> &res, std::vector<std::string> def) {
+    switch (basicCheck(src, key, ARRAY, res, def)) {
         case 0:
             return 0;
         case 1:
@@ -217,8 +217,8 @@ int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::
     return 1;
 }
 
-int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::vector<std::string> &res) {
-    switch (basicCheck(src, key, type)) {
+int getArray(JSON::Object *src, const std::string &key, std::vector<std::string> &res) {
+    switch (basicCheck(src, key, ARRAY)) {
         case 0:
             return 0;
         case 1:
@@ -258,12 +258,6 @@ std::vector<std::string> getDefaultAllowedMethods() {
     allowed.push_back("PATCH");
 
     return allowed;
-}
-
-std::vector<std::string> getDefaultIndex() {
-    std::vector<std::string> def(0);
-
-    return def;
 }
 
 // Object parsing
@@ -363,10 +357,10 @@ int parseRedirect(JSON::Object *src, Redirect &res) {
 
     JSON::Object *rd = src->get("redirect")->toObj();
 
-    if (!getUInteger(rd, "code", NUMBER, res.getCodeRef()))
+    if (!getUInteger(rd, "code", res.getCodeRef()))
         return 0;
     
-    if (!getString(rd, "uri", STRING, res.getURIRef()))
+    if (!getString(rd, "uri", res.getURIRef()))
         return 0;
 
     res.toggle();
@@ -389,7 +383,7 @@ int isValidRedirect(Redirect &res) {
 }
 
 int parseLocation(JSON::Object *src, Location &dst, Location &def) {
-    if (!getString(src, "root", STRING, dst.getRootRef(), def.getRootRef())) { // optional ?
+    if (!getString(src, "root", dst.getRootRef(), def.getRootRef())) { // optional ?
         Log.error("#### Failed to parse \"root\"");
         return 0;
     } else if (!fileExists(dst.getRootRef())) {
@@ -400,7 +394,7 @@ int parseLocation(JSON::Object *src, Location &dst, Location &def) {
         return 0;
     }
 
-    if (!getString(src, "default_page", STRING, dst.getDefaultPageRef())) {
+    if (!getString(src, "default_page", dst.getDefaultPageRef())) {
         Log.error("#### Failed to parse \"default_page\"");
         return 0;
     } else if (!isReadableFile(dst.getDefaultPageRef())) {
@@ -408,12 +402,12 @@ int parseLocation(JSON::Object *src, Location &dst, Location &def) {
         return 0;
     }
 
-    if (!getUInteger(src, "post_max_body", NUMBER, dst.getPostMaxBodyRef(), 200)) {
+    if (!getUInteger(src, "post_max_body", dst.getPostMaxBodyRef(), 200)) {
         Log.error("#### Failed to parse \"post_max_body\"");
         return 0;
     }
 
-    if (!getBoolean(src, "autoindex", BOOLEAN, dst.getAutoindexRef(), false)) {
+    if (!getBoolean(src, "autoindex", dst.getAutoindexRef(), false)) {
         Log.error("#### Failed to parse \"autoindex\"");
         return 0;
     }
@@ -433,7 +427,7 @@ int parseLocation(JSON::Object *src, Location &dst, Location &def) {
         return 0;
     }
 
-    if (!getArray(src, "methods-allowed", ARRAY, dst.getAllowedMethodsRef(), getDefaultAllowedMethods())) {
+    if (!getArray(src, "methods-allowed", dst.getAllowedMethodsRef(), getDefaultAllowedMethods())) {
         Log.error("#### Failed to parse \"methods-allowed\"");
         return 0;
     } else if (!isSubset(getDefaultAllowedMethods(), dst.getAllowedMethodsRef())) {
@@ -441,7 +435,7 @@ int parseLocation(JSON::Object *src, Location &dst, Location &def) {
         return 0;
     }
 
-    if (!getArray(src, "index", ARRAY, dst.getIndexRef(), getDefaultIndex())) {
+    if (!getArray(src, "index", dst.getIndexRef(), dst.getIndexRef())) {
         Log.error("#### Failed to parse \"index\"");
         return 0;
     }
@@ -488,12 +482,12 @@ int parseLocations(JSON::Object *src, std::map<std::string, Location> &res, Loca
 }
 
 int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
-    if (!getString(src, "server_name", STRING, dst.getServerNameRef(), "")) {
+    if (!getString(src, "server_name", dst.getServerNameRef(), "")) {
         Log.error("## Failed to parse \"server_name\"");
         return 0;
     }
 
-    if (!getString(src, "addr", STRING, dst.getAddrRef(), "127.0.0.1")) {
+    if (!getString(src, "addr", dst.getAddrRef(), "127.0.0.1")) {
         Log.error("## Failed to parse \"addr\"");
         return 0;
     } else if (!isValidIp(dst.getAddrRef())) {
@@ -501,7 +495,7 @@ int parseServerBlock(JSON::Object *src, ServerBlock &dst) {
         return 0;
     }
 
-    if (!getUInteger(src, "port", NUMBER, dst.getPortRef())) {
+    if (!getUInteger(src, "port", dst.getPortRef())) {
         Log.error("## Failed to parse \"port\"");
         return 0;
     } else if (dst.getPortRef() < 1024 || dst.getPortRef() > 49151) {

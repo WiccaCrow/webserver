@@ -21,17 +21,17 @@ template <typename T>
 int basicCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res, T def);
 int basicCheck(JSON::Object *src, const std::string &key, ExpectedType type);
 
-int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, int &res, int def);
-int getUInteger(JSON::Object *src, const std::string &key, ExpectedType type, int &res);
+int getUInteger(JSON::Object *src, const std::string &key, int &res, int def);
+int getUInteger(JSON::Object *src, const std::string &key, int &res);
 
-int getString(JSON::Object *src, const std::string &key, ExpectedType type, std::string &res, std::string def);
-int getString(JSON::Object *src, const std::string &key, ExpectedType type, std::string &res);
+int getString(JSON::Object *src, const std::string &key, std::string &res, std::string def);
+int getString(JSON::Object *src, const std::string &key, std::string &res);
 
-int getBoolean(JSON::Object *src, const std::string &key, ExpectedType type, bool &res, bool def);
-int getBoolean(JSON::Object *src, const std::string &key, ExpectedType type, bool &res);
+int getBoolean(JSON::Object *src, const std::string &key, bool &res, bool def);
+int getBoolean(JSON::Object *src, const std::string &key, bool &res);
 
-int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::vector<std::string> &res, std::vector<std::string> def);
-int getArray(JSON::Object *src, const std::string &key, ExpectedType type, std::vector<std::string> &res);
+int getArray(JSON::Object *src, const std::string &key, std::vector<std::string> &res, std::vector<std::string> def);
+int getArray(JSON::Object *src, const std::string &key, std::vector<std::string> &res);
 
 template <typename T>
 int isSubset(std::vector<T> set, std::vector<T> subset);
