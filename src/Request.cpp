@@ -236,8 +236,9 @@ StatusCode Request::parseHeader(std::string line) {
     toLowerCase(header.line);
 
     header.hash = static_cast<HeaderCode>(crc(header.line.data(), header.keyLen));
-    // std::cout << header.getKey() << std::endl;
-    if (validHeaders.find(header.hash) == validHeaders.end()) {
+    std::map<uint32_t, Header::Handler>::const_iterator it = validHeaders.find(header.hash);
+    header.handler = it->second;
+    if (it == validHeaders.end()) {
         Log.debug("Maybe header is not supported");
         Log.debug(header.line.data() + std::string("    |    ") + to_string(header.hash));
         return BAD_REQUEST;

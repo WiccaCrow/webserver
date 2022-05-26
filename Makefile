@@ -3,9 +3,8 @@
 NAME 		   =   serv
 
 CXX            =   clang++
-# CPPFLAGS     =   -g -fstandalone-debug -std=c++98
-# CPPFLAGS     =   -Wall -Wextra -Werror -g -std=c++98 -Wpedantic
-CPPFLAGS       =   -Wall -Wextra -Werror -Wc++11-extensions -g -std=c++98 
+# CPPFLAGS     =   -Wall -Wextra -Werror  -Wc++11-extensions -std=c++98 -g -fstandalone-debug # -Wpedantic
+CPPFLAGS       =   -Wall -Wextra -Werror -Wc++11-extensions -std=c++98 -g 
 
 SOURCEFILES     =	main.cpp \
 				    Server.cpp \
@@ -20,6 +19,7 @@ SOURCEFILES     =	main.cpp \
 					Client.cpp \
 					Logger.cpp \
 					Response.cpp \
+					Header.cpp \
 					ResponseContType.cpp \
 					ResponseErrCode.cpp \
 					Config.cpp \
@@ -46,7 +46,6 @@ $(OSOURCEFOLDER)%.o: $(SOURCEFOLDER)%.cpp
 	$(CXX) $(CPPFLAGS) -c $< -o $@ -I $(INCLUDEFOLDER) -I $(LIBJSONINCLUDE)
 
 libjson:
-# --remote takes the last commit ?
 	@if ! [ "$(ls $(LIBJSONFOLDER))" ] ; then git submodule update --init; fi
 	$(MAKE) -C $(LIBJSONFOLDER) all
 
@@ -64,10 +63,9 @@ fclean: clean
 re: fclean all
 
 # for tests
-
 YoupiBanane:
-				mkdir -p YoupiBanane/nop YoupiBanane/Yeah
-				touch ./YoupiBanane/youpi.bad_extension ./YoupiBanane/youpi.bla
-				touch ./YoupiBanane/nop/youpi.bad_extension ./YoupiBanane/nop/other.pouic
-				touch ./YoupiBanane/Yeah/not_happy.bad_extension
+	mkdir -p YoupiBanane/nop YoupiBanane/Yeah
+	touch ./YoupiBanane/youpi.bad_extension ./YoupiBanane/youpi.bla
+	touch ./YoupiBanane/nop/youpi.bad_extension ./YoupiBanane/nop/other.pouic
+	touch ./YoupiBanane/Yeah/not_happy.bad_extension
 
