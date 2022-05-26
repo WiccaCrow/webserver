@@ -67,4 +67,4 @@ std::map<uint32_t, bool> initHashMap(void) {
 
 const std::map<uint32_t, bool> validHeaders = initHashMap();
 
-}; // namespace HTTP
+} // namespace HTTP

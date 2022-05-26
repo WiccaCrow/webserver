@@ -3,6 +3,12 @@
 const std::map<int, const char*> 
 HTTP::Response::_ErrorCode = HTTP::Response::initErrorCode();
 
+const char* HTTP::Response::findErr(int nbErr) {
+    std::map<int, const char*>::const_iterator iter = _ErrorCode.find(nbErr);
+    _res = (*iter).second;
+    return (_res.c_str());
+}
+
 std::map<int, const char*> HTTP::Response::initErrorCode() {
     std::map<int, const char*> Err;
     Err.insert(std::make_pair(BAD_REQUEST,
@@ -17,7 +23,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"
@@ -39,7 +45,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"
@@ -61,7 +67,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"
@@ -83,7 +89,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"
@@ -107,7 +113,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"
@@ -130,7 +136,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"
@@ -154,7 +160,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"
@@ -177,7 +183,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"
@@ -200,7 +206,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"
@@ -223,7 +229,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"
@@ -246,7 +252,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"
@@ -268,7 +274,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"
@@ -290,7 +296,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"
@@ -314,7 +320,7 @@ std::map<int, const char*> HTTP::Response::initErrorCode() {
                               "<style>\n"
                               "*{margin:0;padding:0}html{font:15px/22px arial,"
                               "sans-serif}html{background:#fff;color:#222;"
-                              "padding:15px}body{margin:7\% auto 0;max-width:"
+                              "padding:15px}body{margin:7% auto 0;max-width:"
                               "390px;min-height:180px;padding:30px 0 15px}p"
                               "{margin:11px 0 22px;overflow:hidden}err_text"
                               "{color:#777;text-decoration:none}"

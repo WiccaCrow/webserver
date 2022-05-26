@@ -38,10 +38,11 @@ size_t Server::getServerBlocksNum(void) {
 
 void Server::fillServBlocksFds(void) {
     for (size_t i = 0; i < _nbServBlocks; ++i) {
-        _pollfds.push_back((struct pollfd){
+        struct pollfd tmp = {
             _ServBlocks[i].getServFd(),
             POLLIN,
-            0});
+            0};
+        _pollfds.push_back(tmp);
     }
 }
 
@@ -235,7 +236,8 @@ void Server::acceptNewClient(size_t id) {
             it->fd = fd;
             it->events = POLLIN | POLLOUT;
         } else {
-            _pollfds.push_back((struct pollfd){fd, POLLIN | POLLOUT, 0});
+            struct pollfd tmp = {fd, POLLIN | POLLOUT, 0};
+            _pollfds.push_back(tmp);
             _clients.push_back(Client(_pollfds.back(), _ServBlocks[id])); // add string with port
         }
     }

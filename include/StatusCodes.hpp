@@ -94,4 +94,4 @@ class StatusDescription {
 
 extern StatusDescription descriptions;
 
-}; // namespace HTTP
+} // namespace HTTP

@@ -2,13 +2,13 @@
 
 ReadSock Client::_reader;
 
-Client::Client(struct pollfd& pfd, ServerBlock &servBlock) : _pfd(pfd), _servBlock(servBlock), _req(servBlock) {
+Client::Client(struct pollfd& pfd, ServerBlock &servBlock) : _pfd(pfd), _req(servBlock), _servBlock(servBlock) {
 }
 
 Client::~Client() {
 }
 
-Client::Client(const Client& client) : _pfd(client._pfd), _servBlock(client._servBlock), _req(client._servBlock) {
+Client::Client(const Client& client) : _pfd(client._pfd), _req(client._servBlock), _servBlock(client._servBlock) {
     *this = client;
 }
 
@@ -97,14 +97,14 @@ void Client::reply(void) {
     // std::cout << << std::endl;
 
     int _req_getStatus = _req.getStatus();
-    std::cout << "test 1 reply response " << _req_getStatus << std::endl;
+    // std::cout << "test 1 reply response " << _req_getStatus << std::endl;
     if (_req.getStatus() == HTTP::PROCESSING) {
         _req_getStatus = HTTP::OK;
     }
     if (_req_getStatus >= HTTP::BAD_REQUEST) {
         _res.findErr(_req_getStatus);
     } else if (_req_getStatus == 200) {
-        std::cout << "test 4 reply response " << _req.getMethod() << std::endl;
+        // std::cout << "test 4 reply response " << _req.getMethod() << std::endl;
         if (_req.getMethod() == "HEAD")
             _res.HEADmethod(_req);
         if (_req.getMethod() == "GET")
@@ -138,20 +138,8 @@ void Client::reply(void) {
     // если нет каких-то полей с указанием окончания отправки ответа,
     // клиент будет продолжать стоять в ожидании окончания ответа - POLLOUT
 
-    // Not sure if it should be here.
-    // Most likely current function should return the value (or set some flag)
-    // to the server class and it should disconnect the client
-
-    // if (sentBytes < 0) {
-    //     disconnect();
-    //     // Error case
-    // }
     // if (sentBytes == 0) {
     //     disconnect();
-    // }
-    // if (sentBytes != responseLength) {
-    //     // Not all bytes were sent
-    //     // Chucked response or error
     // }
 }
 

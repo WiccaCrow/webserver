@@ -153,7 +153,7 @@ bool fileExists(const std::string &filename) {
 }
 
 bool isWord(const std::string word) {
-    for (int i = 0; i < word.length(); i++) {
+    for (size_t i = 0; i < word.length(); i++) {
         if (!isalnum(word[i]))
             return false;
     }

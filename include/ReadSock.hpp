@@ -14,7 +14,7 @@ class ReadSock {
     enum Perm {
         PERM_NONE = 0,
         PERM_READ = 1,
-        PERM_WRITE = 2,
+        PERM_WRITE = 2
     };
 
     enum Status {

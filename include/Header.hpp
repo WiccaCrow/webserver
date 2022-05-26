@@ -52,4 +52,4 @@ class Header {
     StatusCode ContentType(void);
 };
 
-}; // namespace HTTP
+} // namespace HTTP

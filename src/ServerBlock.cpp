@@ -4,10 +4,10 @@ enum ServerBlockError {
     SOCKET_ERR = -2,
     SETOPT_ERR = -3,
     BIND_ERR = -5,
-    LISTEN_ERR = -6,
+    LISTEN_ERR = -6
 };
 
-ServerBlock::ServerBlock() : _addr("127.0.0.1"), _port(7676) {};
+ServerBlock::ServerBlock() : _addr("127.0.0.1"), _port(7676) {}
 
 ServerBlock::ServerBlock(const std::string &ipaddr, const int port) : _addr(ipaddr), _port(port) {}
 

@@ -5,16 +5,20 @@ HTTP::Response::Response() {
     _responseFormed = false;
 }
 
+HTTP::Response::~Response() {}
+
 void    HTTP::Response::clear() {
     _res.clear();
     _resLeftToSend.clear();    
     _responseFormed = false;
 }
 
-const char* HTTP::Response::findErr(int nbErr) {
-    std::map<int, const char*>::const_iterator iter = _ErrorCode.find(nbErr);
-    _res = (*iter).second;
-    return (_res.c_str());
+bool HTTP::Response::isFormed() const {
+    return _responseFormed;
+}
+
+void HTTP::Response::setFormed(bool formed) {
+    _responseFormed = formed;
 }
 
 std::string HTTP::Response::GetContentType(std::string resourcePath)
@@ -38,38 +42,17 @@ std::string HTTP::Response::GetContentType(std::string resourcePath)
     return (contType);
 }
 
-std::string         HTTP::Response::doCGI(Request &req) {
-    // две строки ниже убрать, когда будет использован в коде req
-    if (req.getMethod() != "")
-        ;
+void    HTTP::Response::doCGI(Request &req) {
     std::string resCGI = CGI(req);
-    // раскомментировать, когда  будет готов глобальный объект для конфига
-    // добавить в объект конфига функцию, которая принимает строку с URI req.getPath(),
-    // которую будет сравнивать с map для cgi, например такой: map<окончание для url, путь к cgi> cgiMap;
-    // и возвращает std::string путь к cgi для принятия функцией
-    // executeCGI(необходимые параметры).
-    //      std::string путь к cgi = объект конфига  conf.cmpCGI(req.getPath());
-    //      if (путь к cgi != "") {
-    //          std::string resCGI = executeCGI(необходимые параметры);
      
-    // _req.getStatus() еще не написано, но уже обговорено.
-    // это будет либо status в pubic у Request, либо геттер на него
-    // Используется также в reply  в Client.cpp
-    //      Внутри executeCGI(...) в случае ошибки, необходимо изменить значение 
-    //      этого кода, например написать для этого SetStatus(int statusCode) в Request
-    //          int _req_getStatus = HTTP::OK;
-    //          if (_req_getStatus >= 400) {
-    //              _res = "";
-    //              return (findErr(_req_getStatus));
-    //          }
-    //              
-    _res += "Content-Length: ";
-    _res += to_string(resCGI.length()) + "\r\n\r\n";
-    _res += resCGI;
-    //      }
-    return (resCGI);
+    if (req.getStatus() >= 400) {
+        _res = findErr(req.getStatus());
+    } else {
+        _res += "Content-Length: ";
+        _res += to_string(resCGI.length()) + "\r\n\r\n";
+        _res += resCGI;
+    }
 }
-
 
 // std::string HTTP::Response::TransferEncodingChunked(std::string buffer, size_t bufSize) {
 //     size_t i = 0;
@@ -198,8 +181,9 @@ std::string HTTP::Response::contentForGetHead(Request &req) {
     }
     int isItFile = isFile(resourcePath);
     if (0 == isItFile) {
-        std::string isCGI = doCGI(req);
+        std::string isCGI = ""; // from config
         if (isCGI != "") {
+            doCGI(req);
             return (isCGI);
         }
         _res += GetContentType(resourcePath);
@@ -246,8 +230,10 @@ void HTTP::Response::DELETEmethod(Request &req) {
 }
 
 void HTTP::Response::POSTmethod(Request &req) {
-    std::string isCGI = doCGI(req);
-    if (isCGI == "") {
+    std::string isCGI = ""; // from config
+    if (isCGI != "") {
+        doCGI(req);
+    } else {
         _res = "HTTP/1.1 204 No Content\r\n\r\n";
     }
 }
@@ -267,7 +253,6 @@ const char    *HTTP::Response::GetLeftToSend() {
 void    HTTP::Response::SetLeftToSend(size_t n) {
     _resLeftToSend = _res.substr(n);
 }
-
 
 size_t  HTTP::Response::GetLeftToSendSize() {
     return (_resLeftToSend.size());

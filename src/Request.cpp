@@ -5,10 +5,10 @@
 namespace HTTP {
 
 Request::Request(ServerBlock &servBlock) : 
-                     _parseFlags(PARSED_NONE),
-                     _isSizeChunk(true),
-                     _sizeChunk(0),
-                     _servBlock(servBlock) {}
+                     _servBlock(servBlock),
+                     _flag_getline_bodySize(true),
+                     _bodySize(0),
+                     _parseFlags(PARSED_NONE) {}
 
 Request::~Request() {}
 
@@ -26,8 +26,8 @@ Request &Request::operator=(const Request &other) {
         _headers = other._headers;
         _status = other._status;
         _servBlock = other._servBlock;
-        _isSizeChunk = other._isSizeChunk;
-        _sizeChunk = other._sizeChunk;
+        _flag_getline_bodySize = other._flag_getline_bodySize;
+        _bodySize = other._bodySize;
         _body = other._body;
         _parseFlags = other._parseFlags;
     }
@@ -86,8 +86,8 @@ void Request::clear() {
     // _path.clear();
     _protocol = "";
     _headers.clear();
-    _isSizeChunk = true;
-    _sizeChunk = 0;
+    _flag_getline_bodySize = true;
+    _bodySize = 0;
     _body.clear();
     _parseFlags = 0;
 
@@ -95,8 +95,8 @@ void Request::clear() {
     // _path.clear();
     // _protocol.clear();
     // _headers.clear();
-    // _isSizeChunk = true;
-    // _sizeChunk = 0;
+    // _flag_getline_bodySize = true;
+    // _bodySize = 0;
     // _body.clear();
     // _parseFlags = 0;
 }
@@ -249,8 +249,8 @@ StatusCode Request::parseHeader(std::string line) {
     }
     if (header.hash == CONTENT_LENGTH) {
         size_t length = strtoul(header.getVal(), NULL, 10);
-        setChunked_isSizeChunk(false);
-        setChunked_Size(length);
+        setBodySizeFlag(false);
+        setBodySize(length);
     }
 
     // Copying here need to replace
@@ -260,43 +260,45 @@ StatusCode Request::parseHeader(std::string line) {
 }
 
 StatusCode Request::parseChunked(const std::string &line) {
-    if (_isSizeChunk) {
+    if (_flag_getline_bodySize) {
         if (line.empty() == true ||
             line.find_first_not_of("0123456789ABCDEFabcdef") != line.npos) {
             // bad chunk length
-            _isSizeChunk = false;
+            _flag_getline_bodySize = false;
             return (BAD_REQUEST);
         }
         std::string chunk(line.c_str());
-        if ((_sizeChunk = strtol(chunk.c_str(), NULL, 16)) == 0) {
+        if ((_bodySize = strtoul(chunk.c_str(), NULL, 16)) == 0) {
             if (chunk[0] == '0') {
                 setFlag(PARSED_BODY);
                 return (PROCESSING);
             }
             return (BAD_REQUEST);
         }
-        _isSizeChunk = false;
+        _flag_getline_bodySize = false;
         return (CONTINUE);
     }
 
-    _isSizeChunk = true;
-    if (line.length() > _sizeChunk) {
+    _flag_getline_bodySize = true;
+    if (line.length() > _bodySize) {
         // bad chunk body
         return (BAD_REQUEST);
     }
-    _sizeChunk = 0;
+    _bodySize = 0;
     _body += line;
     return (CONTINUE);
 }
 
 StatusCode Request::parseBody(const std::string &line) {
-    std::cout << "body:" << std::endl;
-    std::cout << line << std::endl;
+    // std::cout << "body:" << std::endl;
+    // std::cout << line << std::endl;
     if (_headers.find(TRANSFER_ENCODING) != _headers.end()) {
         return (parseChunked(line));
     }
     else if (_headers.find(CONTENT_LENGTH) != _headers.end()) {
         setFlag(PARSED_BODY);
+    std::cout << "body:" << _body << std::endl;
+
         // parse
         return PROCESSING;
     }
@@ -305,23 +307,23 @@ StatusCode Request::parseBody(const std::string &line) {
 }
 
 // for chunked
-bool Request::getChunked_isSizeChunk() {
-    return (_isSizeChunk);
+bool Request::getBodySizeFlag() {
+    return (_flag_getline_bodySize);
 }
 
-void Request::setChunked_isSizeChunk(bool isSize) {
-    _isSizeChunk = isSize;
+void Request::setBodySizeFlag(bool isSize) {
+    _flag_getline_bodySize = isSize;
 }
 
-long Request::getChunked_Size() {
-    return (_sizeChunk);
+unsigned long Request::getBodySize() {
+    return (_bodySize);
 }
-void Request::setChunked_Size(long size) {
-    _sizeChunk = size;
+void Request::setBodySize(unsigned long size) {
+    _bodySize = size;
 }
 
 void Request::setStatus(const HTTP::StatusCode &status) {
     _status = status;
 }
 
-}; // namespace HTTP
+} // namespace HTTP

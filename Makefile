@@ -1,11 +1,11 @@
 .PHONY: clean fclean re all libjson
 
-NAME 			= 	serv
+NAME 		   =   serv
 
-CXX             =   clang++
-CPPFLAGS        =   -g -fstandalone-debug -std=c++98
-# CPPFLAGS       =   -Wall -Wextra -Werror -g -std=c++98 
-# CPPFLAGS       =   -Wall -Wextra -Werror -Wc++11-extensions -g -Wpedantic -std=c++98 
+CXX            =   clang++
+# CPPFLAGS     =   -g -fstandalone-debug -std=c++98
+# CPPFLAGS     =   -Wall -Wextra -Werror -g -std=c++98 -Wpedantic
+CPPFLAGS       =   -Wall -Wextra -Werror -Wc++11-extensions -g -std=c++98 
 
 SOURCEFILES     =	main.cpp \
 				    Server.cpp \

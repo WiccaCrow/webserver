@@ -1,7 +1,7 @@
 #include "Config.hpp"
 
 int isInteger(double &num) {
-    return (num - static_cast<long long>(num) == 0);
+    return (num - static_cast<int32_t>(num) == 0);
 }
 
 int isUInteger(double &num) {

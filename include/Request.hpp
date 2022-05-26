@@ -33,10 +33,10 @@ class Request {
 
     ServerBlock              &_servBlock;
 
-    bool        _isSizeChunk;
-    long        _sizeChunk;
-    std::string _body;
-    uint8_t       _parseFlags;
+    bool            _flag_getline_bodySize;
+    unsigned long   _bodySize;
+    std::string     _body;
+    uint8_t         _parseFlags;
 
     public:
     Request(ServerBlock &servBlock);
@@ -52,7 +52,7 @@ class Request {
     const std::string              &getProtocol() const;
     const std::map<HeaderCode, Header> &getHeaders() const;
     const std::string              &getBody() const;
-    const uint8_t                    &getFlags() const;
+    const uint8_t                  &getFlags() const;
     const HTTP::StatusCode         &getStatus() const;
 
     // Needed to be improved
@@ -79,12 +79,12 @@ class Request {
 
     public:
     // for chunked
-    bool getChunked_isSizeChunk();
-    void setChunked_isSizeChunk(bool isSize);
-    long getChunked_Size();
-    void setChunked_Size(long size);
+    bool getBodySizeFlag();
+    void setBodySizeFlag(bool isSize);
+    unsigned long getBodySize();
+    void setBodySize(unsigned long size);
     void setStatus(const HTTP::StatusCode &status);
 
 };
 
-}; // namespace HTTP
+} // namespace HTTP
