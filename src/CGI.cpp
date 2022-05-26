@@ -5,17 +5,17 @@
 #include "Request.hpp"
 #include "ValidateHeaders.hpp"
 
-static char * pyargs[] = {
-    "/usr/bin/python",
-    "./pages/site/printenv.py",
-    0
+static const char * pyargs[] = {
+    static_cast<const char *>("/usr/bin/python"),
+    static_cast<const char *>("./pages/site/printenv.py"),
+    static_cast<const char *>(NULL)
 };
 
-static char * phpargs[] = {
-    "/opt/homebrew/bin/php",
-    "./pages/site/printenv.php",
-    0
-};
+// static const char * phpargs[] = {
+//     static_cast<const char *>("/opt/homebrew/bin/php"),
+//     static_cast<const char *>("./pages/site/printenv.php"),
+//     static_cast<const char *>(NULL)
+// };
 
 
 void log_error(const std::string &prefix) {
@@ -59,7 +59,8 @@ void prepareEnv(HTTP::Request &req) {
     setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);    // GET, POST ...
     setenv("SCRIPT_NAME", req.getScriptName().c_str(), 1);       // full script name ? hello.py
     setenv("CONTENT_LENGTH", to_string(req.getBody().length()).c_str(), 1);    // Number, 256, how much bytes should script read from stdin, -1 if not known
-    setenv("CONTENT_TYPE", req.getHeaderValue(HTTP::HeaderCode::CONTENT_TYPE), 1);      // MIME-type, if there is, text/html
+    // HeaderCode key = CONTENT_TYPE;
+    setenv("CONTENT_TYPE", req.getHeaderValue(CONTENT_TYPE), 1);      // MIME-type, if there is, text/html
 
     setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);   // CGI/revision
     setenv("SERVER_NAME", "localhost", 1);       // Server's hostname, DNS alias, or IP address as it appears in self-referencing URLs.
@@ -162,7 +163,7 @@ std::string CGI(HTTP::Request &req) {
         char buf[1000];
         realpath(pyargs[1], buf);
         pyargs[1] = buf;
-        if (execv(pyargs[0], (char * const *)pyargs) == -1) {        // if (execv(phpargs[0], (char * const *)phpargs) == -1) {
+        if (execv(pyargs[0], (char * const *)pyargs) == -1) {
             exit(3);
         }
     }

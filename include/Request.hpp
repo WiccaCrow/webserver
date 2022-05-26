@@ -9,7 +9,6 @@
 #include "Header.hpp"
 #include "Logger.hpp"
 #include "StatusCodes.hpp"
-#include "Types.hpp"
 #include "Utils.hpp"
 #include "ValidateHeaders.hpp"
 #include "ServerBlock.hpp"
@@ -37,7 +36,7 @@ class Request {
     bool            _flag_getline_bodySize;
     unsigned long   _bodySize;
     std::string     _body;
-    uint8           _parseFlags;
+    uint8_t         _parseFlags;
 
     public:
     Request(ServerBlock &servBlock);
@@ -53,7 +52,7 @@ class Request {
     const std::string              &getProtocol() const;
     const std::map<HeaderCode, Header> &getHeaders() const;
     const std::string              &getBody() const;
-    const uint8                    &getFlags() const;
+    const uint8_t                  &getFlags() const;
     const HTTP::StatusCode         &getStatus() const;
 
     // Needed to be improved
@@ -63,8 +62,8 @@ class Request {
 
     bool empty();
 
-    void setFlag(uint8 flag);
-    void removeFlag(uint8 flag);
+    void setFlag(uint8_t flag);
+    void removeFlag(uint8_t flag);
     void clear(void);
 
     StatusCode parseStartLine(const std::string &line);
@@ -82,10 +81,10 @@ class Request {
     // for chunked
     bool getBodySizeFlag();
     void setBodySizeFlag(bool isSize);
-    long getBodySize();
-    void setBodySize(long size);
+    unsigned long getBodySize();
+    void setBodySize(unsigned long size);
     void setStatus(const HTTP::StatusCode &status);
 
 };
 
-}; // namespace HTTP
+} // namespace HTTP

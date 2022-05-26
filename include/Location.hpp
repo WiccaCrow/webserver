@@ -6,9 +6,10 @@
 
 class Redirect {
     
-    bool _set;
     int _code;
     std::string _uri;
+    
+    bool _set;
 
     public:
     Redirect(void);

@@ -2,13 +2,13 @@
 
 ReadSock Client::_reader;
 
-Client::Client(struct pollfd& pfd, ServerBlock &servBlock) : _pfd(pfd), _servBlock(servBlock), _req(servBlock) {
+Client::Client(struct pollfd& pfd, ServerBlock &servBlock) : _pfd(pfd), _req(servBlock), _servBlock(servBlock) {
 }
 
 Client::~Client() {
 }
 
-Client::Client(const Client& client) : _pfd(client._pfd), _servBlock(client._servBlock), _req(client._servBlock) {
+Client::Client(const Client& client) : _pfd(client._pfd), _req(client._servBlock), _servBlock(client._servBlock) {
     *this = client;
 }
 

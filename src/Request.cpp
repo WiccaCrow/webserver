@@ -58,7 +58,7 @@ const std::string &Request::getBody() const {
     return _body;
 }
 
-const uint8 &Request::getFlags() const {
+const uint8_t &Request::getFlags() const {
     return _parseFlags;
 }
 
@@ -73,11 +73,11 @@ bool Request::empty() {
             _headers.empty());
 }
 
-void Request::setFlag(uint8 flag) {
+void Request::setFlag(uint8_t flag) {
     _parseFlags |= flag;
 }
 
-void Request::removeFlag(uint8 flag) {
+void Request::removeFlag(uint8_t flag) {
     _parseFlags &= ~flag;
 }
 
@@ -236,8 +236,9 @@ StatusCode Request::parseHeader(std::string line) {
     toLowerCase(header.line);
 
     header.hash = static_cast<HeaderCode>(crc(header.line.data(), header.keyLen));
-    // std::cout << header.getKey() << std::endl;
-    if (validHeaders.find(header.hash) == validHeaders.end()) {
+    std::map<uint32_t, Header::Handler>::const_iterator it = validHeaders.find(header.hash);
+    header.handler = it->second;
+    if (it == validHeaders.end()) {
         Log.debug("Maybe header is not supported");
         Log.debug(header.line.data() + std::string("    |    ") + to_string(header.hash));
         return BAD_REQUEST;
@@ -315,10 +316,10 @@ void Request::setBodySizeFlag(bool isSize) {
     _flag_getline_bodySize = isSize;
 }
 
-long Request::getBodySize() {
+unsigned long Request::getBodySize() {
     return (_bodySize);
 }
-void Request::setBodySize(long size) {
+void Request::setBodySize(unsigned long size) {
     _bodySize = size;
 }
 
@@ -326,4 +327,4 @@ void Request::setStatus(const HTTP::StatusCode &status) {
     _status = status;
 }
 
-}; // namespace HTTP
+} // namespace HTTP

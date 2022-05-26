@@ -1,6 +1,5 @@
 #pragma once
 
-namespace HTTP {
 
     enum HeaderCode {
         A_IM = 360142786, 
@@ -53,6 +52,12 @@ namespace HTTP {
         SEC_GPC = 570648046,
         SEC_CH_UA_MOBILE = 3851717610,
         SEC_CH_UA_PLATFORM = 464571004,
+
+        // Chrome's non standard header
+        PURPOSE = 3095901163
     };
 
-}; // namespace HTTP
+
+namespace HTTP {
+
+} // namespace HTTP

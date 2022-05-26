@@ -65,4 +65,4 @@ class Response {
     // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);
 };
 
-}; // namespace HTTP
+} // namespace HTTP

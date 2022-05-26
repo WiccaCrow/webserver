@@ -18,11 +18,11 @@ void Logger::setLogFile(const std::string &logfile) {
 
 Logger::~Logger() {}
 
-void Logger::setFlags(uint8 flags) {
+void Logger::setFlags(uint8_t flags) {
     _flags = flags;
 }
 
-void Logger::print(uint8 flag, const std::string &msg) {
+void Logger::print(uint8_t flag, const std::string &msg) {
     if (_flags & flag) {
         if (_logToFile && _out.good()) {
             _out << _titles[flag] << ": " << msg << std::endl;
