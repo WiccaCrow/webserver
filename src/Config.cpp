@@ -205,6 +205,9 @@ int getArray(JSON::Object *src, const std::string &key, std::vector<std::string>
 
     JSON::Array *arr = src->get(key)->toArr();
     
+    // Overwriting inherited values from location_base 
+    res.clear();
+    
     JSON::Array::iterator it = arr->begin();
     JSON::Array::iterator end = arr->end();
     for (; it != end; it++) {
@@ -233,7 +236,7 @@ int getArray(JSON::Object *src, const std::string &key, std::vector<std::string>
 
     JSON::Array::iterator it = arr->begin();
     JSON::Array::iterator end = arr->end();
-    
+    res.clear();
     for (; it != end; it++) {
         if ((*it)->isNull() || !(*it)->isStr()) {
             Log.error(key + " has mixed value(s)");
