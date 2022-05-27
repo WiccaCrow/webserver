@@ -239,6 +239,11 @@ std::cout << "id:        " << id << std::endl;
             struct pollfd tmp = {fd, POLLIN | POLLOUT, 0};
             _pollfds.push_back(tmp);
             _clients.push_back(Client(_pollfds.back(), _ServBlocks[id])); // add string with port
+
+std::cout << "     EMPY INDEX____ " <<
+_ServBlocks[id].getLocationsRef().find("/about")->second.getIndexRef().empty()
+<< std::endl;
+
         }
     }
 }

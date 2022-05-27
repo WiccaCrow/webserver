@@ -25,6 +25,10 @@ if (servBlock.getLocationsRef().find("/about") == servBlock.getLocationsRef().en
         }
     exit(1);
 }
+if ((servBlock.getLocationsRef().find("/about"))->second.getIndexRef().empty() == true) {
+        std::cout << "          LOC empty" << std::endl;
+
+}
 _location_current = &(servBlock.getLocationsRef().find("/about"))->second;
 }
 
