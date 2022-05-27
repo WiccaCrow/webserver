@@ -216,7 +216,7 @@ static int fdNotTaken(struct pollfd pfd) {
 void Server::acceptNewClient(size_t id) {
     struct sockaddr_in addr;
     socklen_t          len = sizeof(addr);
-std::cout << "id:        " << id << std::endl;
+
     int fd = accept(_pollfds[id].fd, (struct sockaddr *)&addr, &len);
 
     if (fd < 0) {
@@ -240,7 +240,7 @@ std::cout << "id:        " << id << std::endl;
             _pollfds.push_back(tmp);
             _clients.push_back(Client(_pollfds.back(), _ServBlocks[id])); // add string with port
 
-std::cout << "     EMPY INDEX____ " <<
+std::cout << "     test EMPY INDEX____ " <<
 _ServBlocks[id].getLocationsRef().find("/about")->second.getIndexRef().empty()
 << std::endl;
 

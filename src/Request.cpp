@@ -29,6 +29,11 @@ if ((servBlock.getLocationsRef().find("/about"))->second.getIndexRef().empty() =
         std::cout << "          LOC empty" << std::endl;
 
 }
+
+std::cout << servBlock.getLocationsRef().find("/about")->second.getIndexRef().size() << "     test EMPY INDEX____ " <<
+servBlock.getLocationsRef().find("/about")->second.getIndexRef()[0]
+<< std::endl;
+
 _location_current = &(servBlock.getLocationsRef().find("/about"))->second;
 }
 

@@ -104,7 +104,7 @@ std::string HTTP::Response::listToResponse(std::string &resourcePath, Request &r
         body += req.getPath() + " </title>\n"
         "   </head>\n"
         "<body>\n"
-        "   <h1> Index of ";
+        "   <h1> Index on ";
         body += req.getPath() + " </h1>\n"
         "   <p>\n"
         "   <hr>\n";
@@ -145,10 +145,10 @@ std::string HTTP::Response::listToResponse(std::string &resourcePath, Request &r
 std::string HTTP::Response::resoursePathTaker(Request &req) {
     std::string resourcePath;
     // если URI начинается с /
+    resourcePath = req.getLocationPtr()->getRootRef();
     if (req.getPath()[0] == '/') {
-        resourcePath = "./pages/site";
     } else {
-        resourcePath += "./pages/site/";
+        resourcePath += "/";
     }
     // root из конфигурации + URI
     resourcePath += req.getPath();
@@ -160,8 +160,8 @@ std::string HTTP::Response::contentForGetHead(Request &req) {
     // root
     // если в конфиге без /, то добавить /,
     // чтобы мне уже с этим приходило
-    // std::string resourcePath = resoursePathTaker(req);
-    std::string resourcePath = req.getLocationPtr()->getRootRef();
+    std::string resourcePath = resoursePathTaker(req);
+    // std::string resourcePath = req.getLocationPtr()->getRootRef();
     std::cout << req.getLocationPtr()->getIndexRef().empty() << "   ||   " << isFile(resourcePath) << "     resourcePath: " << resourcePath << std::endl;
 
     _res =
