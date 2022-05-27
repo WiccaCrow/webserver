@@ -55,6 +55,7 @@ class ServerBlock {
     std::string &getServerNameRef(void);
     std::map<int, std::string> &getErrPathsRef(void);
     std::map<std::string, Location> &getLocationsRef(void);
+    const std::map<std::string, Location> &getLocationsRef(void) const;
 
     // other methods
     void createListenSock();
