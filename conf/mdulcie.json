@@ -14,13 +14,13 @@
             "methods-allowed": [ "GET", "POST" ],
             "post_max_body": 100,
             "autoindex": true,
-            "index": [ "dd.html" ],
+            "index": [ "index.html" ],
             "locations": {
                 "/about": {
                     "root": "./pages",
                     "default_page": "./pages/404.html",
                     "autoindex": false,
-                    "index": [ "pp.html" ],
+                    "index": [ "index.html" ],
                     "post_max_body": 200,
                     "methods-allowed": [ "GET", "POST" ]                 
                 },

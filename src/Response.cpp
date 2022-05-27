@@ -162,7 +162,7 @@ std::string HTTP::Response::contentForGetHead(Request &req) {
     // чтобы мне уже с этим приходило
     std::string resourcePath = resoursePathTaker(req);
     // std::string resourcePath = req.getLocationPtr()->getRootRef();
-    std::cout << req.getLocationPtr()->getIndexRef().empty() << "   ||   " << isFile(resourcePath) << "     resourcePath: " << resourcePath << std::endl;
+    // std::cout << req.getLocationPtr()->getIndexRef().empty() << "   ||   " << isFile(resourcePath) << "     resourcePath: " << resourcePath << std::endl;
 
     _res =
         "HTTP/1.1 200 OK\r\n"
@@ -175,11 +175,9 @@ std::string HTTP::Response::contentForGetHead(Request &req) {
             resourcePath += "/";
         }
         // find index file
-        std::vector<std::string>::const_iterator iter = req.getLocationPtr()->getIndexRef().begin();
-        for (; 
+        for (std::vector<std::string>::const_iterator iter = req.getLocationPtr()->getIndexRef().begin();
                 iter != req.getLocationPtr()->getIndexRef().end() ;
                 ++iter) {
-    std::cout << isFile(resourcePath + *iter) << "     *iter: " << (resourcePath + *iter) << std::endl;
             // put index file to response
             if (0 == isFile(resourcePath + *iter)) {
                 std::string isCGI = ""; // from config

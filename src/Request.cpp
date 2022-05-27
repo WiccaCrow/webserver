@@ -11,30 +11,7 @@ Request::Request(ServerBlock &servBlock) :
                      _bodySize(0),
                      _parseFlags(PARSED_NONE) {
 // временная мера test cout
-if (servBlock.getLocationsRef().find("/about") == servBlock.getLocationsRef().end()) {
-    std::cout << "LOCATION ERROR Request.cpp 7. exit 1\n";
-
-    if (servBlock.getLocationsRef().empty() == true) {
-            std::cout << "          LOC empty" << std::endl;
-
-    }
-    for (std::map<std::string, Location>::iterator iter = 
-        servBlock.getLocationsRef().begin(); iter != servBlock.getLocationsRef().end(); 
-        ++iter) {
-            std::cout << "          LOC:" << iter->first << std::endl;
-        }
-    exit(1);
-}
-if ((servBlock.getLocationsRef().find("/about"))->second.getIndexRef().empty() == true) {
-        std::cout << "          LOC empty" << std::endl;
-
-}
-
-std::cout << servBlock.getLocationsRef().find("/about")->second.getIndexRef().size() << "     test EMPY INDEX____ " <<
-servBlock.getLocationsRef().find("/about")->second.getIndexRef()[0]
-<< std::endl;
-
-_location_current = &(servBlock.getLocationsRef().find("/about"))->second;
+    _location_current = &(servBlock.getLocationsRef().find("/about"))->second;
 }
 
 Request::~Request() {}
