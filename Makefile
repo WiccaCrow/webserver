@@ -4,7 +4,7 @@ NAME 		   =   serv
 
 CXX            =   clang++
 # CPPFLAGS     =   -Wall -Wextra -Werror  -Wc++11-extensions -std=c++98 -g -fstandalone-debug # -Wpedantic
-CPPFLAGS       =   -Wall -Wextra -Werror -Wc++11-extensions -std=c++98 -g 
+CPPFLAGS       =   -Wall -Wextra -Werror -Wc++11-extensions -std=c++98 -g
 
 SOURCEFILES     =	main.cpp \
 				    Server.cpp \

@@ -17,10 +17,10 @@
             "index": [ "index.html" ],
             "locations": {
                 "/about": {
-                    "root": "./root",
+                    "root": "./pages",
                     "default_page": "./pages/404.html",
                     "autoindex": true,
-                    "index": [ "index.php" ],
+                    "index": [ "index.html" ],
                     "post_max_body": 200,
                     "methods-allowed": [ "GET", "POST" ]                 
                 },

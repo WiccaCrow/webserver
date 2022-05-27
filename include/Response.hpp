@@ -49,7 +49,7 @@ class Response {
     std::string contentForGetHead(Request &req);
     std::string resoursePathTaker(Request &req);
     std::string GetContentType(std::string resourcePath);
-    std::string fileToResponse(std::string &resourcePath);
+    std::string fileToResponse(std::string resourcePath);
     std::string listToResponse(std::string &resourcePath, Request &req);
     void        POSTmethod(Request &req);
 

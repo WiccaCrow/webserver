@@ -68,7 +68,7 @@ void    HTTP::Response::doCGI(Request &req) {
 //     return ("");
 // }
 
-std::string HTTP::Response::fileToResponse(std::string &resourcePath) {
+std::string HTTP::Response::fileToResponse(std::string resourcePath) {
     std::ifstream		resourceFile;
     resourceFile.open(resourcePath.c_str(), std::ifstream::in);
     if (!resourceFile.is_open()) {
@@ -160,27 +160,38 @@ std::string HTTP::Response::contentForGetHead(Request &req) {
     // root
     // если в конфиге без /, то добавить /,
     // чтобы мне уже с этим приходило
-    std::string resourcePath = resoursePathTaker(req);
-    // req.getAutoindex();
-    // bool autoindex будет из вышеуказанного геттера
-    // bool autoindex = true;
-    bool autoindex = false;
+    // std::string resourcePath = resoursePathTaker(req);
+    std::string resourcePath = req.getLocationPtr()->getRootRef();
+    std::cout << "     resourcePath: " << resourcePath << std::endl;
 
     _res =
         "HTTP/1.1 200 OK\r\n"
         "connection: keep-alive\r\n"
         "keep-Alive: timeout=55, max=1000\r\n";
-    if (autoindex == true && 1 == isFile(resourcePath)) {
+    // Path is dir
+    if (1 == isFile(resourcePath)) {
+        // в дальнейшем заменить на геттер из req
         if (resourcePath[resourcePath.length() - 1] != '/') {
             resourcePath += "/";
         }
-        // перебор файлов из autoindex вектора/массива 
-        // до встречи первого совпадения (index.html) или
-        // find
-        resourcePath += "index.html";
-    }
-    int isItFile = isFile(resourcePath);
-    if (0 == isItFile) {
+        // find index file
+        std::vector<std::string>::const_iterator iter = req.getLocationPtr()->getIndexRef().begin();
+        for (; 
+                iter != req.getLocationPtr()->getIndexRef().end() ;
+                ++iter) {
+            // put index file to response
+            if (0 == isFile(resourcePath + *iter)) {
+                std::string isCGI = ""; // from config
+                if (isCGI != "") {
+                    doCGI(req);
+                    return (isCGI);
+                }
+                _res += GetContentType(resourcePath + *iter);
+                return (fileToResponse(resourcePath + *iter));
+            }
+        }
+    // Path is file; put Path file to response
+    } else if (0 == isFile(resourcePath)) {
         std::string isCGI = ""; // from config
         if (isCGI != "") {
             doCGI(req);
@@ -188,12 +199,16 @@ std::string HTTP::Response::contentForGetHead(Request &req) {
         }
         _res += GetContentType(resourcePath);
         return (fileToResponse(resourcePath));
-    } else if (autoindex == false && 1 == isItFile) {
+    }
+    // dir listing. autoindex on
+    if (req.getLocationPtr()->getAutoindexRef() == true && 
+        1 == isFile(resourcePath)) {
         _res += "content-type: text/html; charset=utf-8\r\n";
 std::cout << "_res:" + _res << std::endl << std::endl;
         return (listToResponse(resourcePath, req));
+    // 403. autoindex off
     } else {
-        _res = findErr(NOT_FOUND);
+        _res = findErr(FORBIDDEN);
         return "";
     }
 }

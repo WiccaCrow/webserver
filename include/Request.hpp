@@ -32,6 +32,7 @@ class Request {
     HTTP::StatusCode         _status;
 
     ServerBlock              &_servBlock;
+    Location                 *_location_current;
 
     bool            _flag_getline_bodySize;
     unsigned long   _bodySize;
@@ -54,6 +55,7 @@ class Request {
     const std::string              &getBody() const;
     const uint8_t                  &getFlags() const;
     const HTTP::StatusCode         &getStatus() const;
+    Location                       *getLocationPtr();
 
     // Needed to be improved
     const std::string              &getQueryString() const;

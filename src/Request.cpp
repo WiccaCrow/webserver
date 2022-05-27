@@ -6,9 +6,27 @@ namespace HTTP {
 
 Request::Request(ServerBlock &servBlock) : 
                      _servBlock(servBlock),
+                     _location_current(NULL),
                      _flag_getline_bodySize(true),
                      _bodySize(0),
-                     _parseFlags(PARSED_NONE) {}
+                     _parseFlags(PARSED_NONE) {
+// временная мера test cout
+if (servBlock.getLocationsRef().find("/about") == servBlock.getLocationsRef().end()) {
+    std::cout << "LOCATION ERROR Request.cpp 7. exit 1\n";
+
+    if (servBlock.getLocationsRef().empty() == true) {
+            std::cout << "          LOC empty" << std::endl;
+
+    }
+    for (std::map<std::string, Location>::iterator iter = 
+        servBlock.getLocationsRef().begin(); iter != servBlock.getLocationsRef().end(); 
+        ++iter) {
+            std::cout << "          LOC:" << iter->first << std::endl;
+        }
+    exit(1);
+}
+_location_current = &(servBlock.getLocationsRef().find("/about"))->second;
+}
 
 Request::~Request() {}
 
@@ -64,6 +82,10 @@ const uint8_t &Request::getFlags() const {
 
 const HTTP::StatusCode &Request::getStatus() const {
     return _status;
+}
+
+Location *Request::getLocationPtr() {
+    return _location_current;
 }
 
 bool Request::empty() {

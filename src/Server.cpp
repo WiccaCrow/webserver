@@ -216,7 +216,7 @@ static int fdNotTaken(struct pollfd pfd) {
 void Server::acceptNewClient(size_t id) {
     struct sockaddr_in addr;
     socklen_t          len = sizeof(addr);
-
+std::cout << "id:        " << id << std::endl;
     int fd = accept(_pollfds[id].fd, (struct sockaddr *)&addr, &len);
 
     if (fd < 0) {
