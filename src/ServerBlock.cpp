@@ -22,6 +22,11 @@ ServerBlock &ServerBlock::operator=(const ServerBlock &obj) {
         _addr = obj._addr; // Потом будет браться из конфига
         _port = obj._port;
         _servfd = obj._servfd;
+        _blockname = obj._blockname;
+        _server_name = obj._server_name;
+        _locationBase = obj._locationBase;
+        _errorPagesPaths = obj._errorPagesPaths;
+        _locations = obj._locations;
     }
     return (*this);
 }
@@ -97,6 +102,10 @@ int &ServerBlock::getPortRef(void) {
 }
 
 std::map<std::string, Location> &ServerBlock::getLocationsRef(void) {
+    return _locations;
+}
+
+const std::map<std::string, Location> &ServerBlock::getLocationsRef(void) const {
     return _locations;
 }
 

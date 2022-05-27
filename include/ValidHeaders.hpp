@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Header.hpp"
+#include <stdint.h>
 
 namespace HTTP {
 
