@@ -9,7 +9,7 @@
             },
             "CGI": {
                 ".py": "/usr/bin/python",
-                ".php": "/opt/homebrew/bin/php"
+                ".php": "/opt/homebrew/bin/php-cgi"
             },
             "default_page": "./pages/404.html",
             "methods-allowed": [ "GET", "PUT" ],

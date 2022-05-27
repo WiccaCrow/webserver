@@ -32,7 +32,9 @@ void close_pipe(int in, int out) {
 void prepareEnv(HTTP::Request &req) {
 
     setenv("PATH_INFO", "", 1); 
-    setenv("PATH_TRANSLATED", "", 1);
+
+    std::string s = req.getLocationPtr()->getRootRef() + req.getPath();
+    setenv("PATH_TRANSLATED", s.c_str(), 1);
    
     // ?
     setenv("REMOTE_HOST", "", 1);  
@@ -56,6 +58,8 @@ void prepareEnv(HTTP::Request &req) {
     
     // Current server block
     setenv("SERVER_PORT", to_string(req.getServerBlock().getPort()).c_str(), 1);       // 80
+
+    setenv("REDIRECT_STATUS", "200", 1);
     
     // Standart does not define these vars, but info appeared in different sources
     // setenv("DOCUMENT_ROOT", "", 1);

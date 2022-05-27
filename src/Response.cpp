@@ -49,8 +49,6 @@ std::string    HTTP::Response::doCGI(Request &req, std::map<std::string, std::st
         _res = findErr(req.getStatus());
         return "";
     } else {
-        _res += "Content-Length: ";
-        _res += to_string(resCGI.length()) + "\r\n\r\n";
         return resCGI;
     }
 }
