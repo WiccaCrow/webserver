@@ -233,6 +233,7 @@ int getArray(JSON::Object *src, const std::string &key, std::vector<std::string>
 
     JSON::Array::iterator it = arr->begin();
     JSON::Array::iterator end = arr->end();
+    
     for (; it != end; it++) {
         if ((*it)->isNull() || !(*it)->isStr()) {
             Log.error(key + " has mixed value(s)");
@@ -435,10 +436,11 @@ int parseLocation(JSON::Object *src, Location &dst, Location &def) {
         return 0;
     }
 
-    if (!getArray(src, "index", dst.getIndexRef(), dst.getIndexRef())) {
+    if (!getArray(src, "index", dst.getIndexRef(), def.getIndexRef())) {
         Log.error("#### Failed to parse \"index\"");
         return 0;
     }
+
     // Filename checking among indexes ?
 
     return 1;
