@@ -22,12 +22,12 @@ std::string to_string(int val);
 
 #endif
 
-int		isFile(const std::string& fileName);
-
 bool isValidIp(const std::string &ip);
 bool isValidPath(const std::string &path);
 bool isExtension(const std::string &ext);
-bool fileExists(const std::string &filename);
+bool endsWith(const std::string &str, const std::string &end);
+bool resourceExists(const std::string &filename);
+bool isFile(const std::string &filename);
 bool isDirectory(const std::string &dirname);
 bool isReadableFile(const std::string &filename);
 bool isExecutableFile(const std::string &filename);

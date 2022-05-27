@@ -42,15 +42,16 @@ std::string HTTP::Response::GetContentType(std::string resourcePath)
     return (contType);
 }
 
-void    HTTP::Response::doCGI(Request &req) {
-    std::string resCGI = CGI(req);
+std::string    HTTP::Response::doCGI(Request &req, std::map<std::string, std::string>::const_iterator it) {
+    std::string resCGI = CGI(req, it);
      
     if (req.getStatus() >= 400) {
         _res = findErr(req.getStatus());
+        return "";
     } else {
         _res += "Content-Length: ";
         _res += to_string(resCGI.length()) + "\r\n\r\n";
-        _res += resCGI;
+        return resCGI;
     }
 }
 
@@ -72,7 +73,7 @@ std::string HTTP::Response::fileToResponse(std::string resourcePath) {
     std::ifstream		resourceFile;
     resourceFile.open(resourcePath.c_str(), std::ifstream::in);
     if (!resourceFile.is_open()) {
-        _res = findErr(NOT_FOUND);
+        _res = findErr(FORBIDDEN);
         return "";
     }
 
@@ -147,12 +148,23 @@ std::string HTTP::Response::resoursePathTaker(Request &req) {
     // если URI начинается с /
     resourcePath = req.getLocationPtr()->getRootRef();
     if (req.getPath()[0] == '/') {
+
     } else {
         resourcePath += "/";
     }
     // root из конфигурации + URI
     resourcePath += req.getPath();
     return (resourcePath);
+}
+
+std::map<std::string, std::string>::const_iterator isCGI(const std::string &filepath, std::map<std::string, std::string> &cgi) {
+    std::map<std::string, std::string>::const_iterator it = cgi.begin();
+    std::map<std::string, std::string>::const_iterator end = cgi.end();
+    for (;it != end; it++) {
+        if (endsWith(filepath, it->first))
+            return it;
+    }
+    return end;
 }
 
 std::string HTTP::Response::contentForGetHead(Request &req) {
@@ -169,41 +181,44 @@ std::string HTTP::Response::contentForGetHead(Request &req) {
         "connection: keep-alive\r\n"
         "keep-Alive: timeout=55, max=1000\r\n";
     // Path is dir
-    if (1 == isFile(resourcePath)) {
+    if (isDirectory(resourcePath)) {
         // в дальнейшем заменить на геттер из req
         if (resourcePath[resourcePath.length() - 1] != '/') {
             resourcePath += "/";
         }
         // find index file
         for (std::vector<std::string>::const_iterator iter = req.getLocationPtr()->getIndexRef().begin();
-                iter != req.getLocationPtr()->getIndexRef().end() ;
+                iter != req.getLocationPtr()->getIndexRef().end();
                 ++iter) {
             // put index file to response
-            if (0 == isFile(resourcePath + *iter)) {
-                std::string isCGI = ""; // from config
-                if (isCGI != "") {
-                    doCGI(req);
-                    return (isCGI);
+            std::string path = resourcePath + *iter;
+            if (isFile(path)) {
+                std::map<std::string, std::string>::const_iterator it = isCGI(path, req.getLocationPtr()->getCGIPathsRef());
+                if (it != req.getLocationPtr()->getCGIPathsRef().end()) {
+                    return doCGI(req, it);
                 }
-                _res += GetContentType(resourcePath + *iter);
-                return (fileToResponse(resourcePath + *iter));
+                _res += GetContentType(path);
+                return (fileToResponse(path));
             }
         }
     // Path is file; put Path file to response
-    } else if (0 == isFile(resourcePath)) {
-        std::string isCGI = ""; // from config
-        if (isCGI != "") {
-            doCGI(req);
-            return (isCGI);
+    } else if (isFile(resourcePath)) {
+        std::map<std::string, std::string>::const_iterator it = isCGI(resourcePath, req.getLocationPtr()->getCGIPathsRef());
+        if (it != req.getLocationPtr()->getCGIPathsRef().end()) {
+            return doCGI(req, it);
         }
         _res += GetContentType(resourcePath);
         return (fileToResponse(resourcePath));
+    } else {
+        // not readable files and other types
+        _res = findErr(FORBIDDEN);
+        return "";
     }
     // dir listing. autoindex on
     if (req.getLocationPtr()->getAutoindexRef() == true && 
-        1 == isFile(resourcePath)) {
+        isDirectory(resourcePath)) {
         _res += "content-type: text/html; charset=utf-8\r\n";
-std::cout << "_res:" + _res << std::endl << std::endl;
+// std::cout << "_res:" + _res << std::endl << std::endl;
         return (listToResponse(resourcePath, req));
     // 403. autoindex off
     } else {
@@ -225,13 +240,15 @@ void HTTP::Response::DELETEmethod(Request &req) {
     // чтобы не удалить чистовой сайт я временно добавляю следующую строку:
     resourcePath += "test_empty/1111";
 
-    int isItFile = isFile(resourcePath);
-    if (isItFile == -1) {
+    if (!resourceExists(resourcePath)) {
         _res = findErr(NOT_FOUND);
         return ;
-    } else if (isItFile == 2 || std::remove(resourcePath.c_str())) {
+    } else if (isDirectory(resourcePath)) {
+        // deleteDirectory: recursively deletes every file with deleteFile, and call itself for each subdirectory.
         _res = findErr(FORBIDDEN);
         return ;
+    } else {
+        // deleteFile
     }
     _res = 
         "HTTP/1.1 200 OK\r\n"
@@ -245,8 +262,9 @@ void HTTP::Response::DELETEmethod(Request &req) {
 
 void HTTP::Response::POSTmethod(Request &req) {
     std::string isCGI = ""; // from config
+    (void)req;
     if (isCGI != "") {
-        doCGI(req);
+        // doCGI(req);
     } else {
         _res = "HTTP/1.1 204 No Content\r\n\r\n";
     }

@@ -15,4 +15,4 @@
 #include "Utils.hpp"
 #include "Request.hpp"
 
-std::string CGI(HTTP::Request &req);
+std::string CGI(HTTP::Request &req, std::map<std::string, std::string>::const_iterator it);

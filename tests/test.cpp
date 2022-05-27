@@ -1,11 +1,16 @@
 #include "string"
 #include "iostream"
 
-int main(int ac, char **av) {
-    std::string s = "\"b\r\n\"\r\n";
+bool endsWith(const std::string &str, const std::string &end) {
+    if (end.length() >= str.length()) 
+        return false;
+    return str.find(end, str.length() - end.length()) != std::string::npos;
+    // return str.substr(str.length() - end.length()) == end;
+}
 
-    size_t pos = s.find("\r\n");
-    std::cout << "pos = " << pos << std::endl;
-    std::cout << "len = " << s.length() << std::endl;
+int main(int ac, char **av) {
+    std::string s = ".php";
+    std::string ext = ".php";
+    std::cout << endsWith(s, ext) << std::endl;
     return 0;
 }

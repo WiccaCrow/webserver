@@ -76,21 +76,21 @@ std::string to_string(unsigned long val) {
 
 #endif
 
-int		isFile(const std::string& fileName)
-{
-    struct stat buf;
-    if (stat(fileName.c_str(), &buf) == 0 ) {
-        if (buf.st_mode & S_IFREG)
-            return (0);
-        else if (buf.st_mode & S_IFDIR)
-            return (1);
-        else
-            return (2);
-    }
-    else {
-        return (-1);
-    }
-}
+// int		isFile(const std::string& fileName)
+// {
+//     struct stat buf;
+//     if (stat(fileName.c_str(), &buf) == 0 ) {
+//         if (buf.st_mode & S_IFREG)
+//             return (0);
+//         else if (buf.st_mode & S_IFDIR)
+//             return (1);
+//         else
+//             return (2);
+//     }
+//     else {
+//         return (-1);
+//     }
+// }
 
 bool isValidOctet(char *octet)
 {
@@ -148,11 +148,6 @@ bool isValidPath(const std::string &path) {
     return true;
 }
 
-bool fileExists(const std::string &filename) {
-    struct stat state;
-    return (stat(filename.c_str(), &state) == 0);
-}
-
 bool isWord(const std::string word) {
     for (size_t i = 0; i < word.length(); i++) {
         if (!isalnum(word[i]))
@@ -167,14 +162,32 @@ bool isExtension(const std::string &ext) {
     return (isWord(&ext[1]));
 }
 
+bool endsWith(const std::string &str, const std::string &end) {
+    if (end.length() >= str.length()) 
+        return false;
+    return str.find(end, str.length() - end.length()) != std::string::npos;
+}
+
+bool resourceExists(const std::string &filename) {
+    struct stat state;
+
+    return (stat(filename.c_str(), &state) == 0);
+}
+
+bool isFile(const std::string &filename) {
+    struct stat state;
+
+    if (stat(filename.c_str(), &state) < 0)
+        return false;
+    return S_ISREG(state.st_mode);
+}
+
 bool isDirectory(const std::string &dirname) {
     struct stat state;
 
     if (stat(dirname.c_str(), &state) < 0)
         return false;
-    if (!S_ISDIR(state.st_mode))
-        return false;
-    return true;
+    return S_ISDIR(state.st_mode);
 }
 
 bool checkRegFilePerms(const std::string &filename, int perm) {

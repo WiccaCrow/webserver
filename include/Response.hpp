@@ -53,7 +53,7 @@ class Response {
     std::string listToResponse(std::string &resourcePath, Request &req);
     void        POSTmethod(Request &req);
 
-    void        doCGI(Request &req);
+    std::string doCGI(Request &req, std::map<std::string, std::string>::const_iterator it);
 
     // to send response
     size_t      GetResSize(void);

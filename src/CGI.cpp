@@ -5,19 +5,6 @@
 #include "Request.hpp"
 #include "ValidHeaders.hpp"
 
-static const char * pyargs[] = {
-    static_cast<const char *>("/usr/bin/python"),
-    static_cast<const char *>("./pages/site/printenv.py"),
-    static_cast<const char *>(NULL)
-};
-
-// static const char * phpargs[] = {
-//     static_cast<const char *>("/opt/homebrew/bin/php"),
-//     static_cast<const char *>("./pages/site/printenv.php"),
-//     static_cast<const char *>(NULL)
-// };
-
-
 void log_error(const std::string &prefix) {
     Log.error(prefix);
     Log.error("Errno: " + to_string(errno));
@@ -87,8 +74,18 @@ void prepareEnv(HTTP::Request &req) {
 }
 
 
-std::string CGI(HTTP::Request &req) {
+std::string CGI(HTTP::Request &req, std::map<std::string, std::string>::const_iterator it) {
     
+    std::string s = req.getLocationPtr()->getRootRef() + req.getPath();
+    const char * args[] = {
+        static_cast<const char *>(it->second.c_str()),
+        static_cast<const char *>(s.c_str()),
+        static_cast<const char *>(NULL)
+    };
+
+    Log.debug(args[0]);
+    Log.debug(args[1]);
+
     int in[2] = {-1};
     int out[2] = {-1};
 
@@ -160,10 +157,10 @@ std::string CGI(HTTP::Request &req) {
     } else if (childPID == 0) {
         close_pipe(in[1], out[0]);
         // dup2(out[1], fileno(stderr));
-        char buf[1000];
-        realpath(pyargs[1], buf);
-        pyargs[1] = buf;
-        if (execv(pyargs[0], (char * const *)pyargs) == -1) {
+        // char buf[1000];
+        // realpath(pyargs[1], buf);
+        // pyargs[1] = buf;
+        if (execv(args[0], (char * const *)args) == -1) {
             exit(3);
         }
     }

@@ -340,7 +340,7 @@ int isValidErrorPages(std::map<int, std::string> &res) {
     std::map<int, std::string>::iterator end = res.end();
 
     for (; it != end; it++) {
-        if (!fileExists(it->second)) {
+        if (!resourceExists(it->second)) {
             Log.error("\"" + it->second + "\": file does not exist");
             return false;
         }
@@ -390,7 +390,7 @@ int parseLocation(JSON::Object *src, Location &dst, Location &def) {
     if (!getString(src, "root", dst.getRootRef(), def.getRootRef())) { // optional ?
         Log.error("#### Failed to parse \"root\"");
         return 0;
-    } else if (!fileExists(dst.getRootRef())) {
+    } else if (!resourceExists(dst.getRootRef())) {
         Log.error("#### \"root\": " + dst.getRootRef() + " does not exist");
         return 0;
     } else if (!isDirectory(dst.getRootRef())) {
