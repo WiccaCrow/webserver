@@ -297,7 +297,7 @@ int isValidCGI(std::map<std::string, std::string> &res) {
             Log.error("\"" + it->first + "\": incorrect extension");
             return false;
         }
-        if (!isExecutableFile(it->second)) {
+        else if (it->first != ".cgi" && !isExecutableFile(it->second)) {
             Log.error("\"" + it->second + "\" is not executable file");
             return false;
         }

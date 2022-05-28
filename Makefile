@@ -38,7 +38,7 @@ INCLUDEFOLDER   =   include/
 SOURCE          =   $(addprefix $(SOURCEFOLDER), $(SOURCEFILES))
 OSOURCE         =   $(addprefix $(OSOURCEFOLDER), $(SOURCEFILES:.cpp=.o))
 
-all: libjson objdir $(NAME)
+all: libjson objdir cgi_script $(NAME)
 
 objdir:
 	@if ! [ -d ${OSOURCEFOLDER} ] ; then mkdir ${OSOURCEFOLDER} ; fi
@@ -62,6 +62,9 @@ fclean: clean
 	rm -rf $(NAME)
 
 re: fclean all
+
+cgi_script:
+	gcc ./pages/site/printenv.c -o ./pages/site/printenv.cgi
 
 # for tests
 YoupiBanane:

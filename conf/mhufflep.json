@@ -8,8 +8,10 @@
                 "400": "./pages/400.html"
             },
             "CGI": {
+                ".pl": "/usr/bin/perl",
                 ".py": "/usr/bin/python",
-                ".php": "/opt/homebrew/bin/php-cgi"
+                ".php": "/opt/homebrew/bin/php-cgi",
+                ".cgi": ""
             },
             "default_page": "./pages/404.html",
             "methods-allowed": [ "GET", "PUT" ],

@@ -29,62 +29,56 @@ void close_pipe(int in, int out) {
     }
 }
 
-void prepareEnv(HTTP::Request &req) {
+void prepareEnv(HTTP::Request &req, const char *env[]) {
 
-    setenv("PATH_INFO", "", 1); 
+    std::string path_info = "PATH_INFO="; 
+    std::string path_translated = "PATH_TRANSLATED=" + req.getLocationPtr()->getRootRef() + req.getPath(); 
+    std::string remote_host = "REMOTE_HOST=";
+    std::string remote_addr = "REMOTE_ADDR=";
+    std::string remote_user = "REMOTE_USER=";
+    std::string remote_ident = "REMOTE_IDENT=";
+    std::string auth_type = "AUTH_TYPE=Basic";
+    std::string query_string = "QUERY_STRING=" + req.getQueryString();
+    std::string request_method = "REQUEST_METHOD=" + req.getMethod();
+    std::string script_name = "SCRIPT_NAME=" + req.getScriptName();
+    std::string content_length = "CONTENT_LENGTH=" + to_string(req.getBody().length());
+    std::string content_type = static_cast<std::string>("CONTENT_TYPE=") + req.getHeaderValue(CONTENT_TYPE);
+    std::string gateway_interface = "GATEWAY_INTERFACE=CGI/1.1";
+    std::string server_name = "SERVER_NAME=localhost";
+    std::string server_software = "SERVER_SOFTWARE=webserv/1.0";
+    std::string server_protocol = "SERVER_PROTOCOL=HTTP/1.1";
+    std::string server_port = "SERVER_PORT=" + to_string(req.getServerBlock().getPort());
+    std::string redirect_status = "REDIRECT_STATUS=200";
 
-    std::string s = req.getLocationPtr()->getRootRef() + req.getPath();
-    setenv("PATH_TRANSLATED", s.c_str(), 1);
-   
-    // ?
-    setenv("REMOTE_HOST", "", 1);  
-    setenv("REMOTE_ADDR", "", 1);       // ip addr of the request sender
-    setenv("REMOTE_USER", "", 1);
-    setenv("REMOTE_IDENT", "", 1);
-
-    // Request
-    setenv("AUTH_TYPE", "Basic", 1);    // Basic, SSL, or null
-    setenv("QUERY_STRING", req.getQueryString().c_str(), 1);      // scheme://authority/path?QUERY_STRING#fragment
-    setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);    // GET, POST ...
-    setenv("SCRIPT_NAME", req.getScriptName().c_str(), 1);       // full script name ? hello.py
-    setenv("CONTENT_LENGTH", to_string(req.getBody().length()).c_str(), 1);    // Number, 256, how much bytes should script read from stdin, -1 if not known
-    // HeaderCode key = CONTENT_TYPE;
-    setenv("CONTENT_TYPE", req.getHeaderValue(CONTENT_TYPE), 1);      // MIME-type, if there is, text/html
-
-    setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);   // CGI/revision
-    setenv("SERVER_NAME", "localhost", 1);       // Server's hostname, DNS alias, or IP address as it appears in self-referencing URLs.
-    setenv("SERVER_SOFTWARE", "webserv/1.0", 1); // our server name and version
-    setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);    // HTTP/1.1 (scheme/revision)
-    
-    // Current server block
-    setenv("SERVER_PORT", to_string(req.getServerBlock().getPort()).c_str(), 1);       // 80
-
-    setenv("REDIRECT_STATUS", "200", 1);
-    
-    // Standart does not define these vars, but info appeared in different sources
-    // setenv("DOCUMENT_ROOT", "", 1);
-    // setenv("HTTP_COOKIE", "", 1);
-    // setenv("HTTP_HOST", "", 1);
-    // setenv("HTTP_ACCEPT", "", 1); // Comes from request
-
-    // setenv("HTTP_FROM", "", 1);
-    // setenv("HTTP_ACCEPT_CHARSET", "", 1);
-    // setenv("HTTP_ACCEPT_ENCODING", "", 1);
-    // setenv("HTTP_ACCEPT_LANGUAGE", "", 1);
-    // setenv("HTTP_USER_AGENT", "", 1);
-    // setenv("HTTP_REFERER", "", 1);
-    // setenv("HTTP_FORWARDED", "", 1);
-    // setenv("HTTP_PROXY_AUTHORIZATION", "", 1);
+     env[0] = path_info.c_str();
+     env[1] = path_translated.c_str();
+     env[2] = remote_host.c_str();
+     env[3] = remote_addr.c_str();
+     env[4] = remote_user.c_str();
+     env[5] = remote_ident.c_str();
+     env[6] = auth_type.c_str();
+     env[7] = query_string.c_str();
+     env[8] = request_method.c_str();
+     env[9] = script_name.c_str();
+    env[10] = content_length.c_str();
+    env[11] = content_type.c_str();
+    env[12] = gateway_interface.c_str();
+    env[13] = server_name.c_str();
+    env[14] = server_software.c_str();
+    env[15] = server_protocol.c_str();
+    env[16] = server_port.c_str();
+    env[17] = redirect_status.c_str();
 }
 
 
 std::string CGI(HTTP::Request &req, std::map<std::string, std::string>::const_iterator it) {
-    
+
     std::string s = req.getLocationPtr()->getRootRef() + req.getPath();
+    std::string z = it->first == ".cgi" ? s : it->second;
     const char * args[] = {
-        static_cast<const char *>(it->second.c_str()),
-        static_cast<const char *>(s.c_str()),
-        static_cast<const char *>(NULL)
+        z.c_str(),
+        s.c_str(),
+        NULL
     };
 
     Log.debug(args[0]);
@@ -147,7 +141,6 @@ std::string CGI(HTTP::Request &req, std::map<std::string, std::string>::const_it
         return "";
     }
     
-    prepareEnv(req);
     int childPID = fork();
     if (childPID < 0) {
         log_error("CGI::fork: ");
@@ -160,11 +153,13 @@ std::string CGI(HTTP::Request &req, std::map<std::string, std::string>::const_it
         return "";
     } else if (childPID == 0) {
         close_pipe(in[1], out[0]);
+
+        // Catch stderr from cgi
         // dup2(out[1], fileno(stderr));
-        // char buf[1000];
-        // realpath(pyargs[1], buf);
-        // pyargs[1] = buf;
-        if (execv(args[0], (char * const *)args) == -1) {
+
+        const char *env[20] = {0};
+        prepareEnv(req, env);
+        if (execve(args[0], (char * const *)args, const_cast<char * const *>(env)) == -1) {
             exit(3);
         }
     }
@@ -198,7 +193,7 @@ std::string CGI(HTTP::Request &req, std::map<std::string, std::string>::const_it
         return "";
     }
 
-        std::string res = "";
+    std::string res = "";
     if (WIFEXITED(status)) {
         int r = 1;
         const int size = 300;
