@@ -1,40 +1,53 @@
 #include "Location.hpp"
 
-Location::Location() {}
-Location::~Location() {}
+namespace HTTP
+{
 
-std::string &Location::getPathRef(void) {
-    return _path;
-}
+    Location::Location() {}
+    Location::~Location() {}
 
-bool &Location::getAutoindexRef(void) {
-    return _autoindex;
-}
+    std::string &Location::getPathRef(void)
+    {
+        return _path;
+    }
 
-int &Location::getPostMaxBodyRef(void) {
-    return _post_max_body;
-}
+    bool &Location::getAutoindexRef(void)
+    {
+        return _autoindex;
+    }
 
-std::string &Location::getRootRef(void) {
-    return _root;
-}
+    int &Location::getPostMaxBodyRef(void)
+    {
+        return _post_max_body;
+    }
 
-std::string &Location::getDefaultPageRef(void) {
-    return _defaultPage;
-}
+    std::string &Location::getRootRef(void)
+    {
+        return _root;
+    }
 
-std::vector<std::string> &Location::getIndexRef(void) {
-    return _index;
-}
+    std::string &Location::getDefaultPageRef(void)
+    {
+        return _defaultPage;
+    }
 
-std::vector<std::string> &Location::getAllowedMethodsRef(void) {
-    return _allowedMethods;
-}
+    std::vector<std::string> &Location::getIndexRef(void)
+    {
+        return _index;
+    }
 
-std::map<std::string, HTTP::CGI> &Location::getCGIPathsRef(void) {
-    return _cgiPaths;
-}
+    std::vector<std::string> &Location::getAllowedMethodsRef(void)
+    {
+        return _allowedMethods;
+    }
 
-Redirect &Location::getRedirectRef(void) {
-    return _redirect;
+    std::map<std::string, HTTP::CGI> &Location::getCGIPathsRef(void)
+    {
+        return _cgiPaths;
+    }
+
+    Redirect &Location::getRedirectRef(void)
+    {
+        return _redirect;
+    }
 }

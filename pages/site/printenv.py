@@ -1,6 +1,6 @@
 import os
 
-print "Content-type: text/html", "\n\n"
+print "Content-type: text/html\n\n"
 print "<html>\n"
 print "<title>Server-provided Environment variables</title>"
 print "<body>\n"

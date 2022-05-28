@@ -6,7 +6,8 @@
 int isInteger(double &num);
 int isUInteger(double &num);
 
-enum ExpectedType {
+enum ExpectedType
+{
     STRING,
     BOOLEAN,
     NUMBER,
@@ -15,7 +16,7 @@ enum ExpectedType {
 };
 
 std::string getDataTypeName(ExpectedType type);
-int         typeExpected(JSON::AType *ptr, ExpectedType type);
+int typeExpected(JSON::AType *ptr, ExpectedType type);
 
 template <typename T>
 int basicCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res, T def);
@@ -47,10 +48,10 @@ int isValidCGI(std::map<std::string, HTTP::CGI> &res);
 int parseErrorPages(JSON::Object *src, std::map<int, std::string> &res);
 int isValidErrorPages(std::map<int, std::string> &res);
 
-int parseLocation(JSON::Object *src, Location &dst, Location &def);
-int parseLocations(JSON::Object *src, std::map<std::string, Location> &res, Location &base);
+int parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def);
+int parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res, HTTP::Location &base);
 
-int parseServerBlock(JSON::Object *src, ServerBlock &dst);
+int parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst);
 int parseServerBlocks(JSON::Object *src, Server *serv);
 
 Server *loadConfig(const string filename);

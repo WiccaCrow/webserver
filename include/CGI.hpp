@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
+#include <cstring>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -16,8 +16,6 @@
 // #include "Request.hpp"
 #include "Logger.hpp"
 // #include "Globals.hpp"
-
-
 namespace HTTP
 {
     class Request;
@@ -25,9 +23,11 @@ namespace HTTP
     class CGI
     {
     private:
-        const char *_execpath;
-        const char *_args[2];
-        const char *_env[20];
+        std::string _execpath;
+        std::string _filepath;
+
+        const char *_args[3];
+        char *_env[20];
 
         bool _isCompiled;
 
@@ -42,12 +42,16 @@ namespace HTTP
         bool isCompiled(void);
 
         void setEnv(Request &req);
-        void setExecPath(const std::string &);
-        const std::string getExecPath(void) const;
+        void setFullEnv(Request &req);
+        void setExecPath(const std::string);
+        bool setScriptPath(const std::string);
+        void reset(void);
 
-        bool setScriptPath(const std::string &);
+        const std::string getExecPath(void) const;
+        const std::string getResult(void) const;
 
         static const std::string compiledExt;
+        static char **env;
     };
 
 }

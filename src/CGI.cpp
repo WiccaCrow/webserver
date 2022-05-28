@@ -1,17 +1,16 @@
 #include "CGI.hpp"
 
-namespace HTTP
-{
+#include "Request.hpp"
 
-    const std::string CGI::compiledExt = ".cgi";
+namespace HTTP {
 
     CGI::CGI(void) : _isCompiled(false)
     {
-        for (size_t i = 0; i < 2; i++)
+        for (size_t i = 0; i < 3; i++)
             _args[i] = NULL;
 
         for (size_t i = 0; i < 20; i++)
-            _args[i] = NULL;
+            _env[i] = NULL;
     }
 
     CGI::~CGI() {}
@@ -47,45 +46,64 @@ namespace HTTP
         }
     }
 
+    static void setValue(char *const env, std::string value)
+    {
+        char *ptr = strchr(env, '=');
+        if (ptr == NULL) {
+            return ;
+        }
+        ptr[1] = '\0';
+        strncat(env, value.c_str(), 1023 - strlen(env));
+    }
+
+    void CGI::setFullEnv(Request &req) {
+        setenv("PATH_INFO", "", 1);
+
+        std::string s = req.getLocationPtr()->getRootRef() + req.getPath();
+        setenv("PATH_TRANSLATED", s.c_str(), 1);
+
+        setenv("REMOTE_HOST", "", 1);
+        setenv("REMOTE_ADDR", "", 1);
+        setenv("REMOTE_USER", "", 1);
+        setenv("REMOTE_IDENT", "", 1);
+
+        setenv("AUTH_TYPE", "Basic", 1);
+        setenv("QUERY_STRING", req.getQueryString().c_str(), 1);
+        setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
+        setenv("SCRIPT_NAME", req.getScriptName().c_str(), 1);
+        setenv("CONTENT_LENGTH", to_string(req.getBody().length()).c_str(), 1);
+        setenv("CONTENT_TYPE", req.getHeaderValue(CONTENT_TYPE), 1);
+
+        setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
+        setenv("SERVER_NAME", "localhost", 1);
+        setenv("SERVER_SOFTWARE", "webserv/1.0", 1);
+        setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
+
+        // Current server block
+        setenv("SERVER_PORT", to_string(req.getServerBlock().getPort()).c_str(), 1); // 80
+        setenv("REDIRECT_STATUS", "200", 1);
+    }
+
     void CGI::setEnv(Request &req)
     {
-        std::string path_info = "PATH_INFO=";
-        std::string path_translated = "PATH_TRANSLATED=" + req.getLocationPtr()->getRootRef() + req.getPath();
-        std::string remote_host = "REMOTE_HOST=";
-        std::string remote_addr = "REMOTE_ADDR=";
-        std::string remote_user = "REMOTE_USER=";
-        std::string remote_ident = "REMOTE_IDENT=";
-        std::string auth_type = "AUTH_TYPE=Basic";
-        std::string query_string = "QUERY_STRING=" + req.getQueryString();
-        std::string request_method = "REQUEST_METHOD=" + req.getMethod();
-        std::string script_name = "SCRIPT_NAME=" + req.getScriptName();
-        std::string content_length = "CONTENT_LENGTH=" + to_string(req.getBody().length());
-        std::string content_type = static_cast<std::string>("CONTENT_TYPE=") + req.getHeaderValue(CONTENT_TYPE);
-        std::string gateway_interface = "GATEWAY_INTERFACE=CGI/1.1";
-        std::string server_name = "SERVER_NAME=localhost";
-        std::string server_software = "SERVER_SOFTWARE=webserv/1.0";
-        std::string server_protocol = "SERVER_PROTOCOL=HTTP/1.1";
-        std::string server_port = "SERVER_PORT=" + to_string(req.getServerBlock().getPort());
-        std::string redirect_status = "REDIRECT_STATUS=200";
-
-        _env[0] = path_info.c_str();
-        _env[1] = path_translated.c_str();
-        _env[2] = remote_host.c_str();
-        _env[3] = remote_addr.c_str();
-        _env[4] = remote_user.c_str();
-        _env[5] = remote_ident.c_str();
-        _env[6] = auth_type.c_str();
-        _env[7] = query_string.c_str();
-        _env[8] = request_method.c_str();
-        _env[9] = script_name.c_str();
-        _env[10] = content_length.c_str();
-        _env[11] = content_type.c_str();
-        _env[12] = gateway_interface.c_str();
-        _env[13] = server_name.c_str();
-        _env[14] = server_software.c_str();
-        _env[15] = server_protocol.c_str();
-        _env[16] = server_port.c_str();
-        _env[17] = redirect_status.c_str();
+        setValue(env[0], "");
+        setValue(env[1], req.getLocationPtr()->getRootRef() + req.getPath());
+        setValue(env[2], "");
+        setValue(env[3], "");
+        setValue(env[4], "");
+        setValue(env[5], "");
+        setValue(env[6], "Basic");
+        setValue(env[7], req.getQueryString());
+        setValue(env[8], req.getMethod());
+        setValue(env[9], req.getScriptName());
+        setValue(env[10], to_string(req.getBody().length()));
+        setValue(env[11], req.getHeaderValue(CONTENT_TYPE));
+        setValue(env[12], "CGI/1.1");
+        setValue(env[13], "localhost");
+        setValue(env[14], "webserv/1.0");
+        setValue(env[15], "HTTP/1.1");
+        setValue(env[16], to_string(req.getServerBlock().getPort()));
+        setValue(env[17], "200");
     }
 
     void CGI::setCompiled(bool value)
@@ -98,32 +116,44 @@ namespace HTTP
         return _isCompiled;
     }
 
-    void CGI::setExecPath(const std::string &path)
+    void CGI::setExecPath(const std::string path)
     {
-        _execpath = path.c_str();
+        _execpath = path;
     }
 
     const std::string CGI::getExecPath(void) const
     {
-        return std::string(_execpath);
+        return _execpath;
     }
 
-    bool CGI::setScriptPath(const std::string &path)
+    bool CGI::setScriptPath(const std::string path)
     {
-
-        if (!isExecutableFile(path))
-            return false;
-
-        _args[0] = path.c_str();
+        _filepath = path;
         return true;
+    }
+
+    const std::string CGI::getResult(void) const
+    {
+        return _res;
+    }
+
+    void CGI::reset(void) {
+        _res = "";
     }
 
     int CGI::exec()
     {
+        if (_isCompiled && !isExecutableFile(_filepath)) {
+            Log.error(_filepath + " is not executable");
+            return 0;
+        }
 
-        if (_isCompiled)
-        {
-            _execpath = _args[0];
+        if (_isCompiled) {
+            _args[0] = _filepath.c_str();
+            _args[1] = "";
+        } else {
+            _args[0] = _execpath.c_str();
+            _args[1] = _filepath.c_str();
         }
 
         int in[2] = {-1};
@@ -132,7 +162,6 @@ namespace HTTP
         if (pipe(in) != 0)
         {
             log_error("CGI::pipe::in: ");
-            // req.setStatus(HTTP::INTERNAL_SERVER_ERROR);
             return 0;
         }
 
@@ -140,7 +169,6 @@ namespace HTTP
         {
             log_error("CGI::pipe::out: ");
             close_pipe(in[0], in[1]);
-            // req.setStatus(HTTP::INTERNAL_SERVER_ERROR);
             return 0;
         }
 
@@ -152,7 +180,6 @@ namespace HTTP
             close_pipe(tmp[0], tmp[1]);
             close_pipe(in[0], in[1]);
             close_pipe(out[0], out[1]);
-            // req.setStatus(HTTP::INTERNAL_SERVER_ERROR);
             return 0;
         }
 
@@ -163,7 +190,6 @@ namespace HTTP
             close_pipe(tmp[0], tmp[1]);
             close_pipe(in[0], in[1]);
             close_pipe(out[0], out[1]);
-            // req.setStatus(HTTP::INTERNAL_SERVER_ERROR);
             return 0;
         }
 
@@ -174,7 +200,6 @@ namespace HTTP
             close_pipe(tmp[0], tmp[1]);
             close_pipe(in[0], in[1]);
             close_pipe(out[0], out[1]);
-            // req.setStatus(HTTP::INTERNAL_SERVER_ERROR);
             return 0;
         }
 
@@ -185,10 +210,9 @@ namespace HTTP
             close_pipe(tmp[0], tmp[1]);
             close_pipe(in[0], in[1]);
             close_pipe(out[0], out[1]);
-            // req.setStatus(HTTP::INTERNAL_SERVER_ERROR);
             return 0;
         }
-
+ 
         int childPID = fork();
         if (childPID < 0)
         {
@@ -197,8 +221,6 @@ namespace HTTP
             close_pipe(tmp[0], tmp[1]);
             close_pipe(in[0], in[1]);
             close_pipe(out[0], out[1]);
-            // return some message ?
-            // req.setStatus(HTTP::INTERNAL_SERVER_ERROR);
             return 0;
         }
         else if (childPID == 0)
@@ -208,10 +230,7 @@ namespace HTTP
             // Catch stderr from cgi
             // dup2(out[1], fileno(stderr));
 
-            // Not execute process if it is interpreted and no file name is specified
-            // because interpreter will hang up and server never receives response from it.
-
-            if (!execve(_execpath, const_cast<char *const *>(_args), const_cast<char *const *>(_env)))
+            if (execve(_args[0], const_cast<char * const *>(_args), env) == -1)
             {
                 exit(3);
             }
@@ -243,7 +262,6 @@ namespace HTTP
         if (WEXITSTATUS(status) == 3)
         {
             log_error("CGI::execv: ");
-            // req.setStatus(HTTP::INTERNAL_SERVER_ERROR);
             return 0;
         }
 
@@ -270,8 +288,41 @@ namespace HTTP
         // Add other macros for handling unexpected termination of child process.
 
         close_pipe(out[0], -1);
-
         return 1;
     }
+
+    char **initEnv() {
+        char **env = (char **)calloc(19, sizeof(char *));
+
+        for (size_t i = 0; i < 18; i++)
+        {
+            env[i] = (char *)calloc(1024, sizeof(char));
+        }
+        
+        strcpy(env[0], "PATH_INFO=");
+        strcpy(env[1], "PATH_TRANSLATED=");
+        strcpy(env[2], "REMOTE_HOST=");
+        strcpy(env[3], "REMOTE_ADDR=");
+        strcpy(env[4], "REMOTE_USER=");
+        strcpy(env[5], "REMOTE_IDENT=");
+        strcpy(env[6], "AUTH_TYPE=");
+        strcpy(env[7], "QUERY_STRING=");
+        strcpy(env[8], "REQUEST_METHOD=");
+        strcpy(env[9], "SCRIPT_NAME=");
+        strcpy(env[10], "CONTENT_LENGTH=");
+        strcpy(env[11], "CONTENT_TYPE=");
+        strcpy(env[12], "GATEWAY_INTERFACE=");
+        strcpy(env[13], "SERVER_NAME=");
+        strcpy(env[14], "SERVER_SOFTWARE=");
+        strcpy(env[15], "SERVER_PROTOCOL=");
+        strcpy(env[16], "SERVER_PORT=");
+        strcpy(env[17], "REDIRECT_STATUS=");
+        env[18] = NULL;
+
+        return env;
+    }
+
+    char **CGI::env = initEnv();
+    const std::string CGI::compiledExt = ".cgi";
 
 }

@@ -29,20 +29,21 @@
 // максимальный размер пакета в TCP
 #define PACKET_SIZE 65536
 
-class Server {
-    private:
+class Server
+{
+private:
     // Variables
-    size_t                     _nbServBlocks;
-    std::vector<ServerBlock>   _ServBlocks;
+    size_t _nbServBlocks;
+    std::vector<HTTP::ServerBlock> _ServBlocks;
     std::vector<struct pollfd> _pollfds;
-    std::vector<Client>        _clients;
-    int                        _pollResult;
+    std::vector<HTTP::Client> _clients;
+    int _pollResult;
 
     // Methods
     void fillServBlocksFds(void);
 
-    public:
-    char ** env;
+public:
+    char **env;
     Server();
     Server(const std::string &_addr, const uint16_t _port);
     Server(const Server &obj);
@@ -52,16 +53,16 @@ class Server {
 
     // Get and show atributs
 
-    void addServerBlock(ServerBlock &servBlock);
+    void addServerBlock(HTTP::ServerBlock &servBlock);
     void addServerBlock(const std::string &ipaddr, const uint16_t port);
     size_t getServerBlocksNum(void);
-    
+
     void start(void);
     void pollServ(void);
     void acceptNewClient(size_t id);
     void handleAcceptError();
     void handlePollError();
-    int  pollInHandler(size_t id);
+    int pollInHandler(size_t id);
     void pollHupHandler(size_t id);
     void pollOutHandler(size_t id);
     void pollErrHandler(size_t id);
