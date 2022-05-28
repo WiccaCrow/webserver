@@ -16,6 +16,7 @@
 // #include "Request.hpp"
 #include "Logger.hpp"
 // #include "Globals.hpp"
+
 namespace HTTP
 {
     class Request;
@@ -23,11 +24,9 @@ namespace HTTP
     class CGI
     {
     private:
-        std::string _execpath;
-        std::string _filepath;
-
-        const char *_args[3];
-        char *_env[20];
+        std::string  _execpath;
+        std::string  _filepath;
+        const char * _args[3];
 
         bool _isCompiled;
 
