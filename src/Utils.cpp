@@ -232,7 +232,7 @@ int rmdirNonEmpty(std::string &resourceDel) {
                     closedir(r_opndir);
                     return 1;
                 }
-            } else if (remove(path.c_str())){
+            } else if (std::remove(path.c_str())){
                 closedir(r_opndir);
                 return 1;
             }
@@ -240,7 +240,7 @@ int rmdirNonEmpty(std::string &resourceDel) {
     }
 
     closedir(r_opndir);
-    if (remove(resourceDel.c_str())) {
+    if (std::remove(resourceDel.c_str())) {
         return 1;
     }
 
