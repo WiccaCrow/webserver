@@ -1,7 +1,5 @@
 #include "Request.hpp"
 
-#include <iostream>
-
 namespace HTTP {
 
 Request::Request(ServerBlock &servBlock) : 

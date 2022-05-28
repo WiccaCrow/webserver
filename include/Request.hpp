@@ -4,15 +4,16 @@
 #include <cstring>
 #include <map>
 #include <string>
+#include <iostream>
 
 #include "CRC.hpp"
+#include "Utils.hpp"
 #include "Header.hpp"
 #include "Logger.hpp"
-#include "StatusCodes.hpp"
-#include "Utils.hpp"
-#include "ValidHeaders.hpp"
-#include "ServerBlock.hpp"
 #include "Globals.hpp"
+#include "StatusCodes.hpp"
+#include "ServerBlock.hpp"
+#include "ValidHeaders.hpp"
 
 #define PARSED_NONE    0x0
 #define PARSED_SL      0x1

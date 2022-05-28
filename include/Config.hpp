@@ -41,8 +41,8 @@ std::vector<std::string> getDefaultAllowedMethods();
 std::vector<std::string> getDefaultIndex();
 
 // Object parsing
-int parseCGI(JSON::Object *src, std::map<std::string, std::string> &res);
-int isValidCGI(std::map<std::string, std::string> &res);
+int parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res);
+int isValidCGI(std::map<std::string, HTTP::CGI> &res);
 
 int parseErrorPages(JSON::Object *src, std::map<int, std::string> &res);
 int isValidErrorPages(std::map<int, std::string> &res);

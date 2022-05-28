@@ -31,7 +31,7 @@ std::vector<std::string> &Location::getAllowedMethodsRef(void) {
     return _allowedMethods;
 }
 
-std::map<std::string, std::string> &Location::getCGIPathsRef(void) {
+std::map<std::string, HTTP::CGI> &Location::getCGIPathsRef(void) {
     return _cgiPaths;
 }
 

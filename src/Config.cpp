@@ -265,7 +265,7 @@ std::vector<std::string> getDefaultAllowedMethods() {
 }
 
 // Object parsing
-int parseCGI(JSON::Object *src, std::map<std::string, std::string> &res) {
+int parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
     switch (basicCheck(src, "CGI", OBJECT, res, res)) {
         case 0:
             return 0;
@@ -282,23 +282,35 @@ int parseCGI(JSON::Object *src, std::map<std::string, std::string> &res) {
     JSON::Object::iterator it = obj->begin();
     JSON::Object::iterator end = obj->end();
     for (; it != end; it++) {
-        std::string value = it->second->toStr();
-        res.insert(std::make_pair(it->first, value));
+        HTTP::CGI cgi;
+    
+        std::string value;
+        if (!getString(obj, it->first, value)) {
+            Log.error("\"" + it->first + "\" must be string");
+            return 0;
+        }
+        cgi.setExecPath(value);
+
+        if (it->first == cgi.compiledExt) {
+            cgi.setCompiled(true);
+        }
+
+        res.insert(std::make_pair(it->first, cgi));
     }
     return 1;
 }
 
-int isValidCGI(std::map<std::string, std::string> &res) {
-    std::map<std::string, std::string>::iterator it = res.begin();
-    std::map<std::string, std::string>::iterator end = res.end();
+int isValidCGI(std::map<std::string, HTTP::CGI> &res) {
+    std::map<std::string, HTTP::CGI>::iterator it = res.begin();
+    std::map<std::string, HTTP::CGI>::iterator end = res.end();
 
     for (; it != end; it++) {
         if (!isExtension(it->first)) {
             Log.error("\"" + it->first + "\": incorrect extension");
             return false;
         }
-        else if (it->first != ".cgi" && !isExecutableFile(it->second)) {
-            Log.error("\"" + it->second + "\" is not executable file");
+        else if (!it->second.isCompiled() && !isExecutableFile(it->second.getExecPath())) {
+            Log.error("\"" + it->second.getExecPath() + "\" is not executable file");
             return false;
         }
     }

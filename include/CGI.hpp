@@ -13,37 +13,41 @@
 #include <vector>
 
 #include "Utils.hpp"
-#include "Request.hpp"
+// #include "Request.hpp"
+#include "Logger.hpp"
+// #include "Globals.hpp"
 
-// namespace HTTP {
 
-// Interpreted scripts
-// cgi.execpath          cgi.args                     cgi.env 
-// /usr/bin/python       scr.py var1 var2 NULL        var1, var2, NULL
+namespace HTTP
+{
+    class Request;
 
-// Compiled programs
-// cgi.execpath          cgi.args                     cgi.env 
-// scr.cgi               scr.cgi var1 var2 NULL       var1, var2, NULL
+    class CGI
+    {
+    private:
+        const char *_execpath;
+        const char *_args[2];
+        const char *_env[20];
 
-// .cgi script should be executable
+        bool _isCompiled;
 
-// class CGI
-// {
-//     private:
-//         std::string _ext;
-//         std::string _filepath;
-//         std::string _execpath;
-//         // std::vector<std::string> _args;
-//     public:
-//         CGI(void);
-//         ~CGI(void);
-//         std::string exec(void);
-// };
-    
-//     CGI::CGI(){}
-//     CGI::~CGI(){}
-//     std::string CGI::exec() {return "";}
-    
-// }
+        std::string _res;
 
-std::string CGI(HTTP::Request &req, std::map<std::string, std::string>::const_iterator it);
+    public:
+        CGI(void);
+        ~CGI(void);
+
+        int exec(void);
+        void setCompiled(bool);
+        bool isCompiled(void);
+
+        void setEnv(Request &req);
+        void setExecPath(const std::string &);
+        const std::string getExecPath(void) const;
+
+        bool setScriptPath(const std::string &);
+
+        static const std::string compiledExt;
+    };
+
+}

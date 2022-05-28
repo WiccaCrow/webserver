@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "CGI.hpp"
 #include "Redirect.hpp"
 
 class Location {
@@ -14,7 +15,7 @@ class Location {
     std::vector<std::string>           _index;
     int                                _post_max_body;
     std::vector<std::string>           _allowedMethods;
-    std::map<std::string, std::string> _cgiPaths;
+    std::map<std::string, HTTP::CGI>   _cgiPaths;
     Redirect                           _redirect;
     std::string                        _defaultPage;
 
@@ -30,5 +31,5 @@ class Location {
     std::string                        &getRootRef(void);
     std::vector<std::string>           &getIndexRef(void);
     std::vector<std::string>           &getAllowedMethodsRef(void);
-    std::map<std::string, std::string> &getCGIPathsRef(void);
+    std::map<std::string, HTTP::CGI>   &getCGIPathsRef(void);
 };
