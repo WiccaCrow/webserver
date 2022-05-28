@@ -10,6 +10,7 @@
 #include <iostream>
 #include <map>
 #include <cstdio>
+#include <stdio.h>
 
 namespace HTTP {
 // # define SIZE_FOR_CHUNKED 4096

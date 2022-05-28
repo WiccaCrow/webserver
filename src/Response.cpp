@@ -109,17 +109,14 @@ std::string HTTP::Response::listToResponse(std::string &resourcePath, Request &r
         "   <hr>\n";
     DIR *r_opndir;
     r_opndir = opendir(resourcePath.c_str());
-	if (NULL == r_opndir)
-	{
+	if (NULL == r_opndir) {
         _res = findErr(INTERNAL_SERVER_ERROR);
         return "";
-	}
-	else
-	{
-        struct dirent	*r_readdir;
-        r_readdir = readdir(r_opndir);
-        while (r_readdir) {
-            if (NULL == r_readdir) {
+	} else {
+        struct dirent	*dirContent;
+        // dirContent = readdir(r_opndir);
+        while ((dirContent = readdir(r_opndir))) {
+            if (NULL == dirContent) {
                 _res = findErr(INTERNAL_SERVER_ERROR);
                 return "";
             }
@@ -128,11 +125,11 @@ std::string HTTP::Response::listToResponse(std::string &resourcePath, Request &r
             if (body[body.length() - 1] != '/') {
                 body += "/";
             }
-            body += r_readdir->d_name;
+            body += dirContent->d_name;
             body += "\">\n<br>";
-            body += r_readdir->d_name;
+            body += dirContent->d_name;
             body += "</a>\n";
-		    r_readdir = readdir(r_opndir);
+		    // dirContent = readdir(r_opndir);
         }
         body += "</body></html>";
 	}
@@ -233,20 +230,28 @@ void HTTP::Response::HEADmethod(Request &req) {
     contentForGetHead(req);
 }
 
+#include <stdlib.h>
+
 void HTTP::Response::DELETEmethod(Request &req) {
-    std::string resourcePath = resoursePathTaker(req);
+    // std::string resourcePath = resoursePathTaker(req);
     // чтобы не удалить чистовой сайт я временно добавляю следующую строку:
-    resourcePath += "test_empty/1111";
+    std::string resourcePath = "./testdel";
+(void)req;
 
     if (!resourceExists(resourcePath)) {
         _res = findErr(NOT_FOUND);
         return ;
     } else if (isDirectory(resourcePath)) {
         // deleteDirectory: recursively deletes every file with deleteFile, and call itself for each subdirectory.
-        _res = findErr(FORBIDDEN);
-        return ;
+        if (rmdirNonEmpty(resourcePath)) {
+            _res = findErr(FORBIDDEN);
+            return ;
+        }
     } else {
-        // deleteFile
+        if (remove(resourcePath.c_str())) {
+            _res = findErr(FORBIDDEN);
+            return ;
+        }
     }
     _res = 
         "HTTP/1.1 200 OK\r\n"

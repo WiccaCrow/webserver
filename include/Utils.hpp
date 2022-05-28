@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <stdlib.h>
+#include <dirent.h>
 
 std::string itoh(int nb);
 void trim(std::string &s, const char *t);
@@ -32,3 +33,4 @@ bool isDirectory(const std::string &dirname);
 bool isReadableFile(const std::string &filename);
 bool isExecutableFile(const std::string &filename);
 bool checkRegFilePerms(const std::string &filename, int perm);
+int  rmdirNonEmpty(std::string &resourceDel);
