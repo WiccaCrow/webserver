@@ -123,7 +123,6 @@ bool isValidIp(const std::string &ip)
     return (count == 4);
 }
  
-
 bool isValidPath(const std::string &path) {
 
     if (path[0] != '/') {
@@ -212,4 +211,38 @@ bool isWritableFile(const std::string &filename) {
 
 bool isExecutableFile(const std::string &filename) {
     return checkRegFilePerms(filename, S_IEXEC); // User rights only
+}
+
+int rmdirNonEmpty(std::string &resourceDel) {
+    struct dirent *dirContent;
+    std::string path;
+
+    DIR *r_opndir;
+    if (!(r_opndir = opendir(resourceDel.c_str()))) {
+        return 1;
+    }
+
+    while ((dirContent = readdir(r_opndir))) {   
+        if ((static_cast<std::string>(dirContent->d_name) != ".") && 
+            (static_cast<std::string>(dirContent->d_name) != "..")) {   
+            path = resourceDel + '/' + dirContent->d_name;
+
+            if(isDirectory(path)) {
+                if (rmdirNonEmpty(path)) {
+                    closedir(r_opndir);
+                    return 1;
+                }
+            } else if (std::remove(path.c_str())){
+                closedir(r_opndir);
+                return 1;
+            }
+        }
+    }
+
+    closedir(r_opndir);
+    if (std::remove(resourceDel.c_str())) {
+        return 1;
+    }
+
+    return 0;
 }
