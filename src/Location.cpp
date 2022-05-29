@@ -21,10 +21,6 @@ namespace HTTP {
         return _root;
     }
 
-    std::string &Location::getDefaultPageRef(void) {
-        return _defaultPage;
-    }
-
     std::vector<std::string> &Location::getIndexRef(void) {
         return _index;
     }

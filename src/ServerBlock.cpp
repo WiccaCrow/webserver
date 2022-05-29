@@ -26,7 +26,7 @@ namespace HTTP {
             _port = obj._port;
             _servfd = obj._servfd;
             _blockname = obj._blockname;
-            _server_name = obj._server_name;
+            _server_names = obj._server_names;
             _locationBase = obj._locationBase;
             _errorPagesPaths = obj._errorPagesPaths;
             _locations = obj._locations;
@@ -92,8 +92,8 @@ namespace HTTP {
         return _addr;
     }
 
-    std::string &ServerBlock::getServerNameRef(void) {
-        return _server_name;
+    std::vector<std::string> &ServerBlock::getServerNameRef(void) {
+        return _server_names;
     }
 
     int ServerBlock::getPort(void) const {

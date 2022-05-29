@@ -410,14 +410,6 @@ int parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
         return 0;
     }
 
-    if (!getString(src, "default_page", dst.getDefaultPageRef())) {
-        Log.error("#### Failed to parse \"default_page\"");
-        return 0;
-    } else if (!isReadableFile(dst.getDefaultPageRef())) {
-        Log.error("#### \"default_page\" " + dst.getDefaultPageRef() + "is not regular readable file");
-        return 0;
-    }
-
     if (!getUInteger(src, "post_max_body", dst.getPostMaxBodyRef(), 200)) {
         Log.error("#### Failed to parse \"post_max_body\"");
         return 0;
@@ -499,8 +491,8 @@ int parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res
 }
 
 int parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
-    if (!getString(src, "server_name", dst.getServerNameRef(), "")) {
-        Log.error("## Failed to parse \"server_name\"");
+    if (!getArray(src, "server_names", dst.getServerNameRef(), dst.getServerNameRef())) {
+        Log.error("## Failed to parse \"server_names\"");
         return 0;
     }
 

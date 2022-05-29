@@ -20,13 +20,11 @@ namespace HTTP {
         std::vector<std::string> _allowedMethods;
         std::map<std::string, CGI> _cgiPaths;
         Redirect _redirect;
-        std::string _defaultPage;
 
     public:
         Location(void);
         ~Location(void);
 
-        std::string &getDefaultPageRef(void);
         Redirect &getRedirectRef(void);
         std::string &getPathRef(void);
         bool &getAutoindexRef(void);

@@ -2,7 +2,7 @@
     "servers": {
         "http": {
             "port": 8080,
-            "server_name": "localhost",
+            "server_names": [ "localhost" ],
             "error_pages": {
                 "404": "./pages/404.html",
                 "400": "./pages/400.html"

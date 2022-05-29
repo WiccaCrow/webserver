@@ -22,7 +22,7 @@ namespace HTTP {
         std::string _addr;
         int _port;
         int32_t _servfd;
-        std::string _server_name;
+        std::vector<std::string> _server_names;
 
         Location _locationBase;
         std::map<int, std::string> _errorPagesPaths;
@@ -55,7 +55,7 @@ namespace HTTP {
 
         int &getPortRef(void);
         Location &getLocationBaseRef(void);
-        std::string &getServerNameRef(void);
+        std::vector<std::string> &getServerNameRef(void);
         std::map<int, std::string> &getErrPathsRef(void);
         std::map<std::string, Location> &getLocationsRef(void);
         const std::map<std::string, Location> &getLocationsRef(void) const;
