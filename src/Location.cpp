@@ -2,38 +2,46 @@
 
 namespace HTTP {
 
-    Location::Location() {}
-    Location::~Location() {}
+Location::Location() { }
+Location::~Location() { }
 
-    std::string &Location::getPathRef(void) {
-        return _path;
-    }
+std::string &
+Location::getPathRef(void) {
+    return _path;
+}
 
-    bool &Location::getAutoindexRef(void) {
-        return _autoindex;
-    }
+bool &
+Location::getAutoindexRef(void) {
+    return _autoindex;
+}
 
-    int &Location::getPostMaxBodyRef(void) {
-        return _post_max_body;
-    }
+int &
+Location::getPostMaxBodyRef(void) {
+    return _post_max_body;
+}
 
-    std::string &Location::getRootRef(void) {
-        return _root;
-    }
+std::string &
+Location::getRootRef(void) {
+    return _root;
+}
 
-    std::vector<std::string> &Location::getIndexRef(void) {
-        return _index;
-    }
+std::vector<std::string> &
+Location::getIndexRef(void) {
+    return _index;
+}
 
-    std::vector<std::string> &Location::getAllowedMethodsRef(void) {
-        return _allowedMethods;
-    }
+std::vector<std::string> &
+Location::getAllowedMethodsRef(void) {
+    return _allowedMethods;
+}
 
-    std::map<std::string, HTTP::CGI> &Location::getCGIPathsRef(void) {
-        return _cgiPaths;
-    }
+std::map<std::string, HTTP::CGI> &
+Location::getCGIsRef(void) {
+    return _CGIs;
+}
 
-    Redirect &Location::getRedirectRef(void) {
-        return _redirect;
-    }
+Redirect &
+Location::getRedirectRef(void) {
+    return _redirect;
+}
 }

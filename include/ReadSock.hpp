@@ -1,28 +1,28 @@
 #pragma once
 
-#include <sys/socket.h>
-
 #include <map>
-#include <stdexcept>
 #include <string>
+#include <stdexcept>
+#include <sys/socket.h>
 
 #include "Logger.hpp"
 #include "Request.hpp"
 
 class ReadSock {
+
 public:
     enum Perm {
-        PERM_NONE = 0,
-        PERM_READ = 1,
+        PERM_NONE  = 0,
+        PERM_READ  = 1,
         PERM_WRITE = 2
     };
 
     enum Status {
-        RECV_DONE = 2,
-        LINE_FOUND = 1,
-        RECV_END = 0,
-        INVALID_FD = -1,
-        RECV_END_NB = -2,
+        RECV_DONE      = 2,
+        LINE_FOUND     = 1,
+        RECV_END       = 0,
+        INVALID_FD     = -1,
+        RECV_END_NB    = -2,
         LINE_NOT_FOUND = -3
     };
 

@@ -3,7 +3,8 @@
 
 Server *g_server;
 
-int main(int ac, char **av, char **env) {
+int
+main(int ac, char **av) {
 
     if (ac != 2) {
         Log.error("Usage: " + std::string(av[0]) + " conf.json");
@@ -19,7 +20,6 @@ int main(int ac, char **av, char **env) {
     }
     Log.info("Config is loaded");
 
-    g_server->env = env;
     g_server->start();
 
     delete g_server;

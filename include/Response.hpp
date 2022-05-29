@@ -1,70 +1,72 @@
 #pragma once
 
-#include <Utils.hpp>
-#include <unistd.h>
+#include <cstdio>
 #include <dirent.h>
-#include <StatusCodes.hpp>
-#include <Request.hpp>
 #include <fstream>
-#include <sstream>
 #include <iostream>
 #include <map>
-#include <cstdio>
+#include <sstream>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "Request.hpp"
+#include "StatusCodes.hpp"
+#include "Utils.hpp"
 
 namespace HTTP {
-    // # define SIZE_FOR_CHUNKED 4096
-    class Response
-    {
-        std::string _res;
-        std::string _resLeftToSend;
-        bool _responseFormed;
+// # define SIZE_FOR_CHUNKED 4096
+class Response {
 
-    public:
-        Response();
-        ~Response();
+    std::string _res;
+    std::string _resLeftToSend;
+    bool        _responseFormed;
 
-        void clear();
+public:
+    Response();
+    ~Response();
 
-        //  for errors
+    void clear();
 
-        static const std::map<std::string, std::string> _ContType;
-        static const std::map<int, const char *> _ErrorCode;
+    //  for errors
 
-        const char *findErr(int nbErr);
-        static std::map<int, const char *> initErrorCode();
-        static std::map<std::string, std::string> initContType();
+    static const std::map<std::string, std::string> _ContType;
+    static const std::map<int, const char *>        _ErrorCode;
 
-        // These functions allow you to get / set
-        // a flag by which you can find out about
-        // the need to form a response (the request
-        // is fully processed)
+    const char                               *findErr(int nbErr);
+    static std::map<int, const char *>        initErrorCode();
+    static std::map<std::string, std::string> initContType();
 
-        bool isFormed() const;
-        void setFormed(bool formed);
+    // These functions allow you to get / set
+    // a flag by which you can find out about
+    // the need to form a response (the request
+    // is fully processed)
 
-        // methods
+    bool isFormed() const;
+    void setFormed(bool formed);
 
-        void HEADmethod(Request &req);
-        void GETmethod(Request &req);
-        void DELETEmethod(Request &req);
-        std::string contentForGetHead(Request &req);
-        std::string resoursePathTaker(Request &req);
-        std::string GetContentType(std::string resourcePath);
-        std::string fileToResponse(std::string resourcePath);
-        std::string listToResponse(std::string &resourcePath, Request &req);
-        void POSTmethod(Request &req);
+    // methods
 
-        std::string doCGI(Request &req, CGI &cgi);
+    void        HEADmethod(Request &req);
+    void        GETmethod(Request &req);
+    void        DELETEmethod(Request &req);
+    std::string contentForGetHead(Request &req);
+    std::string resoursePathTaker(Request &req);
+    std::string GetContentType(std::string resourcePath);
+    std::string fileToResponse(std::string resourcePath);
+    std::string listToResponse(std::string &resourcePath, Request &req);
+    void        POSTmethod(Request &req);
 
-        // to send response
-        size_t GetResSize(void);
-        const char *GetResponse(void);
-        const char *GetLeftToSend(void);
-        size_t GetLeftToSendSize(void);
-        void SetLeftToSend(size_t n);
+    std::string doCGI(Request &req, CGI &cgi);
 
-        // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);
-    };
+    // to send response
+    size_t      GetResSize(void);
+    const char *GetResponse(void);
+    const char *GetLeftToSend(void);
+    size_t      GetLeftToSendSize(void);
+    void        SetLeftToSend(size_t n);
+
+    // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);
+};
 
 } // namespace HTTP

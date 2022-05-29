@@ -1,10 +1,12 @@
 #include "Response.hpp"
 
 const std::map<std::string, std::string>
-HTTP::Response::_ContType = HTTP::Response::initContType();
+    HTTP::Response::_ContType = HTTP::Response::initContType();
 
-std::map<std::string, std::string>   HTTP::Response::initContType() {
+std::map<std::string, std::string>
+HTTP::Response::initContType() {
     std::map<std::string, std::string> ContType;
+
     ContType.insert(std::make_pair("html", "text/html"));
     ContType.insert(std::make_pair("htm", "text/html"));
     ContType.insert(std::make_pair("shtml", "text/html"));

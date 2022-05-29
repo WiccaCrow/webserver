@@ -6,8 +6,7 @@
 int isInteger(double &num);
 int isUInteger(double &num);
 
-enum ExpectedType
-{
+enum ExpectedType {
     STRING,
     BOOLEAN,
     NUMBER,
@@ -16,7 +15,7 @@ enum ExpectedType
 };
 
 std::string getDataTypeName(ExpectedType type);
-int typeExpected(JSON::AType *ptr, ExpectedType type);
+int         typeExpected(JSON::AType *ptr, ExpectedType type);
 
 template <typename T>
 int basicCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res, T def);
@@ -39,7 +38,6 @@ int isSubset(std::vector<T> set, std::vector<T> subset);
 
 // Default values
 std::vector<std::string> getDefaultAllowedMethods();
-std::vector<std::string> getDefaultIndex();
 
 // Object parsing
 int parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res);

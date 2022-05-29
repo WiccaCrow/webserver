@@ -2,10 +2,11 @@
 
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <stdint.h>
+#include <string>
 
 class Logger {
+
 private:
     std::string _logfile;
     bool        _logToFile;
@@ -18,10 +19,10 @@ public:
     Logger();
     ~Logger();
 
+    void setFlags(uint8_t flags);
     void info(const std::string &s);
     void debug(const std::string &s);
     void error(const std::string &s);
-    void setFlags(uint8_t flags);
     void setLogFile(const std::string &logfile);
     void print(uint8_t flag, const std::string &msg);
 };

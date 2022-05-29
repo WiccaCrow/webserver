@@ -1,94 +1,94 @@
 #pragma once
 
-#include <cstdlib>
-#include <cstring>
 #include <map>
 #include <string>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 #include "CRC.hpp"
 #include "Utils.hpp"
-#include "Header.hpp"
 #include "Logger.hpp"
+#include "Header.hpp"
 #include "Globals.hpp"
 #include "Location.hpp"
-#include "StatusCodes.hpp"
 #include "ServerBlock.hpp"
+#include "StatusCodes.hpp"
 #include "ValidHeaders.hpp"
 
-#define PARSED_NONE 0x0
-#define PARSED_SL 0x1
+#define PARSED_NONE    0x0
+#define PARSED_SL      0x1
 #define PARSED_HEADERS 0x2
-#define PARSED_BODY 0x4
+#define PARSED_BODY    0x4
 
 namespace HTTP {
 
-    class Request
-    {
-    private:
-        std::string _method;
-        std::string _path;
-        std::string _protocol;
-        std::string _queryString;
-        std::string _scriptName;
-        std::map<HeaderCode, Header> _headers;
-        HTTP::StatusCode _status;
+class Request {
 
-        ServerBlock &_servBlock;
-        Location *_location_current;
+private:
+    std::string                  _method;
+    std::string                  _path;
+    std::string                  _protocol;
+    std::string                  _queryString;
+    std::string                  _scriptName;
+    std::map<HeaderCode, Header> _headers;
+    HTTP::StatusCode             _status;
 
-        bool _flag_getline_bodySize;
-        unsigned long _bodySize;
-        std::string _body;
-        uint8_t _parseFlags;
+    ServerBlock *_servBlock;
+    Location    *_location_current;
 
-    public:
-        Request(ServerBlock &servBlock);
-        ~Request();
+    bool          _flag_getline_bodySize;
+    unsigned long _bodySize;
+    std::string   _body;
+    uint8_t       _parseFlags;
 
-        Request(const Request &other);
-        Request &operator=(const Request &other);
+public:
+    Request(ServerBlock *servBlock);
+    ~Request();
 
-        const ServerBlock &getServerBlock() const;
+    Request(const Request &other);
+    Request &operator=(const Request &other);
 
-        const std::string &getMethod() const;
-        const std::string &getPath() const;
-        const std::string &getProtocol() const;
-        const std::map<HeaderCode, Header> &getHeaders() const;
-        const std::string &getBody() const;
-        const uint8_t &getFlags() const;
-        const HTTP::StatusCode &getStatus() const;
-        Location *getLocationPtr();
+    const ServerBlock *getServerBlock() const;
 
-        // Needed to be improved
-        const std::string &getQueryString() const;
-        const std::string &getScriptName() const;
-        const char *getHeaderValue(HeaderCode key) const;
+    const std::string                  &getMethod() const;
+    const std::string                  &getPath() const;
+    const std::string                  &getProtocol() const;
+    const std::map<HeaderCode, Header> &getHeaders() const;
+    const std::string                  &getBody() const;
+    const uint8_t                      &getFlags() const;
+    const HTTP::StatusCode             &getStatus() const;
+    Location                           *getLocationPtr();
 
-        bool empty();
+    // Needed to be improved
+    const std::string &getQueryString() const;
+    const std::string &getScriptName() const;
+    const char        *getHeaderValue(HeaderCode key) const;
 
-        void setFlag(uint8_t flag);
-        void removeFlag(uint8_t flag);
-        void clear(void);
+    bool empty();
 
-        StatusCode parseStartLine(const std::string &line);
-        StatusCode parseHeader(std::string line);
-        StatusCode parseChunked(const std::string &line);
-        StatusCode parseBody(const std::string &line);
-        StatusCode parseLine(std::string line);
+    void setFlag(uint8_t flag);
+    void removeFlag(uint8_t flag);
+    void clear(void);
 
-    private:
-        StatusCode isValidMethod(const std::string &method);
-        StatusCode isValidPath(const std::string &path);
-        StatusCode isValidProtocol(const std::string &protocol);
+    StatusCode parseStartLine(const std::string &line);
+    StatusCode parseHeader(std::string line);
+    StatusCode parseChunked(const std::string &line);
+    StatusCode parseBody(const std::string &line);
+    StatusCode parseLine(std::string line);
 
-    public:
-        // for chunked
-        bool getBodySizeFlag();
-        void setBodySizeFlag(bool isSize);
-        unsigned long getBodySize();
-        void setBodySize(unsigned long size);
-        void setStatus(const HTTP::StatusCode &status);
-    };
+private:
+    StatusCode isValidMethod(const std::string &method);
+    StatusCode isValidPath(const std::string &path);
+    StatusCode isValidProtocol(const std::string &protocol);
+
+public:
+    // for chunked
+    bool          getBodySizeFlag();
+    void          setBodySizeFlag(bool isSize);
+    unsigned long getBodySize();
+    void          setBodySize(unsigned long size);
+    void          setStatus(const HTTP::StatusCode &status);
+};
 
 } // namespace HTTP

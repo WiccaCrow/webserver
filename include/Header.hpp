@@ -2,21 +2,23 @@
 
 #include <map>
 #include <string>
+
 #include "StatusCodes.hpp"
 #include "HeadersCodes.hpp"
 
 namespace HTTP {
 
 class Header {
-    public:
-    typedef StatusCode (Header::*Handler) (void);
+
+public:
+    typedef StatusCode (Header::*Handler)(void);
 
     std::string line;
 
-    size_t valStart;
-    size_t keyLen;
-    size_t valLen;
-    Handler handler;
+    size_t     valStart;
+    size_t     keyLen;
+    size_t     valLen;
+    Handler    handler;
     HeaderCode hash;
 
     const char *getKey() {
@@ -78,7 +80,6 @@ class Header {
     StatusCode SecChUaPlatform(void);
 
     StatusCode NotSupported(void);
-    
 };
 
 } // namespace HTTP

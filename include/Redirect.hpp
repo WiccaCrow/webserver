@@ -4,7 +4,7 @@
 
 class Redirect {
 
-    int _code;
+    int         _code;
     std::string _uri;
 
     bool _set;

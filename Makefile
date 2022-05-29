@@ -64,7 +64,7 @@ fclean: clean
 re: fclean all
 
 cgi_script:
-	gcc ./pages/site/printenv.c -o ./pages/site/printenv.cgi
+	gcc ./pages/site/cgi/printenv.c -o ./pages/site/cgi/printenv.cgi
 
 # for tests
 YoupiBanane:

@@ -1,49 +1,43 @@
 #pragma once
 
-#include <arpa/inet.h>
+#include <poll.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <netdb.h>
-#include <poll.h>
-#include <sys/resource.h>
-#include <unistd.h>
-
-#include <algorithm>
+#include <vector>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <netdb.h>
 #include <iostream>
-#include <vector>
+#include <unistd.h>
+#include <algorithm>
+#include <arpa/inet.h>
+#include <sys/resource.h>
 
+#include "Utils.hpp"
 #include "Client.hpp"
 #include "Logger.hpp"
-#include "ReadSock.hpp"
 #include "Request.hpp"
+#include "ReadSock.hpp"
 #include "Response.hpp"
 #include "ServerBlock.hpp"
-#include "Utils.hpp"
 
 #ifndef SOMAXCONN
-#define SOMAXCONN 128
+    #define SOMAXCONN 128
 #endif
-// максимальный размер пакета в TCP
-#define PACKET_SIZE 65536
 
-class Server
-{
+class Server {
+
 private:
-    // Variables
-    size_t _nbServBlocks;
+    size_t                         _nbServBlocks;
     std::vector<HTTP::ServerBlock> _ServBlocks;
-    std::vector<struct pollfd> _pollfds;
-    std::vector<HTTP::Client> _clients;
-    int _pollResult;
+    std::vector<struct pollfd>     _pollfds;
+    std::vector<HTTP::Client>      _clients;
+    int                            _pollResult;
 
-    // Methods
     void fillServBlocksFds(void);
 
 public:
-    char **env;
     Server();
     Server(const std::string &_addr, const uint16_t _port);
     Server(const Server &obj);
@@ -51,10 +45,8 @@ public:
 
     Server &operator=(const Server &obj);
 
-    // Get and show atributs
-
-    void addServerBlock(HTTP::ServerBlock &servBlock);
-    void addServerBlock(const std::string &ipaddr, const uint16_t port);
+    void   addServerBlock(HTTP::ServerBlock &servBlock);
+    void   addServerBlock(const std::string &ipaddr, const uint16_t port);
     size_t getServerBlocksNum(void);
 
     void start(void);
@@ -62,7 +54,7 @@ public:
     void acceptNewClient(size_t id);
     void handleAcceptError();
     void handlePollError();
-    int pollInHandler(size_t id);
+    int  pollInHandler(size_t id);
     void pollHupHandler(size_t id);
     void pollOutHandler(size_t id);
     void pollErrHandler(size_t id);

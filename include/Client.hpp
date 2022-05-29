@@ -3,7 +3,6 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
 #include <map>
 
 #include "ReadSock.hpp"
@@ -13,29 +12,29 @@
 
 namespace HTTP {
 
-    class Client
-    {
-    private:
-        struct pollfd &_pfd;
-        HTTP::Request _req;
-        HTTP::Response _res;
+class Client {
 
-        ServerBlock &_servBlock;
-        static ReadSock _reader;
+private:
+    struct pollfd &_pfd;
+    HTTP::Request  _req;
+    HTTP::Response _res;
 
-    public:
-        Client(struct pollfd &pfd, ServerBlock &servBlock);
-        ~Client();
-        Client(const Client &client);
+    ServerBlock    *_servBlock;
+    static ReadSock _reader;
 
-        Client &operator=(const Client &client);
+public:
+    Client(struct pollfd &pfd, ServerBlock *servBlock);
+    Client(const Client &client);
+    ~Client();
 
-        void disconnect(void);
-        void receive(void);
-        void reply(void);
-        int getFd(void);
-        void changeFd(int fd);
-        // void changeResponseFlag(bool f);
-        bool responseFormed(void);
-    };
+    Client &operator=(const Client &client);
+
+    void disconnect(void);
+    void receive(void);
+    void reply(void);
+    int  getFd(void);
+    void changeFd(int fd);
+    bool responseFormed(void);
+};
+
 }

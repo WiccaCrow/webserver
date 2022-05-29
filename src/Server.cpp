@@ -21,27 +21,31 @@ Server::~Server() {
     }
 }
 
-Server &Server::operator=(const Server &obj) {
+Server &
+Server::operator=(const Server &obj) {
     if (this != &obj) {
         _ServBlocks = obj._ServBlocks;
         _pollResult = obj._pollResult;
-        _pollfds = obj._pollfds;
+        _pollfds    = obj._pollfds;
     }
     return (*this);
 }
 
-size_t Server::getServerBlocksNum(void) {
+size_t
+Server::getServerBlocksNum(void) {
     return this->_nbServBlocks;
 }
 
 // Private functions
 
-void Server::fillServBlocksFds(void) {
+void
+Server::fillServBlocksFds(void) {
     for (size_t i = 0; i < _nbServBlocks; ++i) {
         struct pollfd tmp = {
             _ServBlocks[i].getServFd(),
             POLLIN,
-            0 };
+            0
+        };
         _pollfds.push_back(tmp);
     }
 }
@@ -54,19 +58,22 @@ void Server::fillServBlocksFds(void) {
 
 // Other methods
 
-void Server::addServerBlock(HTTP::ServerBlock &servBlock) {
+void
+Server::addServerBlock(HTTP::ServerBlock &servBlock) {
     _ServBlocks.push_back(servBlock);
     _ServBlocks.back().createListenSock();
     _nbServBlocks++;
 }
 
-void Server::addServerBlock(const std::string &ipaddr, const uint16_t port) {
+void
+Server::addServerBlock(const std::string &ipaddr, const uint16_t port) {
     _ServBlocks.push_back(HTTP::ServerBlock(ipaddr, port));
     _ServBlocks.back().createListenSock();
     _nbServBlocks++;
 }
 
-int Server::pollInHandler(size_t id) {
+int
+Server::pollInHandler(size_t id) {
     _pollfds[id].revents = 0;
     if (id < _nbServBlocks) {
         acceptNewClient(id);
@@ -77,26 +84,30 @@ int Server::pollInHandler(size_t id) {
     }
 }
 
-void Server::pollHupHandler(size_t id) {
+void
+Server::pollHupHandler(size_t id) {
     Log.error("POLLHUP occured on the " + to_string(_pollfds[id].fd) + "socket");
     if (id >= _nbServBlocks) {
         _clients[id - _nbServBlocks].disconnect();
     }
 }
 
-void Server::pollOutHandler(size_t id) {
+void
+Server::pollOutHandler(size_t id) {
     if (_clients[id - _nbServBlocks].responseFormed()) {
         // _clients[id - _nbServBlocks].changeResponseFlag(0);
         _clients[id - _nbServBlocks].reply();
     }
 }
 
-void Server::pollErrHandler(size_t id) {
+void
+Server::pollErrHandler(size_t id) {
     Log.error("POLLERR occured on the " + to_string(_pollfds[id].fd) + "socket");
     exit(1);
 }
 
-void Server::start(void) {
+void
+Server::start(void) {
     fillServBlocksFds();
     while (1) {
         _pollResult = 0;
@@ -119,41 +130,37 @@ void Server::start(void) {
     }
 }
 
-void Server::handlePollError() {
+void
+Server::handlePollError() {
     Log.error(std::string("POLL: ") + strerror(errno));
     switch (errno) {
-    case EFAULT:
-    {
-        break;
-    }
-    case EINTR:
-    {
-        break;
-    }
-    case EINVAL:
-    {
-        struct rlimit rlim;
-        getrlimit(RLIMIT_NOFILE, &rlim);
-        Log.error("ndfs: " + to_string(_pollfds.size()));
-        Log.error("limits (soft, hard): (" +
-            to_string(rlim.rlim_cur) + ", " +
-            to_string(rlim.rlim_max) + ") ");
-        break;
-    }
-    case ENOMEM:
-    {
-        break;
-    }
+        case EFAULT: {
+            break;
+        }
+        case EINTR: {
+            break;
+        }
+        case EINVAL: {
+            struct rlimit rlim;
+            getrlimit(RLIMIT_NOFILE, &rlim);
+            Log.error("ndfs: " + to_string(_pollfds.size()));
+            Log.error("limits (soft, hard): (" + to_string(rlim.rlim_cur) + ", " + to_string(rlim.rlim_max) + ") ");
+            break;
+        }
+        case ENOMEM: {
+            break;
+        }
 
-    default:
-        break;
+        default:
+            break;
     }
 
     // close all fds
     exit(1);
 }
 
-void Server::pollServ(void) {
+void
+Server::pollServ(void) {
     while (_pollResult == 0) {
         _pollResult = poll(_pollfds.data(), _pollfds.size(), 1000000);
     }
@@ -162,75 +169,65 @@ void Server::pollServ(void) {
     }
 }
 
-void Server::handleAcceptError() {
+void
+Server::handleAcceptError() {
     switch (errno) {
-    case EWOULDBLOCK:
-    {
-        // OK, as we use non-blocking sockets
-        break;
-    }
+        case EWOULDBLOCK: {
+            // OK, as we use non-blocking sockets
+            break;
+        }
 
-    case EBADF:
-    {
-    }
+        case EBADF: {
+        }
 
-    case ECONNABORTED:
-    {
-    }
+        case ECONNABORTED: {
+        }
 
-    case EFAULT:
-    {
-    }
+        case EFAULT: {
+        }
 
-    case EINTR:
-    {
-    }
+        case EINTR: {
+        }
 
-    case EINVAL:
-    {
-    }
+        case EINVAL: {
+        }
 
-    case EMFILE:
-    {
-    }
+        case EMFILE: {
+        }
 
-    case ENFILE:
-    {
-    }
+        case ENFILE: {
+        }
 
-    case ENOMEM:
-    {
-    }
+        case ENOMEM: {
+        }
 
-    case ENOTSOCK:
-    {
-    }
+        case ENOTSOCK: {
+        }
 
-    case EOPNOTSUPP:
-    {
-    }
+        case EOPNOTSUPP: {
+        }
 
-    case EPROTO:
-    {
-    }
+        case EPROTO: {
+        }
 
-    case EPERM:
-    {
-        Log.error(std::string("ACCEPT: ") + strerror(errno));
-    }
+        case EPERM: {
+            Log.error(std::string("ACCEPT: ") + strerror(errno));
+        }
 
-    default:
-        break;
+        default:
+            break;
     }
 }
 
-static int fdNotTaken(struct pollfd pfd) {
+static int
+fdNotTaken(struct pollfd pfd) {
     return pfd.fd == -1;
 }
 
-void Server::acceptNewClient(size_t id) {
+void
+Server::acceptNewClient(size_t id) {
     struct sockaddr_in addr;
-    socklen_t len = sizeof(addr);
+    socklen_t          len = sizeof(addr);
 
     int fd = accept(_pollfds[id].fd, (struct sockaddr *)&addr, &len);
 
@@ -248,12 +245,12 @@ void Server::acceptNewClient(size_t id) {
         Log.info(to_string(fd) + ": client accepted");
 
         if (it != _pollfds.end()) {
-            it->fd = fd;
+            it->fd     = fd;
             it->events = POLLIN | POLLOUT;
         } else {
             struct pollfd tmp = { fd, POLLIN | POLLOUT, 0 };
             _pollfds.push_back(tmp);
-            _clients.push_back(HTTP::Client(_pollfds.back(), _ServBlocks[id])); // add string with port
+            _clients.push_back(HTTP::Client(_pollfds.back(), &_ServBlocks[id])); // add string with port
         }
     }
 }

@@ -1,67 +1,63 @@
 #pragma once
 
-#include <arpa/inet.h>
+#include <map>
+#include <cstdlib>
 #include <netdb.h>
 #include <unistd.h>
-
-#include <cstdlib>
-
 #include <iostream>
-#include <map>
+#include <arpa/inet.h>
 
 #include "Logger.hpp"
 #include "Location.hpp"
 
 namespace HTTP {
 
-    class ServerBlock
-    {
-    private:
-        // Variables
-        std::string _blockname;
-        std::string _addr;
-        int _port;
-        int32_t _servfd;
-        std::vector<std::string> _server_names;
+class ServerBlock {
 
-        Location _locationBase;
-        std::map<int, std::string> _errorPagesPaths;
-        std::map<std::string, Location> _locations;
+private:
+    std::string              _blockname;
+    std::string              _addr;
+    int                      _port;
+    int32_t                  _servfd;
+    std::vector<std::string> _server_names;
 
-        // Methods
-        void createSock(void);
-        void reuseAddr(void);
-        void bindAddr(void);
-        void listenSock(void);
+    Location                        _locationBase;
+    std::map<int, std::string>      _errorPagesPaths;
+    std::map<std::string, Location> _locations;
 
-    public:
-        // Constructs and destructs
-        ServerBlock();
-        ServerBlock(const std::string &ipaddr, const int port);
-        ServerBlock(const ServerBlock &obj);
-        ~ServerBlock();
+    // Methods
+    void createSock(void);
+    void reuseAddr(void);
+    void bindAddr(void);
+    void listenSock(void);
 
-        // Operators
-        ServerBlock &operator=(const ServerBlock &obj);
+public:
+    ServerBlock();
+    ServerBlock(const std::string &ipaddr, const int port);
+    ServerBlock(const ServerBlock &obj);
+    ~ServerBlock();
 
-        // Set atributs
-        void setAddr(const std::string &);
-        void setBlockname(const std::string &);
+    // Operators
+    ServerBlock &operator=(const ServerBlock &obj);
 
-        // Get and show atributs
-        int getPort(void) const;
-        int getServFd(void);
-        std::string &getAddrRef(void);
+    // Set atributs
+    void setAddr(const std::string &);
+    void setBlockname(const std::string &);
 
-        int &getPortRef(void);
-        Location &getLocationBaseRef(void);
-        std::vector<std::string> &getServerNameRef(void);
-        std::map<int, std::string> &getErrPathsRef(void);
-        std::map<std::string, Location> &getLocationsRef(void);
-        const std::map<std::string, Location> &getLocationsRef(void) const;
+    // Get and show atributs
+    int          getPort(void) const;
+    int          getServFd(void);
+    std::string &getAddrRef(void);
 
-        // other methods
-        void createListenSock();
-    };
+    int                                   &getPortRef(void);
+    Location                              &getLocationBaseRef(void);
+    std::vector<std::string>              &getServerNameRef(void);
+    std::map<int, std::string>            &getErrPathsRef(void);
+    std::map<std::string, Location>       &getLocationsRef(void);
+    const std::map<std::string, Location> &getLocationsRef(void) const;
+
+    // other methods
+    void createListenSock();
+};
 
 }

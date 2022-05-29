@@ -1,11 +1,12 @@
+#include "Location.hpp"
 #include <cstring>
 #include <string>
 #include <vector>
-#include "Location.hpp"
 
-std::string transformPath(const std::string &path, std::vector<HTTP::Location> &locations) {
+std::string
+transformPath(const std::string &path, std::vector<HTTP::Location> &locations) {
     int    locationIndex = -1;
-    size_t locationMax = 0;
+    size_t locationMax   = 0;
 
     // find location
     const size_t size = locations.size();
@@ -14,7 +15,7 @@ std::string transformPath(const std::string &path, std::vector<HTTP::Location> &
         size_t pos = strncmp(path.c_str(), locations[i].path.c_str(), len);
         if (pos == 0) {
             if (len > locationMax) {
-                locationMax = len;
+                locationMax   = len;
                 locationIndex = i;
             }
         }
