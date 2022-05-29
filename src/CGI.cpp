@@ -234,6 +234,11 @@ namespace HTTP {
             return 0;
         }
 
+        if (WIFSIGNALED(status)) {
+            log_error("CGI::signaled: ");
+            return 0;
+        }
+
         if (WIFEXITED(status)) {
             int readBytes = 1;
             const int size = 300;
@@ -251,6 +256,8 @@ namespace HTTP {
             // Send response to the client in body
         }
         // Add other macros for handling unexpected termination of child process.
+
+        
 
         close_pipe(out[0], -1);
         return 1;
