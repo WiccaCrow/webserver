@@ -10,7 +10,7 @@
 #include "Request.hpp"
 
 class ReadSock {
-    public:
+public:
     enum Perm {
         PERM_NONE = 0,
         PERM_READ = 1,
@@ -26,17 +26,17 @@ class ReadSock {
         LINE_NOT_FOUND = -3
     };
 
-    private:
+private:
     std::map<int, std::string> _rems;
 
     Status readSocket(int fd);
     Status readSocket_chunked(int fd);
     int    readSocket_for_chunked(struct s_sock &sock, int fd);
 
-    public:
+public:
     Status getline(struct s_sock &sock, std::string &line);
     Status getline_for_chunked(struct s_sock &sock, std::string &line,
-                               HTTP::Request &req);
+        HTTP::Request &req);
 };
 
 // Where should I put this ... ?

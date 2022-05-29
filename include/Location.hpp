@@ -7,8 +7,7 @@
 #include "Redirect.hpp"
 #include "CGI.hpp"
 
-namespace HTTP
-{
+namespace HTTP {
 
     class Location
     {

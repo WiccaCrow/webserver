@@ -21,8 +21,7 @@
 #define PARSED_HEADERS 0x2
 #define PARSED_BODY 0x4
 
-namespace HTTP
-{
+namespace HTTP {
 
     class Request
     {

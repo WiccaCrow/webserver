@@ -12,8 +12,7 @@
 #include <cstdio>
 #include <stdio.h>
 
-namespace HTTP
-{
+namespace HTTP {
     // # define SIZE_FOR_CHUNKED 4096
     class Response
     {

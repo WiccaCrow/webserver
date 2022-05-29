@@ -5,6 +5,6 @@
 
 namespace HTTP {
 
-extern const std::map<uint32_t, Header::Handler> validHeaders;
+    extern const std::map<uint32_t, Header::Handler> validHeaders;
 
 } // namespace HTTP

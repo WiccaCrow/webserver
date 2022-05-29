@@ -12,8 +12,8 @@
 #include "Logger.hpp"
 #include "Location.hpp"
 
-namespace HTTP
-{
+namespace HTTP {
+
     class ServerBlock
     {
     private:

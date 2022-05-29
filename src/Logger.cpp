@@ -3,7 +3,7 @@
 Logger Log;
 
 const int LOG_DEBUG = 1;
-const int LOG_INFO  = 2;
+const int LOG_INFO = 2;
 const int LOG_ERROR = 4;
 
 Logger::Logger() : _logfile(""), _logToFile(false), _flags(0) {
@@ -27,7 +27,7 @@ void Logger::setFlags(uint8_t flags) {
 }
 
 void Logger::print(uint8_t flag, const std::string &msg) {
-    static const std::string _titles[5] = {"", "DEBUG", "INFO", "", "ERROR"};
+    static const std::string _titles[5] = { "", "DEBUG", "INFO", "", "ERROR" };
     if (_flags & flag) {
         if (_logToFile && _out.good()) {
             _out << _titles[flag] << ": " << msg << std::endl;

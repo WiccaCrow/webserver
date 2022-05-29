@@ -1,6 +1,6 @@
 #include "Response.hpp"
 
-const std::map<std::string, std::string>     
+const std::map<std::string, std::string>
 HTTP::Response::_ContType = HTTP::Response::initContType();
 
 std::map<std::string, std::string>   HTTP::Response::initContType() {

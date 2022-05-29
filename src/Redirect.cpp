@@ -7,7 +7,7 @@ int &Redirect::getCodeRef(void) {
     return _code;
 }
 
-std::string  &Redirect::getURIRef(void) {
+std::string &Redirect::getURIRef(void) {
     return _uri;
 }
 

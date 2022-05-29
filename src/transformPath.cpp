@@ -1,8 +1,9 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include "Location.hpp"
 
-std::string transformPath(const std::string &path, std::vector<Location> &locations) {
+std::string transformPath(const std::string &path, std::vector<HTTP::Location> &locations) {
     int    locationIndex = -1;
     size_t locationMax = 0;
 

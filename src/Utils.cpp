@@ -1,8 +1,8 @@
 #include "Utils.hpp"
 #include <sys/stat.h>
+#include <dirent.h>
 
-std::string itoh(int nb)
-{
+std::string itoh(int nb) {
     std::string inhex;
     for (int hexDig = nb % 16; nb; hexDig = nb % 16) {
         if (hexDig > 9) {
@@ -16,37 +16,28 @@ std::string itoh(int nb)
     return inhex;
 }
 
-static inline std::string& rtrim(std::string& s, const char* t) {
+static inline std::string &rtrim(std::string &s, const char *t) {
     s.erase(s.find_last_not_of(t) + 1);
     return s;
 }
 
-static inline std::string& ltrim(std::string& s, const char* t) {
+static inline std::string &ltrim(std::string &s, const char *t) {
     s.erase(0, s.find_first_not_of(t));
     return s;
 }
 
-void trim(std::string& s, const char* t) {
+void trim(std::string &s, const char *t) {
     ltrim(rtrim(s, t), t);
 }
 
-void toLowerCase(std::string& s) {
+void toLowerCase(std::string &s) {
     size_t length = s.length();
     for (size_t i = 0; i < length; ++i) {
         s[i] = tolower(s[i]);
     }
 }
 
-//std::string getWord(const std::string& line, char delimiter, size_t& pos) {
-//    size_t tmp = pos;
-//    pos = line.find(delimiter, pos);
-//
-//    if (pos == std::string::npos)
-//        pos = line.length();
-//    return line.substr(tmp, pos - tmp);
-//}
-
-std::string getWord(const std::string& line, char delimiter, size_t& pos) {
+std::string getWord(const std::string &line, char delimiter, size_t &pos) {
     size_t tmp = pos;
     size_t end = pos = line.find(delimiter, pos);
 
@@ -55,7 +46,7 @@ std::string getWord(const std::string& line, char delimiter, size_t& pos) {
     return line.substr(tmp, end - tmp);
 }
 
-void skipSpaces(const std::string& line, size_t& pos) {
+void skipSpaces(const std::string &line, size_t &pos) {
     for (; line[pos] == ' '; pos++)
         ;
 }
@@ -76,24 +67,7 @@ std::string to_string(unsigned long val) {
 
 #endif
 
-// int		isFile(const std::string& fileName)
-// {
-//     struct stat buf;
-//     if (stat(fileName.c_str(), &buf) == 0 ) {
-//         if (buf.st_mode & S_IFREG)
-//             return (0);
-//         else if (buf.st_mode & S_IFDIR)
-//             return (1);
-//         else
-//             return (2);
-//     }
-//     else {
-//         return (-1);
-//     }
-// }
-
-bool isValidOctet(char *octet)
-{
+bool isValidOctet(char *octet) {
     if (octet[0] == '0' && octet[1] != '\0')
         return false;
 
@@ -106,8 +80,7 @@ bool isValidOctet(char *octet)
     return (x >= 0 && x <= 255);
 }
 
-bool isValidIp(const std::string &ip)
-{
+bool isValidIp(const std::string &ip) {
     char buf[32];
     strncpy(buf, ip.c_str(), 32);
 
@@ -122,7 +95,7 @@ bool isValidIp(const std::string &ip)
     }
     return (count == 4);
 }
- 
+
 bool isValidPath(const std::string &path) {
 
     if (path[0] != '/') {
@@ -133,7 +106,7 @@ bool isValidPath(const std::string &path) {
 
     char dst[512];
     strcpy(dst, path.c_str());
-    
+
     char *token = strtok(dst, "/");
     while (token != NULL) {
         size_t len = strlen(token);
@@ -143,7 +116,7 @@ bool isValidPath(const std::string &path) {
             }
         }
         token = strtok(NULL, "/");
-    }   
+    }
     return true;
 }
 
@@ -162,7 +135,7 @@ bool isExtension(const std::string &ext) {
 }
 
 bool endsWith(const std::string &str, const std::string &end) {
-    if (end.length() >= str.length()) 
+    if (end.length() >= str.length())
         return false;
     return str.find(end, str.length() - end.length()) != std::string::npos;
 }
@@ -222,17 +195,17 @@ int rmdirNonEmpty(std::string &resourceDel) {
         return 1;
     }
 
-    while ((dirContent = readdir(r_opndir))) {   
-        if ((static_cast<std::string>(dirContent->d_name) != ".") && 
-            (static_cast<std::string>(dirContent->d_name) != "..")) {   
+    while ((dirContent = readdir(r_opndir))) {
+        if ((static_cast<std::string>(dirContent->d_name) != ".") &&
+            (static_cast<std::string>(dirContent->d_name) != "..")) {
             path = resourceDel + '/' + dirContent->d_name;
 
-            if(isDirectory(path)) {
+            if (isDirectory(path)) {
                 if (rmdirNonEmpty(path)) {
                     closedir(r_opndir);
                     return 1;
                 }
-            } else if (std::remove(path.c_str())){
+            } else if (std::remove(path.c_str())) {
                 closedir(r_opndir);
                 return 1;
             }

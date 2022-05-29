@@ -4,53 +4,41 @@
 
 namespace HTTP {
 
-    CGI::CGI(void) : _isCompiled(false)
-    {
+    CGI::CGI(void) : _isCompiled(false) {
         for (size_t i = 0; i < 3; i++)
             _args[i] = NULL;
-
-        for (size_t i = 0; i < 20; i++)
-            _env[i] = NULL;
     }
 
     CGI::~CGI() {}
 
-    static void log_error(const std::string &location)
-    {
+    static void log_error(const std::string &location) {
         Log.error(location);
         Log.error("Errno: " + to_string(errno));
         Log.error("Description: " + std::string(strerror(errno)));
     }
 
-    static void restore_std(int in, int out)
-    {
-        if (in != -1 && dup2(in, fileno(stdin)) == -1)
-        {
+    static void restore_std(int in, int out) {
+        if (in != -1 && dup2(in, fileno(stdin)) == -1) {
             log_error("CGI::restore::in: ");
         }
-        if (out != -1 && dup2(out, fileno(stdout)) == -1)
-        {
+        if (out != -1 && dup2(out, fileno(stdout)) == -1) {
             log_error("CGI::restore::out: ");
         }
     }
 
-    static void close_pipe(int in, int out)
-    {
-        if (in != -1)
-        {
+    static void close_pipe(int in, int out) {
+        if (in != -1) {
             close(in);
         }
-        if (out != -1)
-        {
+        if (out != -1) {
             close(out);
         }
     }
 
-    static void setValue(char *const env, std::string value)
-    {
+    static void setValue(char *const env, std::string value) {
         char *ptr = strchr(env, '=');
         if (ptr == NULL) {
-            return ;
+            return;
         }
         ptr[1] = '\0';
         strncat(env, value.c_str(), 1023 - strlen(env));
@@ -84,8 +72,7 @@ namespace HTTP {
         setenv("REDIRECT_STATUS", "200", 1);
     }
 
-    void CGI::setEnv(Request &req)
-    {
+    void CGI::setEnv(Request &req) {
         setValue(env[0], "");
         setValue(env[1], req.getLocationPtr()->getRootRef() + req.getPath());
         setValue(env[2], "");
@@ -106,34 +93,28 @@ namespace HTTP {
         setValue(env[17], "200");
     }
 
-    void CGI::setCompiled(bool value)
-    {
+    void CGI::setCompiled(bool value) {
         _isCompiled = value;
     }
 
-    bool CGI::isCompiled(void)
-    {
+    bool CGI::isCompiled(void) {
         return _isCompiled;
     }
 
-    void CGI::setExecPath(const std::string path)
-    {
+    void CGI::setExecPath(const std::string path) {
         _execpath = path;
     }
 
-    const std::string CGI::getExecPath(void) const
-    {
+    const std::string CGI::getExecPath(void) const {
         return _execpath;
     }
 
-    bool CGI::setScriptPath(const std::string path)
-    {
+    bool CGI::setScriptPath(const std::string path) {
         _filepath = path;
         return true;
     }
 
-    const std::string CGI::getResult(void) const
-    {
+    const std::string CGI::getResult(void) const {
         return _res;
     }
 
@@ -141,8 +122,7 @@ namespace HTTP {
         _res = "";
     }
 
-    int CGI::exec()
-    {
+    int CGI::exec() {
         if (_isCompiled && !isExecutableFile(_filepath)) {
             Log.error(_filepath + " is not executable");
             return 0;
@@ -156,26 +136,23 @@ namespace HTTP {
             _args[1] = _filepath.c_str();
         }
 
-        int in[2] = {-1};
-        int out[2] = {-1};
+        int in[2] = { -1 };
+        int out[2] = { -1 };
 
-        if (pipe(in) != 0)
-        {
+        if (pipe(in) != 0) {
             log_error("CGI::pipe::in: ");
             return 0;
         }
 
-        if (pipe(out) != 0)
-        {
+        if (pipe(out) != 0) {
             log_error("CGI::pipe::out: ");
             close_pipe(in[0], in[1]);
             return 0;
         }
 
-        int tmp[2] = {-1};
+        int tmp[2] = { -1 };
         tmp[0] = dup(fileno(stdin));
-        if (tmp[0] == -1)
-        {
+        if (tmp[0] == -1) {
             log_error("CGI::backup::in: ");
             close_pipe(tmp[0], tmp[1]);
             close_pipe(in[0], in[1]);
@@ -184,8 +161,7 @@ namespace HTTP {
         }
 
         tmp[1] = dup(fileno(stdout));
-        if (tmp[1] == -1)
-        {
+        if (tmp[1] == -1) {
             log_error("CGI::backup::out: ");
             close_pipe(tmp[0], tmp[1]);
             close_pipe(in[0], in[1]);
@@ -194,8 +170,7 @@ namespace HTTP {
         }
 
         // Redirect for child process
-        if (dup2(in[0], fileno(stdin)) == -1)
-        {
+        if (dup2(in[0], fileno(stdin)) == -1) {
             log_error("CGI::redirect::in: ");
             close_pipe(tmp[0], tmp[1]);
             close_pipe(in[0], in[1]);
@@ -203,8 +178,7 @@ namespace HTTP {
             return 0;
         }
 
-        if (dup2(out[1], fileno(stdout)) == -1)
-        {
+        if (dup2(out[1], fileno(stdout)) == -1) {
             log_error("CGI::redirect::out: ");
             restore_std(tmp[0], -1);
             close_pipe(tmp[0], tmp[1]);
@@ -212,26 +186,22 @@ namespace HTTP {
             close_pipe(out[0], out[1]);
             return 0;
         }
- 
+
         int childPID = fork();
-        if (childPID < 0)
-        {
+        if (childPID < 0) {
             log_error("CGI::fork: ");
             restore_std(tmp[0], tmp[1]);
             close_pipe(tmp[0], tmp[1]);
             close_pipe(in[0], in[1]);
             close_pipe(out[0], out[1]);
             return 0;
-        }
-        else if (childPID == 0)
-        {
+        } else if (childPID == 0) {
             close_pipe(in[1], out[0]);
 
             // Catch stderr from cgi
             // dup2(out[1], fileno(stderr));
 
-            if (execve(_args[0], const_cast<char * const *>(_args), env) == -1)
-            {
+            if (execve(_args[0], const_cast<char *const *>(_args), env) == -1) {
                 exit(3);
             }
         }
@@ -259,31 +229,26 @@ namespace HTTP {
         // Important to close it before reading
         close_pipe(-1, out[1]);
 
-        if (WEXITSTATUS(status) == 3)
-        {
+        if (WEXITSTATUS(status) == 3) {
             log_error("CGI::execv: ");
             return 0;
         }
 
-        if (WIFEXITED(status))
-        {
+        if (WIFEXITED(status)) {
             int readBytes = 1;
             const int size = 300;
             char buf[size];
 
-            while (readBytes > 0)
-            {
+            while (readBytes > 0) {
                 readBytes = read(out[0], buf, size - 1);
-                if (readBytes < 0)
-                {
-                    std::cout << "read err" << std::endl;
-                    break;
+                if (readBytes < 0) {
+                    log_error("CGI::read");
+                    return 1;
                 }
                 buf[readBytes] = 0;
                 _res += buf;
             }
             // Send response to the client in body
-            // std::cout << res << std::endl;
         }
         // Add other macros for handling unexpected termination of child process.
 
@@ -294,11 +259,10 @@ namespace HTTP {
     char **initEnv() {
         char **env = (char **)calloc(19, sizeof(char *));
 
-        for (size_t i = 0; i < 18; i++)
-        {
+        for (size_t i = 0; i < 18; i++) {
             env[i] = (char *)calloc(1024, sizeof(char));
         }
-        
+
         strcpy(env[0], "PATH_INFO=");
         strcpy(env[1], "PATH_TRANSLATED=");
         strcpy(env[2], "REMOTE_HOST=");

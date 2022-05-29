@@ -47,3 +47,4 @@ serv
 .idea
 *.out
 *.out.dSYM
+.editorconfig

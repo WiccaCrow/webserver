@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 class Logger {
-    private:
+private:
     std::string _logfile;
     bool        _logToFile;
     uint8_t     _flags;
@@ -14,7 +14,7 @@ class Logger {
     // For file logging
     std::ofstream _out;
 
-    public:
+public:
     Logger();
     ~Logger();
 

@@ -17,16 +17,14 @@
 #include "Logger.hpp"
 // #include "Globals.hpp"
 
-namespace HTTP
-{
+namespace HTTP {
     class Request;
 
-    class CGI
-    {
+    class CGI {
     private:
-        std::string  _execpath;
-        std::string  _filepath;
-        const char * _args[3];
+        std::string _execpath;
+        std::string _filepath;
+        const char *_args[3];
 
         bool _isCompiled;
 

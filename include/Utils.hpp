@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <cstring>
 #include <stdlib.h>
-#include <dirent.h>
 
 std::string itoh(int nb);
 void trim(std::string &s, const char *t);

@@ -11,8 +11,7 @@
 #include "Response.hpp"
 #include "StatusCodes.hpp"
 
-namespace HTTP
-{
+namespace HTTP {
 
     class Client
     {
@@ -20,7 +19,6 @@ namespace HTTP
         struct pollfd &_pfd;
         HTTP::Request _req;
         HTTP::Response _res;
-        // int            _responseFormed : 1;
 
         ServerBlock &_servBlock;
         static ReadSock _reader;
