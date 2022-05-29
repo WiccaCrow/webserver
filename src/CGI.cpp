@@ -197,12 +197,8 @@ namespace HTTP {
             return 0;
         } else if (childPID == 0) {
             close_pipe(in[1], out[0]);
-
-            // Catch stderr from cgi
-            // dup2(out[1], fileno(stderr));
-
             if (execve(_args[0], const_cast<char *const *>(_args), env) == -1) {
-                exit(3);
+                exit(125);
             }
         }
 
@@ -229,17 +225,19 @@ namespace HTTP {
         // Important to close it before reading
         close_pipe(-1, out[1]);
 
-        if (WEXITSTATUS(status) == 3) {
-            log_error("CGI::execv: ");
-            return 0;
-        }
-
         if (WIFSIGNALED(status)) {
-            log_error("CGI::signaled: ");
+            log_error("CGI::signaled:" + to_string(WTERMSIG(status)));
             return 0;
-        }
+        } else if (WIFSTOPPED(status)) {
+            log_error("CGI::stopped:" + to_string(WSTOPSIG(status)));
+            return 0;
+        } else if (WIFEXITED(status)) {
 
-        if (WIFEXITED(status)) {
+            if (WEXITSTATUS(status)) {
+                log_error("CGI::exited:" + to_string(WEXITSTATUS(status)));
+                return 0;
+            }
+
             int readBytes = 1;
             const int size = 300;
             char buf[size];
