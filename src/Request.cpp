@@ -4,12 +4,14 @@ namespace HTTP {
 
 Request::Request(ServerBlock *servBlock)
     : _servBlock(servBlock)
-    , _location_current(NULL)
+    , _location(NULL)
     , _flag_getline_bodySize(true)
     , _bodySize(0)
     , _parseFlags(PARSED_NONE) {
-    // временная мера test cout
-    _location_current = &((servBlock->getLocationsRef().find("/about"))->second);
+
+    // _location = &((servBlock->getLocationsRef().find("/about"))->second);
+    // _path = _locations[matchIndex].getRootRef() + path.substr(matchMaxLen + 1);
+
 }
 
 Request::~Request() { }
@@ -23,7 +25,7 @@ Request &
 Request::operator=(const Request &other) {
     if (this != &other) {
         _method                = other._method;
-        _path                  = other._path;
+        _uri                  = other._uri;
         _protocol              = other._protocol;
         _queryString           = other._queryString;
         _scriptName            = other._scriptName;
@@ -46,6 +48,11 @@ Request::getServerBlock() const {
 const std::string &
 Request::getMethod() const {
     return _method;
+}
+
+const std::string &
+Request::getURI() const {
+    return _uri;
 }
 
 const std::string &
@@ -80,12 +87,12 @@ Request::getStatus() const {
 
 Location *
 Request::getLocationPtr() {
-    return _location_current;
+    return _location;
 }
 
 bool
 Request::empty() {
-    return (_method.empty() && _path.empty() && _protocol.empty() && _headers.empty());
+    return (_method.empty() && _uri.empty() && _protocol.empty() && _headers.empty());
 }
 
 void
@@ -101,7 +108,7 @@ Request::removeFlag(uint8_t flag) {
 void
 Request::clear() {
     _method = "";
-    // _path.clear();
+    // _uri.clear();
     _protocol = "";
     _headers.clear();
     _flag_getline_bodySize = true;
@@ -110,7 +117,7 @@ Request::clear() {
     _parseFlags = 0;
 
     // _method.clear();
-    // _path.clear();
+    // _uri.clear();
     // _protocol.clear();
     // _headers.clear();
     // _flag_getline_bodySize = true;
@@ -177,9 +184,9 @@ Request::parseStartLine(const std::string &line) {
     }
 
     skipSpaces(line, pos);
-    _path = getWord(line, ' ', pos);
-    Log.debug("PATH: " + _path);
-    if (isValidPath(_path) == BAD_REQUEST) {
+    _uri = getWord(line, ' ', pos);
+    Log.debug("PATH: " + _uri);
+    if (isValidPath(_uri) == BAD_REQUEST) {
         Log.debug("Invalid URI");
         return BAD_REQUEST;
     }
@@ -198,6 +205,16 @@ Request::parseStartLine(const std::string &line) {
         // Or 505, need to improve
         return BAD_REQUEST;
     }
+
+    // if (_uri.back() != '/')
+    //     _uri += '/';
+    _location = _servBlock->matchLocation(_uri);
+    if (_uri.length() > _location->getPathRef().length()) {
+        _path = _location->getRootRef() + _uri.substr(_location->getPathRef().length() + 1);
+    } else {
+        _path = _location->getRootRef();
+    }
+    Log.debug("PHYS_PATH:" + _path);
 
     setFlag(PARSED_SL);
     return CONTINUE;

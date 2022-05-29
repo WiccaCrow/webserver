@@ -54,7 +54,7 @@ public:
     std::string resoursePathTaker(Request &req);
     std::string GetContentType(std::string resourcePath);
     std::string fileToResponse(std::string resourcePath);
-    std::string listToResponse(std::string &resourcePath, Request &req);
+    std::string listToResponse(const std::string &resourcePath, Request &req);
     void        POSTmethod(Request &req);
 
     std::string doCGI(Request &req, CGI &cgi);

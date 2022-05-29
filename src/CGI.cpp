@@ -253,8 +253,8 @@ CGI::exec() {
             return 0;
         }
 
-        int  readBytes = 1;
-        const int size = 300;
+        int       readBytes = 1;
+        const int size      = 300;
 
         char buf[size];
         while (readBytes > 0) {
@@ -268,8 +268,6 @@ CGI::exec() {
         }
         // Send response to the client in body
     }
-    // Add other macros for handling unexpected termination of child process.
-
     close_pipe(out[0], -1);
     return 1;
 }

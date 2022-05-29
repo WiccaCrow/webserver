@@ -27,15 +27,16 @@ class Request {
 
 private:
     std::string                  _method;
-    std::string                  _path;
+    std::string                  _uri;
     std::string                  _protocol;
+    std::string                  _path;
     std::string                  _queryString;
     std::string                  _scriptName;
     std::map<HeaderCode, Header> _headers;
     HTTP::StatusCode             _status;
 
-    ServerBlock *_servBlock;
-    Location    *_location_current;
+    ServerBlock                 *_servBlock;
+    Location                    *_location;
 
     bool          _flag_getline_bodySize;
     unsigned long _bodySize;
@@ -51,8 +52,9 @@ public:
 
     const ServerBlock *getServerBlock() const;
 
-    const std::string                  &getMethod() const;
     const std::string                  &getPath() const;
+    const std::string                  &getMethod() const;
+    const std::string                  &getURI() const;
     const std::string                  &getProtocol() const;
     const std::map<HeaderCode, Header> &getHeaders() const;
     const std::string                  &getBody() const;

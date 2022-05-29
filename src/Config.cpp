@@ -298,6 +298,7 @@ parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
 
     JSON::Object::iterator it  = obj->begin();
     JSON::Object::iterator end = obj->end();
+    res.clear();
     for (; it != end; it++) {
         HTTP::CGI cgi;
 
@@ -431,6 +432,8 @@ parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
     } else if (!isDirectory(dst.getRootRef())) {
         Log.error("#### \"root\" should be a directory");
         return 0;
+    } else if (dst.getRootRef().back() != '/') {
+        dst.getRootRef() += "/";
     }
 
     if (!getUInteger(src, "post_max_body", dst.getPostMaxBodyRef(), 200)) {
@@ -503,6 +506,7 @@ parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res, HT
             Log.error("### location path \"" + it->first + "\" is incorrect");
             return 0;
         }
+        dst.getPathRef() = it->first;
 
         JSON::Object *src = it->second->toObj();
         if (!parseLocation(src, dst, base)) {

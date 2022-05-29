@@ -34,7 +34,6 @@
             "locations": {
                 "/about": {
                     "root": "/Users/mhufflep/Desktop/serv/pages/site",
-                    "default_page": "./pages/404.html",
                     "CGI": {
                         ".js": "/usr/local/bin/node"
                     },

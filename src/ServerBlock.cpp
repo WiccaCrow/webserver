@@ -139,4 +139,27 @@ Location &
 ServerBlock::getLocationBaseRef(void) {
     return _locationBase;
 }
+
+Location *
+ServerBlock::matchLocation(const std::string &path) {
+    size_t matchMaxLen = 0;
+
+    std::map<std::string, Location>::iterator it = _locations.begin();
+    std::map<std::string, Location>::iterator end = _locations.end();
+    std::map<std::string, Location>::iterator match = _locations.end();
+    for (; it != end; it++) {
+        size_t len = it->first.length();
+        if (path.find(it->first) == 0) {
+            if (len > matchMaxLen) {
+                match = it;
+                matchMaxLen = len;
+            }
+        }
+    }
+    if (match == end) {
+        return &_locationBase;
+    } 
+    return &(match->second);
+}
+
 }

@@ -96,7 +96,7 @@ HTTP::Response::fileToResponse(std::string resourcePath) {
 }
 
 std::string
-HTTP::Response::listToResponse(std::string &resourcePath, Request &req) {
+HTTP::Response::listToResponse(const std::string &resourcePath, Request &req) {
     std::string pathToDir;
     std::string body = "<!DOCTYPE html>\n"
                        "<html>\n"
@@ -150,6 +150,7 @@ HTTP::Response::resoursePathTaker(Request &req) {
     } else {
         resourcePath += "/";
     }
+
     // root из конфигурации + URI
     resourcePath += req.getPath();
     return (resourcePath);
@@ -174,7 +175,7 @@ HTTP::Response::contentForGetHead(Request &req) {
     // root
     // если в конфиге без /, то добавить /,
     // чтобы мне уже с этим приходило
-    std::string resourcePath = resoursePathTaker(req);
+    const std::string &resourcePath = req.getPath(); //resoursePathTaker(req);
     // std::string resourcePath = req.getLocationPtr()->getRootRef();
     // std::cout << req.getLocationPtr()->getIndexRef().empty() << "   ||   " << isFile(resourcePath) << "     resourcePath: " << resourcePath << std::endl;
 
@@ -184,9 +185,9 @@ HTTP::Response::contentForGetHead(Request &req) {
     // Path is dir
     if (isDirectory(resourcePath)) {
         // в дальнейшем заменить на геттер из req
-        if (resourcePath[resourcePath.length() - 1] != '/') {
-            resourcePath += "/";
-        }
+        // if (resourcePath[resourcePath.length() - 1] != '/') {
+        //     resourcePath += "/";
+        // }
         // find index file
         for (std::vector<std::string>::const_iterator iter = req.getLocationPtr()->getIndexRef().begin();
              iter != req.getLocationPtr()->getIndexRef().end();

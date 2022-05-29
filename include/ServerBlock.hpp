@@ -58,6 +58,7 @@ public:
 
     // other methods
     void createListenSock();
+    Location *matchLocation(const std::string &path);
 };
 
 }
