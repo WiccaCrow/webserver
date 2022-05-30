@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-// void        trim(std::string &s, const char *t);
+void        trim(std::string &s, const char *t);
 
 std::string itoh(int nb);
 std::string getWord(const std::string &line, char delimiter, size_t &pos);
@@ -19,6 +19,7 @@ void        skipSpaces(const std::string &line, size_t &pos);
     #include <string>
 
 std::string to_string(int val);
+std::string to_string(unsigned long val);
 
 #endif
 

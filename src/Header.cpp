@@ -179,9 +179,9 @@ Header::Range(Request &req) {
 StatusCode
 Header::Referer(Request &req) {
     URI ref;
-    ref.parse(getVal());
-
-    req.getUriRef()._path = ref._path + req.getUriRef()._path;
+    ref.parse(value);
+    (void)req;
+    // req.getUriRef()._path = ref._path + req.getUriRef()._path;
     return CONTINUE;
 }
 

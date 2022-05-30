@@ -48,7 +48,7 @@ HTTP::Response::doCGI(Request &req, CGI &cgi) {
     cgi.reset();
     cgi.setEnv(req);
     if (!cgi.exec()) {
-        req.setStatus(HTTP::INTERNAL_SERVER_ERROR);
+        req.setStatus(HTTP::BAD_GATEWAY);
         _res = findErr(req.getStatus());
         return "";
     }
@@ -91,7 +91,7 @@ HTTP::Response::fileToResponse(std::string resourcePath) {
     //     _res += "Transfer-Encoding: chunked\r\n\r\n";
     //     return (TransferEncodingChunked(buffer.str(), bufSize));
     // } else {
-    _res += "content-length: " + to_string(bufSize) + "\r\n\r\n";
+    _res += "content-length: " + to_string((unsigned long)bufSize) + "\r\n\r\n";
     return (buffer.str());
     // }
 }
@@ -158,9 +158,9 @@ HTTP::Response::resoursePathTaker(Request &req) {
 }
 
 std::map<std::string, HTTP::CGI>::iterator
-isCGI(const std::string &filepath, std::map<std::string, HTTP::CGI> &cgi) {
-    std::map<std::string, HTTP::CGI>::iterator it  = cgi.begin();
-    std::map<std::string, HTTP::CGI>::iterator end = cgi.end();
+isCGI(const std::string &filepath, std::map<std::string, HTTP::CGI> &cgis) {
+    std::map<std::string, HTTP::CGI>::iterator it  = cgis.begin();
+    std::map<std::string, HTTP::CGI>::iterator end = cgis.end();
     for (; it != end; it++) {
         if (endsWith(filepath, it->first)) {
             it->second.setScriptPath(filepath);

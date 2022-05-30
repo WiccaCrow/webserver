@@ -16,21 +16,10 @@ class Header {
 public:
     typedef StatusCode (Header::*Handler)(Request &req);
     
-    std::string line;
-
-    size_t     valStart;
-    size_t     keyLen;
-    size_t     valLen;
+    std::string key;
+    std::string value;
     Handler    method;
     HeaderCode hash;
-
-    const char *getKey() {
-        return line.data();
-    }
-
-    const char *getVal() const {
-        return &(line.data()[valStart]);
-    }
 
     StatusCode handle(Request &req);
     StatusCode A_IM(Request &req);

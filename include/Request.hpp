@@ -63,7 +63,7 @@ public:
     // Needed to be improved
     const std::string &getQueryString() const;
     const std::string &getScriptName() const;
-    const char        *getHeaderValue(HeaderCode key) const;
+    const std::string getHeaderValue(HeaderCode key) const;
 
     bool empty();
 

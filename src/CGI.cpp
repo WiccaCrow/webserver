@@ -39,7 +39,7 @@ close_pipe(int in, int out) {
 }
 
 static void
-setValue(char *const env, std::string value) {
+setValue(char *const env, const std::string &value) {
     char *ptr = strchr(env, '=');
     if (ptr == NULL) {
         return;
@@ -65,7 +65,7 @@ CGI::setFullEnv(Request &req) {
     setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
     setenv("SCRIPT_NAME", req.getScriptName().c_str(), 1);
     setenv("CONTENT_LENGTH", to_string(req.getBody().length()).c_str(), 1);
-    setenv("CONTENT_TYPE", req.getHeaderValue(CONTENT_TYPE), 1);
+    setenv("CONTENT_TYPE", req.getHeaderValue(CONTENT_TYPE).c_str(), 1);
 
     setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
     setenv("SERVER_NAME", "localhost", 1);

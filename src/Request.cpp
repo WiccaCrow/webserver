@@ -136,13 +136,13 @@ Request::getScriptName() const {
     return _scriptName;
 }
 
-const char *
+const std::string 
 Request::getHeaderValue(HeaderCode key) const {
     std::map<HeaderCode, Header>::const_iterator it = _headers.find(key);
     if (it == _headers.end()) {
         return "";
     }
-    return it->second.getVal();
+    return it->second.value;
 }
 
 StatusCode
@@ -258,27 +258,24 @@ Request::parseHeader(std::string line) {
         return CONTINUE;
     }
 
+    size_t sepPos = line.find(':');
+    if (sepPos == std::string::npos) {
+        return BAD_REQUEST;
+    } 
+
+    toLowerCase(line);
+
     Header header;
-    // header.line.swap(line);
-    header.line = line;
+    header.key = line.substr(0, sepPos);
+    header.value = line.substr(sepPos + 1);
+    trim(header.value, " \t\r\n");
 
-    size_t sepPos       = line.find(':');
-    header.line[sepPos] = '\0';
-    header.keyLen       = sepPos;
-
-    // Some errors skipped with this method... (Maybe should be rewritten with nginx parser)
-    header.valStart = line.find_first_not_of(" \t\n\r", sepPos + 1);
-    size_t valEnd   = line.find_last_not_of(" \t\n\r", sepPos + 1);
-    header.valLen   = valEnd - header.valStart;
-
-    toLowerCase(header.line);
-
-    header.hash = static_cast<HeaderCode>(crc(header.line.data(), header.keyLen));
+    header.hash = static_cast<HeaderCode>(crc(header.key.c_str(), header.key.length()));
 
     if (header.handle(*this) == BAD_REQUEST) {
         // Not all unsupported headers should lead to bad request
         Log.debug("Maybe header is not supported");
-        Log.debug(header.line.data() + std::string(" | ") + to_string(header.hash));
+        Log.debug(header.key + "|" + to_string((unsigned long)header.hash));
         return BAD_REQUEST;
     }
     
@@ -289,7 +286,7 @@ Request::parseHeader(std::string line) {
 
     // Should be moved to header handler
     if (header.hash == CONTENT_LENGTH) {
-        size_t length = strtoul(header.getVal(), NULL, 10);
+        size_t length = strtoul(header.value.c_str(), NULL, 10);
         setBodySizeFlag(false);
         setBodySize(length);
     }

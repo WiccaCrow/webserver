@@ -311,7 +311,7 @@ parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
         if (it->first == cgi.compiledExt) {
             cgi.setCompiled(true);
         }
-
+        
         res.insert(std::make_pair(it->first, cgi));
     }
     return 1;

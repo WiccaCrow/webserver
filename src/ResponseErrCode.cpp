@@ -8,7 +8,7 @@ HTTP::Response::findErr(int nbErr) {
     std::map<int, const char *>::const_iterator iter = _ErrorCode.find(nbErr);
     if (iter == _ErrorCode.end()) {
         std::cerr << "Unknown error code. Please let me know or add to the ResponseErrCode.cpp file. Wicca" << std::endl;
-        exit (66);
+        exit(66);
     }
     _res = (*iter).second;
 
