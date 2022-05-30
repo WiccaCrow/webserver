@@ -97,7 +97,7 @@ Client::reply(void) {
     if (_pfd.fd == -1) {
         return;
     }
-    // std::cout << "test 2 reply response" << std::endl;
+    std::cout << "     test 2 reply response" << std::endl;
 
     // std::cout << "res URI: " << _req.getPath() << std::endl;
     // определить размер данных, которые надо отправить
@@ -106,14 +106,15 @@ Client::reply(void) {
     // std::cout << << std::endl;
 
     int _req_getStatus = _req.getStatus();
-    // std::cout << "test 1 reply response " << _req_getStatus << std::endl;
+
     if (_req.getStatus() == HTTP::PROCESSING) {
         _req_getStatus = HTTP::OK;
     }
+    std::cout << "test 1 reply response " << _req_getStatus << std::endl;
     if (_req_getStatus >= HTTP::BAD_REQUEST) {
         _res.findErr(_req_getStatus);
     } else if (_req_getStatus == 200) {
-        // std::cout << "test 4 reply response " << _req.getMethod() << std::endl;
+        std::cout << "test 4 reply response " << _req.getMethod() << std::endl;
         if (_req.getMethod() == "HEAD")
             _res.HEADmethod(_req);
         if (_req.getMethod() == "GET")
