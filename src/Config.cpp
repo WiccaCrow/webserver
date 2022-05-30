@@ -432,7 +432,7 @@ parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
     } else if (!isDirectory(dst.getRootRef())) {
         Log.error("#### \"root\" should be a directory");
         return 0;
-    } else if (dst.getRootRef().back() != '/') {
+    } else if (dst.getRootRef()[dst.getRootRef().length() - 1] != '/') {
         dst.getRootRef() += "/";
     }
 

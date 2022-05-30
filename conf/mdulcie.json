@@ -4,8 +4,8 @@
             "port": 8080,
             "server_name": "localhost",
             "error_pages": {
-                "404": "./pages/404.html",
-                "400": "./pages/400.html"
+                "404": "./pages/error_pages/404.html",
+                "400": "./pages/error_pages/400.html"
             },
             "CGI": {
                 ".py": "/usr/bin/python3.9"
@@ -17,7 +17,7 @@
             "index": [ "index.html" ],
             "locations": {
                 "/about": {
-                    "root": "./pages",
+                    "root": "./pages/site",
                     "default_page": "./pages/404.html",
                     "autoindex": false,
                     "index": [ "index.html" ],
