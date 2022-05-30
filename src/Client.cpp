@@ -124,7 +124,7 @@ Client::reply(void) {
         if (_req.getMethod() == "DELETE")
             _res.DELETEmethod(_req);
     }
-    size_t sentBytes = 0;
+    long sentBytes = 0;
     // std::cout << "test 5 reply response" << std::endl;
     do {
         _res.SetLeftToSend(sentBytes);
@@ -133,7 +133,7 @@ Client::reply(void) {
             // std::cout << "Disconnect 3" << std::endl;
             disconnect();
         }
-    } while (sentBytes < _res.GetResSize());
+    } while (static_cast<size_t>(sentBytes) < _res.GetResSize());
     _res.clear();
     _req.clear();
 

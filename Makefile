@@ -2,7 +2,8 @@
 
 NAME 		   =   serv
 
-CXX            =   clang++
+# CXX            =   clang++
+CXX			   =	g++
 # CPPFLAGS     =   -Wall -Wextra -Werror  -Wc++11-extensions -std=c++98 -g -fstandalone-debug # -Wpedantic
 CPPFLAGS       =   -Wall -Wextra -Werror -std=c++98 -g
 

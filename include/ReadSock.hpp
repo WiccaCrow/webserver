@@ -41,6 +41,6 @@ public:
 
 // Where should I put this ... ?
 struct s_sock {
-    int16_t  fd;
+    int  fd;
     u_int8_t perm;
 };
