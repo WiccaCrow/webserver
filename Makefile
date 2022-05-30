@@ -4,7 +4,7 @@ NAME 		   =   serv
 
 CXX            =   clang++
 # CPPFLAGS     =   -Wall -Wextra -Werror  -Wc++11-extensions -std=c++98 -g -fstandalone-debug # -Wpedantic
-CPPFLAGS       =   -Wall -Wextra -Werror -Wc++11-extensions -std=c++98 -g
+CPPFLAGS       =   -Wall -Wextra -Werror -std=c++98 -g
 
 SOURCEFILES     =	main.cpp \
 				    Server.cpp \
@@ -14,9 +14,9 @@ SOURCEFILES     =	main.cpp \
 					ServerBlock.cpp \
 					Utils.cpp \
 					CRC.cpp \
+					URI.cpp \
 					CGI.cpp \
 					Redirect.cpp \
-					ValidHeaders.cpp \
 					Client.cpp \
 					Logger.cpp \
 					Response.cpp \
@@ -38,7 +38,7 @@ INCLUDEFOLDER   =   include/
 SOURCE          =   $(addprefix $(SOURCEFOLDER), $(SOURCEFILES))
 OSOURCE         =   $(addprefix $(OSOURCEFOLDER), $(SOURCEFILES:.cpp=.o))
 
-all: libjson objdir cgi_script $(NAME)
+all: libjson objdir $(NAME)
 
 objdir:
 	@if ! [ -d ${OSOURCEFOLDER} ] ; then mkdir ${OSOURCEFOLDER} ; fi
@@ -63,7 +63,7 @@ fclean: clean
 
 re: fclean all
 
-cgi_script:
+cgi:
 	gcc ./pages/site/cgi/printenv.c -o ./pages/site/cgi/printenv.cgi
 
 # for tests

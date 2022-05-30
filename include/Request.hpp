@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "CRC.hpp"
+#include "URI.hpp"
 #include "Utils.hpp"
 #include "Logger.hpp"
 #include "Header.hpp"
@@ -14,7 +15,6 @@
 #include "Location.hpp"
 #include "ServerBlock.hpp"
 #include "StatusCodes.hpp"
-#include "ValidHeaders.hpp"
 
 #define PARSED_NONE    0x0
 #define PARSED_SL      0x1
@@ -27,10 +27,8 @@ class Request {
 
 private:
     std::string                  _method;
-    std::string                  _uri;
+    URI                          _uri;
     std::string                  _protocol;
-    std::string                  _path;
-    std::string                  _queryString;
     std::string                  _scriptName;
     std::map<HeaderCode, Header> _headers;
     HTTP::StatusCode             _status;
@@ -54,13 +52,13 @@ public:
 
     const std::string                  &getPath() const;
     const std::string                  &getMethod() const;
-    const std::string                  &getURI() const;
     const std::string                  &getProtocol() const;
     const std::map<HeaderCode, Header> &getHeaders() const;
     const std::string                  &getBody() const;
     const uint8_t                      &getFlags() const;
     const HTTP::StatusCode             &getStatus() const;
     Location                           *getLocationPtr();
+    URI                                &getUriRef();
 
     // Needed to be improved
     const std::string &getQueryString() const;
@@ -80,9 +78,9 @@ public:
     StatusCode parseLine(std::string line);
 
 private:
-    StatusCode isValidMethod(const std::string &method);
-    StatusCode isValidPath(const std::string &path);
-    StatusCode isValidProtocol(const std::string &protocol);
+    bool isValidMethod(const std::string &method);
+    bool isValidPath(const std::string &path);
+    bool isValidProtocol(const std::string &protocol);
 
 public:
     // for chunked

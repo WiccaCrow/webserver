@@ -71,7 +71,7 @@ HTTP::Response::doCGI(Request &req, CGI &cgi) {
 
 std::string
 HTTP::Response::fileToResponse(std::string resourcePath) {
-    std::cout << "file to response:          " << resourcePath << std::endl;
+    // std::cout << "file to response:          " << resourcePath << std::endl;
     std::ifstream resourceFile;
     resourceFile.open(resourcePath.c_str(), std::ifstream::in);
     if (!resourceFile.is_open()) {
@@ -180,7 +180,7 @@ HTTP::Response::contentForGetHead(Request &req) {
     // std::string resourcePath = req.getLocationPtr()->getRootRef();
     // std::cout << req.getLocationPtr()->getIndexRef().empty() << "   ||   " << isFile(resourcePath) << "     resourcePath: " << resourcePath << std::endl;
 
-std::cout << "_______     PATH     " << resourcePath << std::endl;
+// std::cout << "_______     PATH     " << resourcePath << std::endl;
 
     _res = "HTTP/1.1 200 OK\r\n"
            "connection: keep-alive\r\n"

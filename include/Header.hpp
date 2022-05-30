@@ -2,23 +2,26 @@
 
 #include <map>
 #include <string>
+#include <stdint.h>
 
 #include "StatusCodes.hpp"
 #include "HeadersCodes.hpp"
 
 namespace HTTP {
 
+class Request;
+
 class Header {
 
 public:
-    typedef StatusCode (Header::*Handler)(void);
-
+    typedef StatusCode (Header::*Handler)(Request &req);
+    
     std::string line;
 
     size_t     valStart;
     size_t     keyLen;
     size_t     valLen;
-    Handler    handler;
+    Handler    method;
     HeaderCode hash;
 
     const char *getKey() {
@@ -29,57 +32,61 @@ public:
         return &(line.data()[valStart]);
     }
 
-    StatusCode A_IM(void);
-    StatusCode Accept(void);
-    StatusCode AcceptCharset(void);
-    StatusCode AcceptEncoding(void);
-    StatusCode AcceptLanguage(void);
-    StatusCode AcceptDateTime(void);
-    StatusCode AccessControlRequestMethod(void);
-    StatusCode AccessControlRequestHeaders(void);
-    StatusCode Authorization(void);
-    StatusCode CacheControl(void);
-    StatusCode Connection(void);
-    StatusCode Cookie(void);
-    StatusCode Date(void);
-    StatusCode Expect(void);
-    StatusCode Forwarded(void);
-    StatusCode From(void);
-    StatusCode Host(void);
-    StatusCode IfMatch(void);
-    StatusCode IfModifiedSince(void);
-    StatusCode IfNoneMatch(void);
-    StatusCode IfRange(void);
-    StatusCode IfUnmodifiedSince(void);
-    StatusCode MaxForwards(void);
-    StatusCode Origin(void);
-    StatusCode Pragma(void);
-    StatusCode ProxyAuthorization(void);
-    StatusCode Range(void);
-    StatusCode Referer(void);
-    StatusCode TransferEncoding(void);
-    StatusCode TE(void);
-    StatusCode UserAgent(void);
-    StatusCode ContentLength(void);
-    // StatusCode SetCookie(void);
-    StatusCode ContentType(void);
-    StatusCode Upgrade(void);
-    StatusCode Via(void);
-    StatusCode Warning(void);
-    StatusCode Dnt(void);
-    StatusCode XRequestedWith(void);
-    StatusCode XCsrfToken(void);
-    StatusCode SecFetchDest(void);
-    StatusCode SecFetchMode(void);
-    StatusCode SecFetchSite(void);
-    StatusCode SecFetchUser(void);
-    StatusCode UpgradeInsecureRequests(void);
-    StatusCode SecChUa(void);
-    StatusCode SecGpc(void);
-    StatusCode SecChUaMobile(void);
-    StatusCode SecChUaPlatform(void);
+    StatusCode handle(Request &req);
+    StatusCode A_IM(Request &req);
+    StatusCode Accept(Request &req);
+    StatusCode AcceptCharset(Request &req);
+    StatusCode AcceptEncoding(Request &req);
+    StatusCode AcceptLanguage(Request &req);
+    StatusCode AcceptDateTime(Request &req);
+    StatusCode AccessControlRequestMethod(Request &req);
+    StatusCode AccessControlRequestHeaders(Request &req);
+    StatusCode Authorization(Request &req);
+    StatusCode CacheControl(Request &req);
+    StatusCode Connection(Request &req);
+    StatusCode Cookie(Request &req);
+    StatusCode Date(Request &req);
+    StatusCode Expect(Request &req);
+    StatusCode Forwarded(Request &req);
+    StatusCode From(Request &req);
+    StatusCode Host(Request &req);
+    StatusCode IfMatch(Request &req);
+    StatusCode IfModifiedSince(Request &req);
+    StatusCode IfNoneMatch(Request &req);
+    StatusCode IfRange(Request &req);
+    StatusCode IfUnmodifiedSince(Request &req);
+    StatusCode MaxForwards(Request &req);
+    StatusCode Origin(Request &req);
+    StatusCode Pragma(Request &req);
+    StatusCode ProxyAuthorization(Request &req);
+    StatusCode Range(Request &req);
+    StatusCode Referer(Request &req);
+    StatusCode TransferEncoding(Request &req);
+    StatusCode TE(Request &req);
+    StatusCode UserAgent(Request &req);
+    StatusCode ContentLength(Request &req);
+    // StatusCode SetCookie(Request &req);
+    StatusCode ContentType(Request &req);
+    StatusCode Upgrade(Request &req);
+    StatusCode Via(Request &req);
+    StatusCode Warning(Request &req);
+    StatusCode Dnt(Request &req);
+    StatusCode XRequestedWith(Request &req);
+    StatusCode XCsrfToken(Request &req);
+    StatusCode SecFetchDest(Request &req);
+    StatusCode SecFetchMode(Request &req);
+    StatusCode SecFetchSite(Request &req);
+    StatusCode SecFetchUser(Request &req);
+    StatusCode UpgradeInsecureRequests(Request &req);
+    StatusCode SecChUa(Request &req);
+    StatusCode SecGpc(Request &req);
+    StatusCode SecChUaMobile(Request &req);
+    StatusCode SecChUaPlatform(Request &req);
 
-    StatusCode NotSupported(void);
+    StatusCode NotSupported(Request &req);
 };
 
+extern std::map<uint32_t, Header::Handler> validHeaders;
+
 } // namespace HTTP
+
