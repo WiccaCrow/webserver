@@ -176,6 +176,8 @@ Request::parseStartLine(const std::string &line) {
         return CONTINUE;
     } // ?
 
+    Log.debug("#########################");
+
     size_t pos = 0;
     _method    = getWord(line, ' ', pos);
     Log.debug("METHOD: " + _method);

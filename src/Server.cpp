@@ -144,7 +144,8 @@ Server::handlePollError() {
             struct rlimit rlim;
             getrlimit(RLIMIT_NOFILE, &rlim);
             Log.error("ndfs: " + to_string(_pollfds.size()));
-            Log.error("limits (soft, hard): (" + to_string(rlim.rlim_cur) + ", " + to_string(rlim.rlim_max) + ") ");
+            Log.error("limit(soft): " + to_string(rlim.rlim_cur));
+            Log.error("limit(hard): " + to_string(rlim.rlim_max));
             break;
         }
         case ENOMEM: {

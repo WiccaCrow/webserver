@@ -18,7 +18,6 @@ void        skipSpaces(const std::string &line, size_t &pos);
     #include <stdio.h>
     #include <string>
 
-std::string to_string(int val);
 std::string to_string(unsigned long val);
 
 #endif

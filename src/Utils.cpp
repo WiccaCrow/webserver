@@ -61,13 +61,6 @@ skipSpaces(const std::string &line, size_t &pos) {
 #if __cplusplus < 201103L
 
 std::string
-to_string(int val) {
-    char buf[25];
-    snprintf(buf, 25, "%d", val);
-    return std::string(buf);
-}
-
-std::string
 to_string(unsigned long val) {
     char buf[25];
     snprintf(buf, 25, "%lu", val);
