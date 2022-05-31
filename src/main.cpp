@@ -10,9 +10,7 @@ main(int ac, char **av) {
     // Log.setLogFile("test.log");
 
     if (ac > 2) {
-        Log.error("Usage: " + std::string(av[0]) + " conf.json" +
-                  " or use " + std::string(av[0]) + " (default config "
-                  "file will be used)");
+        Log.error("Usage: " + std::string(av[0]) + " [config.json]");
         return 1;
     }
     g_server = loadConfig(ac == 1 ? "./conf/default.json" : av[1]);
