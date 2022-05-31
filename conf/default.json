@@ -2,13 +2,13 @@
     "servers": {
         "http": {
             "port": 8080,
-            "server_name": [ "localhost" ],
+            "server_names": [ "localhost" ],
             "error_pages": {
-                "404": "./pages/404.html",
-                "400": "./pages/400.html"
+                "404": "./pages/error_pages/404.html",
+                "400": "./pages/error_pages/400.html"
             },
             "autoindex": true,
-            "root": "./default/",
+            "root": "./pages/default/",
             "index": [ "index.html" ]
         }
     }
