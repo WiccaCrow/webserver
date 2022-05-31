@@ -17,6 +17,7 @@ struct URI {
     std::string _fragment;
 
     void parse(std::string uri);
+    std::string getAuthority(void) const;
 
 };
 

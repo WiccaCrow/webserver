@@ -96,7 +96,11 @@ void
 Server::pollOutHandler(size_t id) {
     if (_clients[id - _nbServBlocks].responseFormed()) {
         // _clients[id - _nbServBlocks].changeResponseFlag(0);
+        _clients[id - _nbServBlocks].process();
         _clients[id - _nbServBlocks].reply();
+        _clients[id - _nbServBlocks].disconnectIfFailed();
+        _clients[id - _nbServBlocks].clearData();
+
     }
 }
 
@@ -227,10 +231,11 @@ fdNotTaken(struct pollfd pfd) {
 
 void
 Server::acceptNewClient(size_t id) {
-    struct sockaddr_in addr;
-    socklen_t          len = sizeof(addr);
+    struct sockaddr_in clientData;
 
-    int fd = accept(_pollfds[id].fd, (struct sockaddr *)&addr, &len);
+    socklen_t len = sizeof(clientData);
+
+    int fd = accept(_pollfds[id].fd, (struct sockaddr *)&clientData, &len);
 
     if (fd < 0) {
         handleAcceptError();
@@ -243,7 +248,7 @@ Server::acceptNewClient(size_t id) {
         std::vector<struct pollfd>::iterator it;
         it = std::find_if(_pollfds.begin(), _pollfds.end(), fdNotTaken);
 
-        Log.info(to_string(fd) + ": client accepted");
+        Log.debug("client accepted -> fd: " + to_string(fd));
 
         if (it != _pollfds.end()) {
             it->fd     = fd;
@@ -252,6 +257,7 @@ Server::acceptNewClient(size_t id) {
             struct pollfd tmp = { fd, POLLIN | POLLOUT, 0 };
             _pollfds.push_back(tmp);
             _clients.push_back(HTTP::Client(_pollfds.back(), &_ServBlocks[id])); // add string with port
+            _clients[_clients.size() - 1].setSocketData(clientData);
         }
     }
 }

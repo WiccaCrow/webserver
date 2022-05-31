@@ -29,13 +29,10 @@ public:
     void clear();
 
     //  for errors
+    static const std::map<std::string, std::string> MIMEs;
+    static const std::map<HTTP::StatusCode, const char *>  errorResponses;
 
-    static const std::map<std::string, std::string> _ContType;
-    static const std::map<int, const char *>        _ErrorCode;
-
-    const char                               *findErr(int nbErr);
-    static std::map<int, const char *>        initErrorCode();
-    static std::map<std::string, std::string> initContType();
+    void setErrorResponse(HTTP::StatusCode status);
 
     // These functions allow you to get / set
     // a flag by which you can find out about
@@ -50,21 +47,20 @@ public:
     void        HEADmethod(Request &req);
     void        GETmethod(Request &req);
     void        DELETEmethod(Request &req);
-    std::string contentForGetHead(Request &req);
-    std::string resoursePathTaker(Request &req);
-    std::string GetContentType(std::string resourcePath);
-    std::string fileToResponse(std::string resourcePath);
-    std::string listToResponse(const std::string &resourcePath, Request &req);
     void        POSTmethod(Request &req);
+    std::string contentForGetHead(Request &req);
+    std::string getContentType(std::string resourcePath);
+    std::string fileToResponse(std::string resourcePath);
+    std::string listing(const std::string &resourcePath, Request &req);
 
-    std::string doCGI(Request &req, CGI &cgi);
+    std::string passToCGI(Request &req, CGI &cgi);
 
     // to send response
-    size_t      GetResSize(void);
-    const char *GetResponse(void);
-    const char *GetLeftToSend(void);
-    size_t      GetLeftToSendSize(void);
-    void        SetLeftToSend(size_t n);
+    size_t      getResSize(void);
+    const char *getResponse(void);
+    const char *getLeftToSend(void);
+    size_t      getLeftToSendSize(void);
+    void        setLeftToSend(size_t n);
 
     // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);
 };

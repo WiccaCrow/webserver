@@ -2,10 +2,10 @@
 
 NAME 		   =   serv
 
-# CXX            =   clang++
-CXX			   =	g++
-# CPPFLAGS     =   -Wall -Wextra -Werror  -Wc++11-extensions -std=c++98 -g -fstandalone-debug # -Wpedantic
-CPPFLAGS       =   -Wall -Wextra -Werror -std=c++98 -g
+CXX            =   clang++
+CPPFLAGS       =   -Wall -Wextra -Werror -Wc++11-extensions -std=c++98 -g # -Wpedantic
+# CXX		   =   g++
+# CPPFLAGS     =   -Wall -Wextra -Werror -std=c++98 -g
 
 SOURCEFILES     =	main.cpp \
 				    Server.cpp \
@@ -23,7 +23,7 @@ SOURCEFILES     =	main.cpp \
 					Response.cpp \
 					Header.cpp \
 					ResponseContType.cpp \
-					ResponseErrCode.cpp \
+					DefaultErrorResponses.cpp \
 					Config.cpp \
 					Location.cpp
 

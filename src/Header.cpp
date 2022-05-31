@@ -4,7 +4,7 @@
 namespace HTTP {
 
 StatusCode Header::handle(Request &req) {
-    std::map<uint32_t, Header::Handler>::iterator it = validHeaders.find(hash);
+    std::map<uint32_t, Header::Handler>::const_iterator it = validHeaders.find(hash);
     
     if (it == validHeaders.end()) {
         // Or bad request
@@ -316,8 +316,8 @@ Header::NotSupported(Request &req) {
     return CONTINUE;
 }
 
-std::map<uint32_t, Header::Handler>
-createHeadersMap(void) {
+static std::map<uint32_t, Header::Handler>
+initHeadersMap(void) {
     std::map<uint32_t, Header::Handler> tmp;
 
     tmp.insert(std::make_pair(A_IM, &Header::A_IM));
@@ -376,6 +376,6 @@ createHeadersMap(void) {
 }
 
 
-std::map<uint32_t, Header::Handler> validHeaders = createHeadersMap();
+const std::map<uint32_t, Header::Handler> validHeaders = initHeadersMap();
 
 }

@@ -62,7 +62,6 @@ Client::receive(void) {
         } else {
             stat = _reader.getline_for_chunked(s, line, _req);
         }
-        Log.debug(line);
         switch (stat) {
             case ReadSock::RECV_END:
                 disconnect();
@@ -93,53 +92,74 @@ Client::receive(void) {
 }
 
 void
+Client::disconnectIfFailed(void) {
+
+    if (_req.getStatus() == HTTP::BAD_REQUEST || 
+        _req.getStatus() == HTTP::REQUEST_TIMEOUT || 
+        _req.getStatus() == HTTP::INTERNAL_SERVER_ERROR ||
+        _req.getStatus() == HTTP::PAYLOAD_TOO_LARGE) {
+        disconnect();
+    }
+}
+
+void
+Client::clearData(void) {
+    _res.clear();
+    _req.clear();
+}
+
+void
+Client::process(void) {
+    if (_pfd.fd == -1) {
+        return;
+    }
+
+    Log.debug("===> Processing started");
+
+    HTTP::StatusCode status = _req.getStatus();
+
+    if (status == HTTP::PROCESSING) {
+        status = HTTP::OK;
+    }
+
+    if (status >= HTTP::BAD_REQUEST) {
+        _res.setErrorResponse(status);
+    } else if (status == HTTP::OK) {
+        if (_req.getMethod() == "HEAD")
+            _res.HEADmethod(_req);
+        else if (_req.getMethod() == "GET")
+            _res.GETmethod(_req);
+        else if (_req.getMethod() == "POST")
+            _res.POSTmethod(_req);
+        else if (_req.getMethod() == "DELETE")
+            _res.DELETEmethod(_req);
+    }
+}
+
+void
+Client::setSocketData(struct sockaddr_in data) {
+    _socketData = data;
+}
+
+void
 Client::reply(void) {
     if (_pfd.fd == -1) {
         return;
     }
-    std::cout << "     test 2 reply response" << std::endl;
 
-    // std::cout << "res URI: " << _req.getPath() << std::endl;
-    // определить размер данных, которые надо отправить
-    // sendByte (по аналогии с recvServ) или sendSize
+    Log.debug("===> Reply started");
 
-    // std::cout << << std::endl;
-
-    int _req_getStatus = _req.getStatus();
-
-    if (_req.getStatus() == HTTP::PROCESSING) {
-        _req_getStatus = HTTP::OK;
-    }
-    std::cout << "test 1 reply response " << _req_getStatus << std::endl;
-    if (_req_getStatus >= HTTP::BAD_REQUEST) {
-        _res.findErr(_req_getStatus);
-    } else if (_req_getStatus == 200) {
-        std::cout << "test 4 reply response " << _req.getMethod() << std::endl;
-        if (_req.getMethod() == "HEAD")
-            _res.HEADmethod(_req);
-        if (_req.getMethod() == "GET")
-            _res.GETmethod(_req);
-        if (_req.getMethod() == "POST")
-            _res.POSTmethod(_req);
-        if (_req.getMethod() == "DELETE")
-            _res.DELETEmethod(_req);
-    }
     long sentBytes = 0;
-    // std::cout << "test 5 reply response" << std::endl;
     do {
-        _res.SetLeftToSend(sentBytes);
-        sentBytes += send(_pfd.fd, _res.GetLeftToSend(), _res.GetLeftToSendSize(), 0);
+        _res.setLeftToSend(sentBytes);
+        sentBytes += send(_pfd.fd, _res.getLeftToSend(), _res.getLeftToSendSize(), 0);
         if (sentBytes < 0) {
-            // std::cout << "Disconnect 3" << std::endl;
-            disconnect();
+            _req.setStatus(INTERNAL_SERVER_ERROR);
+            break;
         }
-    } while (static_cast<size_t>(sentBytes) < _res.GetResSize());
-    _res.clear();
-    _req.clear();
-
-    if (_req_getStatus == HTTP::BAD_REQUEST || _req_getStatus == HTTP::REQUEST_TIMEOUT || _req_getStatus == HTTP::PAYLOAD_TOO_LARGE) {
-        disconnect();
-    }
+    } while (static_cast<size_t>(sentBytes) < _res.getResSize());
+    
+   
     // std::cout << "test 6 reply response" << std::endl;
     // _res.resetResponse();
 

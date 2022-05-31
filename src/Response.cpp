@@ -25,12 +25,12 @@ HTTP::Response::setFormed(bool formed) {
 }
 
 std::string
-HTTP::Response::GetContentType(std::string resourcePath) {
+HTTP::Response::getContentType(std::string resourcePath) {
     std::string contType;
     for (int i = resourcePath.length(); i--;) {
         if (resourcePath[i] == '.') {
-            std::map<std::string, std::string>::const_iterator iter = _ContType.find(resourcePath.substr(i + 1));
-            if (iter != _ContType.end()) {
+            std::map<std::string, std::string>::const_iterator iter = MIMEs.find(resourcePath.substr(i + 1));
+            if (iter != MIMEs.end()) {
                 contType = "content-type: " + (*iter).second;
                 if ((*iter).second == "text") {
                     contType += "; charset=utf-8";
@@ -44,12 +44,13 @@ HTTP::Response::GetContentType(std::string resourcePath) {
 }
 
 std::string
-HTTP::Response::doCGI(Request &req, CGI &cgi) {
+HTTP::Response::passToCGI(Request &req, CGI &cgi) {
     cgi.reset();
     cgi.setEnv(req);
     if (!cgi.exec()) {
         req.setStatus(HTTP::BAD_GATEWAY);
-        _res = findErr(req.getStatus());
+        setErrorResponse(req.getStatus());
+
         return "";
     }
     return cgi.getResult();
@@ -75,7 +76,7 @@ HTTP::Response::fileToResponse(std::string resourcePath) {
     std::ifstream resourceFile;
     resourceFile.open(resourcePath.c_str(), std::ifstream::in);
     if (!resourceFile.is_open()) {
-        _res = findErr(FORBIDDEN);
+        setErrorResponse(FORBIDDEN);
         return "";
     }
 
@@ -83,7 +84,7 @@ HTTP::Response::fileToResponse(std::string resourcePath) {
     buffer << resourceFile.rdbuf();
     long bufSize = buffer.tellp();
     if (bufSize == -1) {
-        _res = findErr(INTERNAL_SERVER_ERROR);
+        setErrorResponse(INTERNAL_SERVER_ERROR);
         return "";
     }
     resourceFile.close();
@@ -97,7 +98,7 @@ HTTP::Response::fileToResponse(std::string resourcePath) {
 }
 
 std::string
-HTTP::Response::listToResponse(const std::string &resourcePath, Request &req) {
+HTTP::Response::listing(const std::string &resourcePath, Request &req) {
     std::string pathToDir;
     std::string body = "<!DOCTYPE html>\n"
                        "<html>\n"
@@ -114,14 +115,14 @@ HTTP::Response::listToResponse(const std::string &resourcePath, Request &req) {
     DIR *r_opndir;
     r_opndir = opendir(resourcePath.c_str());
     if (NULL == r_opndir) {
-        _res = findErr(INTERNAL_SERVER_ERROR);
+        setErrorResponse(INTERNAL_SERVER_ERROR);
         return "";
     } else {
         struct dirent *dirContent;
         // dirContent = readdir(r_opndir);
         while ((dirContent = readdir(r_opndir))) {
             if (NULL == dirContent) {
-                _res = findErr(INTERNAL_SERVER_ERROR);
+                setErrorResponse(INTERNAL_SERVER_ERROR);
                 return "";
             }
 
@@ -142,21 +143,6 @@ HTTP::Response::listToResponse(const std::string &resourcePath, Request &req) {
     return (body);
 }
 
-std::string
-HTTP::Response::resoursePathTaker(Request &req) {
-    std::string resourcePath;
-    // если URI начинается с /
-    resourcePath = req.getLocationPtr()->getRootRef();
-    if (req.getPath()[0] == '/') {
-    } else {
-        resourcePath += "/";
-    }
-
-    // root из конфигурации + URI
-    resourcePath += req.getPath();
-    return (resourcePath);
-}
-
 std::map<std::string, HTTP::CGI>::iterator
 isCGI(const std::string &filepath, std::map<std::string, HTTP::CGI> &cgis) {
     std::map<std::string, HTTP::CGI>::iterator it  = cgis.begin();
@@ -170,17 +156,23 @@ isCGI(const std::string &filepath, std::map<std::string, HTTP::CGI> &cgis) {
     return end;
 }
 
+// Request
+
+// contentForGet
+//     makeHeaders 
+//     makeBody
+
+// contentForHead
+//     makeHeaders 
+
+
 std::string
 HTTP::Response::contentForGetHead(Request &req) {
     // resourcePath (часть root) будет браться из конфига
     // root
     // если в конфиге без /, то добавить /,
     // чтобы мне уже с этим приходило
-    const std::string &resourcePath = req.getPath(); //resoursePathTaker(req);
-    // std::string resourcePath = req.getLocationPtr()->getRootRef();
-    // std::cout << req.getLocationPtr()->getIndexRef().empty() << "   ||   " << isFile(resourcePath) << "     resourcePath: " << resourcePath << std::endl;
-
-// std::cout << "_______     PATH     " << resourcePath << std::endl;
+    const std::string &resourcePath = req.getPath();
 
     _res = "HTTP/1.1 200 OK\r\n"
            "connection: keep-alive\r\n"
@@ -189,7 +181,7 @@ HTTP::Response::contentForGetHead(Request &req) {
     if (isDirectory(resourcePath)) {
         // в дальнейшем заменить на геттер из req
         // if (resourcePath[resourcePath.length() - 1] != '/') {
-        //     resourcePath += "/";
+        //      redirect 301;
         // }
         // find index file
         for (std::vector<std::string>::const_iterator iter = req.getLocationPtr()->getIndexRef().begin();
@@ -201,9 +193,9 @@ HTTP::Response::contentForGetHead(Request &req) {
                 std::map<std::string, HTTP::CGI>::iterator it;
                 it = isCGI(path, req.getLocationPtr()->getCGIsRef());
                 if (it != req.getLocationPtr()->getCGIsRef().end()) {
-                    return doCGI(req, it->second);
+                    return passToCGI(req, it->second);
                 }
-                _res += GetContentType(path);
+                _res += getContentType(path);
                 return (fileToResponse(path));
             }
         }
@@ -212,23 +204,23 @@ HTTP::Response::contentForGetHead(Request &req) {
         std::map<std::string, CGI>::iterator it;
         it = isCGI(resourcePath, req.getLocationPtr()->getCGIsRef());
         if (it != req.getLocationPtr()->getCGIsRef().end()) {
-            return doCGI(req, it->second);
+            return passToCGI(req, it->second);
         }
-        _res += GetContentType(resourcePath);
+        _res += getContentType(resourcePath);
         return (fileToResponse(resourcePath));
     } else {
         // not readable files and other types
-        _res = findErr(FORBIDDEN);
+        setErrorResponse(FORBIDDEN);
         return "";
     }
     // dir listing. autoindex on
     if (req.getLocationPtr()->getAutoindexRef() == true && isDirectory(resourcePath)) {
         _res += "content-type: text/html; charset=utf-8\r\n";
         // std::cout << "_res:" + _res << std::endl << std::endl;
-        return (listToResponse(resourcePath, req));
+        return (listing(resourcePath, req));
         // 403. autoindex off
     } else {
-        _res = findErr(FORBIDDEN);
+        setErrorResponse(FORBIDDEN);
         return "";
     }
 }
@@ -245,23 +237,21 @@ HTTP::Response::HEADmethod(Request &req) {
 
 void
 HTTP::Response::DELETEmethod(Request &req) {
-    // std::string resourcePath = resoursePathTaker(req);
     // чтобы не удалить чистовой сайт я временно добавляю следующую строку:
     std::string resourcePath = "./testdel";
     (void)req;
 
     if (!resourceExists(resourcePath)) {
-        _res = findErr(NOT_FOUND);
-        return;
+        setErrorResponse(NOT_FOUND);
+        return ;
     } else if (isDirectory(resourcePath)) {
-        // deleteDirectory: recursively deletes every file with deleteFile, and call itself for each subdirectory.
         if (rmdirNonEmpty(resourcePath)) {
-            _res = findErr(FORBIDDEN);
+            setErrorResponse(FORBIDDEN);
             return;
         }
     } else {
         if (remove(resourcePath.c_str())) {
-            _res = findErr(FORBIDDEN);
+            setErrorResponse(FORBIDDEN);
             return;
         }
     }
@@ -286,26 +276,26 @@ HTTP::Response::POSTmethod(Request &req) {
 }
 
 const char *
-HTTP::Response::GetResponse() {
+HTTP::Response::getResponse() {
     return (_res.c_str());
 }
 
 size_t
-HTTP::Response::GetResSize() {
+HTTP::Response::getResSize() {
     return (_res.size());
 }
 
 const char *
-HTTP::Response::GetLeftToSend() {
+HTTP::Response::getLeftToSend() {
     return (_resLeftToSend.c_str());
 }
 
 void
-HTTP::Response::SetLeftToSend(size_t n) {
+HTTP::Response::setLeftToSend(size_t n) {
     _resLeftToSend = _res.substr(n);
 }
 
 size_t
-HTTP::Response::GetLeftToSendSize() {
+HTTP::Response::getLeftToSendSize() {
     return (_resLeftToSend.size());
 }

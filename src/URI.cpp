@@ -2,6 +2,13 @@
 
 namespace HTTP {
 
+std::string URI::getAuthority(void) const {
+    if (_port != "") {
+        return _host + ":" + _port;
+    }
+    return _host;
+}
+
 void URI::parse(std::string uri) {
 
     if (uri.length() == 0)

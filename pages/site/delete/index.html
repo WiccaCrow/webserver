@@ -1,0 +1,67 @@
+<html>
+<head>
+    <title>DELETE tester</title>
+</head>
+<body>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        hr {
+            width: 100%;
+        }
+        #container {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            border: 1px solid black;
+            width: 400px;
+            padding: 10px;
+            
+        }
+        #btn-container {
+            margin: 5px;
+            display: flex;
+            justify-content: space-around;
+            flex-direction: row;
+            width: 50%;
+        }
+        #input-container {
+            margin: 5px;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        #input-container input {
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        #cancel-btn {
+            background-color: rgb(255, 115, 115);
+        }
+        #delete-btn {
+            background-color: rgb(203, 254, 155);
+        }
+    </style>
+    <div id="container">
+        <div id=btn-container>
+            <span>DELETE tester</span>
+        </div>
+        <hr>
+        <div id="input-container">
+            <input id="uri" type="text" placeholder="http://localhost:8080/location"/>
+            <input id="filepicker" type="file"/>
+        </div>
+        <hr>
+        <div id="btn-container">
+            <input id="cancel-btn" type="button" value="Cancel"/>
+            <input id="delete-btn" type="button" value="Delete"/>
+        </div>
+    </div>
+    <script src="request.js"></script>
+</body>
+</html>

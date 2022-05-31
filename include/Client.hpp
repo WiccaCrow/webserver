@@ -16,8 +16,10 @@ class Client {
 
 private:
     struct pollfd &_pfd;
-    HTTP::Request  _req;
-    HTTP::Response _res;
+    struct sockaddr_in _socketData;
+
+    HTTP::Request   _req;
+    HTTP::Response  _res;
 
     ServerBlock    *_servBlock;
     static ReadSock _reader;
@@ -28,6 +30,12 @@ public:
     ~Client();
 
     Client &operator=(const Client &client);
+
+    void setSocketData(struct sockaddr_in data);
+
+    void process(void);
+    void clearData(void);
+    void disconnectIfFailed(void);
 
     void disconnect(void);
     void receive(void);

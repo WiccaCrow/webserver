@@ -423,17 +423,17 @@ isValidRedirect(Redirect &res) {
 
 int
 parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
-    if (!getString(src, "root", dst.getRootRef(), def.getRootRef())) { // optional ?
-        Log.error("#### Failed to parse \"root\"");
+    if (!getString(src, "alias", dst.getAliasRef(), def.getAliasRef())) { // optional ?
+        Log.error("#### Failed to parse \"alias\"");
         return 0;
-    } else if (!resourceExists(dst.getRootRef())) {
-        Log.error("#### \"root\": " + dst.getRootRef() + " does not exist");
+    } else if (!resourceExists(dst.getAliasRef())) {
+        Log.error("#### \"alias\": " + dst.getAliasRef() + " does not exist");
         return 0;
-    } else if (!isDirectory(dst.getRootRef())) {
-        Log.error("#### \"root\" should be a directory");
+    } else if (!isDirectory(dst.getAliasRef())) {
+        Log.error("#### \"alias\" should be a directory");
         return 0;
-    } else if (dst.getRootRef()[dst.getRootRef().length() - 1] != '/') {
-        dst.getRootRef() += "/";
+    } else if (dst.getAliasRef()[dst.getAliasRef().length() - 1] != '/') {
+        dst.getAliasRef() += "/";
     }
 
     if (!getUInteger(src, "post_max_body", dst.getPostMaxBodyRef(), 200)) {
@@ -549,7 +549,9 @@ parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
         return 0;
     }
 
-    dst.getLocationBaseRef().getRootRef() = "./"; // Default path for base root
+    char resolvedPath[256] = {0};
+    realpath("./", resolvedPath);
+    dst.getLocationBaseRef().getAliasRef() = resolvedPath; // Default path for base 
     if (!parseLocation(src, dst.getLocationBaseRef(), dst.getLocationBaseRef())) {
         Log.error("## Failed to parse \"location base\"");
         return 0;

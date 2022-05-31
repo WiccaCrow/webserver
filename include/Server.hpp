@@ -23,7 +23,7 @@
 #include "ServerBlock.hpp"
 
 #ifndef SOMAXCONN
-    #define SOMAXCONN 128
+    # define SOMAXCONN 128
 #endif
 
 class Server {

@@ -8,10 +8,6 @@ Request::Request(ServerBlock *servBlock)
     , _flag_getline_bodySize(true)
     , _bodySize(0)
     , _parseFlags(PARSED_NONE) {
-
-    // _location = &((servBlock->getLocationsRef().find("/about"))->second);
-    // _path = _locations[matchIndex].getRootRef() + path.substr(matchMaxLen + 1);
-
 }
 
 Request::~Request() { }
@@ -175,9 +171,8 @@ Request::parseStartLine(const std::string &line) {
     if (line.empty()) {
         return CONTINUE;
     } // ?
-
-    Log.debug("#########################");
-
+    Log.debug("###################################################################");
+    Log.debug(line);
     size_t pos = 0;
     _method    = getWord(line, ' ', pos);
     Log.debug("METHOD: " + _method);
@@ -241,15 +236,13 @@ StatusCode
 Request::parseHeader(std::string line) {
     if (line == "") {
         setFlag(PARSED_HEADERS);
-        Log.debug("Headers were parsed");
-
-        // Referer -> (if URI is relative) -> URI -> _referer.path + _uri.path 
+        Log.debug("Headers are parsed");
 
         _location = _servBlock->matchLocation(_uri._path);
         if (_uri._path.length() > _location->getPathRef().length()) {
-            _uri._path = _location->getRootRef() + _uri._path.substr(_location->getPathRef().length() + 1);
+            _uri._path = _location->getAliasRef() + _uri._path.substr(_location->getPathRef().length() + 1);
         } else {
-            _uri._path = _location->getRootRef();
+            _uri._path = _location->getAliasRef();
         }
         Log.debug("PHYSICAL_PATH:" + _uri._path);
 
@@ -259,7 +252,7 @@ Request::parseHeader(std::string line) {
         }
         return CONTINUE;
     }
-
+    Log.debug(line);
     size_t sepPos = line.find(':');
     if (sepPos == std::string::npos) {
         return BAD_REQUEST;

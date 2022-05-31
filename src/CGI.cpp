@@ -52,7 +52,7 @@ void
 CGI::setFullEnv(Request &req) {
     setenv("PATH_INFO", "", 1);
 
-    std::string s = req.getLocationPtr()->getRootRef() + req.getPath();
+    std::string s = req.getLocationPtr()->getAliasRef() + req.getPath(); // ?
     setenv("PATH_TRANSLATED", s.c_str(), 1);
 
     setenv("REMOTE_HOST", "", 1);
@@ -79,23 +79,27 @@ CGI::setFullEnv(Request &req) {
 
 void
 CGI::setEnv(Request &req) {
+    // Need to get from client
+    // char *connected_ip = inet_ntoa(client.sin_addr);
+    // int port = ntohs(client.sin_port); 
     setValue(env[0], "");
-    setValue(env[1], req.getLocationPtr()->getRootRef() + req.getPath());
-    setValue(env[2], "");
-    setValue(env[3], "");
-    setValue(env[4], "");
-    setValue(env[5], "");
+    setValue(env[1], req.getPath()); // Maybe not like that
+    setValue(env[2], ""); // host
+    setValue(env[3], ""); // addr
+    setValue(env[4], ""); // user
+    setValue(env[5], ""); // ident
     setValue(env[6], "Basic");
     setValue(env[7], req.getQueryString());
     setValue(env[8], req.getMethod());
     setValue(env[9], req.getScriptName());
     setValue(env[10], to_string(req.getBody().length()));
     setValue(env[11], req.getHeaderValue(CONTENT_TYPE));
-    setValue(env[12], "CGI/1.1");
-    setValue(env[13], "localhost");
-    setValue(env[14], "webserv/1.0");
+    setValue(env[12], GATEWAY_INTERFACE);
+    setValue(env[13], req.getUriRef().getAuthority());
+    setValue(env[14], SERVER_SOFTWARE);
     setValue(env[15], "HTTP/1.1");
     setValue(env[16], to_string(req.getServerBlock()->getPort()));
+
     setValue(env[17], "200");
 }
 

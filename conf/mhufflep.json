@@ -33,7 +33,7 @@
             "index": [ "index.html" ],
             "locations": {
                 "/about": {
-                    "root": "/Users/mhufflep/Desktop/serv/pages/site",
+                    "alias": "/Users/mhufflep/Desktop/serv/pages/site",
                     "CGI": {
                         ".js": "/usr/local/bin/node"
                     },

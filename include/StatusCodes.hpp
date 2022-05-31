@@ -81,17 +81,6 @@ enum StatusCode {
     INVALID_SSL_CERTIFICATE         = 526
 };
 
-class StatusDescription {
-    std::map<StatusCode, std::string> _descriptions;
-
-public:
-    StatusDescription();
-    ~StatusDescription();
-
-    const std::string &operator[](StatusCode status);
-    const std::string &operator[](int code);
-};
-
-extern const StatusDescription descriptions;
+extern const std::map<StatusCode, std::string> descriptions;
 
 } // namespace HTTP

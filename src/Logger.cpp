@@ -34,11 +34,20 @@ Logger::setFlags(uint8_t flags) {
 void
 Logger::print(uint8_t flag, const std::string &msg) {
     static const std::string _titles[5] = { "", "DEBUG", "INFO", "", "ERROR" };
+    time_t timetoday;
+    time(&timetoday);
+
+    time_t cur = time(NULL);
+    tm *ct = localtime(&cur);
     if (_flags & flag) {
         if (_logToFile && _out.good()) {
-            _out << _titles[flag] << ": " << msg << std::endl;
+            _out << (ct->tm_mday) << "/" << (ct->tm_mon) + 1 << "/" << (ct->tm_year) + 1900 << " ";
+            _out << (ct->tm_hour) << ":" << (ct->tm_min) << ":" << (ct->tm_sec);
+            _out << " " << _titles[flag] << ": " << msg << std::endl;
         } else {
-            std::cout << _titles[flag] << ": " << msg << std::endl;
+            std::cout << (ct->tm_mday) << "/" << (ct->tm_mon) + 1 << "/" << (ct->tm_year) + 1900 << " ";
+            std::cout << (ct->tm_hour) << ":" << (ct->tm_min) << ":" << (ct->tm_sec);
+            std::cout << " " << _titles[flag] << ": " << msg << std::endl;
         }
     }
 }

@@ -21,8 +21,8 @@ Location::getPostMaxBodyRef(void) {
 }
 
 std::string &
-Location::getRootRef(void) {
-    return _root;
+Location::getAliasRef(void) {
+    return _alias;
 }
 
 std::vector<std::string> &
