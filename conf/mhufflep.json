@@ -26,8 +26,7 @@
                 ".js": "/usr/local/bin/node",
                 ".cgi": ""
             },
-            "default_page": "./pages/404.html",
-            "methods-allowed": [ "GET", "PUT" ],
+            "methods_allowed": [ "GET", "PUT" ],
             "post_max_body": 100,
             "autoindex": true,
             "index": [ "index.html" ],
@@ -40,17 +39,16 @@
                     "autoindex": true,
                     "index": [ "index.html" ],
                     "post_max_body": 200,
-                    "methods-allowed": [ "GET", "POST" ]                 
+                    "methods_allowed": [ "GET", "POST" ]                 
                 },
                 "/feedback": {
-                    "default_page": "./pages/404.html",
                     "CGI": {
                         ".py": "/usr/bin/python",
                         ".js": "/usr/local/bin/node"
                     },
                     "autoindex": false,
                     "index": [ "index.html", "index.php" ],
-                    "methods-allowed": [ "DELETE" ],
+                    "methods_allowed": [ "DELETE" ],
                     "post_max_body": 300
                 }
             }

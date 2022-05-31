@@ -51,7 +51,7 @@ public:
 
     static const std::string compiledExt;
 
-    static char **env;
+    static char ** const env;
 };
 
 }

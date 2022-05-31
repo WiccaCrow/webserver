@@ -280,6 +280,63 @@ getDefaultAllowedMethods() {
     return allowed;
 }
 
+bool
+isValidKeywordLocation(const std::string &key) {
+    std::vector<std::string> allowed(8);
+
+    allowed.push_back("CGI");
+    allowed.push_back("root");
+    allowed.push_back("alias");
+    allowed.push_back("methods_allowed");
+    allowed.push_back("post_max_body");
+    allowed.push_back("autoindex");
+    allowed.push_back("index");
+    allowed.push_back("redirect");
+
+    if (std::find(allowed.begin(), allowed.end(), key) == allowed.end()) {
+        Log.error("Keyword \"" + key + "\" is unrecognized or can't be used in location context");
+        return false;
+    }
+    return true;
+}
+
+bool
+isValidKeywordServerBlock(const std::string &key) {
+    std::vector<std::string> allowed(12);
+
+    allowed.push_back("port");
+    allowed.push_back("server_names");
+    allowed.push_back("error_pages");
+    allowed.push_back("addr");
+    allowed.push_back("locations");
+    allowed.push_back("CGI");
+    allowed.push_back("root");
+    allowed.push_back("methods_allowed");
+    allowed.push_back("post_max_body");
+    allowed.push_back("autoindex");
+    allowed.push_back("index");
+    allowed.push_back("redirect");
+
+    if (std::find(allowed.begin(), allowed.end(), key) == allowed.end()) {
+        Log.error("Keyword \"" + key + "\" is unrecognized or can't be used in serverblock context");
+        return false;
+    }
+    return true;
+}
+
+bool
+isValidKeywords(JSON::Object *src, bool (*validator)(const std::string &)) {
+    JSON::Object::iterator it  = src->begin();
+    JSON::Object::iterator end = src->end();
+
+    for (; it != end; it++) {
+        if (!validator(it->first)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // Object parsing
 int
 parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
@@ -423,17 +480,43 @@ isValidRedirect(Redirect &res) {
 
 int
 parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
-    if (!getString(src, "alias", dst.getAliasRef(), def.getAliasRef())) { // optional ?
-        Log.error("#### Failed to parse \"alias\"");
+    if (&dst != &def) {
+
+        if (!isValidKeywords(src, isValidKeywordLocation)) {
+            return 0;
+        }
+
+        if (!getString(src, "alias", dst.getAliasRef(), dst.getAliasRef())) {
+            Log.error("#### Failed to parse \"alias\"");
+            return 0;
+        }
+        if (!resourceExists(dst.getAliasRef())) {
+            Log.error("#### \"alias\": " + dst.getAliasRef() + " does not exist");
+            return 0;
+        } else if (!isDirectory(dst.getAliasRef())) {
+            Log.error("#### \"alias\" should be a directory");
+            return 0;
+        } else if (dst.getAliasRef()[dst.getAliasRef().length() - 1] != '/') { // ?
+            dst.getAliasRef() += "/";
+        }
+    }
+
+    if (!getString(src, "root", dst.getRootRef(), def.getRootRef())) {
+        Log.error("#### Failed to parse \"root\"");
         return 0;
-    } else if (!resourceExists(dst.getAliasRef())) {
-        Log.error("#### \"alias\": " + dst.getAliasRef() + " does not exist");
+    } else if (dst.getRootRef() != "" && dst.getAliasRef() != "") {
+        // Log.error(dst.getAliasRef());
+        // Log.error(dst.getRootRef());
+        Log.error("#### \"root\" and \"alias\" are mutually exclusive");
         return 0;
-    } else if (!isDirectory(dst.getAliasRef())) {
-        Log.error("#### \"alias\" should be a directory");
+    } else if (!resourceExists(dst.getRootRef())) {
+        Log.error("#### \"root\": " + dst.getRootRef() + " does not exist");
         return 0;
-    } else if (dst.getAliasRef()[dst.getAliasRef().length() - 1] != '/') {
-        dst.getAliasRef() += "/";
+    } else if (!isDirectory(dst.getRootRef())) {
+        Log.error("#### \"root\" should be a directory");
+        return 0;
+    } else if (dst.getRootRef()[dst.getRootRef().length() - 1] != '/') { // ?
+        dst.getRootRef() += "/";
     }
 
     if (!getUInteger(src, "post_max_body", dst.getPostMaxBodyRef(), 200)) {
@@ -461,11 +544,11 @@ parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
         return 0;
     }
 
-    if (!getArray(src, "methods-allowed", dst.getAllowedMethodsRef(), getDefaultAllowedMethods())) {
-        Log.error("#### Failed to parse \"methods-allowed\"");
+    if (!getArray(src, "methods_allowed", dst.getAllowedMethodsRef(), getDefaultAllowedMethods())) {
+        Log.error("#### Failed to parse \"methods_allowed\"");
         return 0;
     } else if (!isSubset(getDefaultAllowedMethods(), dst.getAllowedMethodsRef())) {
-        Log.error("#### Unrecognized value in \"methods-allowed\"");
+        Log.error("#### Unrecognized value in \"methods_allowed\"");
         return 0;
     }
 
@@ -520,6 +603,11 @@ parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res, HT
 
 int
 parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
+
+    if (!isValidKeywords(src, isValidKeywordServerBlock)) {
+        return 0;
+    }
+
     if (!getArray(src, "server_names", dst.getServerNameRef(), dst.getServerNameRef())) {
         Log.error("## Failed to parse \"server_names\"");
         return 0;
@@ -537,8 +625,9 @@ parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
         Log.error("## Failed to parse \"port\"");
         return 0;
     } else if (dst.getPortRef() < 1024 || dst.getPortRef() > 49151) {
-        Log.error("## Port number beyond boundaries");
-        return 0;
+        Log.info("## WARNING: Port number beyond boundaries");
+        Log.info("## WARNING: Ports lower than 1024 reserved for OS");
+        Log.info("## WARNING: Ports higher than 49151 reserved for client apps");
     }
 
     if (!parseErrorPages(src, dst.getErrPathsRef())) {
@@ -551,7 +640,7 @@ parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
 
     char resolvedPath[256] = {0};
     realpath("./", resolvedPath);
-    dst.getLocationBaseRef().getAliasRef() = resolvedPath; // Default path for base 
+    dst.getLocationBaseRef().getRootRef() = resolvedPath;
     if (!parseLocation(src, dst.getLocationBaseRef(), dst.getLocationBaseRef())) {
         Log.error("## Failed to parse \"location base\"");
         return 0;

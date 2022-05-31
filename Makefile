@@ -3,7 +3,7 @@
 NAME 		   =   serv
 
 CXX            =   clang++
-CPPFLAGS       =   -Wall -Wextra -Werror -Wc++11-extensions -std=c++98 -g # -Wpedantic
+CPPFLAGS       =   -Wall -Wextra -Werror -std=c++98 -g # -Wpedantic
 # CXX		   =   g++
 # CPPFLAGS     =   -Wall -Wextra -Werror -std=c++98 -g
 

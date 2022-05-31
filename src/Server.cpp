@@ -136,14 +136,8 @@ Server::start(void) {
 
 void
 Server::handlePollError() {
-    Log.error(std::string("POLL: ") + strerror(errno));
+    Log.error(std::string("Poll:: ") + strerror(errno));
     switch (errno) {
-        case EFAULT: {
-            break;
-        }
-        case EINTR: {
-            break;
-        }
         case EINVAL: {
             struct rlimit rlim;
             getrlimit(RLIMIT_NOFILE, &rlim);
@@ -152,10 +146,6 @@ Server::handlePollError() {
             Log.error("limit(hard): " + to_string(rlim.rlim_max));
             break;
         }
-        case ENOMEM: {
-            break;
-        }
-
         default:
             break;
     }
@@ -181,46 +171,10 @@ Server::handleAcceptError() {
             // OK, as we use non-blocking sockets
             break;
         }
-
-        case EBADF: {
-        }
-
-        case ECONNABORTED: {
-        }
-
-        case EFAULT: {
-        }
-
-        case EINTR: {
-        }
-
-        case EINVAL: {
-        }
-
-        case EMFILE: {
-        }
-
-        case ENFILE: {
-        }
-
-        case ENOMEM: {
-        }
-
-        case ENOTSOCK: {
-        }
-
-        case EOPNOTSUPP: {
-        }
-
-        case EPROTO: {
-        }
-
-        case EPERM: {
-            Log.error(std::string("ACCEPT: ") + strerror(errno));
-        }
-
-        default:
+        default: {
+            Log.error(std::string("Accept::") + strerror(errno));
             break;
+        }
     }
 }
 

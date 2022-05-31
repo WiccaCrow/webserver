@@ -276,7 +276,7 @@ CGI::exec() {
     return 1;
 }
 
-char **
+static char **
 initEnv() {
     char **env = (char **)calloc(19, sizeof(char *));
 
@@ -307,7 +307,7 @@ initEnv() {
     return env;
 }
 
-char **CGI::env = initEnv();
+char ** const CGI::env = initEnv();
 
 const std::string CGI::compiledExt = ".cgi";
 

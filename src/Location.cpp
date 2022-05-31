@@ -25,6 +25,11 @@ Location::getAliasRef(void) {
     return _alias;
 }
 
+std::string &
+Location::getRootRef(void) {
+    return _root;
+}
+
 std::vector<std::string> &
 Location::getIndexRef(void) {
     return _index;

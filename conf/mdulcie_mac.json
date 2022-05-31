@@ -7,7 +7,6 @@
                 "404": "./pages/404.html",
                 "400": "./pages/400.html"
             },
-            "default_page": "./pages/404.html",
             "methods-allowed": [ "GET", "POST" ],
             "post_max_body": 100,
             "autoindex": true,
@@ -15,14 +14,12 @@
             "locations": {
                 "/about": {
                     "root": "./pages",
-                    "default_page": "./pages/404.html",
                     "autoindex": false,
                     "index": [ "index.html" ],
                     "post_max_body": 200,
                     "methods-allowed": [ "GET", "POST" ]                 
                 },
                 "/feedback": {
-                    "default_page": "./pages/404.html",
                     "autoindex": false,
                     "index": [ "index.html", "index.php" ],
                     "methods-allowed": [ "GET" ],

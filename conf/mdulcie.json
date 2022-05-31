@@ -10,7 +10,6 @@
             "CGI": {
                 ".py": "/usr/bin/python3.9"
             },
-            "default_page": "./pages/404.html",
             "methods-allowed": [ "GET", "POST" ],
             "post_max_body": 100,
             "autoindex": true,
@@ -18,14 +17,12 @@
             "locations": {
                 "/about": {
                     "root": "./pages/site",
-                    "default_page": "./pages/404.html",
                     "autoindex": false,
                     "index": [ "index.html" ],
                     "post_max_body": 200,
                     "methods-allowed": [ "GET", "POST" ]                 
                 },
                 "/feedback": {
-                    "default_page": "./pages/404.html",
                     "CGI": {
                         ".py": "/usr/bin/python3.9"
                     },
