@@ -48,12 +48,13 @@ setValue(char *const env, const std::string &value) {
     strncat(env, value.c_str(), 1023 - strlen(env));
 }
 
+// This version passes all the env, including system
+// Currently env pass with setEnv function.
 void
 CGI::setFullEnv(Request &req) {
     setenv("PATH_INFO", "", 1);
 
-    std::string s = req.getLocationPtr()->getAliasRef() + req.getPath(); // ?
-    setenv("PATH_TRANSLATED", s.c_str(), 1);
+    setenv("PATH_TRANSLATED", req.getResolvedPath().c_str(), 1); // ?
 
     setenv("REMOTE_HOST", "", 1);
     setenv("REMOTE_ADDR", "", 1);
@@ -63,7 +64,7 @@ CGI::setFullEnv(Request &req) {
     setenv("AUTH_TYPE", "Basic", 1);
     setenv("QUERY_STRING", req.getQueryString().c_str(), 1);
     setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
-    setenv("SCRIPT_NAME", req.getScriptName().c_str(), 1);
+    setenv("SCRIPT_NAME", req.getResolvedPath().c_str(), 1);
     setenv("CONTENT_LENGTH", to_string(req.getBody().length()).c_str(), 1);
     setenv("CONTENT_TYPE", req.getHeaderValue(CONTENT_TYPE).c_str(), 1);
 
@@ -83,7 +84,7 @@ CGI::setEnv(Request &req) {
     // char *connected_ip = inet_ntoa(client.sin_addr);
     // int port = ntohs(client.sin_port); 
     setValue(env[0], "");
-    setValue(env[1], req.getPath()); // Maybe not like that
+    setValue(env[1], req.getResolvedPath()); // Maybe not like that
     setValue(env[2], ""); // host
     setValue(env[3], ""); // addr
     setValue(env[4], ""); // user
@@ -91,7 +92,7 @@ CGI::setEnv(Request &req) {
     setValue(env[6], "Basic");
     setValue(env[7], req.getQueryString());
     setValue(env[8], req.getMethod());
-    setValue(env[9], req.getScriptName());
+    setValue(env[9], req.getResolvedPath());
     setValue(env[10], to_string(req.getBody().length()));
     setValue(env[11], req.getHeaderValue(CONTENT_TYPE));
     setValue(env[12], GATEWAY_INTERFACE);

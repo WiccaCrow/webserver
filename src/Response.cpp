@@ -105,11 +105,11 @@ HTTP::Response::listing(const std::string &resourcePath, Request &req) {
                        "   <head>\n"
                        "       <meta charset=\"UTF-8\">\n"
                        "       <title> ";
-    body += req.getPath() + " </title>\n"
+    body += req.getResolvedPath() + " </title>\n"
                             "   </head>\n"
                             "<body>\n"
                             "   <h1> Index on ";
-    body += req.getPath() + " </h1>\n"
+    body += req.getResolvedPath() + " </h1>\n"
                             "   <p>\n"
                             "   <hr>\n";
     DIR *r_opndir;
@@ -126,7 +126,7 @@ HTTP::Response::listing(const std::string &resourcePath, Request &req) {
                 return "";
             }
 
-            body += "   <a href=\"" + req.getPath();
+            body += "   <a href=\"" + req.getResolvedPath();
             if (body[body.length() - 1] != '/') {
                 body += "/";
             }
@@ -172,7 +172,7 @@ HTTP::Response::contentForGetHead(Request &req) {
     // root
     // если в конфиге без /, то добавить /,
     // чтобы мне уже с этим приходило
-    const std::string &resourcePath = req.getPath();
+    const std::string &resourcePath = req.getResolvedPath();
 
     _res = "HTTP/1.1 200 OK\r\n"
            "connection: keep-alive\r\n"

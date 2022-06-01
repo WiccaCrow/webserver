@@ -23,7 +23,7 @@ Request::operator=(const Request &other) {
         _method                = other._method;
         _uri                   = other._uri;
         _protocol              = other._protocol;
-        _scriptName            = other._scriptName;
+        _resolvedPath          = other._resolvedPath;
         _headers               = other._headers;
         _status                = other._status;
         _servBlock             = other._servBlock;
@@ -85,7 +85,6 @@ Request::getUriRef() {
     return _uri;
 }
 
-
 // bool
 // Request::empty() {
 //     return (_method.empty() && _uri.empty() && _protocol.empty() && _headers.empty());
@@ -128,8 +127,8 @@ Request::getQueryString() const {
 }
 
 const std::string &
-Request::getScriptName() const {
-    return _scriptName;
+Request::getResolvedPath() const {
+    return _resolvedPath;
 }
 
 const std::string 
@@ -239,12 +238,19 @@ Request::parseHeader(std::string line) {
         Log.debug("Headers are parsed");
 
         _location = _servBlock->matchLocation(_uri._path);
-        if (_uri._path.length() > _location->getPathRef().length()) {
-            _uri._path = _location->getRootRef() + _uri._path.substr(_location->getPathRef().length() + 1);
+        if (_location->getAliasRef() == "") {
+            _resolvedPath = _location->getRootRef();
+            if (_uri._path[0] == '/' && _uri._path.length() > 1) {
+                _resolvedPath += _uri._path.substr(1);
+            }
         } else {
-            _uri._path = _location->getRootRef();
+            // Alias used, watch carefully about / case
+            _resolvedPath = _location->getAliasRef();
+            if (_uri._path.length() > _location->getPathRef().length()) {
+                _resolvedPath += _uri._path.substr(_location->getPathRef().length() + 1);
+            }
         }
-        Log.debug("PHYSICAL_PATH:" + _uri._path);
+        Log.debug("PHYSICAL_PATH:" + _resolvedPath);
 
         // transfer-encoding && content-length not find
         if (_headers.find(TRANSFER_ENCODING) == _headers.end() && _headers.find(CONTENT_LENGTH) == _headers.end()) {
