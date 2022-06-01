@@ -29,7 +29,7 @@ private:
     std::string                  _method;
     URI                          _uri;
     std::string                  _protocol;
-    std::string                  _scriptName;
+    std::string                  _resolvedPath;
     std::map<HeaderCode, Header> _headers;
     HTTP::StatusCode             _status;
 
@@ -62,7 +62,7 @@ public:
 
     // Needed to be improved
     const std::string &getQueryString() const;
-    const std::string &getScriptName() const;
+    const std::string &getResolvedPath() const;
     const std::string getHeaderValue(HeaderCode key) const;
 
     bool empty();
