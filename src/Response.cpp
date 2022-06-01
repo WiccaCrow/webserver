@@ -283,11 +283,26 @@ HTTP::Response::PUTmethod(Request &req) {
 
     if (isFile(resourcePath)) {
         if (isDirectory(resourcePath)) {
-            // 
-            ;
+            setErrorResponse(FORBIDDEN);
+        } else {
+            // if (есть права на запись)
+                // rewriteFile(resourcePath); 200
+            // else
+                // setErrorResponse(FORBIDDEN);
         }
+    } else {
+        createFile(req, resourcePath);
     }
 }
+
+void
+HTTP::Response::createFile(Request &req, const std::string &resourcePath) {
+    std::ofstream outputToNewFile(resourcePath) ; //output file
+    outputToNewFile << req.getBody(); // запись строки в файл
+    outputToNewFile.close();
+    // 201
+}
+
 
 const char *
 HTTP::Response::getResponse() {

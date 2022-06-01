@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fstream>
 
 #include "Request.hpp"
 #include "StatusCodes.hpp"
@@ -53,6 +54,7 @@ public:
     std::string getContentType(std::string resourcePath);
     std::string fileToResponse(std::string resourcePath);
     std::string listing(const std::string &resourcePath, Request &req);
+    void        createFile(Request &req, const std::string &resourcePath);
 
     std::string passToCGI(Request &req, CGI &cgi);
 
