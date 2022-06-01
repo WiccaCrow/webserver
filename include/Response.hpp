@@ -48,6 +48,7 @@ public:
     void        GETmethod(Request &req);
     void        DELETEmethod(Request &req);
     void        POSTmethod(Request &req);
+    void        PUTmethod(Request &req);
     std::string contentForGetHead(Request &req);
     std::string getContentType(std::string resourcePath);
     std::string fileToResponse(std::string resourcePath);

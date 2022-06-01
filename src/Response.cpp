@@ -239,6 +239,8 @@ void
 HTTP::Response::DELETEmethod(Request &req) {
     // чтобы не удалить чистовой сайт я временно добавляю следующую строку:
     std::string resourcePath = "./testdel";
+    // std::string resourcePath = req.getPath();
+
     (void)req;
 
     if (!resourceExists(resourcePath)) {
@@ -272,6 +274,18 @@ HTTP::Response::POSTmethod(Request &req) {
         // doCGI(req);
     } else {
         _res = "HTTP/1.1 204 No Content\r\n\r\n";
+    }
+}
+
+void
+HTTP::Response::PUTmethod(Request &req) {
+    std::string resourcePath = req.getPath();
+
+    if (isFile(resourcePath)) {
+        if (isDirectory(resourcePath)) {
+            // 
+            ;
+        }
     }
 }
 

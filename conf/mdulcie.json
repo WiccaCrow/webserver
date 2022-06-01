@@ -2,7 +2,7 @@
     "servers": {
         "http": {
             "port": 8080,
-            "server_name": "localhost",
+            "server_names": [ "localhost" ],
             "error_pages": {
                 "404": "./pages/error_pages/404.html",
                 "400": "./pages/error_pages/400.html"
@@ -10,17 +10,17 @@
             "CGI": {
                 ".py": "/usr/bin/python3.9"
             },
-            "methods-allowed": [ "GET", "POST" ],
+            "methods_allowed": [ "GET", "POST" ],
             "post_max_body": 100,
             "autoindex": true,
             "index": [ "index.html" ],
             "locations": {
                 "/about": {
                     "root": "./pages/site",
-                    "autoindex": false,
+                    "autoindex": true,
                     "index": [ "index.html" ],
                     "post_max_body": 200,
-                    "methods-allowed": [ "GET", "POST" ]                 
+                    "methods_allowed": [ "GET", "POST" ]                 
                 },
                 "/feedback": {
                     "CGI": {
@@ -28,7 +28,7 @@
                     },
                     "autoindex": false,
                     "index": [ "index.html", "index.php" ],
-                    "methods-allowed": [ "GET" ],
+                    "methods_allowed": [ "GET" ],
                     "post_max_body": 300
                 }
             }
