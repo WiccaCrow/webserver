@@ -177,12 +177,20 @@ HTTP::Response::contentForGetHead(Request &req) {
     _res = "HTTP/1.1 200 OK\r\n"
            "connection: keep-alive\r\n"
            "keep-Alive: timeout=55, max=1000\r\n";
+    if (!resourceExists(resourcePath)) {
+        setErrorResponse(NOT_FOUND);
+        return "";
+    }
     // Path is dir
     if (isDirectory(resourcePath)) {
         // в дальнейшем заменить на геттер из req
-        // if (resourcePath[resourcePath.length() - 1] != '/') {
-        //      redirect 301;
-        // }
+        if (resourcePath[resourcePath.length() - 1] != '/') {
+            _res = statusLines[MOVED_PERMANENTLY];
+            _res += "Content-Type: text/html\r\n"
+                    "Location: " + req.getRawUri() + "/\r\n"
+                    "Connection: keep-alive\r\n\r\n\r\n";
+            return "";
+        }
         // find index file
         for (std::vector<std::string>::const_iterator iter = req.getLocationPtr()->getIndexRef().begin();
              iter != req.getLocationPtr()->getIndexRef().end();

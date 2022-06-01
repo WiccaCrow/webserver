@@ -14,7 +14,7 @@
 #include "Globals.hpp"
 #include "Location.hpp"
 #include "ServerBlock.hpp"
-#include "StatusCodes.hpp"
+#include "Status.hpp"
 
 #define PARSED_NONE    0x0
 #define PARSED_SL      0x1
@@ -28,6 +28,7 @@ class Request {
 private:
     std::string                  _method;
     URI                          _uri;
+    std::string                  _rawURI;
     std::string                  _protocol;
     std::string                  _resolvedPath;
     std::map<HeaderCode, Header> _headers;
@@ -59,6 +60,7 @@ public:
     const HTTP::StatusCode             &getStatus() const;
     Location                           *getLocationPtr();
     URI                                &getUriRef();
+    const std::string                  &getRawUri() const;
 
     // Needed to be improved
     const std::string &getQueryString() const;
@@ -79,7 +81,7 @@ public:
 
 private:
     bool isValidMethod(const std::string &method);
-    bool isValidPath(const std::string &path);
+    // bool isValidPath(const std::string &path);
     bool isValidProtocol(const std::string &protocol);
 
 public:

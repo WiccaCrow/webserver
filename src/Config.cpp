@@ -453,9 +453,10 @@ parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
             } else if (!isDirectory(dst.getAliasRef())) {
                 Log.error("#### \"alias\" should be a directory");
                 return NONE_OR_INV;
-            } else if (dst.getAliasRef()[dst.getAliasRef().length() - 1] != '/') { // ?
-                dst.getAliasRef() += "/";
-            }
+            } 
+            // else if (dst.getAliasRef()[dst.getAliasRef().length() - 1] != '/') { // ?
+            //     dst.getAliasRef() += "/";
+            // }
         } 
     }
 
@@ -537,12 +538,12 @@ parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res, HT
             return NONE_OR_INV;
         }
         dst.getPathRef() = it->first;
-
         JSON::Object *src = it->second->toObj();
         if (!parseLocation(src, dst, base)) {
             Log.error("### Failed to parse location \"" + it->first + "\"");
             return NONE_OR_INV;
         }
+        
         res.insert(std::make_pair(it->first, dst));
     }
     return SET;
@@ -585,9 +586,9 @@ parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
         return NONE_OR_INV;
     }
 
-    char resolvedPath[256] = {0};
-    realpath("./", resolvedPath);
-    dst.getLocationBaseRef().getRootRef() = resolvedPath;
+    // char resolvedPath[256] = {0};
+    // realpath("./", resolvedPath);
+    dst.getLocationBaseRef().getRootRef() = "./";
     if (!parseLocation(src, dst.getLocationBaseRef(), dst.getLocationBaseRef())) {
         Log.error("## Failed to parse \"location base\"");
         return NONE_OR_INV;

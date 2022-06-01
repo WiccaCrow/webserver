@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 #include "Request.hpp"
-#include "StatusCodes.hpp"
+#include "Status.hpp"
 #include "Utils.hpp"
 
 namespace HTTP {
