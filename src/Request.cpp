@@ -240,9 +240,9 @@ Request::parseHeader(std::string line) {
 
         _location = _servBlock->matchLocation(_uri._path);
         if (_uri._path.length() > _location->getPathRef().length()) {
-            _uri._path = _location->getAliasRef() + _uri._path.substr(_location->getPathRef().length() + 1);
+            _uri._path = _location->getRootRef() + _uri._path.substr(_location->getPathRef().length() + 1);
         } else {
-            _uri._path = _location->getAliasRef();
+            _uri._path = _location->getRootRef();
         }
         Log.debug("PHYSICAL_PATH:" + _uri._path);
 
