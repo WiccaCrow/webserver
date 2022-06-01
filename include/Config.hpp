@@ -14,12 +14,18 @@ enum ExpectedType {
     ARRAY
 };
 
+enum ConfStatus {
+    NONE_OR_INV = 0,
+    SET,
+    DEFAULT
+};
+
 std::string getDataTypeName(ExpectedType type);
 int         typeExpected(JSON::AType *ptr, ExpectedType type);
 
 template <typename T>
-int basicCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res, T def);
-int basicCheck(JSON::Object *src, const std::string &key, ExpectedType type);
+ConfStatus basicCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res, T def);
+ConfStatus basicCheck(JSON::Object *src, const std::string &key, ExpectedType type);
 
 int getUInteger(JSON::Object *src, const std::string &key, int &res, int def);
 int getUInteger(JSON::Object *src, const std::string &key, int &res);
