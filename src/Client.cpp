@@ -114,7 +114,7 @@ Client::process(void) {
         return;
     }
 
-    Log.debug("===> Processing started");
+    Log.debug("Processing started"  + to_string(_pfd.fd));
 
     HTTP::StatusCode status = _req.getStatus();
 
@@ -147,7 +147,7 @@ Client::reply(void) {
         return;
     }
 
-    Log.debug("===> Reply started");
+    Log.debug("Reply started");
 
     long sentBytes = 0;
     do {

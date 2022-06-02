@@ -8,6 +8,8 @@ Request::Request(ServerBlock *servBlock)
     , _flag_getline_bodySize(true)
     , _bodySize(0)
     , _parseFlags(PARSED_NONE) {
+    Log.debug("Constructor req called");
+
 }
 
 Request::~Request() { }
@@ -20,6 +22,7 @@ Request::Request(const Request &other)
 Request &
 Request::operator=(const Request &other) {
     if (this != &other) {
+        Log.debug("Copy constructor req called");
         _method                = other._method;
         _uri                   = other._uri;
         _protocol              = other._protocol;
@@ -27,6 +30,7 @@ Request::operator=(const Request &other) {
         _headers               = other._headers;
         _status                = other._status;
         _servBlock             = other._servBlock;
+        _location              = other._location;
         _flag_getline_bodySize = other._flag_getline_bodySize;
         _bodySize              = other._bodySize;
         _body                  = other._body;
@@ -189,10 +193,10 @@ Request::parseStartLine(const std::string &line) {
     _rawURI = getWord(line, ' ', pos);
     Log.debug("PATH: " + _rawURI);
     _uri.parse(_rawURI);
-    if (isValidPath(_rawURI)) {
-        Log.debug("Invalid URI");
-        return BAD_REQUEST;
-    }
+    // if (isValidPath(_rawURI)) {
+    //     Log.debug("Invalid URI");
+    //     return BAD_REQUEST;
+    // }
 
     skipSpaces(line, pos);
     _protocol = getWord(line, ' ', pos);
@@ -338,6 +342,7 @@ Request::parseChunked(const std::string &line) {
 
 StatusCode
 Request::parseBody(const std::string &line) {
+    Log.debug("Request::parseBody");
     if (_headers.find(TRANSFER_ENCODING) != _headers.end()) {
         return (parseChunked(line));
     } else if (_headers.find(CONTENT_LENGTH) != _headers.end()) {
