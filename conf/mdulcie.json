@@ -16,7 +16,7 @@
             "index": [ "index.html" ],
             "locations": {
                 "/about": {
-                    "root": "./pages/site",
+                    "alias": "/home/user/Desktop/github/webserver/pages/site",
                     "autoindex": true,
                     "index": [ "index.html" ],
                     "post_max_body": 200,

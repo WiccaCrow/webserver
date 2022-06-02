@@ -297,7 +297,7 @@ HTTP::Response::PUTmethod(Request &req) {
 
 void
 HTTP::Response::createFile(Request &req, const std::string &resourcePath) {
-    std::ofstream outputToNewFile(resourcePath) ; //output file
+    std::ofstream outputToNewFile(resourcePath.c_str()) ; //output file
     outputToNewFile << req.getBody(); // запись строки в файл
     outputToNewFile.close();
     // 201
