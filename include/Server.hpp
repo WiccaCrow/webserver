@@ -48,6 +48,7 @@ public:
     void   addServerBlock(HTTP::ServerBlock &servBlock);
     void   addServerBlock(const std::string &ipaddr, const uint16_t port);
     size_t getServerBlocksNum(void);
+    std::vector<HTTP::ServerBlock> &getServerBlocks(void);
 
     void start(void);
     void pollServ(void);

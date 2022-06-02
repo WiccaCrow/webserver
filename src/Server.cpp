@@ -36,6 +36,11 @@ Server::getServerBlocksNum(void) {
     return this->_nbServBlocks;
 }
 
+std::vector<HTTP::ServerBlock>&
+Server::getServerBlocks(void) {
+    return this->_ServBlocks;
+}
+
 // Private functions
 
 void

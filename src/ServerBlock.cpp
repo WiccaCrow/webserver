@@ -100,6 +100,11 @@ ServerBlock::setBlockname(const std::string &blockname) {
     this->_blockname = blockname;
 }
 
+const std::string &
+ServerBlock::getBlockName(void) const {
+    return this->_blockname;
+}
+
 std::string &
 ServerBlock::getAddrRef(void) {
     return _addr;

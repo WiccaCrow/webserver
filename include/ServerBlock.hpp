@@ -55,6 +55,7 @@ public:
     std::map<int, std::string>            &getErrPathsRef(void);
     std::map<std::string, Location>       &getLocationsRef(void);
     const std::map<std::string, Location> &getLocationsRef(void) const;
+    const std::string                     &getBlockName(void) const;
 
     // other methods
     void createListenSock();
