@@ -23,6 +23,7 @@ SOURCEFILES     =	main.cpp \
 					Response.cpp \
 					Header.cpp \
 					ResponseContType.cpp \
+					StatusLines.cpp \
 					DefaultErrorResponses.cpp \
 					Config.cpp \
 					Location.cpp

@@ -85,6 +85,11 @@ Request::getUriRef() {
     return _uri;
 }
 
+const std::string & 
+Request::getRawUri() const {
+    return _rawURI;
+}
+
 // bool
 // Request::empty() {
 //     return (_method.empty() && _uri.empty() && _protocol.empty() && _headers.empty());
@@ -181,13 +186,13 @@ Request::parseStartLine(const std::string &line) {
     }
 
     skipSpaces(line, pos);
-    std::string uri = getWord(line, ' ', pos);
-    Log.debug("PATH: " + uri);
-    _uri.parse(uri);
-    // if (isValidPath(_uri)) {
-    //     Log.debug("Invalid URI");
-    //     return BAD_REQUEST;
-    // }
+    _rawURI = getWord(line, ' ', pos);
+    Log.debug("PATH: " + _rawURI);
+    _uri.parse(_rawURI);
+    if (isValidPath(_rawURI)) {
+        Log.debug("Invalid URI");
+        return BAD_REQUEST;
+    }
 
     skipSpaces(line, pos);
     _protocol = getWord(line, ' ', pos);
@@ -221,10 +226,10 @@ Request::isValidMethod(const std::string &method) {
     return false;
 }
 
-bool
-Request::isValidPath(const std::string &path) {
-    return (path[0] == '/');
-}
+// bool
+// Request::isValidPath(const std::string &path) {
+//     return (path[0] == '/');
+// }
 
 bool
 Request::isValidProtocol(const std::string &protocol) {
@@ -245,9 +250,12 @@ Request::parseHeader(std::string line) {
             }
         } else {
             // Alias used, watch carefully about / case
+            Log.info("alias: " + _location->getAliasRef());
+            Log.info("uri.path: " + _uri._path);
             _resolvedPath = _location->getAliasRef();
             if (_uri._path.length() > _location->getPathRef().length()) {
-                _resolvedPath += _uri._path.substr(_location->getPathRef().length() + 1);
+                Log.info("append: " + _uri._path.substr(_location->getPathRef().length()));
+                _resolvedPath += _uri._path.substr(_location->getPathRef().length());
             }
         }
         Log.debug("PHYSICAL_PATH:" + _resolvedPath);
@@ -258,7 +266,7 @@ Request::parseHeader(std::string line) {
         }
         return CONTINUE;
     }
-    Log.debug(line);
+    // Log.debug(line); // Print headers
     size_t sepPos = line.find(':');
     if (sepPos == std::string::npos) {
         return BAD_REQUEST;

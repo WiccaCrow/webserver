@@ -8,7 +8,7 @@
 #include "ReadSock.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
-#include "StatusCodes.hpp"
+#include "Status.hpp"
 
 namespace HTTP {
 

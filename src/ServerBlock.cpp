@@ -144,12 +144,46 @@ Location *
 ServerBlock::matchLocation(const std::string &path) {
     size_t matchMaxLen = 0;
 
+    // uri: /about/cgi valid
+    // loc: /about
+    // root: /var/site
+    // res: /var/site/cgi   301
+
+    // uri: /about/ valid
+    // loc: /about
+    // root: /var/site/
+    // res: /var/site//  OK
+    
+    // uri: /about/ valid
+    // loc: /about
+    // root: /var/site
+    // res: /var/site/  OK
+
+    // uri: /about valid
+    // loc: /about
+    // root: /var/site/
+    // res: /var/site  301
+
+    // uri: /about  valid
+    // loc: /about
+
+    // uri: /aboutsfff not valid
+    // loc: /about
+
+    // uri: /about/cgi valid
+    // loc: /about/
+
+    // uri: /about not valid
+    // loc: /about/
+
+    // uri: /aboutcfofgg not valid
+    // loc: /about/
     std::map<std::string, Location>::iterator it = _locations.begin();
     std::map<std::string, Location>::iterator end = _locations.end();
     std::map<std::string, Location>::iterator match = _locations.end();
     for (; it != end; it++) {
         size_t len = it->first.length();
-        if (path.find(it->first) == 0) {
+        if (path.find(it->first) == 0 && (path.length() == it->first.length() || path[it->first.length()] == '/')) {
             if (len > matchMaxLen) {
                 match = it;
                 matchMaxLen = len;

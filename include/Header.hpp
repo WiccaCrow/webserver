@@ -4,7 +4,7 @@
 #include <string>
 #include <stdint.h>
 
-#include "StatusCodes.hpp"
+#include "Status.hpp"
 #include "HeadersCodes.hpp"
 
 namespace HTTP {

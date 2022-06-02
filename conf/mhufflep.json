@@ -31,7 +31,7 @@
             "autoindex": true,
             "index": [ "index.html" ],
             "locations": {
-                "/about": {
+                "/about/": {
                     "alias": "/Users/mhufflep/Desktop/serv/pages/site",
                     "CGI": {
                         ".js": "/usr/local/bin/node"

@@ -81,6 +81,23 @@ enum StatusCode {
     INVALID_SSL_CERTIFICATE         = 526
 };
 
-extern const std::map<StatusCode, std::string> descriptions;
+class StatusLines {
+    
+    private:
+        typedef std::map<HTTP::StatusCode, std::string>::const_iterator c_iter;
+        typedef std::map<HTTP::StatusCode, std::string>::const_iterator iter;
+
+        std::map<HTTP::StatusCode, std::string> _statusLines;
+        const std::string _empty;
+    
+    public:
+        StatusLines(void);
+        ~StatusLines(void);
+        const std::string & operator[](HTTP::StatusCode code) const;
+        const std::string & operator[](int code) const;
+
+};
+
+extern const StatusLines statusLines;
 
 } // namespace HTTP
