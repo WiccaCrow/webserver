@@ -186,9 +186,10 @@ HTTP::Response::contentForGetHead(Request &req) {
         // в дальнейшем заменить на геттер из req
         if (resourcePath[resourcePath.length() - 1] != '/') {
             _res = statusLines[MOVED_PERMANENTLY];
-            _res += "Content-Type: text/html\r\n"
-                    "Location: " + req.getRawUri() + "/\r\n"
+            _res += "Location: " + req.getRawUri() + "/\r\n"
+                    "Content-Type: text/html\r\n"
                     "Connection: keep-alive\r\n\r\n\r\n";
+                    //body
             return "";
         }
         // find index file
@@ -217,7 +218,7 @@ HTTP::Response::contentForGetHead(Request &req) {
         _res += getContentType(resourcePath);
         return (fileToResponse(resourcePath));
     } else {
-        // not readable files and other types
+        // not readable files and other types and file not exist
         setErrorResponse(FORBIDDEN);
         return "";
     }

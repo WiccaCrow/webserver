@@ -79,6 +79,7 @@ Server::pollInHandler(size_t id) {
         acceptNewClient(id);
         return 1;
     } else {
+        Log.debug("Server::receive " + to_string(id));
         _clients[id - _nbServBlocks].receive();
         return 0;
     }
