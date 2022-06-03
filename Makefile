@@ -3,9 +3,9 @@
 NAME 		   =   webserv
 
 CXX            =   clang++
-CPPFLAGS       =   -Wall -Wextra -Werror -std=c++98 -g # -Wpedantic
+CPPFLAGS       =   -Wall -Wextra -Werror -std=c++98 -g
 # CXX		   =   g++
-# CPPFLAGS     =   -Wall -Wextra -Werror -std=c++98 -g
+# CPPFLAGS     =   -Wall -Wextra -Werror -Wpedantic -std=c++98 -g 
 
 SOURCEFILES     =	main.cpp \
 				    Server.cpp \

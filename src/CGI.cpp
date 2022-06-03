@@ -84,11 +84,11 @@ CGI::setEnv(Request &req) {
 
     setValue(env[0], "");
     setValue(env[1], req.getResolvedPath()); // Definitely not like that
-    setValue(env[2], req.getHeaderValue(HOST)); // host
-    setValue(env[3], req.getClient()->getIpAddr()); // addr
+    setValue(env[2], req.getHeaderValue(HOST)); // host, maybe should be without port
+    setValue(env[3], req.getClient()->getIpAddr()); // ipv4 addr
     setValue(env[4], ""); // user
     setValue(env[5], ""); // ident
-    setValue(env[6], "Basic");
+    setValue(env[6], ""); // auth
     setValue(env[7], req.getQueryString());
     setValue(env[8], req.getMethod());
     setValue(env[9], req.getResolvedPath());

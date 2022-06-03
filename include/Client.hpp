@@ -39,6 +39,7 @@ public:
     void setIpAddr(const std::string);
     void setPort(int port);
     
+    void linkToRequest(void);
     const std::string &getIpAddr() const;
     int getPort() const;
     const std::string getHostname() const;

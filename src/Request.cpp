@@ -5,6 +5,7 @@ namespace HTTP {
 Request::Request()
     : _servBlock(NULL)
     , _location(NULL)
+    , _client(NULL)
     , _flag_getline_bodySize(true)
     , _bodySize(0)
     , _parseFlags(PARSED_NONE) {

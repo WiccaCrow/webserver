@@ -221,6 +221,8 @@ Server::connectClient(size_t id) {
 
         _clients.insert(std::make_pair(clientId, HTTP::Client()));
 
+
+        _clients[clientId].linkToRequest();
         _clients[clientId].setFd(fd);
         _clients[clientId].setPort(ntohs(clientData.sin_port));
         _clients[clientId].setIpAddr(inet_ntoa(clientData.sin_addr));

@@ -5,7 +5,6 @@ namespace HTTP {
 ReadSock Client::_reader;
 
 Client::Client() : _fd(-1), _port(0) {
-    _req.setClient(this);
 }
 
 Client::~Client() {
@@ -28,6 +27,10 @@ Client::operator=(const Client &client) {
         _port = client._port;
     }
     return *this;
+}
+
+void Client::linkToRequest(void) {
+    _req.setClient(this);
 }
 
 int
@@ -75,12 +78,6 @@ Client::setServerBlock(ServerBlock *serverBlock) {
     _servBlock = serverBlock;
     _req.setServerBlock(_servBlock);
 }
-
-// void
-// Client::setPollFdPtr(struct pollfd *ptr) {
-//     _pfd = ptr;
-// }
-
 
 void
 Client::receive(void) {
@@ -153,7 +150,7 @@ Client::process(void) {
         return;
     }
 
-    Log.debug("Client::process -> fd:"  + to_string(_fd));
+    Log.debug("Client::process -> fd: "  + to_string(_fd));
 
     HTTP::StatusCode status = _req.getStatus();
 
@@ -181,7 +178,7 @@ Client::reply(void) {
         return;
     }
 
-    Log.debug("Client::reply -> fd:"  + to_string(_fd));
+    Log.debug("Client::reply -> fd: "  + to_string(_fd));
 
     long sentBytes = 0;
     do {
@@ -205,18 +202,5 @@ Client::reply(void) {
     // }
 }
 
-// void
-// Client::disconnect(void) {
-//     _fd = -1;
-    // if (_fd != -1) {
-
-    //     // Maybe socket should be closed on the same level as accept, i.e. in server class
-    //     // close(_fd);
-    //     _fd = -1;
-        
-    //     // _pfd->events  = 0;
-    //     // _pfd->revents = 0;
-    // }
-// }
 
 }
