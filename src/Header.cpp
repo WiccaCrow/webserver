@@ -120,18 +120,7 @@ Header::Host(Request &req) {
         return BAD_REQUEST;
     }
 
-    (void)req;
-    std::vector<HTTP::ServerBlock> &servBlocks = g_server->getServerBlocksRef();
-
-    for (size_t i = 0; i < servBlocks.size(); ++i) {
-        std::vector<std::string>::iterator res;
-        res = std::find(servBlocks[i].getServerNameRef().begin(), servBlocks[i].getServerNameRef().end(), uri._host);
-        if (res != servBlocks[i].getServerNameRef().end()) {
-            Log.debug("ServerBlock found -> " + servBlocks[i].getBlockName());
-            break ;
-        }
-    }
-    // if current_server == null, current_server = default
+    req.setServerBlock(g_server->matchServerBlock(req.getClient()->getServerPort(), "", uri._host));
 
     return CONTINUE;
 }

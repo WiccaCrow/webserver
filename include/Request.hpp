@@ -11,7 +11,6 @@
 #include "Utils.hpp"
 #include "Logger.hpp"
 #include "Header.hpp"
-// #include "Client.hpp"
 #include "Globals.hpp"
 #include "Location.hpp"
 #include "ServerBlock.hpp"

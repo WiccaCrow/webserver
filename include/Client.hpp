@@ -15,9 +15,9 @@ namespace HTTP {
 class Client {
 
 private:
-
     int             _fd;
-    int             _port;
+    int             _clientPort;
+    int             _serverPort;
     std::string     _ipAddr;
 
     HTTP::Request   _req;
@@ -34,23 +34,26 @@ public:
     Client &operator=(const Client &client);
 
     void setFd(int fd);
-    void setServerBlock(ServerBlock *serverBlock);
+    int getFd(void) const;
+
+    void setPort(int port);
+    int getPort(void) const;
+
+    void setServerPort(int port);
+    int getServerPort(void) const;
 
     void setIpAddr(const std::string);
-    void setPort(int port);
-    
-    void linkToRequest(void);
-    const std::string &getIpAddr() const;
-    int getPort() const;
-    const std::string getHostname() const;
+    const std::string &getIpAddr(void) const;
 
-    void process(void);
-    void clearData(void);
-    void checkIfFailed(void);
+    void linkToRequest(void);
+    const std::string getHostname(void) const;
 
     void receive(void);
+    void process(void);
     void reply(void);
-    int  getFd(void);
+    void checkIfFailed(void);
+    void clearData(void);
+
     bool responseFormed(void);
 };
 

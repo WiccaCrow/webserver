@@ -292,6 +292,8 @@ isValidKeywords(JSON::Object *src, bool (*validator)(const std::string &)) {
 // Object parsing
 int
 parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
+    res.clear();
+    
     ConfStatus status = basicCheck(src, "CGI", OBJECT, res, res);
     if (status != SET) {
         return status;
@@ -301,7 +303,6 @@ parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
 
     JSON::Object::iterator it  = obj->begin();
     JSON::Object::iterator end = obj->end();
-    res.clear();
     for (; it != end; it++) {
         HTTP::CGI cgi;
 
@@ -453,10 +454,7 @@ parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
             } else if (!isDirectory(dst.getAliasRef())) {
                 Log.error("#### \"alias\" should be a directory");
                 return NONE_OR_INV;
-            } 
-            // else if (dst.getAliasRef()[dst.getAliasRef().length() - 1] != '/') { // ?
-            //     dst.getAliasRef() += "/";
-            // }
+            }
         } 
     }
 
@@ -538,8 +536,8 @@ parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res, HT
             return NONE_OR_INV;
         }
         dst.getPathRef() = it->first;
-        JSON::Object *src = it->second->toObj();
-        if (!parseLocation(src, dst, base)) {
+        JSON::Object *location = it->second->toObj();
+        if (!parseLocation(location, dst, base)) {
             Log.error("### Failed to parse location \"" + it->first + "\"");
             return NONE_OR_INV;
         }

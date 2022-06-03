@@ -4,7 +4,7 @@ namespace HTTP {
 
 ReadSock Client::_reader;
 
-Client::Client() : _fd(-1), _port(0) {
+Client::Client() : _fd(-1), _clientPort(0) {
 }
 
 Client::~Client() {
@@ -24,7 +24,8 @@ Client::operator=(const Client &client) {
         // Not think it is correct
         _fd = client._fd;
         _ipAddr = client._ipAddr;
-        _port = client._port;
+        _clientPort = client._clientPort;
+        _serverPort = client._serverPort;
     }
     return *this;
 }
@@ -34,7 +35,7 @@ void Client::linkToRequest(void) {
 }
 
 int
-Client::getFd(void) {
+Client::getFd(void) const {
     return _fd;
 }
 
@@ -55,7 +56,22 @@ Client::setIpAddr(const std::string ipaddr) {
 
 void
 Client::setPort(int port) {
-    _port = port;
+    _clientPort = port;
+}
+
+int
+Client::getPort(void) const {
+    return _clientPort;
+}
+
+void
+Client::setServerPort(int port) {
+    _serverPort = port;
+}
+
+int
+Client::getServerPort(void) const {
+    return _serverPort;
 }
 
 const std::string &
@@ -63,20 +79,9 @@ Client::getIpAddr(void) const {
     return _ipAddr;
 }
 
-int
-Client::getPort(void) const {
-    return _port;
-}
-
 const std::string
 Client::getHostname() const {
-    return _port != 0 ? _ipAddr + ":" + to_string(_port) : _ipAddr;
-}
-
-void
-Client::setServerBlock(ServerBlock *serverBlock) {
-    _servBlock = serverBlock;
-    _req.setServerBlock(_servBlock);
+    return _clientPort != 0 ? _ipAddr + ":" + to_string(_clientPort) : _ipAddr;
 }
 
 void
