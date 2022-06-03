@@ -1,5 +1,6 @@
 #include "Header.hpp"
 #include "Request.hpp"
+#include "Server.hpp"
 
 namespace HTTP {
 
@@ -112,7 +113,21 @@ Header::From(Request &req) {
 
 StatusCode
 Header::Host(Request &req) {
+    URI uri;
+    uri.parse(value);
     (void)req;
+    std::vector<HTTP::ServerBlock> &servBlocks = g_server->getServerBlocks();
+
+    for (size_t i = 0; i < servBlocks.size(); ++i) {
+        std::vector<std::string>::iterator res;
+        res = std::find(servBlocks[i].getServerNameRef().begin(), servBlocks[i].getServerNameRef().end(), uri._host);
+        if (res != servBlocks[i].getServerNameRef().end()) {
+            Log.debug("Server block founded -> " + servBlocks[i].getBlockName());
+            break ;
+        }
+    }
+    // if current_server == null, current_server = default
+
     return CONTINUE;
 }
 

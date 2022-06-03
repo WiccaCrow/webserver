@@ -3,9 +3,11 @@
 #include <map>
 #include <string>
 #include <stdint.h>
+#include <algorithm>
 
 #include "Status.hpp"
 #include "HeadersCodes.hpp"
+#include "Globals.hpp"
 
 namespace HTTP {
 
@@ -78,4 +80,5 @@ public:
 extern const std::map<uint32_t, Header::Handler> validHeaders;
 
 } // namespace HTTP
+
 

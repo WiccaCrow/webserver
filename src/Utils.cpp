@@ -101,6 +101,57 @@ isValidIp(const std::string &ip) {
 }
 
 bool
+isUnreserved(int c) {
+    return (std::isalnum(c) || std::strchr("-._~", c) != NULL);
+}
+
+bool
+isPctEncoded(const std::string &str) {
+    if (str[0] != '%') {
+        return false;
+    }
+
+    const std::string hex = str.substr(1);
+    if (!strtol(hex.c_str(), NULL, 16)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool
+isSubDelims(int c) {
+    return (std::strchr("!$&'()*+,;=", c) != NULL);
+}
+
+bool
+isValidRegName(const std::string &regname) {
+    if (regname.length() > 255) {
+        return false;
+    }
+    for (int i = 0; i < regname.length(); ++i) {
+        if (isUnreserved(regname[i]) || isSubDelims(regname[i])) {
+            continue ;
+        } else if (regname[i] == '%') {
+            if (!std::isxdigit(regname[i + 1])) {
+                break ;
+            }
+            if (!std::isxdigit(regname[i + 2])) {
+                break ;
+            }
+            i += 2;
+        }
+        return false;
+    }
+    return true;   
+}
+
+bool
+isValidHost(const std::string &hostname) {
+    return (isValidIp(hostname) || isValidRegName(hostname));
+}
+
+bool
 isValidPath(const std::string &path) {
 
     if (path[0] != '/') {

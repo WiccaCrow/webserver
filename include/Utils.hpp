@@ -4,6 +4,7 @@
 #include <cstring>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sstream>
 
 void        trim(std::string &s, const char *t);
 
@@ -23,6 +24,7 @@ std::string to_string(unsigned long val);
 #endif
 
 bool isValidIp(const std::string &ip);
+bool isValidHost(const std::string &hostname);
 bool isValidPath(const std::string &path);
 bool isExtension(const std::string &ext);
 bool endsWith(const std::string &str, const std::string &end);
