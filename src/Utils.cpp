@@ -129,7 +129,7 @@ isValidRegName(const std::string &regname) {
     if (regname.length() > 255) {
         return false;
     }
-    for (int i = 0; i < regname.length(); ++i) {
+    for (int i = 0; i < static_cast<int>(regname.length()); ++i) {
         if (isUnreserved(regname[i]) || isSubDelims(regname[i])) {
             continue ;
         } else if (regname[i] == '%') {
@@ -213,6 +213,15 @@ isFile(const std::string &filename) {
     if (stat(filename.c_str(), &state) < 0)
         return false;
     return S_ISREG(state.st_mode);
+}
+
+bool
+isWriteMode(const std::string &filename) {
+    struct stat state;
+
+    if (stat(filename.c_str(), &state) < 0)
+        return false;
+    return state.st_mode == S_IWUSR;
 }
 
 bool

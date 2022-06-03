@@ -30,6 +30,7 @@ bool isExtension(const std::string &ext);
 bool endsWith(const std::string &str, const std::string &end);
 bool resourceExists(const std::string &filename);
 bool isFile(const std::string &filename);
+bool isWriteMode(const std::string &filename);
 bool isDirectory(const std::string &dirname);
 bool isReadableFile(const std::string &filename);
 bool isExecutableFile(const std::string &filename);

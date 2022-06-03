@@ -105,11 +105,11 @@ HTTP::Response::listing(const std::string &resourcePath, Request &req) {
                        "   <head>\n"
                        "       <meta charset=\"UTF-8\">\n"
                        "       <title> ";
-    body += req.getResolvedPath() + " </title>\n"
+    body += req.getPath() + " </title>\n"
                             "   </head>\n"
                             "<body>\n"
                             "   <h1> Index on ";
-    body += req.getResolvedPath() + " </h1>\n"
+    body += req.getPath() + " </h1>\n"
                             "   <p>\n"
                             "   <hr>\n";
     DIR *r_opndir;
@@ -126,7 +126,7 @@ HTTP::Response::listing(const std::string &resourcePath, Request &req) {
                 return "";
             }
 
-            body += "   <a href=\"" + req.getResolvedPath();
+            body += "   <a href=\"" + req.getPath();
             if (body[body.length() - 1] != '/') {
                 body += "/";
             }
@@ -290,28 +290,40 @@ void
 HTTP::Response::PUTmethod(Request &req) {
     std::string resourcePath = req.getPath();
 
-    if (isFile(resourcePath)) {
-        if (isDirectory(resourcePath)) {
-            setErrorResponse(FORBIDDEN);
+    if (isDirectory(resourcePath)) {
+        setErrorResponse(FORBIDDEN);
+    } else if (isFile(resourcePath)) {
+        if (isWriteMode(resourcePath)) {
+            writeFile(req, resourcePath);
+            _res = "HTTP/1.1 200 OK\r\n"
+            "content-length: 67\r\n\r\n"
+            "<html>\n"
+            "  <body>\n"
+            "    <h1>File is overwritten.</h1>\n"
+            "  </body>\n"
+            "</html>";
         } else {
-            // if (есть права на запись)
-                // rewriteFile(resourcePath); 200
-            // else
-                // setErrorResponse(FORBIDDEN);
+            setErrorResponse(FORBIDDEN);
         }
     } else {
-        createFile(req, resourcePath);
+        writeFile(req, resourcePath);
+        _res = "HTTP/1.1 201 OK\r\n"
+        "content-length: 60\r\n\r\n"
+        "<html>\n"
+        "  <body>\n"
+        "    <h1>File created.</h1>\n"
+        "  </body>\n"
+        "</html>";
     }
 }
 
 void
-HTTP::Response::createFile(Request &req, const std::string &resourcePath) {
-    std::ofstream outputToNewFile(resourcePath.c_str()) ; //output file
+HTTP::Response::writeFile(Request &req, const std::string &resourcePath) {
+    std::ofstream outputToNewFile(resourcePath.c_str(), 
+                                  std::ios_base::out | std::ios_base::trunc) ; //output file
     outputToNewFile << req.getBody(); // запись строки в файл
     outputToNewFile.close();
-    // 201
 }
-
 
 const char *
 HTTP::Response::getResponse() {
