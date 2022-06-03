@@ -293,7 +293,7 @@ HTTP::Response::PUTmethod(Request &req) {
     if (isDirectory(resourcePath)) {
         setErrorResponse(FORBIDDEN);
     } else if (isFile(resourcePath)) {
-        if (isWriteMode(resourcePath)) { // Change to isWritable
+        if (isWritableFile(resourcePath)) {
             writeFile(req, resourcePath);
             _res = "HTTP/1.1 200 OK\r\n"
             "content-length: 67\r\n\r\n"
