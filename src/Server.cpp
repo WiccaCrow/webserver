@@ -203,9 +203,7 @@ Server::connectClient(size_t id) {
         fcntl(fd, F_SETFL, O_NONBLOCK);
 
         Log.debug("Server::connectClient -> fd: " + to_string(fd));
-        Log.info("Server::connectClient ip: " + std::string(inet_ntoa(clientData.sin_addr)));
-        Log.info("Server::connectClient port: " + to_string(clientData.sin_port));
-
+       
         std::vector<struct pollfd>::iterator it;
         it = std::find_if(_pollfds.begin(), _pollfds.end(), fdFree);
 
@@ -224,17 +222,29 @@ Server::connectClient(size_t id) {
         _clients.insert(std::make_pair(clientId, HTTP::Client()));
 
         _clients[clientId].setFd(fd);
-        // _clients[clientId].setSocketData(clientData); // or pass fd instead (ptr to client in req)
+        _clients[clientId].setPort(ntohs(clientData.sin_port));
+        _clients[clientId].setIpAddr(inet_ntoa(clientData.sin_addr));
+
+        Log.debug("Server::connectClient -> addr: " + _clients[clientId].getHostname());  
+
         _clients[clientId].setServerBlock(&_servBlocks[id]); // matchServerBlock will be added 
     }
 }
 
 void
 Server::disconnectClient(size_t id) {
-    Log.info("Server::disconnectClient -> fd:" + to_string(_pollfds[id].fd));
+    Log.debug("Server::disconnectClient -> fd: " + to_string(_pollfds[id].fd));
     _clients.erase(id);
     close(_pollfds[id].fd);
     _pollfds[id].fd = -1;
     _pollfds[id].events = 0;
     _pollfds[id].revents = 0;
+}
+
+HTTP::ServerBlock *
+matchServerBlock(int port, const std::string &ipaddr, const std::string &host) {
+    (void)port;
+    (void)ipaddr;
+    (void)host;
+    return NULL;
 }

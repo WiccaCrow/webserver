@@ -4,7 +4,8 @@ namespace HTTP {
 
 ReadSock Client::_reader;
 
-Client::Client() {
+Client::Client() : _fd(-1), _port(0) {
+    _req.setClient(this);
 }
 
 Client::~Client() {
@@ -23,6 +24,8 @@ Client::operator=(const Client &client) {
         _servBlock = client._servBlock;
         // Not think it is correct
         _fd = client._fd;
+        _ipAddr = client._ipAddr;
+        _port = client._port;
     }
     return *this;
 }
@@ -32,12 +35,10 @@ Client::getFd(void) {
     return _fd;
 }
 
-// Why would I need to do that? I know now :D
 void
 Client::setFd(int fd) {
     _fd = fd;
 }
-
 
 bool
 Client::responseFormed() {
@@ -45,8 +46,28 @@ Client::responseFormed() {
 }
 
 void
-Client::setSocketData(struct sockaddr_in data) {
-    _socketData = data;
+Client::setIpAddr(const std::string ipaddr) {
+    _ipAddr = ipaddr;
+}
+
+void
+Client::setPort(int port) {
+    _port = port;
+}
+
+const std::string &
+Client::getIpAddr(void) const {
+    return _ipAddr;
+}
+
+int
+Client::getPort(void) const {
+    return _port;
+}
+
+const std::string
+Client::getHostname() const {
+    return _port != 0 ? _ipAddr + ":" + to_string(_port) : _ipAddr;
 }
 
 void

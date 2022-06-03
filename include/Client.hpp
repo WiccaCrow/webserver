@@ -15,8 +15,10 @@ namespace HTTP {
 class Client {
 
 private:
-    int _fd;
-    struct sockaddr_in _socketData;
+
+    int             _fd;
+    int             _port;
+    std::string     _ipAddr;
 
     HTTP::Request   _req;
     HTTP::Response  _res;
@@ -32,8 +34,14 @@ public:
     Client &operator=(const Client &client);
 
     void setFd(int fd);
-    void setSocketData(struct sockaddr_in data);
     void setServerBlock(ServerBlock *serverBlock);
+
+    void setIpAddr(const std::string);
+    void setPort(int port);
+    
+    const std::string &getIpAddr() const;
+    int getPort() const;
+    const std::string getHostname() const;
 
     void process(void);
     void clearData(void);

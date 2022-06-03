@@ -1,5 +1,6 @@
 #include "CGI.hpp"
 #include "Request.hpp"
+#include "Client.hpp"
 
 namespace HTTP {
 
@@ -80,13 +81,11 @@ CGI::setFullEnv(Request &req) {
 
 void
 CGI::setEnv(Request &req) {
-    // Need to get from client
-    // char *connected_ip = inet_ntoa(client.sin_addr);
-    // int port = ntohs(client.sin_port);
+
     setValue(env[0], "");
-    setValue(env[1], req.getResolvedPath()); // Maybe not like that
-    setValue(env[2], ""); // host
-    setValue(env[3], ""); // addr
+    setValue(env[1], req.getResolvedPath()); // Definitely not like that
+    setValue(env[2], req.getHeaderValue(HOST)); // host
+    setValue(env[3], req.getClient()->getIpAddr()); // addr
     setValue(env[4], ""); // user
     setValue(env[5], ""); // ident
     setValue(env[6], "Basic");
@@ -96,7 +95,7 @@ CGI::setEnv(Request &req) {
     setValue(env[10], to_string(req.getBody().length()));
     setValue(env[11], req.getHeaderValue(CONTENT_TYPE));
     setValue(env[12], GATEWAY_INTERFACE);
-    setValue(env[13], req.getUriRef().getAuthority());
+    setValue(env[13], req.getUriRef().getAuthority()); // Not like that
     setValue(env[14], SERVER_SOFTWARE);
     setValue(env[15], "HTTP/1.1");
     setValue(env[16], to_string(req.getServerBlock()->getPort()));

@@ -45,6 +45,14 @@ Request::setServerBlock(ServerBlock *serverBlock) {
     _servBlock = serverBlock;
 }
 
+const Client *Request::getClient() const {
+    return _client;
+}
+
+void Request::setClient(Client *client) {
+    _client = client;
+}
+
 const std::string &
 Request::getMethod() const {
     return _method;
@@ -94,11 +102,6 @@ const std::string &
 Request::getRawUri() const {
     return _rawURI;
 }
-
-// bool
-// Request::empty() {
-//     return (_method.empty() && _uri.empty() && _protocol.empty() && _headers.empty());
-// }
 
 void
 Request::setFlag(uint8_t flag) {

@@ -11,6 +11,7 @@
 #include "Utils.hpp"
 #include "Logger.hpp"
 #include "Header.hpp"
+// #include "Client.hpp"
 #include "Globals.hpp"
 #include "Location.hpp"
 #include "ServerBlock.hpp"
@@ -22,6 +23,8 @@
 #define PARSED_BODY    0x4
 
 namespace HTTP {
+
+class Client;
 
 class Request {
 
@@ -36,6 +39,7 @@ private:
 
     ServerBlock                 *_servBlock;
     Location                    *_location;
+    Client                      *_client;
 
     bool          _flag_getline_bodySize;
     unsigned long _bodySize;
@@ -51,6 +55,9 @@ public:
 
     const ServerBlock *getServerBlock() const;
     void setServerBlock(ServerBlock *);
+
+    const Client *getClient() const;
+    void setClient(Client *);
 
     const std::string                  &getPath() const;
     const std::string                  &getMethod() const;

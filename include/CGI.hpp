@@ -20,6 +20,7 @@
 namespace HTTP {
 
 class Request;
+class Client;
 
 class CGI {
 
