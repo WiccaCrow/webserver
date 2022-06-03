@@ -2,27 +2,23 @@
 
 namespace HTTP {
 
-Request::Request(ServerBlock *servBlock)
-    : _servBlock(servBlock)
+Request::Request()
+    : _servBlock(NULL)
     , _location(NULL)
     , _flag_getline_bodySize(true)
     , _bodySize(0)
     , _parseFlags(PARSED_NONE) {
-    Log.debug("Constructor req called");
-
 }
 
 Request::~Request() { }
 
-Request::Request(const Request &other)
-    : _servBlock(other._servBlock) {
+Request::Request(const Request &other) {
     *this = other;
 }
 
 Request &
 Request::operator=(const Request &other) {
     if (this != &other) {
-        Log.debug("Copy constructor req called");
         _method                = other._method;
         _uri                   = other._uri;
         _protocol              = other._protocol;
@@ -42,6 +38,11 @@ Request::operator=(const Request &other) {
 const ServerBlock *
 Request::getServerBlock() const {
     return _servBlock;
+}
+
+void
+Request::setServerBlock(ServerBlock *serverBlock) {
+    _servBlock = serverBlock;
 }
 
 const std::string &
@@ -185,7 +186,7 @@ Request::parseStartLine(const std::string &line) {
     _method    = getWord(line, ' ', pos);
     Log.debug("METHOD: " + _method);
     if (!isValidMethod(_method)) {
-        Log.debug("Method is not implemented");
+        Log.debug("Request::parseStartLine: Method is not implemented");
         return NOT_IMPLEMENTED;
     }
 
@@ -230,11 +231,7 @@ Request::isValidMethod(const std::string &method) {
     return false;
 }
 
-// bool
-// Request::isValidPath(const std::string &path) {
-//     return (path[0] == '/');
-// }
-
+// Should be moved later
 bool
 Request::isValidProtocol(const std::string &protocol) {
     return (protocol == "HTTP/1.1");
@@ -244,7 +241,7 @@ StatusCode
 Request::parseHeader(std::string line) {
     if (line == "") {
         setFlag(PARSED_HEADERS);
-        Log.debug("Headers are parsed");
+        Log.debug("Request::parseHeader: Headers are parsed");
 
         _location = _servBlock->matchLocation(_uri._path);
         if (_location->getAliasRef() == "") {
@@ -281,13 +278,14 @@ Request::parseHeader(std::string line) {
     Header header;
     header.key = line.substr(0, sepPos);
     header.value = line.substr(sepPos + 1);
+    
     trim(header.value, " \t\r\n");
 
     header.hash = static_cast<HeaderCode>(crc(header.key.c_str(), header.key.length()));
 
     if (header.handle(*this) == BAD_REQUEST) {
         // Not all unsupported headers should lead to bad request
-        Log.debug("Maybe header is not supported");
+        Log.debug("Request::parseHeader: Maybe header is not supported");
         Log.debug(header.key + "|" + to_string((unsigned long)header.hash));
         return BAD_REQUEST;
     }

@@ -20,20 +20,33 @@ int main(int ac, char **av) {
 		return 1;
 
 	const size_t size = atoi(av[1]);
-	// std::list<struct pollfd> l(size, (struct pollfd) { 2, POLLIN, 0 });
 	std::vector<struct pollfd> v(size, (struct pollfd) { 2, POLLIN, 0 });
 
 	auto start_time = std::chrono::system_clock::now();
 
-	//auto it = l.begin();
-	//auto end = l.end();
-	//for (; it != end; it++);
-	for (size_t i = 0; i < size; i++);
+	for (size_t i = 0; i < size; i++) {
+		v[i].fd = i;
+	}
 
 	auto end_time = std::chrono::system_clock::now();
 	std::chrono::duration<double> diff = end_time - start_time;
 
-	printf("total time: %.8f\n", diff.count());
+	printf("v total time: %.16f\n", diff.count());
+	
+	std::list<struct pollfd> l(size, (struct pollfd) { 2, POLLIN, 0 });
+	
+	auto start_time2 = std::chrono::system_clock::now();
+	auto it = l.begin();
+	auto end = l.end();
+	for (; it != end; it++) {
+		(*it).fd = 100;
+	}
+
+	auto end_time2 = std::chrono::system_clock::now();
+	std::chrono::duration<double> diff2 = end_time2 - start_time2;
+
+	printf("l total time: %.16f\n", diff2.count());	
+
 	//std::cout << "total time: " << diff.count() << std::endl;
 	
 	return 0;

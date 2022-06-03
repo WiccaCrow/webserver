@@ -82,7 +82,7 @@ void
 CGI::setEnv(Request &req) {
     // Need to get from client
     // char *connected_ip = inet_ntoa(client.sin_addr);
-    // int port = ntohs(client.sin_port); 
+    // int port = ntohs(client.sin_port);
     setValue(env[0], "");
     setValue(env[1], req.getResolvedPath()); // Maybe not like that
     setValue(env[2], ""); // host

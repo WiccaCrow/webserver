@@ -48,3 +48,4 @@ serv
 *.out
 *.out.dSYM
 .editorconfig
+*.cgi

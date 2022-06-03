@@ -106,22 +106,13 @@ isUnreserved(int c) {
 }
 
 bool
-isPctEncoded(const std::string &str) {
-    if (str[0] != '%') {
-        return false;
-    }
-
-    const std::string hex = str.substr(1);
-    if (!strtol(hex.c_str(), NULL, 16)) {
-        return false;
-    }
-
-    return true;
+isSubDelims(int c) {
+    return (std::strchr("!$&'()*+,;=", c) != NULL);
 }
 
 bool
-isSubDelims(int c) {
-    return (std::strchr("!$&'()*+,;=", c) != NULL);
+isPctEncoded(const char *s) {
+    return (s[0] == '%' && std::isxdigit(s[1]) && std::isxdigit(s[2]));
 }
 
 bool
@@ -129,21 +120,15 @@ isValidRegName(const std::string &regname) {
     if (regname.length() > 255) {
         return false;
     }
-    for (int i = 0; i < static_cast<int>(regname.length()); ++i) {
-        if (isUnreserved(regname[i]) || isSubDelims(regname[i])) {
-            continue ;
-        } else if (regname[i] == '%') {
-            if (!std::isxdigit(regname[i + 1])) {
-                break ;
-            }
-            if (!std::isxdigit(regname[i + 2])) {
-                break ;
-            }
+    for (size_t i = 0; i < regname.length(); ++i) {
+        if (isPctEncoded(regname.c_str() + i)) {
             i += 2;
+        } else if (!isUnreserved(regname[i]) &&
+                   !isSubDelims(regname[i])) {
+            return false;
         }
-        return false;
     }
-    return true;   
+    return true;
 }
 
 bool

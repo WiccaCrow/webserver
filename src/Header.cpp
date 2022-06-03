@@ -116,13 +116,13 @@ Header::Host(Request &req) {
     URI uri;
     uri.parse(value);
     (void)req;
-    std::vector<HTTP::ServerBlock> &servBlocks = g_server->getServerBlocks();
+    std::vector<HTTP::ServerBlock> &servBlocks = g_server->getServerBlocksRef();
 
     for (size_t i = 0; i < servBlocks.size(); ++i) {
         std::vector<std::string>::iterator res;
         res = std::find(servBlocks[i].getServerNameRef().begin(), servBlocks[i].getServerNameRef().end(), uri._host);
         if (res != servBlocks[i].getServerNameRef().end()) {
-            Log.debug("Server block founded -> " + servBlocks[i].getBlockName());
+            Log.debug("ServerBlock found -> " + servBlocks[i].getBlockName());
             break ;
         }
     }

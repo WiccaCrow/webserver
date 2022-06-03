@@ -7,13 +7,8 @@ Server::Server() {
     _pollfds.reserve(reservedClients);
 }
 
-Server::Server(const Server &obj) {
-    operator=(obj);
-}
-
 Server::~Server() {
-    const size_t size = _pollfds.size();
-    for (size_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < _pollfds.size(); i++) {
         if (_pollfds[i].fd != -1) {
             close(_pollfds[i].fd);
             _pollfds[i].fd = -1;
@@ -21,24 +16,28 @@ Server::~Server() {
     }
 }
 
+// Could be used for re-reading config:
+// Try to read new configuration into another server,
+// and if server is not NULL, then do old_server = new_server,
+// else keep old configuration and log message.
+Server::Server(const Server &obj) {
+    operator=(obj);
+}
+
 Server &
 Server::operator=(const Server &obj) {
     if (this != &obj) {
-        _ServBlocks = obj._ServBlocks;
+        _servBlocks = obj._servBlocks;
         _pollResult = obj._pollResult;
         _pollfds    = obj._pollfds;
+        _clientsMap = obj._clientsMap;
     }
     return (*this);
 }
 
-size_t
-Server::getServerBlocksNum(void) {
-    return this->_nbServBlocks;
-}
-
 std::vector<HTTP::ServerBlock>&
-Server::getServerBlocks(void) {
-    return this->_ServBlocks;
+Server::getServerBlocksRef(void) {
+    return this->_servBlocks;
 }
 
 // Private functions
@@ -47,7 +46,7 @@ void
 Server::fillServBlocksFds(void) {
     for (size_t i = 0; i < _nbServBlocks; ++i) {
         struct pollfd tmp = {
-            _ServBlocks[i].getServFd(),
+            _servBlocks[i].getServFd(),
             POLLIN,
             0
         };
@@ -65,15 +64,8 @@ Server::fillServBlocksFds(void) {
 
 void
 Server::addServerBlock(HTTP::ServerBlock &servBlock) {
-    _ServBlocks.push_back(servBlock);
-    _ServBlocks.back().createListenSock();
-    _nbServBlocks++;
-}
-
-void
-Server::addServerBlock(const std::string &ipaddr, const uint16_t port) {
-    _ServBlocks.push_back(HTTP::ServerBlock(ipaddr, port));
-    _ServBlocks.back().createListenSock();
+    _servBlocks.push_back(servBlock);
+    _servBlocks.back().createListenSock(); // Should not
     _nbServBlocks++;
 }
 
@@ -81,11 +73,14 @@ int
 Server::pollInHandler(size_t id) {
     _pollfds[id].revents = 0;
     if (id < _nbServBlocks) {
-        acceptNewClient(id);
+        connectClient(id);
         return 1;
     } else {
-        Log.debug("Server::receive " + to_string(id));
-        _clients[id - _nbServBlocks].receive();
+        _clientsMap[id].receive();
+
+        if (_clientsMap[id].getFd() == -1) {
+            disconnectClient(id);
+        }
         return 0;
     }
 }
@@ -94,19 +89,21 @@ void
 Server::pollHupHandler(size_t id) {
     Log.error("POLLHUP occured on the " + to_string(_pollfds[id].fd) + "socket");
     if (id >= _nbServBlocks) {
-        _clients[id - _nbServBlocks].disconnect();
+        disconnectClient(id);
     }
 }
 
 void
 Server::pollOutHandler(size_t id) {
-    if (_clients[id - _nbServBlocks].responseFormed()) {
-        // _clients[id - _nbServBlocks].changeResponseFlag(0);
-        _clients[id - _nbServBlocks].process();
-        _clients[id - _nbServBlocks].reply();
-        _clients[id - _nbServBlocks].disconnectIfFailed();
-        _clients[id - _nbServBlocks].clearData();
+    if (_clientsMap[id].responseFormed()) { // Not response, but request formed
+        _clientsMap[id].process(); // Response is formed only after process
+        _clientsMap[id].reply();
+        _clientsMap[id].checkIfFailed();
+        _clientsMap[id].clearData();
 
+        if (_clientsMap[id].getFd() == -1) {
+            disconnectClient(id);
+        }
     }
 }
 
@@ -178,19 +175,19 @@ Server::handleAcceptError() {
             break;
         }
         default: {
-            Log.error(std::string("Accept::") + strerror(errno));
+            Log.error("Accept::" + std::string(strerror(errno)));
             break;
         }
     }
 }
 
 static int
-fdNotTaken(struct pollfd pfd) {
-    return pfd.fd == -1;
+fdFree(struct pollfd pfd) {
+    return (pfd.fd == -1);
 }
 
 void
-Server::acceptNewClient(size_t id) {
+Server::connectClient(size_t id) {
     struct sockaddr_in clientData;
 
     socklen_t len = sizeof(clientData);
@@ -205,19 +202,39 @@ Server::acceptNewClient(size_t id) {
     if (fd > -1) {
         fcntl(fd, F_SETFL, O_NONBLOCK);
 
-        std::vector<struct pollfd>::iterator it;
-        it = std::find_if(_pollfds.begin(), _pollfds.end(), fdNotTaken);
+        Log.debug("Server::connectClient -> fd: " + to_string(fd));
+        Log.info("client's ip: " + std::string(inet_ntoa(clientData.sin_addr)));
+        Log.info("client's port: " + to_string(clientData.sin_port));
 
-        Log.debug("client accepted -> fd: " + to_string(fd));
+        std::vector<struct pollfd>::iterator it;
+        it = std::find_if(_pollfds.begin(), _pollfds.end(), fdFree);
+
+        size_t clientId;
 
         if (it != _pollfds.end()) {
             it->fd     = fd;
             it->events = POLLIN | POLLOUT;
+            clientId = it - _pollfds.begin();
         } else {
             struct pollfd tmp = { fd, POLLIN | POLLOUT, 0 };
             _pollfds.push_back(tmp);
-            _clients.push_back(HTTP::Client(_pollfds.back(), &_ServBlocks[id])); // add string with port
-            _clients[_clients.size() - 1].setSocketData(clientData);
+            clientId = _pollfds.size() - 1;
         }
+
+        _clientsMap.insert(std::make_pair(clientId, HTTP::Client()));
+
+        _clientsMap[clientId].setFd(fd);
+        // _clientsMap[clientId].setSocketData(clientData); // or pass fd instead (ptr to client in req)
+        _clientsMap[clientId].setServerBlock(&_servBlocks[id]); // matchServerBlock will be added 
     }
+}
+
+void
+Server::disconnectClient(size_t id) {
+    Log.info("Server::disconnectClient -> fd:" + to_string(_pollfds[id].fd));
+    _clientsMap.erase(id);
+    close(_pollfds[id].fd);
+    _pollfds[id].fd = -1;
+    _pollfds[id].events = 0;
+    _pollfds[id].revents = 0;
 }

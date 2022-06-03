@@ -15,7 +15,7 @@ namespace HTTP {
 class Client {
 
 private:
-    struct pollfd &_pfd;
+    int _fd;
     struct sockaddr_in _socketData;
 
     HTTP::Request   _req;
@@ -25,23 +25,23 @@ private:
     static ReadSock _reader;
 
 public:
-    Client(struct pollfd &pfd, ServerBlock *servBlock);
+    Client(void);
     Client(const Client &client);
     ~Client();
 
     Client &operator=(const Client &client);
 
+    void setFd(int fd);
     void setSocketData(struct sockaddr_in data);
+    void setServerBlock(ServerBlock *serverBlock);
 
     void process(void);
     void clearData(void);
-    void disconnectIfFailed(void);
+    void checkIfFailed(void);
 
-    void disconnect(void);
     void receive(void);
     void reply(void);
     int  getFd(void);
-    void changeFd(int fd);
     bool responseFormed(void);
 };
 

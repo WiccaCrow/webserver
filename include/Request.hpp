@@ -43,13 +43,14 @@ private:
     uint8_t       _parseFlags;
 
 public:
-    Request(ServerBlock *servBlock);
+    Request();
     ~Request();
 
     Request(const Request &other);
     Request &operator=(const Request &other);
 
     const ServerBlock *getServerBlock() const;
+    void setServerBlock(ServerBlock *);
 
     const std::string                  &getPath() const;
     const std::string                  &getMethod() const;

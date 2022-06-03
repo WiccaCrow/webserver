@@ -4,19 +4,13 @@ namespace HTTP {
 
 ReadSock Client::_reader;
 
-Client::Client(struct pollfd &pfd, ServerBlock *servBlock)
-    : _pfd(pfd)
-    , _req(servBlock)
-    , _servBlock(servBlock) {
+Client::Client() {
 }
 
 Client::~Client() {
 }
 
-Client::Client(const Client &client)
-    : _pfd(client._pfd)
-    , _req(client._servBlock)
-    , _servBlock(client._servBlock) {
+Client::Client(const Client &client) {
     *this = client;
 }
 
@@ -28,20 +22,22 @@ Client::operator=(const Client &client) {
         _res = client._res;
         _servBlock = client._servBlock;
         // Not think it is correct
-        _pfd = client._pfd;
+        _fd = client._fd;
     }
     return *this;
 }
 
 int
 Client::getFd(void) {
-    return _pfd.fd;
+    return _fd;
 }
 
+// Why would I need to do that? I know now :D
 void
-Client::changeFd(int fd) {
-    _pfd.fd = fd;
+Client::setFd(int fd) {
+    _fd = fd;
 }
+
 
 bool
 Client::responseFormed() {
@@ -49,10 +45,30 @@ Client::responseFormed() {
 }
 
 void
+Client::setSocketData(struct sockaddr_in data) {
+    _socketData = data;
+}
+
+void
+Client::setServerBlock(ServerBlock *serverBlock) {
+    _servBlock = serverBlock;
+    _req.setServerBlock(_servBlock);
+}
+
+// void
+// Client::setPollFdPtr(struct pollfd *ptr) {
+//     _pfd = ptr;
+// }
+
+
+void
 Client::receive(void) {
+
     std::string line;
 
-    struct s_sock s = { _pfd.fd, ReadSock::PERM_READ };
+    struct s_sock s = { _fd, ReadSock::PERM_READ };
+
+    Log.debug("Client::receive -> fd:" + to_string(_fd));
 
     ReadSock::Status stat;
     while (true) {
@@ -64,7 +80,9 @@ Client::receive(void) {
         }
         switch (stat) {
             case ReadSock::RECV_END:
-                disconnect();
+                Log.debug("Client::recv_env " + to_string(_fd));
+                setFd(-1);
+                // need to erase from map of clients in server
             case ReadSock::INVALID_FD:
                 return;
             case ReadSock::LINE_NOT_FOUND:
@@ -92,13 +110,13 @@ Client::receive(void) {
 }
 
 void
-Client::disconnectIfFailed(void) {
+Client::checkIfFailed(void) {
 
     if (_req.getStatus() == HTTP::BAD_REQUEST || 
         _req.getStatus() == HTTP::REQUEST_TIMEOUT || 
         _req.getStatus() == HTTP::INTERNAL_SERVER_ERROR ||
         _req.getStatus() == HTTP::PAYLOAD_TOO_LARGE) {
-        disconnect();
+        setFd(-1);
     }
 }
 
@@ -110,11 +128,11 @@ Client::clearData(void) {
 
 void
 Client::process(void) {
-    if (_pfd.fd == -1) {
+    if (_fd == -1) {
         return;
     }
 
-    Log.debug("Processing started"  + to_string(_pfd.fd));
+    Log.debug("Client::process -> fd:"  + to_string(_fd));
 
     HTTP::StatusCode status = _req.getStatus();
 
@@ -137,22 +155,17 @@ Client::process(void) {
 }
 
 void
-Client::setSocketData(struct sockaddr_in data) {
-    _socketData = data;
-}
-
-void
 Client::reply(void) {
-    if (_pfd.fd == -1) {
+    if (_fd == -1) {
         return;
     }
 
-    Log.debug("Reply started");
+    Log.debug("Client::reply -> fd:"  + to_string(_fd));
 
     long sentBytes = 0;
     do {
         _res.setLeftToSend(sentBytes);
-        sentBytes += send(_pfd.fd, _res.getLeftToSend(), _res.getLeftToSendSize(), 0);
+        sentBytes += send(_fd, _res.getLeftToSend(), _res.getLeftToSendSize(), 0);
         if (sentBytes < 0) {
             _req.setStatus(INTERNAL_SERVER_ERROR);
             break;
@@ -171,15 +184,18 @@ Client::reply(void) {
     // }
 }
 
-void
-Client::disconnect(void) {
-    if (_pfd.fd != -1) {
-        Log.info(to_string(_pfd.fd) + ": client left");
+// void
+// Client::disconnect(void) {
+//     _fd = -1;
+    // if (_fd != -1) {
 
-        close(_pfd.fd);
-        _pfd.fd      = -1;
-        _pfd.events  = 0;
-        _pfd.revents = 0;
-    }
-}
+    //     // Maybe socket should be closed on the same level as accept, i.e. in server class
+    //     // close(_fd);
+    //     _fd = -1;
+        
+    //     // _pfd->events  = 0;
+    //     // _pfd->revents = 0;
+    // }
+// }
+
 }

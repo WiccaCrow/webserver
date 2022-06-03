@@ -613,6 +613,10 @@ parseServerBlocks(JSON::Object *src, Server *serv) {
 
     JSON::Object::iterator it  = servers->begin();
     JSON::Object::iterator end = servers->end();
+    if (it == end) {
+        Log.error("At least one server block is needed.");
+        return NONE_OR_INV;
+    }
     for (; it != end; it++) {
         HTTP::ServerBlock block_dst;
         block_dst.setBlockname(it->first);
@@ -650,10 +654,6 @@ loadConfig(const string filename) {
     if (!parseServerBlocks(ptr, serv)) {
         delete serv;
         serv = NULL;
-    } else if (serv && !serv->getServerBlocksNum()) {
-        delete serv;
-        serv = NULL;
-        Log.error("At least one server block is needed.");
     }
 
     delete ptr;

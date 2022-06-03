@@ -1,6 +1,6 @@
 .PHONY: clean fclean re all libjson
 
-NAME 		   =   serv
+NAME 		   =   webserv
 
 CXX            =   clang++
 CPPFLAGS       =   -Wall -Wextra -Werror -std=c++98 -g # -Wpedantic

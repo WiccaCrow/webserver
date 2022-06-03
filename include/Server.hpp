@@ -30,9 +30,9 @@ class Server {
 
 private:
     size_t                         _nbServBlocks;
-    std::vector<HTTP::ServerBlock> _ServBlocks;
+    std::vector<HTTP::ServerBlock> _servBlocks;
     std::vector<struct pollfd>     _pollfds;
-    std::vector<HTTP::Client>      _clients;
+    std::map<size_t, HTTP::Client> _clientsMap;
     int                            _pollResult;
 
     void fillServBlocksFds(void);
@@ -46,17 +46,19 @@ public:
     Server &operator=(const Server &obj);
 
     void   addServerBlock(HTTP::ServerBlock &servBlock);
-    void   addServerBlock(const std::string &ipaddr, const uint16_t port);
-    size_t getServerBlocksNum(void);
-    std::vector<HTTP::ServerBlock> &getServerBlocks(void);
+
+    std::vector<HTTP::ServerBlock> &getServerBlocksRef(void);
 
     void start(void);
     void pollServ(void);
-    void acceptNewClient(size_t id);
+    void connectClient(size_t id);
+    void disconnectClient(size_t id);
     void handleAcceptError();
     void handlePollError();
     int  pollInHandler(size_t id);
     void pollHupHandler(size_t id);
     void pollOutHandler(size_t id);
     void pollErrHandler(size_t id);
+
+    HTTP::ServerBlock *matchServerBlock(const std::string &);
 };

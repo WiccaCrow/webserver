@@ -1,12 +1,16 @@
 class httpAPI {
 
-    delete(url) {  
-        fetch(url, {
-            method: 'DELETE',
-        })
-        .then(response => {
-            return response.status == 204 ? "OK" : "NOT OK";
-        });
+    delete(url) {
+        try {
+            fetch(url, {
+                method: 'DELETE',
+            })
+            .then(response => {
+                return response.status == 204 ? "OK" : "NOT OK";
+            });
+        } catch (e) {
+            console.log(e);
+        }
     }
 
     checkStatus (response) {
