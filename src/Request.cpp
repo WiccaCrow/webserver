@@ -299,13 +299,6 @@ Request::parseHeader(std::string line) {
         return BAD_REQUEST;
     }
 
-    // Should be moved to header handler
-    if (header.hash == CONTENT_LENGTH) {
-        size_t length = strtoul(header.value.c_str(), NULL, 10);
-        setBodySizeFlag(false);
-        setBodySize(length);
-    }
-
     // Copying here need to replace
     _headers.insert(std::make_pair(header.hash, header));
 
