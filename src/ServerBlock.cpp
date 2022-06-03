@@ -56,7 +56,7 @@ ServerBlock::getAddrRef(void) {
 }
 
 std::vector<std::string> &
-ServerBlock::getServerNameRef(void) {
+ServerBlock::getServerNamesRef(void) {
     return _server_names;
 }
 

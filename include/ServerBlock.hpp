@@ -45,7 +45,7 @@ public:
     std::string                           &getAddrRef(void);
     int                                   &getPortRef(void);
     Location                              &getLocationBaseRef(void);
-    std::vector<std::string>              &getServerNameRef(void);
+    std::vector<std::string>              &getServerNamesRef(void);
     std::map<int, std::string>            &getErrPathsRef(void);
     std::map<std::string, Location>       &getLocationsRef(void);
     const std::map<std::string, Location> &getLocationsRef(void) const;

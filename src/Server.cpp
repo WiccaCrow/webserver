@@ -280,7 +280,7 @@ Server::matchServerBlock(int port, const std::string &ipaddr, const std::string 
         if (_servBlocks[i].getPort() == port) {
             defaultServerIndex = i;
 
-            std::vector<std::string> &sNames = _servBlocks[i].getServerNameRef();
+            std::vector<std::string> &sNames = _servBlocks[i].getServerNamesRef();
             if (std::find(sNames.begin(), sNames.end(), host) != sNames.end()) {
                 Log.debug("ServerBlock found -> " + _servBlocks[i].getBlockName() + " for: " + host + ":" + to_string(port));
                 return &_servBlocks[i];

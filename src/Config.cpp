@@ -554,7 +554,7 @@ parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
         return NONE_OR_INV;
     }
 
-    if (!getArray(src, "server_names", dst.getServerNameRef(), dst.getServerNameRef())) {
+    if (!getArray(src, "server_names", dst.getServerNamesRef(), dst.getServerNamesRef())) {
         Log.error("## Failed to parse \"server_names\"");
         return NONE_OR_INV;
     }
