@@ -115,6 +115,11 @@ StatusCode
 Header::Host(Request &req) {
     URI uri;
     uri.parse(value);
+
+    if (!isValidHost(uri._host)) {
+        return BAD_REQUEST;
+    }
+
     (void)req;
     std::vector<HTTP::ServerBlock> &servBlocks = g_server->getServerBlocksRef();
 
@@ -202,7 +207,11 @@ Header::Referer(Request &req) {
 
 StatusCode
 Header::TransferEncoding(Request &req) {
-    (void)req;
+    const std::map<HeaderCode, HTTP::Header> headers = req.getHeaders();
+    if (headers.find(CONTENT_LENGTH) != headers.end()) {
+        return BAD_REQUEST;
+    }
+
     return CONTINUE;
 }
 
@@ -220,7 +229,21 @@ Header::UserAgent(Request &req) {
 
 StatusCode
 Header::ContentLength(Request &req) {
-    (void)req;
+    const std::map<HeaderCode, HTTP::Header> headers = req.getHeaders();
+    if (headers.find(TRANSFER_ENCODING) != headers.end()) {
+        return BAD_REQUEST;
+    }
+
+    long long length = strtoll(value.c_str(), NULL, 10);
+    if (length > LONG_MAX) {
+        return PAYLOAD_TOO_LARGE;
+    }
+    if (length < 0) {
+        return BAD_REQUEST;
+    }
+    req.setBodySizeFlag(false);
+    req.setBodySize(length);
+
     return CONTINUE;
 }
 
