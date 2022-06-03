@@ -219,7 +219,7 @@ Request::parseStartLine(const std::string &line) {
 
 bool
 Request::isValidMethod(const std::string &method) {
-    std::string validMethods[9] = {
+    static const std::string validMethods[9] = {
         "GET", "DELETE", "POST",
         "PUT", "HEAD", "CONNECT",
         "OPTIONS", "TRACE", "PATCH"
@@ -261,11 +261,13 @@ Request::parseHeader(std::string line) {
         }
         Log.debug("PHYSICAL_PATH:" + _resolvedPath);
 
-        // transfer-encoding && content-length not find
-        if (_headers.find(TRANSFER_ENCODING) == _headers.end() && _headers.find(CONTENT_LENGTH) == _headers.end()) {
-            return PROCESSING;
+        // transfer-encoding && content-length with POST, PUT, etc...
+        if (_headers.find(TRANSFER_ENCODING) == _headers.end()
+            && _headers.find(CONTENT_LENGTH) == _headers.end()
+            && _method == "POST") {
+            return BAD_REQUEST;
         }
-        return CONTINUE;
+        return PROCESSING;
     }
     // Log.debug(line); // Print headers
     size_t sepPos = line.find(':');
