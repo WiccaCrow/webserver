@@ -60,5 +60,5 @@ public:
     void pollOutHandler(size_t id);
     void pollErrHandler(size_t id);
 
-    HTTP::ServerBlock *matchServerBlock(const std::string &);
+    HTTP::ServerBlock *matchServerBlock(int port, const std::string &ipaddr, const std::string &host);
 };

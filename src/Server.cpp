@@ -221,7 +221,6 @@ Server::connectClient(size_t id) {
 
         _clients.insert(std::make_pair(clientId, HTTP::Client()));
 
-
         _clients[clientId].linkToRequest();
         _clients[clientId].setFd(fd);
         _clients[clientId].setPort(ntohs(clientData.sin_port));
@@ -244,9 +243,21 @@ Server::disconnectClient(size_t id) {
 }
 
 HTTP::ServerBlock *
-matchServerBlock(int port, const std::string &ipaddr, const std::string &host) {
-    (void)port;
+Server::matchServerBlock(int port, const std::string &ipaddr, const std::string &host) {
     (void)ipaddr;
-    (void)host;
-    return NULL;
+    
+    size_t defaultServerIndex = 0;
+    for (size_t i = _servBlocks.size() - 1; i >= 0; --i) {
+        if (_servBlocks[i].getPort() == port) {
+            defaultServerIndex = i;
+
+            std::vector<std::string> &sNames = _servBlocks[i].getServerNameRef();
+            if (std::find(sNames.begin(), sNames.end(), host) != sNames.end()) {
+                Log.debug("ServerBlock found -> " + _servBlocks[i].getBlockName());
+                return &_servBlocks[i];
+            }
+        }
+    }
+    Log.debug("ServerBlock found [default] -> " + _servBlocks[defaultServerIndex].getBlockName());
+    return &_servBlocks[defaultServerIndex];
 }
