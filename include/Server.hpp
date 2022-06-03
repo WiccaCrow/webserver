@@ -32,7 +32,7 @@ private:
     size_t                         _nbServBlocks;
     std::vector<HTTP::ServerBlock> _servBlocks;
     std::vector<struct pollfd>     _pollfds;
-    std::map<size_t, HTTP::Client> _clientsMap;
+    std::map<size_t, HTTP::Client> _clients;
     int                            _pollResult;
 
     void fillServBlocksFds(void);

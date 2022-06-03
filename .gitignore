@@ -39,7 +39,7 @@
 *.log
 
 # Other
-serv
+webserv
 .DS_Store
 .vscode
 .obj/
