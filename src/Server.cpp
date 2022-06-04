@@ -116,8 +116,7 @@ Server::pollInHandler(size_t id) {
             disconnectClient(id);
         }
     }
-
-    return 0; // control may reach end of non-void function [-Werror,-Wreturn-type]
+    return 0; 
 }
 
 void

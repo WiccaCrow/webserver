@@ -84,6 +84,7 @@ public:
     StatusCode parseHeader(std::string line);
     StatusCode parseChunked(const std::string &line);
     StatusCode parseBody(const std::string &line);
+    StatusCode writeBody(const std::string &line);
     StatusCode parseLine(std::string line);
 
 private:

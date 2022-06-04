@@ -326,13 +326,18 @@ Request::parseChunked(const std::string &line) {
     }
 
     _flag_getline_bodySize = true;
+    return (writeBody(line) == BAD_REQUEST ? BAD_REQUEST : CONTINUE);
+}
+
+StatusCode
+Request::writeBody(const std::string &line) {
     if (line.length() > _bodySize) {
         // bad chunk body
         return (BAD_REQUEST);
     }
     _bodySize = 0;
     _body += line;
-    return (CONTINUE);
+    return (PROCESSING);
 }
 
 StatusCode
