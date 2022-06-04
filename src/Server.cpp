@@ -53,11 +53,13 @@ Server::createListenSocket(const std::string addr, const int port) {
     struct sockaddr_in data;
     data.sin_family      = AF_INET;
     data.sin_port        = htons(port);
-    data.sin_addr.s_addr = inet_addr(addr.c_str());
+    // Request for socket to be bound to all network interfaces on the host
+    data.sin_addr.s_addr = INADDR_ANY; // inet_addr(addr.c_str());
     if (bind(fd, (struct sockaddr *)&data, sizeof(data)) < 0) {
         Log.error("Server::bind -> addr: " + addr + ":" + to_string(port));
         exit(7);
     }
+    Log.debug("Server::bind -> addr: " + addr + ":" + to_string(port));
 
     if (listen(fd, SOMAXCONN) < 0) {
         Log.error("Server::listen -> addr: " + addr + ":" + to_string(port));
@@ -72,9 +74,10 @@ Server::fillServBlocksFds(void) {
 
     for (size_t i = 0; i < _servBlocks.size(); ++i) {
         const int                    port = _servBlocks[i].getPort();
+        const std::string          & addr = _servBlocks[i].getAddrRef();
         std::map<int, int>::iterator it   = sockets.find(port);
         if (it == sockets.end()) {
-            int fd = createListenSocket("127.0.0.1", port); // what addr should i use here?
+            int fd = createListenSocket(addr, port); // what addr should i use here?
             sockets.insert(std::make_pair(port, fd));
             _servBlocks[i].setFd(fd);
         } else {
@@ -116,7 +119,7 @@ Server::pollInHandler(size_t id) {
             disconnectClient(id);
         }
     }
-    return 0; 
+    return 0;
 }
 
 void
