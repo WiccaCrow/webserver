@@ -307,25 +307,29 @@ Request::parseHeader(std::string line) {
 StatusCode
 Request::parseChunked(const std::string &line) {
     if (_flag_getline_bodySize) {
-        if (line.empty() == true || line.find_first_not_of("0123456789ABCDEFabcdef") != line.npos) {
-            // bad chunk length
-            _flag_getline_bodySize = false;
-            return (BAD_REQUEST);
-        }
-        std::string chunk(line.c_str());
-        if ((_bodySize = strtoul(chunk.c_str(), NULL, 16)) == 0) {
-            if (chunk[0] == '0') {
-                setFlag(PARSED_BODY);
-                return (PROCESSING);
-            }
-            return (BAD_REQUEST);
-        }
-        _flag_getline_bodySize = false;
-        return (CONTINUE);
+        return writeChunkedSize(line);
     }
-
     _flag_getline_bodySize = true;
     return (writeBody(line) == BAD_REQUEST ? BAD_REQUEST : CONTINUE);
+}
+
+StatusCode
+Request::writeChunkedSize(const std::string &line) {
+    if (line.empty() == true || line.find_first_not_of("0123456789ABCDEFabcdef") != line.npos) {
+        // bad chunk length
+        _flag_getline_bodySize = false;
+        return (BAD_REQUEST);
+    }
+    std::string chunk(line.c_str());
+    if ((_bodySize = strtoul(chunk.c_str(), NULL, 16)) == 0) {
+        if (chunk[0] == '0') {
+            setFlag(PARSED_BODY);
+            return (PROCESSING);
+        }
+        return (BAD_REQUEST);
+    }
+    _flag_getline_bodySize = false;
+    return (CONTINUE);
 }
 
 StatusCode
