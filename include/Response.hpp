@@ -21,7 +21,6 @@ class Response {
 
     std::string _res;
     std::string _resLeftToSend;
-    bool        _responseFormed;
 
 public:
     Response();
@@ -34,14 +33,6 @@ public:
     static const std::map<HTTP::StatusCode, const char *>  errorResponses;
 
     void setErrorResponse(HTTP::StatusCode status);
-
-    // These functions allow you to get / set
-    // a flag by which you can find out about
-    // the need to form a response (the request
-    // is fully processed)
-
-    bool isFormed() const;
-    void setFormed(bool formed);
 
     // methods
 

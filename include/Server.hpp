@@ -29,13 +29,14 @@
 class Server {
 
 private:
-    size_t                         _nbServBlocks;
     std::vector<HTTP::ServerBlock> _servBlocks;
     std::vector<struct pollfd>     _pollfds;
-    std::map<size_t, HTTP::Client> _clientsMap;
+    std::map<size_t, HTTP::Client> _clients;
     int                            _pollResult;
 
     void fillServBlocksFds(void);
+
+    int createListenSocket(const std::string addr, const int port);
 
 public:
     Server();
@@ -46,8 +47,6 @@ public:
     Server &operator=(const Server &obj);
 
     void   addServerBlock(HTTP::ServerBlock &servBlock);
-
-    std::vector<HTTP::ServerBlock> &getServerBlocksRef(void);
 
     void start(void);
     void pollServ(void);
@@ -60,5 +59,5 @@ public:
     void pollOutHandler(size_t id);
     void pollErrHandler(size_t id);
 
-    HTTP::ServerBlock *matchServerBlock(const std::string &);
+    HTTP::ServerBlock *matchServerBlock(int port, const std::string &ipaddr, const std::string &host);
 };

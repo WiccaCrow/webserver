@@ -221,15 +221,6 @@ isFile(const std::string &filename) {
 }
 
 bool
-isWriteMode(const std::string &filename) {
-    struct stat state;
-
-    if (stat(filename.c_str(), &state) < 0)
-        return false;
-    return state.st_mode == S_IWUSR;
-}
-
-bool
 isDirectory(const std::string &dirname) {
     struct stat state;
 

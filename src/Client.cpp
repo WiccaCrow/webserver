@@ -4,7 +4,7 @@ namespace HTTP {
 
 ReadSock Client::_reader;
 
-Client::Client() {
+Client::Client() : _fd(-1), _clientPort(0), _requestFormed(false), _responseFormed(true) {
 }
 
 Client::~Client() {
@@ -17,49 +17,88 @@ Client::Client(const Client &client) {
 Client &
 Client::operator=(const Client &client) {
     if (this != &client) {
-        _res.setFormed(false);
         _req = client._req;
         _res = client._res;
         _servBlock = client._servBlock;
         // Not think it is correct
         _fd = client._fd;
+        _ipAddr = client._ipAddr;
+        _clientPort = client._clientPort;
+        _serverPort = client._serverPort;
+        _requestFormed = client._requestFormed;
+        _responseFormed = client._responseFormed;
     }
     return *this;
 }
 
+void Client::linkToRequest(void) {
+    _req.setClient(this);
+}
+
 int
-Client::getFd(void) {
+Client::getFd(void) const {
     return _fd;
 }
 
-// Why would I need to do that? I know now :D
 void
 Client::setFd(int fd) {
     _fd = fd;
 }
 
+void
+Client::setIpAddr(const std::string ipaddr) {
+    _ipAddr = ipaddr;
+}
+
+void
+Client::setPort(int port) {
+    _clientPort = port;
+}
+
+int
+Client::getPort(void) const {
+    return _clientPort;
+}
+
+void
+Client::setServerPort(int port) {
+    _serverPort = port;
+}
+
+int
+Client::getServerPort(void) const {
+    return _serverPort;
+}
+
+const std::string &
+Client::getIpAddr(void) const {
+    return _ipAddr;
+}
+
+const std::string
+Client::getHostname() const {
+    return _clientPort != 0 ? _ipAddr + ":" + to_string(_clientPort) : _ipAddr;
+}
 
 bool
-Client::responseFormed() {
-    return _res.isFormed();
+Client::isRequestFormed() const {
+    return _requestFormed;
 }
 
 void
-Client::setSocketData(struct sockaddr_in data) {
-    _socketData = data;
+Client::setRequestFormed(bool formed) {
+    _requestFormed = formed;
+}
+
+bool
+Client::isResponseFormed() const {
+    return _responseFormed;
 }
 
 void
-Client::setServerBlock(ServerBlock *serverBlock) {
-    _servBlock = serverBlock;
-    _req.setServerBlock(_servBlock);
+Client::setResponseFormed(bool formed) {
+    _responseFormed = formed;
 }
-
-// void
-// Client::setPollFdPtr(struct pollfd *ptr) {
-//     _pfd = ptr;
-// }
-
 
 void
 Client::receive(void) {
@@ -97,7 +136,9 @@ Client::receive(void) {
             case ReadSock::LINE_FOUND: {
                 _req.parseLine(line);
                 if (_req.getStatus() != HTTP::CONTINUE) {
-                    _res.setFormed(true);
+                    setRequestFormed(true);
+                    // _res.setFormed(true);
+                    // _req.setFormed(true);
                     return;
                 }
                 break;
@@ -124,6 +165,8 @@ void
 Client::clearData(void) {
     _res.clear();
     _req.clear();
+    _requestFormed = false;
+    _responseFormed = true;
 }
 
 void
@@ -132,7 +175,7 @@ Client::process(void) {
         return;
     }
 
-    Log.debug("Client::process -> fd:"  + to_string(_fd));
+    Log.debug("Client::process -> fd: "  + to_string(_fd));
 
     HTTP::StatusCode status = _req.getStatus();
 
@@ -160,7 +203,7 @@ Client::reply(void) {
         return;
     }
 
-    Log.debug("Client::reply -> fd:"  + to_string(_fd));
+    Log.debug("Client::reply -> fd: "  + to_string(_fd));
 
     long sentBytes = 0;
     do {
@@ -184,18 +227,5 @@ Client::reply(void) {
     // }
 }
 
-// void
-// Client::disconnect(void) {
-//     _fd = -1;
-    // if (_fd != -1) {
-
-    //     // Maybe socket should be closed on the same level as accept, i.e. in server class
-    //     // close(_fd);
-    //     _fd = -1;
-        
-    //     // _pfd->events  = 0;
-    //     // _pfd->revents = 0;
-    // }
-// }
 
 }

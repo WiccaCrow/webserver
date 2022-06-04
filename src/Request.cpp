@@ -5,6 +5,7 @@ namespace HTTP {
 Request::Request()
     : _servBlock(NULL)
     , _location(NULL)
+    , _client(NULL)
     , _flag_getline_bodySize(true)
     , _bodySize(0)
     , _parseFlags(PARSED_NONE) {
@@ -43,6 +44,14 @@ Request::getServerBlock() const {
 void
 Request::setServerBlock(ServerBlock *serverBlock) {
     _servBlock = serverBlock;
+}
+
+const Client *Request::getClient() const {
+    return _client;
+}
+
+void Request::setClient(Client *client) {
+    _client = client;
 }
 
 const std::string &
@@ -94,11 +103,6 @@ const std::string &
 Request::getRawUri() const {
     return _rawURI;
 }
-
-// bool
-// Request::empty() {
-//     return (_method.empty() && _uri.empty() && _protocol.empty() && _headers.empty());
-// }
 
 void
 Request::setFlag(uint8_t flag) {
@@ -321,13 +325,18 @@ Request::parseChunked(const std::string &line) {
     }
 
     _flag_getline_bodySize = true;
+    return (writeBody(line) == BAD_REQUEST ? BAD_REQUEST : CONTINUE);
+}
+
+StatusCode
+Request::writeBody(const std::string &line) {
     if (line.length() > _bodySize) {
         // bad chunk body
         return (BAD_REQUEST);
     }
     _bodySize = 0;
     _body += line;
-    return (CONTINUE);
+    return (PROCESSING);
 }
 
 StatusCode
