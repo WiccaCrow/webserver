@@ -4,7 +4,7 @@ namespace HTTP {
 
 ReadSock Client::_reader;
 
-Client::Client() : _fd(-1), _clientPort(0) {
+Client::Client() : _fd(-1), _clientPort(0), _requestFormed(false), _responseFormed(true) {
 }
 
 Client::~Client() {
@@ -26,6 +26,8 @@ Client::operator=(const Client &client) {
         _ipAddr = client._ipAddr;
         _clientPort = client._clientPort;
         _serverPort = client._serverPort;
+        _requestFormed = client._requestFormed;
+        _responseFormed = client._responseFormed;
     }
     return *this;
 }
@@ -42,11 +44,6 @@ Client::getFd(void) const {
 void
 Client::setFd(int fd) {
     _fd = fd;
-}
-
-bool
-Client::responseFormed() {
-    return _res.isFormed();
 }
 
 void
@@ -82,6 +79,26 @@ Client::getIpAddr(void) const {
 const std::string
 Client::getHostname() const {
     return _clientPort != 0 ? _ipAddr + ":" + to_string(_clientPort) : _ipAddr;
+}
+
+bool
+Client::isRequestFormed() const {
+    return _requestFormed;
+}
+
+void
+Client::setRequestFormed(bool formed) {
+    _requestFormed = formed;
+}
+
+bool
+Client::isResponseFormed() const {
+    return _responseFormed;
+}
+
+void
+Client::setResponseFormed(bool formed) {
+    _responseFormed = formed;
 }
 
 void
@@ -120,7 +137,9 @@ Client::receive(void) {
             case ReadSock::LINE_FOUND: {
                 _req.parseLine(line);
                 if (_req.getStatus() != HTTP::CONTINUE) {
-                    _res.setFormed(true);
+                    setRequestFormed(true);
+                    // _res.setFormed(true);
+                    // _req.setFormed(true);
                     return;
                 }
                 break;
@@ -147,6 +166,8 @@ void
 Client::clearData(void) {
     _res.clear();
     _req.clear();
+    _requestFormed = false;
+    _responseFormed = true;
 }
 
 void

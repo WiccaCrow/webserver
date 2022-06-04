@@ -14,11 +14,6 @@ HTTP::Response::clear() {
     _responseFormed = false;
 }
 
-bool
-HTTP::Response::isFormed() const {
-    return _responseFormed;
-}
-
 void
 HTTP::Response::setFormed(bool formed) {
     _responseFormed = formed;

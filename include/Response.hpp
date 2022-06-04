@@ -21,7 +21,6 @@ class Response {
 
     std::string _res;
     std::string _resLeftToSend;
-    bool        _responseFormed;
 
 public:
     Response();
@@ -40,7 +39,6 @@ public:
     // the need to form a response (the request
     // is fully processed)
 
-    bool isFormed() const;
     void setFormed(bool formed);
 
     // methods

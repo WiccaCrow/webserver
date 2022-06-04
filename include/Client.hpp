@@ -19,6 +19,8 @@ private:
     int             _clientPort;
     int             _serverPort;
     std::string     _ipAddr;
+    bool            _requestFormed;
+    bool            _responseFormed;
 
     HTTP::Request   _req;
     HTTP::Response  _res;
@@ -48,13 +50,17 @@ public:
     void linkToRequest(void);
     const std::string getHostname(void) const;
 
+    bool isRequestFormed() const;
+    void setRequestFormed(bool);
+
+    bool isResponseFormed() const;
+    void setResponseFormed(bool);
+
     void receive(void);
     void process(void);
     void reply(void);
     void checkIfFailed(void);
     void clearData(void);
-
-    bool responseFormed(void);
 };
 
 }

@@ -3,10 +3,11 @@
 void
 HTTP::Response::setErrorResponse(HTTP::StatusCode status) {
     std::map<HTTP::StatusCode, const char *>::const_iterator iter = errorResponses.find(status);
-    
+
     // if serverblock has error-pages, but response doesn't have a reference to serverblock
     if (iter == errorResponses.end()) {
-        std::cerr << "Unknown error response. Please let me know or add to the ResponseErrCode.cpp file. Wicca" << std::endl;
+        Log.error(to_string(static_cast<int>(status)));
+        Log.error("Unknown error response. Please let me know or add to the ResponseErrCode.cpp file. Wicca");
         // Should be removed after development
         exit(66);
     }
