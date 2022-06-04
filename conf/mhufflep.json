@@ -56,7 +56,7 @@
         },
         "http2": {
             "port": 8080,
-            "server_names": [ "www.server.cpp" ],
+            "server_names": [ "webserv" ],
             "error_pages": {
                 "400": "./pages/error_pages/400.html",
                 "403": "./pages/error_pages/403.html",
