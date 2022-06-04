@@ -34,13 +34,6 @@ public:
 
     void setErrorResponse(HTTP::StatusCode status);
 
-    // These functions allow you to get / set
-    // a flag by which you can find out about
-    // the need to form a response (the request
-    // is fully processed)
-
-    void setFormed(bool formed);
-
     // methods
 
     void        HEADmethod(Request &req);

@@ -29,7 +29,7 @@ Server::operator=(const Server &obj) {
         _servBlocks = obj._servBlocks;
         _pollResult = obj._pollResult;
         _pollfds    = obj._pollfds;
-        _clients = obj._clients;
+        _clients    = obj._clients;
     }
     return (*this);
 }
@@ -43,7 +43,7 @@ Server::createListenSocket(const std::string addr, const int port) {
         Log.error("Server::socket -> addr: " + addr + ":" + to_string(port));
         exit(5);
     }
-    
+
     int i = 1;
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) < 0) {
         Log.error("Server::setsockopt -> addr: " + addr + ":" + to_string(port));
@@ -71,8 +71,8 @@ Server::fillServBlocksFds(void) {
     std::map<int, int> sockets;
 
     for (size_t i = 0; i < _servBlocks.size(); ++i) {
-        const int port = _servBlocks[i].getPort();
-        std::map<int, int>::iterator it = sockets.find(port);
+        const int                    port = _servBlocks[i].getPort();
+        std::map<int, int>::iterator it   = sockets.find(port);
         if (it == sockets.end()) {
             int fd = createListenSocket("127.0.0.1", port); // what addr should i use here?
             sockets.insert(std::make_pair(port, fd));
@@ -109,14 +109,15 @@ Server::pollInHandler(size_t id) {
     if (id < _servBlocks.size()) {
         connectClient(id);
         return 1;
-    } else if (_clients[id].isResponseFormed()){
+    } else if (_clients[id].isResponseFormed()) {
         _clients[id].receive();
 
         if (_clients[id].getFd() == -1) {
             disconnectClient(id);
         }
-        return 0;
     }
+
+    return 0; // control may reach end of non-void function [-Werror,-Wreturn-type]
 }
 
 void
@@ -130,7 +131,7 @@ Server::pollHupHandler(size_t id) {
 void
 Server::pollOutHandler(size_t id) {
     if (_clients[id].isRequestFormed()) { // Not response, but request formed
-        _clients[id].process(); // Response is formed only after process
+        _clients[id].process();           // Response is formed only after process
         _clients[id].reply();
         _clients[id].checkIfFailed();
         _clients[id].clearData();
@@ -230,12 +231,12 @@ Server::connectClient(size_t id) {
 
     if (fd < 0) {
         handleAcceptError();
-        return ;
+        return;
     }
 
     if (fd > -1) {
         fcntl(fd, F_SETFL, O_NONBLOCK);
-       
+
         std::vector<struct pollfd>::iterator it;
         it = std::find_if(_pollfds.begin(), _pollfds.end(), fdFree);
 
@@ -243,7 +244,7 @@ Server::connectClient(size_t id) {
         if (it != _pollfds.end()) {
             it->fd     = fd;
             it->events = POLLIN | POLLOUT;
-            clientId = it - _pollfds.begin();
+            clientId   = it - _pollfds.begin();
         } else {
             struct pollfd tmp = { fd, POLLIN | POLLOUT, 0 };
             _pollfds.push_back(tmp);
@@ -257,7 +258,7 @@ Server::connectClient(size_t id) {
         _clients[clientId].setServerPort(_servBlocks[id].getPort());
         _clients[clientId].setIpAddr(inet_ntoa(clientData.sin_addr));
 
-        Log.debug("Server::connectClient -> fd: " + to_string(fd) + ", addr: " + _clients[clientId].getHostname());  
+        Log.debug("Server::connectClient -> fd: " + to_string(fd) + ", addr: " + _clients[clientId].getHostname());
     }
 }
 
@@ -266,15 +267,15 @@ Server::disconnectClient(size_t id) {
     Log.debug("Server::disconnectClient -> fd: " + to_string(_pollfds[id].fd));
     _clients.erase(id);
     close(_pollfds[id].fd);
-    _pollfds[id].fd = -1;
-    _pollfds[id].events = 0;
+    _pollfds[id].fd      = -1;
+    _pollfds[id].events  = 0;
     _pollfds[id].revents = 0;
 }
 
 HTTP::ServerBlock *
 Server::matchServerBlock(int port, const std::string &ipaddr, const std::string &host) {
     (void)ipaddr;
-    
+
     int defaultServerIndex = 0;
     for (int i = _servBlocks.size() - 1; i >= 0; --i) {
         if (_servBlocks[i].getPort() == port) {
@@ -287,6 +288,6 @@ Server::matchServerBlock(int port, const std::string &ipaddr, const std::string 
             }
         }
     }
-    Log.debug("ServerBlock found [default] -> " + _servBlocks[defaultServerIndex].getBlockName()  + " for: " + host + ":" + to_string(port));
+    Log.debug("ServerBlock found [default] -> " + _servBlocks[defaultServerIndex].getBlockName() + " for: " + host + ":" + to_string(port));
     return &_servBlocks[defaultServerIndex];
 }

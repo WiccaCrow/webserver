@@ -1,9 +1,7 @@
 #include "Response.hpp"
 #include "CGI.hpp"
 
-HTTP::Response::Response() {
-    _responseFormed = false;
-}
+HTTP::Response::Response() { }
 
 HTTP::Response::~Response() { }
 
@@ -11,12 +9,6 @@ void
 HTTP::Response::clear() {
     _res.clear();
     _resLeftToSend.clear();
-    _responseFormed = false;
-}
-
-void
-HTTP::Response::setFormed(bool formed) {
-    _responseFormed = formed;
 }
 
 std::string
@@ -154,12 +146,11 @@ isCGI(const std::string &filepath, std::map<std::string, HTTP::CGI> &cgis) {
 // Request
 
 // contentForGet
-//     makeHeaders 
+//     makeHeaders
 //     makeBody
 
 // contentForHead
-//     makeHeaders 
-
+//     makeHeaders
 
 std::string
 HTTP::Response::contentForGetHead(Request &req) {
@@ -182,9 +173,9 @@ HTTP::Response::contentForGetHead(Request &req) {
         if (resourcePath[resourcePath.length() - 1] != '/') {
             _res = statusLines[MOVED_PERMANENTLY];
             _res += "Location: " + req.getRawUri() + "/\r\n"
-                    "Content-Type: text/html\r\n"
-                    "Connection: keep-alive\r\n\r\n\r\n";
-                    //body
+                                                     "Content-Type: text/html\r\n"
+                                                     "Connection: keep-alive\r\n\r\n\r\n";
+            // body
             return "";
         }
         // find index file
@@ -249,7 +240,7 @@ HTTP::Response::DELETEmethod(Request &req) {
 
     if (!resourceExists(resourcePath)) {
         setErrorResponse(NOT_FOUND);
-        return ;
+        return;
     } else if (isDirectory(resourcePath)) {
         if (rmdirNonEmpty(resourcePath)) {
             setErrorResponse(FORBIDDEN);
@@ -291,32 +282,32 @@ HTTP::Response::PUTmethod(Request &req) {
         if (isWritableFile(resourcePath)) {
             writeFile(req, resourcePath);
             _res = "HTTP/1.1 200 OK\r\n"
-            "content-length: 67\r\n\r\n"
-            "<html>\n"
-            "  <body>\n"
-            "    <h1>File is overwritten.</h1>\n"
-            "  </body>\n"
-            "</html>";
+                   "content-length: 67\r\n\r\n"
+                   "<html>\n"
+                   "  <body>\n"
+                   "    <h1>File is overwritten.</h1>\n"
+                   "  </body>\n"
+                   "</html>";
         } else {
             setErrorResponse(FORBIDDEN);
         }
     } else {
         writeFile(req, resourcePath);
         _res = "HTTP/1.1 201 OK\r\n"
-        "content-length: 60\r\n\r\n"
-        "<html>\n"
-        "  <body>\n"
-        "    <h1>File created.</h1>\n"
-        "  </body>\n"
-        "</html>";
+               "content-length: 60\r\n\r\n"
+               "<html>\n"
+               "  <body>\n"
+               "    <h1>File created.</h1>\n"
+               "  </body>\n"
+               "</html>";
     }
 }
 
 void
 HTTP::Response::writeFile(Request &req, const std::string &resourcePath) {
-    std::ofstream outputToNewFile(resourcePath.c_str(), 
-                                  std::ios_base::out | std::ios_base::trunc) ; //output file
-    outputToNewFile << req.getBody(); // запись строки в файл
+    std::ofstream outputToNewFile(resourcePath.c_str(),
+        std::ios_base::out | std::ios_base::trunc); // output file
+    outputToNewFile << req.getBody();               // запись строки в файл
     outputToNewFile.close();
 }
 

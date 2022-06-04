@@ -17,7 +17,6 @@ Client::Client(const Client &client) {
 Client &
 Client::operator=(const Client &client) {
     if (this != &client) {
-        _res.setFormed(false);
         _req = client._req;
         _res = client._res;
         _servBlock = client._servBlock;
