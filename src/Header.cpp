@@ -207,24 +207,21 @@ Header::Referer(Request &req) {
 
 StatusCode
 Header::TransferEncoding(Request &req) {
-    static const size_t size = 1;
-    static const std::string transferCoding[size] = {"chunked"};
+    std::set<std::string> acceptedValues;
+    acceptedValues.insert("chunked");
 
     const std::map<HeaderCode, HTTP::Header> headers = req.getHeaders();
     if (headers.find(CONTENT_LENGTH) != headers.end()) {
         return BAD_REQUEST;
     }
 
-    // replace to split
-    // char *pch = strtok(const_cast<char *>(value.c_str()), " ,");
-    // while (pch != NULL) {
-    //     std::cout << pch  << "n";
-    //     pch = strtok (NULL, " ,.-");
-    // }
-
-    // for (int i = 0; i < size; ++i) {
-    //     if (transferCoding[i] !)
-    // }
+    std::vector<std::string> currentValues = split(this->value, " ,");
+    for (size_t i = 0; i < currentValues.size(); ++i) {
+        if (acceptedValues.find(currentValues[i]) == acceptedValues.end()) {
+            Log.error("Transfer coding parameter \""+ currentValues[i] + "\" is not supported");
+            return NOT_IMPLEMENTED;
+        }
+    }
 
     return CONTINUE;
 }

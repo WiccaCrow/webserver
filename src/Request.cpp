@@ -261,10 +261,7 @@ Request::parseHeader(std::string line) {
         }
         Log.debug("PHYSICAL_PATH:" + _resolvedPath);
 
-        // transfer-encoding && content-length with POST, PUT, etc...
-        if (_headers.find(TRANSFER_ENCODING) == _headers.end()
-            && _headers.find(CONTENT_LENGTH) == _headers.end()
-            && _method == "POST") {
+        if (_headers.find(HOST) == _headers.end()) {
             return BAD_REQUEST;
         }
         return PROCESSING;
@@ -335,13 +332,17 @@ Request::parseChunked(const std::string &line) {
 
 StatusCode
 Request::parseBody(const std::string &line) {
-    Log.debug("Request::parseBody");
-    if (_headers.find(TRANSFER_ENCODING) != _headers.end()) {
-        return (parseChunked(line));
-    } else if (_headers.find(CONTENT_LENGTH) != _headers.end()) {
-        setFlag(PARSED_BODY);
-        parseChunked(line);
-        return PROCESSING;
+    if (_method == "POST" || _method == "PUT" || _method == "PATCH") {
+        Log.debug("Request::parseBody");
+        if (_headers.find(TRANSFER_ENCODING) != _headers.end()) {
+            return (parseChunked(line));
+        } else if (_headers.find(CONTENT_LENGTH) != _headers.end()) {
+            setFlag(PARSED_BODY);
+            return writeBody(line);
+        } else {
+            Log.error("No Transfer-Encoding or Content-Length in request");
+            return LENGTH_REQUIRED;
+        }
     }
     return PROCESSING;
 }
