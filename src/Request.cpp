@@ -158,19 +158,17 @@ StatusCode
 Request::parseLine(std::string line) {
     if (!(getFlags() & PARSED_SL)) {
         if ((_status = parseStartLine(line)) != HTTP::CONTINUE) {
-            Log.error("Request::parseLine, parsing SL");
-            // return HTTP::Response(_status);
+            Log.debug("Request::parseLine, parsing SL");
             return _status;
         }
     } else if (!(getFlags() & PARSED_HEADERS)) {
         if ((_status = parseHeader(line)) != HTTP::CONTINUE) {
-            Log.error("Request::parseLine, parsing Headers");
-            // return HTTP::Response(_status);
+            Log.debug("Request::parseLine, parsing Headers");
             return _status;
         }
     } else if (!(getFlags() & PARSED_BODY)) {
         if ((_status = parseBody(line)) != HTTP::CONTINUE) {
-            Log.error("Request::parseLine, parsing Body");
+            Log.debug("Request::parseLine, parsing Body");
             return _status;
         }
     } else {
@@ -266,9 +264,10 @@ Request::parseHeader(std::string line) {
         Log.debug("PHYSICAL_PATH:" + _resolvedPath);
 
         if (_headers.find(HOST) == _headers.end()) {
+            Log.error("Host not founded");
             return BAD_REQUEST;
         }
-        return PROCESSING;
+        return CONTINUE;
     }
     // Log.debug(line); // Print headers
     size_t sepPos = line.find(':');
@@ -295,6 +294,7 @@ Request::parseHeader(std::string line) {
     
     // dublicate header
     if (_headers.find(header.hash) != _headers.end()) {
+        Log.error("Dublicate header");
         return BAD_REQUEST;
     }
 
