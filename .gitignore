@@ -40,7 +40,6 @@
 
 # Other
 webserv
-
 .DS_Store
 .vscode
 .obj/

@@ -4,8 +4,9 @@
 #include <cstring>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sstream>
+#include <vector>
 
+std::vector<std::string> split(const std::string &source, const std::string &delimiters);
 void        trim(std::string &s, const char *t);
 
 std::string itoh(int nb);

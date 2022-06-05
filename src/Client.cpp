@@ -4,8 +4,7 @@ namespace HTTP {
 
 ReadSock Client::_reader;
 
-Client::Client() : _fd(-1), _clientPort(0), _requestFormed(false), _responseFormed(true) {
-}
+Client::Client() : _fd(-1), _clientPort(0), _requestFormed(false), _responseFormed(true) { }
 
 Client::~Client() {
 }
@@ -186,14 +185,9 @@ Client::process(void) {
     if (status >= HTTP::BAD_REQUEST) {
         _res.setErrorResponse(status);
     } else if (status == HTTP::OK) {
-        if (_req.getMethod() == "HEAD")
-            _res.HEADmethod(_req);
-        else if (_req.getMethod() == "GET")
-            _res.GETmethod(_req);
-        else if (_req.getMethod() == "POST")
-            _res.POSTmethod(_req);
-        else if (_req.getMethod() == "DELETE")
-            _res.DELETEmethod(_req);
+        if (_res.handle(_req) == METHOD_NOT_ALLOWED) {
+            _res.setErrorResponse(status = HTTP::METHOD_NOT_ALLOWED);
+        }
     }
 }
 
@@ -214,17 +208,6 @@ Client::reply(void) {
             break;
         }
     } while (static_cast<size_t>(sentBytes) < _res.getResSize());
-    
-   
-    // std::cout << "test 6 reply response" << std::endl;
-    // _res.resetResponse();
-
-    // если нет каких-то полей с указанием окончания отправки ответа,
-    // клиент будет продолжать стоять в ожидании окончания ответа - POLLOUT
-
-    // if (sentBytes == 0) {
-    //     disconnect();
-    // }
 }
 
 

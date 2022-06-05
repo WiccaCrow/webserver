@@ -1,9 +1,27 @@
 #include "Response.hpp"
 #include "CGI.hpp"
 
-HTTP::Response::Response() { }
+HTTP::Response::Response() {
+    methods.insert(std::make_pair("DELETE", &Response::DELETE));
+    methods.insert(std::make_pair("HEAD", &Response::HEAD));
+    methods.insert(std::make_pair("GET", &Response::GET));
+    methods.insert(std::make_pair("OPTION", &Response::OPTIONS));
+    methods.insert(std::make_pair("POST", &Response::POST));
+    methods.insert(std::make_pair("PUT", &Response::PUT));
+}
 
 HTTP::Response::~Response() { }
+
+HTTP::StatusCode
+HTTP::Response::handle(Request &req) {
+    std::map<std::string, Response::Handler>::iterator it = methods.find(req.getMethod());
+    
+    if (it == methods.end()) {
+        return METHOD_NOT_ALLOWED;
+    }
+    (this->*(it->second))(req);
+    return req.getStatus();
+}
 
 void
 HTTP::Response::clear() {
@@ -221,17 +239,17 @@ HTTP::Response::contentForGetHead(Request &req) {
 }
 
 void
-HTTP::Response::GETmethod(Request &req) {
+HTTP::Response::GET(Request &req) {
     _res += contentForGetHead(req);
 }
 
 void
-HTTP::Response::HEADmethod(Request &req) {
+HTTP::Response::HEAD(Request &req) {
     contentForGetHead(req);
 }
 
 void
-HTTP::Response::DELETEmethod(Request &req) {
+HTTP::Response::DELETE(Request &req) {
     // чтобы не удалить чистовой сайт я временно добавляю следующую строку:
     std::string resourcePath = "./testdel";
     // std::string resourcePath = req.getPath();
@@ -262,7 +280,7 @@ HTTP::Response::DELETEmethod(Request &req) {
 }
 
 void
-HTTP::Response::POSTmethod(Request &req) {
+HTTP::Response::POST(Request &req) {
     std::string isCGI = ""; // from config
     (void)req;
     if (isCGI != "") {
@@ -273,7 +291,7 @@ HTTP::Response::POSTmethod(Request &req) {
 }
 
 void
-HTTP::Response::PUTmethod(Request &req) {
+HTTP::Response::PUT(Request &req) {
     std::string resourcePath = req.getPath();
 
     if (isDirectory(resourcePath)) {
@@ -302,6 +320,29 @@ HTTP::Response::PUTmethod(Request &req) {
                "</html>";
     }
 }
+
+void
+HTTP::Response::OPTIONS(Request &req) {
+    std::cout << "OPTIONS" << std::endl;
+    _res = "HTTP/1.1 200 OK\r\n"
+           "Allow: ";
+    std::vector<std::string> AllowedMethods = req.getLocationPtr()->getAllowedMethodsRef();
+    for (int i = 0, nbMetods = AllowedMethods.size(); i < nbMetods; ) {
+        _res += AllowedMethods[i];
+        if (++i != nbMetods) {
+            _res += ", ";
+        } else {
+            _res += "\r\n\r\n";
+        }
+    std::cout << "_res" << _res << std::endl << std::endl;
+    }
+}
+
+// void
+// HTTP::Response::generateHeaders(Request &req) {
+//     
+// }
+
 
 void
 HTTP::Response::writeFile(Request &req, const std::string &resourcePath) {

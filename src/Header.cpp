@@ -196,9 +196,20 @@ Header::Referer(Request &req) {
 
 StatusCode
 Header::TransferEncoding(Request &req) {
+    std::set<std::string> acceptedValues;
+    acceptedValues.insert("chunked");
+
     const std::map<HeaderCode, HTTP::Header> headers = req.getHeaders();
     if (headers.find(CONTENT_LENGTH) != headers.end()) {
         return BAD_REQUEST;
+    }
+
+    std::vector<std::string> currentValues = split(this->value, " ,");
+    for (size_t i = 0; i < currentValues.size(); ++i) {
+        if (acceptedValues.find(currentValues[i]) == acceptedValues.end()) {
+            Log.error("Transfer coding parameter \""+ currentValues[i] + "\" is not supported");
+            return NOT_IMPLEMENTED;
+        }
     }
 
     return CONTINUE;

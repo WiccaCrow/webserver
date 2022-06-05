@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <utility>
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,14 +20,21 @@ namespace HTTP {
 // # define SIZE_FOR_CHUNKED 4096
 class Response {
 
+
     std::string _res;
     std::string _resLeftToSend;
 
 public:
+
+    typedef void  (Response::*Handler)(Request &req);
+    std::map<std::string, Handler> methods;
+
     Response();
     ~Response();
 
     void clear();
+
+    StatusCode handle(Request &req);
 
     //  for errors
     static const std::map<std::string, std::string> MIMEs;
@@ -36,11 +44,13 @@ public:
 
     // methods
 
-    void        HEADmethod(Request &req);
-    void        GETmethod(Request &req);
-    void        DELETEmethod(Request &req);
-    void        POSTmethod(Request &req);
-    void        PUTmethod(Request &req);
+    void        DELETE(Request &req);
+    void        HEAD(Request &req);
+    void        GET(Request &req);
+    void        OPTIONS(Request &req);
+    void        POST(Request &req);
+    void        PUT(Request &req);
+    // void        generateHeaders(Request &req);
     std::string contentForGetHead(Request &req);
     std::string getContentType(std::string resourcePath);
     std::string fileToResponse(std::string resourcePath);

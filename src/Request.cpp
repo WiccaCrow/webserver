@@ -158,19 +158,17 @@ StatusCode
 Request::parseLine(std::string line) {
     if (!(getFlags() & PARSED_SL)) {
         if ((_status = parseStartLine(line)) != HTTP::CONTINUE) {
-            Log.error("Request::parseLine, parsing SL");
-            // return HTTP::Response(_status);
+            Log.debug("Request::parseLine, parsing SL");
             return _status;
         }
     } else if (!(getFlags() & PARSED_HEADERS)) {
         if ((_status = parseHeader(line)) != HTTP::CONTINUE) {
-            Log.error("Request::parseLine, parsing Headers");
-            // return HTTP::Response(_status);
+            Log.debug("Request::parseLine, parsing Headers");
             return _status;
         }
     } else if (!(getFlags() & PARSED_BODY)) {
         if ((_status = parseBody(line)) != HTTP::CONTINUE) {
-            Log.error("Request::parseLine, parsing Body");
+            Log.debug("Request::parseLine, parsing Body");
             return _status;
         }
     } else {
@@ -226,7 +224,7 @@ Request::parseStartLine(const std::string &line) {
 
 bool
 Request::isValidMethod(const std::string &method) {
-    std::string validMethods[9] = {
+    static const std::string validMethods[9] = {
         "GET", "DELETE", "POST",
         "PUT", "HEAD", "CONNECT",
         "OPTIONS", "TRACE", "PATCH"
@@ -279,10 +277,20 @@ Request::parseHeader(std::string line) {
         }
         Log.debug("PHYSICAL_PATH:" + _resolvedPath);
 
-        // transfer-encoding && content-length not find
-        if (_headers.find(TRANSFER_ENCODING) == _headers.end() && _headers.find(CONTENT_LENGTH) == _headers.end()) {
+        if (_headers.find(HOST) == _headers.end()) {
+            Log.error("Host not founded");
+            return BAD_REQUEST;
+        }
+
+        if (_headers.find(TRANSFER_ENCODING) == _headers.end() &&
+             _headers.find(CONTENT_LENGTH) == _headers.end()) {
+            if (_method == "POST" || _method == "PUT" || _method == "PATCH") {
+                Log.error("No Transfer-Encoding or Content-Length in request");
+                return LENGTH_REQUIRED;
+            }
             return PROCESSING;
         }
+
         return CONTINUE;
     }
     // Log.debug(line); // Print headers
@@ -310,43 +318,50 @@ Request::parseHeader(std::string line) {
     
     // dublicate header
     if (_headers.find(header.hash) != _headers.end()) {
+        Log.error("Dublicate header");
         return BAD_REQUEST;
     }
 
     // Copying here need to replace
     _headers.insert(std::make_pair(header.hash, header));
-
     return CONTINUE;
 }
 
 StatusCode
 Request::parseChunked(const std::string &line) {
     if (_flag_getline_bodySize) {
-        if (line.empty() == true || line.find_first_not_of("0123456789ABCDEFabcdef") != line.npos) {
-            // bad chunk length
-            _flag_getline_bodySize = false;
-            return (BAD_REQUEST);
-        }
-        std::string chunk(line.c_str());
-        if ((_bodySize = strtoul(chunk.c_str(), NULL, 16)) == 0) {
-            if (chunk[0] == '0') {
-                setFlag(PARSED_BODY);
-                return (PROCESSING);
-            }
-            return (BAD_REQUEST);
-        }
-        _flag_getline_bodySize = false;
-        return (CONTINUE);
+        return writeChunkedSize(line);
     }
-
     _flag_getline_bodySize = true;
     return (writeBody(line) == BAD_REQUEST ? BAD_REQUEST : CONTINUE);
 }
 
 StatusCode
+Request::writeChunkedSize(const std::string &line) {
+    if (line.empty() == true || line.find_first_not_of("0123456789ABCDEFabcdef") != line.npos) {
+        // bad chunk length
+        _flag_getline_bodySize = false;
+        Log.error("Request: Incorrect format of the chunks size");
+        return (BAD_REQUEST);
+    }
+    std::string chunk(line.c_str());
+    _bodySize = strtoul(chunk.c_str(), NULL, 16);
+    if (!_bodySize || _bodySize == ULONG_MAX) {
+        if (!_bodySize && chunk[0] == '0') {
+            setFlag(PARSED_BODY);
+            return (PROCESSING);
+        }
+        Log.error("Request: Incorrect format of the chunks size");
+        return (BAD_REQUEST);
+    }
+    _flag_getline_bodySize = false;
+    return (CONTINUE);
+}
+
+StatusCode
 Request::writeBody(const std::string &line) {
     if (line.length() > _bodySize) {
-        // bad chunk body
+        Log.error("Request: the body length is too long");
         return (BAD_REQUEST);
     }
     _bodySize = 0;
@@ -356,14 +371,18 @@ Request::writeBody(const std::string &line) {
 
 StatusCode
 Request::parseBody(const std::string &line) {
-    Log.debug("Request::parseBody");
-    if (_headers.find(TRANSFER_ENCODING) != _headers.end()) {
-        return (parseChunked(line));
-    } else if (_headers.find(CONTENT_LENGTH) != _headers.end()) {
-        setFlag(PARSED_BODY);
-        parseChunked(line);
-        return PROCESSING;
-    }
+    // if (_method == "POST" || _method == "PUT" || _method == "PATCH") {
+        Log.debug("Request::parseBody");
+        if (_headers.find(TRANSFER_ENCODING) != _headers.end()) {
+            return (parseChunked(line));
+        } else if (_headers.find(CONTENT_LENGTH) != _headers.end()) {
+            setFlag(PARSED_BODY);
+            return writeBody(line);
+        // } else {
+        //     Log.error("No Transfer-Encoding or Content-Length in request");
+        //     return LENGTH_REQUIRED;
+        }
+    // }
     return PROCESSING;
 }
 
