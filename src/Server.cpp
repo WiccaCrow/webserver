@@ -285,11 +285,11 @@ Server::matchServerBlock(int port, const std::string &ipaddr, const std::string 
 
             std::vector<std::string> &sNames = _servBlocks[i].getServerNamesRef();
             if (std::find(sNames.begin(), sNames.end(), host) != sNames.end()) {
-                Log.debug("ServerBlock found -> " + _servBlocks[i].getBlockName() + " for: " + host + ":" + to_string(port));
+                Log.debug("Server::matchServerBlock -> " + _servBlocks[i].getBlockName() + " for: " + host + ":" + to_string(port));
                 return &_servBlocks[i];
             }
         }
     }
-    Log.debug("ServerBlock found [default] -> " + _servBlocks[defaultServerIndex].getBlockName() + " for: " + host + ":" + to_string(port));
+    Log.debug("Server::matchServerBlock [default] -> " + _servBlocks[defaultServerIndex].getBlockName() + " for: " + host + ":" + to_string(port));
     return &_servBlocks[defaultServerIndex];
 }
