@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <climits>
 
 #include "CRC.hpp"
 #include "URI.hpp"
