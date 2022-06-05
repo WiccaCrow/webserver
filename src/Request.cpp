@@ -272,7 +272,8 @@ Request::parseHeader(std::string line) {
             return BAD_REQUEST;
         }
 
-        if (_method == "POST" || _method == "PUT" || _method == "PATCH") {
+        // PUT or POST or PATCH
+        if (_method[0] == 'P') {
             if (_headers.find(TRANSFER_ENCODING) == _headers.end() &&
                 _headers.find(CONTENT_LENGTH) == _headers.end()) {
                 Log.error("No Transfer-Encoding or Content-Length in request");
