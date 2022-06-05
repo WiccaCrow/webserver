@@ -4,9 +4,10 @@
 
 namespace HTTP {
 
-StatusCode Header::handle(Request &req) {
+StatusCode
+Header::handle(Request &req) {
     std::map<uint32_t, Header::Handler>::const_iterator it = validHeaders.find(hash);
-    
+
     if (it == validHeaders.end()) {
         // Or bad request
         return BAD_REQUEST;
@@ -156,6 +157,12 @@ Header::IfUnmodifiedSince(Request &req) {
 }
 
 StatusCode
+Header::KeepAlive(Request &req) {
+    (void)req;
+    return CONTINUE;
+}
+
+StatusCode
 Header::MaxForwards(Request &req) {
     (void)req;
     return CONTINUE;
@@ -207,7 +214,7 @@ Header::TransferEncoding(Request &req) {
     std::vector<std::string> currentValues = split(this->value, " ,");
     for (size_t i = 0; i < currentValues.size(); ++i) {
         if (acceptedValues.find(currentValues[i]) == acceptedValues.end()) {
-            Log.error("Transfer coding parameter \""+ currentValues[i] + "\" is not supported");
+            Log.error("Transfer coding parameter \"" + currentValues[i] + "\" is not supported");
             return NOT_IMPLEMENTED;
         }
     }
@@ -412,7 +419,6 @@ initHeadersMap(void) {
 
     return tmp;
 }
-
 
 const std::map<uint32_t, Header::Handler> validHeaders = initHeadersMap();
 

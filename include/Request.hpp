@@ -1,21 +1,21 @@
 #pragma once
 
-#include <map>
-#include <string>
+#include <climits>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <climits>
+#include <map>
+#include <string>
 
 #include "CRC.hpp"
-#include "URI.hpp"
-#include "Utils.hpp"
-#include "Logger.hpp"
-#include "Header.hpp"
 #include "Globals.hpp"
+#include "Header.hpp"
 #include "Location.hpp"
+#include "Logger.hpp"
 #include "ServerBlock.hpp"
 #include "Status.hpp"
+#include "URI.hpp"
+#include "Utils.hpp"
 
 #define PARSED_NONE    0x0
 #define PARSED_SL      0x1
@@ -36,12 +36,12 @@ private:
     std::string                  _resolvedPath;
     std::map<HeaderCode, Header> _headers;
     HTTP::StatusCode             _status;
-    int                         _major : 4;
-    int                         _minor : 4;
-    
-    ServerBlock                 *_servBlock;
-    Location                    *_location;
-    Client                      *_client;
+    int                          _major : 4;
+    int                          _minor : 4;
+
+    ServerBlock *_servBlock;
+    Location    *_location;
+    Client      *_client;
 
     bool          _flag_getline_bodySize;
     unsigned long _bodySize;
@@ -56,10 +56,10 @@ public:
     Request &operator=(const Request &other);
 
     const ServerBlock *getServerBlock() const;
-    void setServerBlock(ServerBlock *);
+    void               setServerBlock(ServerBlock *);
 
     const Client *getClient() const;
-    void setClient(Client *);
+    void          setClient(Client *);
 
     const std::string                  &getPath() const;
     const std::string                  &getMethod() const;
@@ -75,7 +75,7 @@ public:
     // Needed to be improved
     const std::string &getQueryString() const;
     const std::string &getResolvedPath() const;
-    const std::string getHeaderValue(HeaderCode key) const;
+    const std::string  getHeaderValue(HeaderCode key) const;
 
     bool empty();
 

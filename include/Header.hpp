@@ -1,14 +1,14 @@
 #pragma once
 
+#include <algorithm>
 #include <map>
 #include <set>
-#include <string>
 #include <stdint.h>
-#include <algorithm>
+#include <string>
 
-#include "Status.hpp"
-#include "HeadersCodes.hpp"
 #include "Globals.hpp"
+#include "HeadersCodes.hpp"
+#include "Status.hpp"
 
 namespace HTTP {
 
@@ -18,11 +18,11 @@ class Header {
 
 public:
     typedef StatusCode (Header::*Handler)(Request &req);
-    
+
     std::string key;
     std::string value;
-    Handler    method;
-    HeaderCode hash;
+    Handler     method;
+    HeaderCode  hash;
 
     StatusCode handle(Request &req);
     StatusCode A_IM(Request &req);
@@ -47,6 +47,7 @@ public:
     StatusCode IfNoneMatch(Request &req);
     StatusCode IfRange(Request &req);
     StatusCode IfUnmodifiedSince(Request &req);
+    StatusCode KeepAlive(Request &req);
     StatusCode MaxForwards(Request &req);
     StatusCode Origin(Request &req);
     StatusCode Pragma(Request &req);
@@ -57,7 +58,6 @@ public:
     StatusCode TE(Request &req);
     StatusCode UserAgent(Request &req);
     StatusCode ContentLength(Request &req);
-    // StatusCode SetCookie(Request &req);
     StatusCode ContentType(Request &req);
     StatusCode Upgrade(Request &req);
     StatusCode Via(Request &req);
@@ -81,5 +81,3 @@ public:
 extern const std::map<uint32_t, Header::Handler> validHeaders;
 
 } // namespace HTTP
-
-

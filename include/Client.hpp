@@ -1,9 +1,9 @@
 #pragma once
 
+#include <map>
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <map>
 
 #include "ReadSock.hpp"
 #include "Request.hpp"
@@ -12,19 +12,18 @@
 
 namespace HTTP {
 
-
 class Client {
 
 private:
-    int             _fd;
-    int             _clientPort;
-    int             _serverPort;
-    std::string     _ipAddr;
-    bool            _requestFormed;
-    bool            _responseFormed;
+    int         _fd;
+    int         _clientPort;
+    int         _serverPort;
+    std::string _ipAddr;
+    bool        _requestFormed;
+    bool        _responseFormed;
 
-    HTTP::Request   _req;
-    HTTP::Response  _res;
+    HTTP::Request  _req;
+    HTTP::Response _res;
 
     ServerBlock    *_servBlock;
     static ReadSock _reader;
@@ -37,18 +36,18 @@ public:
     Client &operator=(const Client &client);
 
     void setFd(int fd);
-    int getFd(void) const;
+    int  getFd(void) const;
 
     void setPort(int port);
-    int getPort(void) const;
+    int  getPort(void) const;
 
     void setServerPort(int port);
-    int getServerPort(void) const;
+    int  getServerPort(void) const;
 
-    void setIpAddr(const std::string);
+    void               setIpAddr(const std::string);
     const std::string &getIpAddr(void) const;
 
-    void linkToRequest(void);
+    void              linkRequest(void);
     const std::string getHostname(void) const;
 
     bool isRequestFormed() const;

@@ -4,7 +4,11 @@ namespace HTTP {
 
 ReadSock Client::_reader;
 
-Client::Client() : _fd(-1), _clientPort(0), _requestFormed(false), _responseFormed(true) { }
+Client::Client()
+    : _fd(-1)
+    , _clientPort(0)
+    , _requestFormed(false)
+    , _responseFormed(true) { }
 
 Client::~Client() {
 }
@@ -16,21 +20,22 @@ Client::Client(const Client &client) {
 Client &
 Client::operator=(const Client &client) {
     if (this != &client) {
-        _req = client._req;
-        _res = client._res;
+        _req       = client._req;
+        _res       = client._res;
         _servBlock = client._servBlock;
         // Not think it is correct
-        _fd = client._fd;
-        _ipAddr = client._ipAddr;
-        _clientPort = client._clientPort;
-        _serverPort = client._serverPort;
-        _requestFormed = client._requestFormed;
+        _fd             = client._fd;
+        _ipAddr         = client._ipAddr;
+        _clientPort     = client._clientPort;
+        _serverPort     = client._serverPort;
+        _requestFormed  = client._requestFormed;
         _responseFormed = client._responseFormed;
     }
     return *this;
 }
 
-void Client::linkToRequest(void) {
+void
+Client::linkRequest(void) {
     _req.setClient(this);
 }
 
@@ -152,10 +157,7 @@ Client::receive(void) {
 void
 Client::checkIfFailed(void) {
 
-    if (_req.getStatus() == HTTP::BAD_REQUEST || 
-        _req.getStatus() == HTTP::REQUEST_TIMEOUT || 
-        _req.getStatus() == HTTP::INTERNAL_SERVER_ERROR ||
-        _req.getStatus() == HTTP::PAYLOAD_TOO_LARGE) {
+    if (_req.getStatus() == HTTP::BAD_REQUEST || _req.getStatus() == HTTP::REQUEST_TIMEOUT || _req.getStatus() == HTTP::INTERNAL_SERVER_ERROR || _req.getStatus() == HTTP::PAYLOAD_TOO_LARGE) {
         setFd(-1);
     }
 }
@@ -164,7 +166,7 @@ void
 Client::clearData(void) {
     _res.clear();
     _req.clear();
-    _requestFormed = false;
+    _requestFormed  = false;
     _responseFormed = true;
 }
 
@@ -174,7 +176,7 @@ Client::process(void) {
         return;
     }
 
-    Log.debug("Client::process -> fd: "  + to_string(_fd));
+    Log.debug("Client::process -> fd: " + to_string(_fd));
 
     HTTP::StatusCode status = _req.getStatus();
 
@@ -197,7 +199,7 @@ Client::reply(void) {
         return;
     }
 
-    Log.debug("Client::reply -> fd: "  + to_string(_fd));
+    Log.debug("Client::reply -> fd: " + to_string(_fd));
 
     long sentBytes = 0;
     do {
@@ -207,8 +209,7 @@ Client::reply(void) {
             _req.setStatus(INTERNAL_SERVER_ERROR);
             break;
         }
-    } while (static_cast<size_t>(sentBytes) < _res.getResSize());
+    } while (static_cast<size_t>(sentBytes) < _res.getResLength());
 }
-
 
 }

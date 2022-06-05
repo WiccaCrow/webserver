@@ -5,12 +5,11 @@
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <utility>
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <fstream>
+#include <utility>
 
 #include "Request.hpp"
 #include "Status.hpp"
@@ -20,13 +19,13 @@ namespace HTTP {
 // # define SIZE_FOR_CHUNKED 4096
 class Response {
 
-
     std::string _res;
     std::string _resLeftToSend;
+    Request    *_req;
+    std::string _body;
 
 public:
-
-    typedef void  (Response::*Handler)(Request &req);
+    typedef void (Response::*Handler)();
     std::map<std::string, Handler> methods;
 
     Response();
@@ -37,34 +36,37 @@ public:
     StatusCode handle(Request &req);
 
     //  for errors
-    static const std::map<std::string, std::string> MIMEs;
-    static const std::map<HTTP::StatusCode, const char *>  errorResponses;
+    static const std::map<std::string, std::string>       MIMEs;
+    static const std::map<HTTP::StatusCode, const char *> errorResponses;
 
     void setErrorResponse(HTTP::StatusCode status);
 
     // methods
 
-    void        DELETE(Request &req);
-    void        HEAD(Request &req);
-    void        GET(Request &req);
-    void        OPTIONS(Request &req);
-    void        POST(Request &req);
-    void        PUT(Request &req);
+    void DELETE(void);
+    void HEAD(void);
+    void GET(void);
+    void OPTIONS(void);
+    void POST(void);
+    void PUT(void);
     // void        generateHeaders(Request &req);
-    std::string contentForGetHead(Request &req);
+    std::string contentForGetHead(void);
     std::string getContentType(std::string resourcePath);
     std::string fileToResponse(std::string resourcePath);
-    std::string listing(const std::string &resourcePath, Request &req);
-    void        writeFile(Request &req, const std::string &resourcePath);
+    std::string listing(const std::string &resourcePath);
+    void        writeFile(const std::string &resourcePath);
 
-    std::string passToCGI(Request &req, CGI &cgi);
+    std::string passToCGI(CGI &cgi);
 
     // to send response
-    size_t      getResSize(void);
-    const char *getResponse(void);
-    const char *getLeftToSend(void);
-    size_t      getLeftToSendSize(void);
-    void        setLeftToSend(size_t n);
+    size_t             getResLength(void);
+    const char        *getResponse(void);
+    const char        *getLeftToSend(void);
+    size_t             getLeftToSendSize(void);
+    const std::string &getBody(void) const;
+    void               setLeftToSend(size_t n);
+    void               setRequest(Request *req);
+    Request           *getRequest(void) const;
 
     // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);
 };

@@ -22,6 +22,7 @@ SOURCEFILES     =	main.cpp \
 					Logger.cpp \
 					Response.cpp \
 					Header.cpp \
+					ResponseHeader.cpp \
 					ResponseContType.cpp \
 					StatusLines.cpp \
 					DefaultErrorResponses.cpp \
