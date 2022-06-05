@@ -20,20 +20,21 @@ namespace HTTP {
 // # define SIZE_FOR_CHUNKED 4096
 class Response {
 
-typedef void  (Response::*methodFunction)(Request &req);
-
-    // std::vector<std::pair<std::string, methodFunction> > Methods;
 
     std::string _res;
     std::string _resLeftToSend;
 
 public:
-    std::map<std::string, methodFunction> Methods;
-    
+
+    typedef void  (Response::*Handler)(Request &req);
+    std::map<std::string, Handler> methods;
+
     Response();
     ~Response();
 
     void clear();
+
+    StatusCode handle(Request &req);
 
     //  for errors
     static const std::map<std::string, std::string> MIMEs;
@@ -43,12 +44,12 @@ public:
 
     // methods
 
-    void        DELETEmethod(Request &req);
-    void        HEADmethod(Request &req);
-    void        GETmethod(Request &req);
-    void        OPTIONSmethod(Request &req);
-    void        POSTmethod(Request &req);
-    void        PUTmethod(Request &req);
+    void        DELETE(Request &req);
+    void        HEAD(Request &req);
+    void        GET(Request &req);
+    void        OPTIONS(Request &req);
+    void        POST(Request &req);
+    void        PUT(Request &req);
     // void        generateHeaders(Request &req);
     std::string contentForGetHead(Request &req);
     std::string getContentType(std::string resourcePath);
