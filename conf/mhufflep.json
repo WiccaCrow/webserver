@@ -26,6 +26,10 @@
                 ".js": "/usr/local/bin/node",
                 ".cgi": ""
             },
+            "auth_basic": {
+                "realm": "k1",
+                "user_file": "./.htpasswd"
+            },
             "methods_allowed": [ "GET", "PUT" ],
             "post_max_body": 100,
             "autoindex": true,

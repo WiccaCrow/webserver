@@ -51,10 +51,10 @@ const std::string Base64::decode(const std::string &in) {
             return "";
         }
 
-        int s1 = in[i] != 0 ? decoders[in[i]] : 0;
-        int s2 = s1 != 0 ? decoders[in[i + 1]] : 0;
-        int s3 = s2 != 0 ? decoders[in[i + 2]] : 0;
-        int s4 = s3 != 0 ? decoders[in[i + 3]] : 0;
+        int s1 = in[i] != 0 ? decoders[static_cast<int>(in[i])] : 0;
+        int s2 = s1 != 0 ? decoders[static_cast<int>(in[i + 1])] : 0;
+        int s3 = s2 != 0 ? decoders[static_cast<int>(in[i + 2])] : 0;
+        int s4 = s3 != 0 ? decoders[static_cast<int>(in[i + 3])] : 0;
         
         int line = (s1 << 26) | (s2 << 20) | (s3 << 14) | (s4 << 8);
         res += static_cast<char>((line << 0) >> 24);

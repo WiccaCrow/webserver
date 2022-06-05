@@ -10,6 +10,11 @@ Location::getPathRef(void) {
     return _path;
 }
 
+Auth &
+Location::getAuthRef(void) {
+    return _auth;
+}
+
 bool &
 Location::getAutoindexRef(void) {
     return _autoindex;

@@ -9,6 +9,8 @@ CPPFLAGS       =   -Wall -Wextra -Werror -std=c++98 -g
 
 SOURCEFILES     =	main.cpp \
 				    Server.cpp \
+					Auth.cpp \
+					Base64.cpp \
 					Request.cpp \
 					ReadSock.cpp \
 					Request.cpp \

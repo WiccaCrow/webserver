@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "CGI.hpp"
+#include "Auth.hpp"
 #include "Redirect.hpp"
 
 namespace HTTP {
@@ -21,11 +22,13 @@ private:
     std::vector<std::string>   _allowedMethods;
     std::map<std::string, CGI> _CGIs;
     Redirect                   _redirect;
+    Auth                       _auth;
 
 public:
     Location(void);
     ~Location(void);
 
+    Auth                       &getAuthRef(void);
     Redirect                   &getRedirectRef(void);
     std::string                &getPathRef(void);
     bool                       &getAutoindexRef(void);

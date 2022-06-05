@@ -234,7 +234,7 @@ getDefaultAllowedMethods() {
 
 bool
 isValidKeywordLocation(const std::string &key) {
-    std::vector<std::string> allowed(8);
+    std::vector<std::string> allowed(9);
 
     allowed.push_back("CGI");
     allowed.push_back("root");
@@ -243,6 +243,7 @@ isValidKeywordLocation(const std::string &key) {
     allowed.push_back("post_max_body");
     allowed.push_back("autoindex");
     allowed.push_back("index");
+    allowed.push_back("auth_basic");
     allowed.push_back("redirect");
 
     if (std::find(allowed.begin(), allowed.end(), key) == allowed.end()) {
@@ -254,7 +255,7 @@ isValidKeywordLocation(const std::string &key) {
 
 bool
 isValidKeywordServerBlock(const std::string &key) {
-    std::vector<std::string> allowed(12);
+    std::vector<std::string> allowed(13);
 
     allowed.push_back("port");
     allowed.push_back("server_names");
@@ -268,6 +269,7 @@ isValidKeywordServerBlock(const std::string &key) {
     allowed.push_back("autoindex");
     allowed.push_back("index");
     allowed.push_back("redirect");
+    allowed.push_back("auth_basic");
 
     if (std::find(allowed.begin(), allowed.end(), key) == allowed.end()) {
         Log.error("Keyword \"" + key + "\" is unrecognized or can't be used in serverblock context");
@@ -421,6 +423,43 @@ isValidRedirect(Redirect &res) {
     return 1;
 }
 
+int
+parseAuth(JSON::Object *src, HTTP::Auth &res) {
+    ConfStatus status = basicCheck(src, "auth_basic", OBJECT, res, res);
+    if (status != SET) {
+        return status;
+    }
+
+    JSON::Object *rd = src->get("auth_basic")->toObj();
+
+    if (!getString(rd, "realm", res.getRealmRef()))
+        return NONE_OR_INV;
+
+    if (!getString(rd, "user_file", res.getFileRef()))
+        return NONE_OR_INV;
+
+    res.set(true);
+    return SET;
+}
+
+int
+isValidAuth(HTTP::Auth &res) {
+
+    if (res.isSet()) {
+        if (res.getRealmRef().empty()) {
+            Log.error("Auth realm cannot be empty");
+            return 0;
+        } else if (!resourceExists(res.getFileRef())) {
+            Log.error("Auth::user_file " + res.getFileRef() + " does not exist");
+            return 0;
+        } else if (!isReadableFile(res.getFileRef())) {
+            Log.error("Auth::user_file " + res.getFileRef() + " is not readable");
+            return 0;
+        }
+    }
+    return 1;
+}
+
 int checkMutualExclusions(JSON::Object *src, const std::string &key1, const std::string &key2) {
     JSON::AType *ptr1 = src->get(key1);
     JSON::AType *ptr2 = src->get(key2);
@@ -485,6 +524,13 @@ parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
         Log.error("#### Failed to parse \"redirect\"");
         return NONE_OR_INV;
     } else if (!isValidRedirect(dst.getRedirectRef())) {
+        return NONE_OR_INV;
+    }
+
+    if (!parseAuth(src, dst.getAuthRef())) {
+        Log.error("#### Failed to parse \"auth_basic\"");
+        return NONE_OR_INV;
+    } else if (!isValidAuth(dst.getAuthRef())) {
         return NONE_OR_INV;
     }
 
