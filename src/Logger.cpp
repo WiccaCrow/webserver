@@ -66,6 +66,10 @@ Logger::print(uint8_t flag, const std::string &msg) {
     if (_flags & flag) {
         if (_logToFile && _out.good()) {
                 _out << makeTimeString() << " " << _titles[flag] << ": " << msg << std::endl;
+        }
+
+        if (_flags & LOG_ERROR) {
+            std::cerr << makeTimeString() << " " << _titles[flag] << ": " << msg << std::endl;
         } else {
             std::cout << makeTimeString() << " " << _titles[flag] << ": " << msg << std::endl;
         }
