@@ -157,24 +157,14 @@ Request::getHeaderValue(HeaderCode key) const {
 StatusCode
 Request::parseLine(std::string line) {
     if (!(getFlags() & PARSED_SL)) {
-        if ((_status = parseStartLine(line)) != HTTP::CONTINUE) {
-            Log.debug("Request::parseLine, parsing SL");
-            return _status;
-        }
+        return (_status = parseStartLine(line));
     } else if (!(getFlags() & PARSED_HEADERS)) {
-        if ((_status = parseHeader(line)) != HTTP::CONTINUE) {
-            Log.debug("Request::parseLine, parsing Headers");
-            return _status;
-        }
+        return (_status = parseHeader(line));
     } else if (!(getFlags() & PARSED_BODY)) {
-        if ((_status = parseBody(line)) != HTTP::CONTINUE) {
-            Log.debug("Request::parseLine, parsing Body");
-            return _status;
-        }
+        return (_status = parseBody(line));
     } else {
         return (_status = PROCESSING);
     }
-    return CONTINUE;
 }
 
 StatusCode
@@ -255,12 +245,12 @@ Request::isValidProtocol(const std::string &protocol) {
 
 StatusCode
 Request::parseHeader(std::string line) {
-    if (line == "") {
+    if (line.empty()) {
         setFlag(PARSED_HEADERS);
         Log.debug("Request::parseHeader: Headers are parsed");
 
         _location = _servBlock->matchLocation(_uri._path);
-        if (_location->getAliasRef() == "") {
+        if (_location->getAliasRef().empty()) {
             _resolvedPath = _location->getRootRef();
             if (_uri._path[0] == '/' && _uri._path.length() > 1) {
                 _resolvedPath += _uri._path.substr(1);
@@ -282,16 +272,15 @@ Request::parseHeader(std::string line) {
             return BAD_REQUEST;
         }
 
-        if (_headers.find(TRANSFER_ENCODING) == _headers.end() &&
-             _headers.find(CONTENT_LENGTH) == _headers.end()) {
-            if (_method == "POST" || _method == "PUT" || _method == "PATCH") {
+        if (_method == "POST" || _method == "PUT" || _method == "PATCH") {
+            if (_headers.find(TRANSFER_ENCODING) == _headers.end() &&
+                _headers.find(CONTENT_LENGTH) == _headers.end()) {
                 Log.error("No Transfer-Encoding or Content-Length in request");
                 return LENGTH_REQUIRED;
             }
-            return PROCESSING;
+            return CONTINUE;
         }
-
-        return CONTINUE;
+        return PROCESSING;
     }
     // Log.debug(line); // Print headers
     size_t sepPos = line.find(':');
@@ -371,18 +360,13 @@ Request::writeBody(const std::string &body) {
 
 StatusCode
 Request::parseBody(const std::string &line) {
-    // if (_method == "POST" || _method == "PUT" || _method == "PATCH") {
-        Log.debug("Request::parseBody");
-        if (_headers.find(TRANSFER_ENCODING) != _headers.end()) {
-            return (parseChunked(line));
-        } else if (_headers.find(CONTENT_LENGTH) != _headers.end()) {
-            setFlag(PARSED_BODY);
-            return writeBody(line);
-        // } else {
-        //     Log.error("No Transfer-Encoding or Content-Length in request");
-        //     return LENGTH_REQUIRED;
-        }
-    // }
+    Log.debug("Request::parseBody");
+    if (_headers.find(TRANSFER_ENCODING) != _headers.end()) {
+        return (parseChunked(line));
+    } else if (_headers.find(CONTENT_LENGTH) != _headers.end()) {
+        setFlag(PARSED_BODY);
+        return writeBody(line);
+    }
     return PROCESSING;
 }
 
