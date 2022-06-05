@@ -267,6 +267,16 @@ Request::parseHeader(std::string line) {
             Log.error("Host not founded");
             return BAD_REQUEST;
         }
+
+        if (_headers.find(TRANSFER_ENCODING) == _headers.end() &&
+             _headers.find(CONTENT_LENGTH) == _headers.end()) {
+            if (_method == "POST" || _method == "PUT" || _method == "PATCH") {
+                Log.error("No Transfer-Encoding or Content-Length in request");
+                return LENGTH_REQUIRED;
+            }
+            return PROCESSING;
+        }
+
         return CONTINUE;
     }
     // Log.debug(line); // Print headers
@@ -300,7 +310,6 @@ Request::parseHeader(std::string line) {
 
     // Copying here need to replace
     _headers.insert(std::make_pair(header.hash, header));
-
     return CONTINUE;
 }
 
@@ -348,18 +357,18 @@ Request::writeBody(const std::string &line) {
 
 StatusCode
 Request::parseBody(const std::string &line) {
-    if (_method == "POST" || _method == "PUT" || _method == "PATCH") {
+    // if (_method == "POST" || _method == "PUT" || _method == "PATCH") {
         Log.debug("Request::parseBody");
         if (_headers.find(TRANSFER_ENCODING) != _headers.end()) {
             return (parseChunked(line));
         } else if (_headers.find(CONTENT_LENGTH) != _headers.end()) {
             setFlag(PARSED_BODY);
             return writeBody(line);
-        } else {
-            Log.error("No Transfer-Encoding or Content-Length in request");
-            return LENGTH_REQUIRED;
+        // } else {
+        //     Log.error("No Transfer-Encoding or Content-Length in request");
+        //     return LENGTH_REQUIRED;
         }
-    }
+    // }
     return PROCESSING;
 }
 

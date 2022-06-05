@@ -4,8 +4,7 @@ namespace HTTP {
 
 ReadSock Client::_reader;
 
-Client::Client() : _fd(-1), _clientPort(0), _requestFormed(false), _responseFormed(true) {
-}
+Client::Client() : _fd(-1), _clientPort(0), _requestFormed(false), _responseFormed(true) { }
 
 Client::~Client() {
 }
@@ -186,16 +185,8 @@ Client::process(void) {
     if (status >= HTTP::BAD_REQUEST) {
         _res.setErrorResponse(status);
     } else if (status == HTTP::OK) {
-        if (_req.getMethod() == "HEAD")
-            _res.HEADmethod(_req);
-        else if (_req.getMethod() == "GET")
-            _res.GETmethod(_req);
-        else if (_req.getMethod() == "POST")
-            _res.POSTmethod(_req);
-        else if (_req.getMethod() == "DELETE")
-            _res.DELETEmethod(_req);
-        else if (_req.getMethod() == "OPTIONS")
-            _res.OPTIONSmethod(_req);
+        if (_res.Methods.find(_req.getMethod()) == _res.Methods.end())
+            _res.setErrorResponse(status = HTTP::METHOD_NOT_ALLOWED);
     }
 }
 

@@ -1,7 +1,29 @@
 #include "Response.hpp"
 #include "CGI.hpp"
 
-HTTP::Response::Response() { }
+HTTP::Response::Response() {
+//     Methods.reserve(6);
+//     Methods[0].first = "DELETE";
+//     Methods[1].first = "HEAD";
+//     Methods[2].first = "GET";
+//     Methods[3].first = "OPTION";
+//     Methods[4].first = "POST";
+//     Methods[5].first = "PUT";
+// 
+//     Methods[0].second = Response::&DELETEmethod;
+//     Methods[1].second = Response::&HEADmethod;
+//     Methods[2].second = Response::&GETmethod;
+//     Methods[3].second = Response::&OPTIONSmethod;
+//     Methods[4].second = Response::&POSTmethod;
+//     Methods[5].second = Response::&PUTmethod;
+
+    Methods.insert(std::make_pair("DELETE", &Response::DELETEmethod));
+    Methods.insert(std::make_pair("HEAD", &Response::HEADmethod));
+    Methods.insert(std::make_pair("GET", &Response::GETmethod));
+    Methods.insert(std::make_pair("OPTION", &Response::OPTIONSmethod));
+    Methods.insert(std::make_pair("POST", &Response::POSTmethod));
+    Methods.insert(std::make_pair("PUT", &Response::PUTmethod));
+}
 
 HTTP::Response::~Response() { }
 
