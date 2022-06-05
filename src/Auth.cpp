@@ -83,8 +83,9 @@ Auth::isAuthorized(const std::string &line) const {
         return false;
     }
 
-    std::string encrypted = crypt(crds.second.c_str(), "z9");
-    if (it->second != encrypted) { // Salt should be set from env
+    char salt[2] = { it->second[0], it->second[1] };
+    std::string encrypted = crypt(crds.second.c_str(), salt);
+    if (it->second != encrypted) {
         Log.debug("Auth::passwords do not match");
         Log.debug("stored: " + it->second);
         Log.debug("encrypted: " + encrypted);
