@@ -194,6 +194,8 @@ Client::process(void) {
             _res.POSTmethod(_req);
         else if (_req.getMethod() == "DELETE")
             _res.DELETEmethod(_req);
+        else if (_req.getMethod() == "OPTIONS")
+            _res.OPTIONSmethod(_req);
     }
 }
 

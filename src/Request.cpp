@@ -318,14 +318,17 @@ Request::writeChunkedSize(const std::string &line) {
     if (line.empty() == true || line.find_first_not_of("0123456789ABCDEFabcdef") != line.npos) {
         // bad chunk length
         _flag_getline_bodySize = false;
+        Log.error("Request: Incorrect format of the chunks size");
         return (BAD_REQUEST);
     }
     std::string chunk(line.c_str());
-    if ((_bodySize = strtoul(chunk.c_str(), NULL, 16)) == 0) {
-        if (chunk[0] == '0') {
+    _bodySize = strtoul(chunk.c_str(), NULL, 16);
+    if (!_bodySize || _bodySize == ULONG_MAX) {
+        if (!_bodySize && chunk[0] == '0') {
             setFlag(PARSED_BODY);
             return (PROCESSING);
         }
+        Log.error("Request: Incorrect format of the chunks size");
         return (BAD_REQUEST);
     }
     _flag_getline_bodySize = false;
@@ -335,7 +338,7 @@ Request::writeChunkedSize(const std::string &line) {
 StatusCode
 Request::writeBody(const std::string &line) {
     if (line.length() > _bodySize) {
-        // bad chunk body
+        Log.error("Request: the body length is too long");
         return (BAD_REQUEST);
     }
     _bodySize = 0;

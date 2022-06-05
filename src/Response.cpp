@@ -304,6 +304,29 @@ HTTP::Response::PUTmethod(Request &req) {
 }
 
 void
+HTTP::Response::OPTIONSmethod(Request &req) {
+    std::cout << "OPTIONS" << std::endl;
+    _res = "HTTP/1.1 200 OK\r\n"
+           "Allow: ";
+    std::vector<std::string> AllowedMethods = req.getLocationPtr()->getAllowedMethodsRef();
+    for (int i = 0, nbMetods = AllowedMethods.size(); i < nbMetods; ) {
+        _res += AllowedMethods[i];
+        if (++i != nbMetods) {
+            _res += ", ";
+        } else {
+            _res += "\r\n\r\n";
+        }
+    std::cout << "_res" << _res << std::endl << std::endl;
+    }
+}
+
+// void
+// HTTP::Response::generateHeaders(Request &req) {
+//     
+// }
+
+
+void
 HTTP::Response::writeFile(Request &req, const std::string &resourcePath) {
     std::ofstream outputToNewFile(resourcePath.c_str(),
         std::ios_base::out | std::ios_base::trunc); // output file
