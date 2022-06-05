@@ -211,9 +211,12 @@ Request::parseStartLine(const std::string &line) {
         Log.debug("Forbidden symbols at the end of the line");
         return BAD_REQUEST;
     }
+
     if (!isValidProtocol(_protocol)) {
-        Log.debug("Protocol is not supported or invalid");
-        // Or 505, need to improve
+        return BAD_REQUEST;
+    } else if (_major > 1) {
+        return HTTP_VERSION_NOT_SUPPORTED;
+    } else if (_major != 1 || _minor != 1) { // Supports only http/1.1 now
         return BAD_REQUEST;
     }
 
@@ -238,7 +241,18 @@ Request::isValidMethod(const std::string &method) {
 // Should be moved later
 bool
 Request::isValidProtocol(const std::string &protocol) {
-    return (protocol == "HTTP/1.1");
+    if (protocol.find("HTTP/") != 0) {
+        return false;
+    }
+    if (!isdigit(protocol[5]) || protocol[6] != '.') {
+        return false;
+    }
+    _major = protocol[5] - '0';
+    if (!isdigit(protocol[7]) || protocol.length() != 8) {
+        return false;
+    }
+    _minor = protocol[7] - '0';
+    return true;
 }
 
 StatusCode

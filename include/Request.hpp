@@ -35,6 +35,8 @@ private:
     std::string                  _resolvedPath;
     std::map<HeaderCode, Header> _headers;
     HTTP::StatusCode             _status;
+    int                         _major : 4;
+    int                         _minor : 4;
     
     ServerBlock                 *_servBlock;
     Location                    *_location;
