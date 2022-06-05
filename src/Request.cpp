@@ -359,13 +359,13 @@ Request::writeChunkedSize(const std::string &line) {
 }
 
 StatusCode
-Request::writeBody(const std::string &line) {
-    if (line.length() > _bodySize) {
+Request::writeBody(const std::string &body) {
+    if (body.length() > _bodySize) {
         Log.error("Request: the body length is too long");
         return (BAD_REQUEST);
     }
     _bodySize = 0;
-    _body += line;
+    _body += body;
     return (PROCESSING);
 }
 
