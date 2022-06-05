@@ -48,6 +48,8 @@ private:
     std::string   _body;
     uint8_t       _parseFlags;
 
+    bool                         _isAuthorized;
+
 public:
     Request();
     ~Request();
@@ -55,8 +57,11 @@ public:
     Request(const Request &other);
     Request &operator=(const Request &other);
 
-    const ServerBlock *getServerBlock() const;
-    void               setServerBlock(ServerBlock *);
+    ServerBlock *getServerBlock() const;
+    void         setServerBlock(ServerBlock *);
+
+    Location    *getLocation(void);
+    void         setLocation(Location *);
 
     const Client *getClient() const;
     void          setClient(Client *);
@@ -68,7 +73,6 @@ public:
     const std::string                  &getBody() const;
     const uint8_t                      &getFlags() const;
     const HTTP::StatusCode             &getStatus() const;
-    Location                           *getLocationPtr();
     URI                                &getUriRef();
     const std::string                  &getRawUri() const;
 
@@ -103,6 +107,9 @@ public:
     unsigned long getBodySize();
     void          setBodySize(unsigned long size);
     void          setStatus(const HTTP::StatusCode &status);
+
+    bool isAuthorized(void) const;
+    void setAuthFlag(bool);
 };
 
 } // namespace HTTP

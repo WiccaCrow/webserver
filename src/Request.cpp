@@ -8,7 +8,8 @@ Request::Request()
     , _client(NULL)
     , _flag_getline_bodySize(true)
     , _bodySize(0)
-    , _parseFlags(PARSED_NONE) {
+    , _parseFlags(PARSED_NONE)
+    , _isAuthorized(false) {
 }
 
 Request::~Request() { }
@@ -36,7 +37,7 @@ Request::operator=(const Request &other) {
     return *this;
 }
 
-const ServerBlock *
+ServerBlock *
 Request::getServerBlock() const {
     return _servBlock;
 }
@@ -44,6 +45,16 @@ Request::getServerBlock() const {
 void
 Request::setServerBlock(ServerBlock *serverBlock) {
     _servBlock = serverBlock;
+}
+
+Location *
+Request::getLocation(void) {
+    return _location;
+}
+
+void
+Request::setLocation(Location *location) {
+    _location = location;
 }
 
 const Client *Request::getClient() const {
@@ -87,11 +98,6 @@ Request::getFlags() const {
 const HTTP::StatusCode &
 Request::getStatus() const {
     return _status;
-}
-
-Location *
-Request::getLocationPtr() {
-    return _location;
 }
 
 URI &
@@ -144,6 +150,17 @@ const std::string &
 Request::getResolvedPath() const {
     return _resolvedPath;
 }
+
+bool
+Request::isAuthorized(void) const {
+    return _isAuthorized;
+}
+
+void
+Request::setAuthFlag(bool flag) {
+    _isAuthorized = flag;
+}
+
 
 const std::string 
 Request::getHeaderValue(HeaderCode key) const {
@@ -249,7 +266,7 @@ Request::parseHeader(std::string line) {
         setFlag(PARSED_HEADERS);
         Log.debug("Request::parseHeader: Headers are parsed");
 
-        _location = _servBlock->matchLocation(_uri._path);
+        // _location = _servBlock->matchLocation(_uri._path);
         if (_location->getAliasRef().empty()) {
             _resolvedPath = _location->getRootRef();
             if (_uri._path[0] == '/' && _uri._path.length() > 1) {
@@ -289,10 +306,11 @@ Request::parseHeader(std::string line) {
         return BAD_REQUEST;
     } 
 
-    toLowerCase(line);
+    // toLowerCase(line);
 
     Header header;
     header.key = line.substr(0, sepPos);
+    toLowerCase(header.key);
     header.value = line.substr(sepPos + 1);
     
     trim(header.value, " \t\r\n");

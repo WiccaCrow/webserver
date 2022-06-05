@@ -183,6 +183,29 @@ isCGI(const std::string &filepath, std::map<std::string, HTTP::CGI> &cgis) {
 //     makeHeaders
 
 std::string
+getDateTimeGMT() {
+    // e.g. Date: Wed, 21 Oct 2015 07:28:00 GMT
+    time_t rawtime;
+    time(&rawtime);
+    struct tm *info = gmtime(&rawtime);
+    
+    char buff[70];
+    strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
+    
+    return buff;
+}
+
+void
+HTTP::Response::shouldBeClosed(bool flag) {
+    _shouldBeClosed = flag;
+}
+
+bool 
+HTTP::Response::shouldBeClosed(void) const {
+    return _shouldBeClosed;
+}
+
+std::string
 HTTP::Response::contentForGetHead(void) {
     // resourcePath (часть root) будет браться из конфига
     // root
@@ -197,6 +220,18 @@ HTTP::Response::contentForGetHead(void) {
         setErrorResponse(NOT_FOUND);
         return "";
     }
+    if (!_req->isAuthorized() && _req->getLocation()->getAuthRef().isSet()) {
+        // If no Authorization header provided
+        Log.debug("Authenticate");
+        _res = statusLines[UNAUTHORIZED];
+        _res += "Date: " + getDateTimeGMT() + "\r\n";
+        _res += "Connection: close\r\n";
+        _res += "WWW-Authenticate: Basic realm=\"" + _req->getLocation()->getAuthRef().getRealmRef() + "\"\r\n";
+        _res += "\r\n\r\n";
+        shouldBeClosed(true);
+        return "";
+    }
+
     // Path is dir
     if (isDirectory(resourcePath)) {
         // в дальнейшем заменить на геттер из req
@@ -209,15 +244,15 @@ HTTP::Response::contentForGetHead(void) {
             return "";
         }
         // find index file
-        for (std::vector<std::string>::const_iterator iter = _req->getLocationPtr()->getIndexRef().begin();
-             iter != _req->getLocationPtr()->getIndexRef().end();
+        for (std::vector<std::string>::const_iterator iter = _req->getLocation()->getIndexRef().begin();
+             iter != _req->getLocation()->getIndexRef().end();
              ++iter) {
             // put index file to response
             std::string path = resourcePath + *iter;
             if (isFile(path)) {
                 std::map<std::string, HTTP::CGI>::iterator it;
-                it = isCGI(path, _req->getLocationPtr()->getCGIsRef());
-                if (it != _req->getLocationPtr()->getCGIsRef().end()) {
+                it = isCGI(path, _req->getLocation()->getCGIsRef());
+                if (it != _req->getLocation()->getCGIsRef().end()) {
                     return passToCGI(it->second);
                 }
                 _res += getContentType(path);
@@ -227,8 +262,8 @@ HTTP::Response::contentForGetHead(void) {
         // Path is file; put Path file to response
     } else if (isFile(resourcePath)) {
         std::map<std::string, CGI>::iterator it;
-        it = isCGI(resourcePath, _req->getLocationPtr()->getCGIsRef());
-        if (it != _req->getLocationPtr()->getCGIsRef().end()) {
+        it = isCGI(resourcePath, _req->getLocation()->getCGIsRef());
+        if (it != _req->getLocation()->getCGIsRef().end()) {
             return passToCGI(it->second);
         }
         _res += getContentType(resourcePath);
@@ -239,7 +274,7 @@ HTTP::Response::contentForGetHead(void) {
         return "";
     }
     // dir listing. autoindex on
-    if (_req->getLocationPtr()->getAutoindexRef() == true && isDirectory(resourcePath)) {
+    if (_req->getLocation()->getAutoindexRef() == true && isDirectory(resourcePath)) {
         _res += "content-type: text/html; charset=utf-8\r\n";
         // std::cout << "_res:" + _res << std::endl << std::endl;
         return (listing(resourcePath));
@@ -335,7 +370,7 @@ HTTP::Response::OPTIONS(void) {
     std::cout << "OPTIONS" << std::endl;
     _res                                    = "HTTP/1.1 200 OK\r\n"
                                               "Allow: ";
-    std::vector<std::string> AllowedMethods = _req->getLocationPtr()->getAllowedMethodsRef();
+    std::vector<std::string> AllowedMethods = _req->getLocation()->getAllowedMethodsRef();
     for (int i = 0, nbMetods = AllowedMethods.size(); i < nbMetods;) {
         _res += AllowedMethods[i];
         if (++i != nbMetods) {

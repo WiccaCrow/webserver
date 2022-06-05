@@ -210,6 +210,10 @@ Client::reply(void) {
             break;
         }
     } while (static_cast<size_t>(sentBytes) < _res.getResLength());
+
+    if (_res.shouldBeClosed()) {
+        _fd = -1; 
+    }
 }
 
 }

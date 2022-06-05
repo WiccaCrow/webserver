@@ -14,7 +14,7 @@ splitCredentials(const std::string &line, std::pair<std::string, std::string> &c
         return false;
     }
     crds.first = line.substr(0, pos);
-    crds.second = line.substr(pos);
+    crds.second = line.substr(pos + 1);
     return true;
 }
 

@@ -23,6 +23,7 @@ class Response {
     std::string _resLeftToSend;
     Request    *_req;
     std::string _body;
+    bool _shouldBeClosed;
 
 public:
     typedef void (Response::*Handler)();
@@ -67,6 +68,9 @@ public:
     void               setLeftToSend(size_t n);
     void               setRequest(Request *req);
     Request           *getRequest(void) const;
+
+    bool            shouldBeClosed(void) const;
+    void            shouldBeClosed(bool);
 
     // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);
 };

@@ -1,6 +1,7 @@
 #include "Header.hpp"
 #include "Request.hpp"
 #include "Server.hpp"
+#include "Base64.hpp"
 
 namespace HTTP {
 
@@ -67,6 +68,33 @@ Header::AccessControlRequestHeaders(Request &req) {
 StatusCode
 Header::Authorization(Request &req) {
     (void)req;
+    const Auth &auth = req.getLocation()->getAuthRef();
+    Log.debug("Authorization::Entered");
+    if (auth.isSet()) {
+        Log.debug("Authorization::Started");
+
+        std::vector<std::string> splitted = split(value, " ");
+
+        if (splitted[0] == "Basic") {
+            
+            std::string decoded = Base64::decode(splitted[1]);
+            Log.debug("Authorization::Decoded Base64:" + decoded);
+            if (decoded != "") {
+                req.setAuthFlag(auth.isAuthorized(decoded));
+                if (req.isAuthorized()) {
+                    Log.debug("Authorization::Succeed");
+                } else {
+                    Log.debug("Authorization::Failed");
+                }
+
+            } else {
+                Log.debug("Authorization::Invalid Base64 string");
+            }
+        } else {
+            Log.debug("Authorization::Only Basic supported for now " + splitted[0]);
+        }
+
+    }
     return CONTINUE;
 }
 
@@ -122,7 +150,7 @@ Header::Host(Request &req) {
     }
 
     req.setServerBlock(g_server->matchServerBlock(req.getClient()->getServerPort(), "", uri._host));
-
+    req.setLocation(req.getServerBlock()->matchLocation(req.getUriRef()._path));
     return CONTINUE;
 }
 

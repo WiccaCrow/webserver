@@ -455,6 +455,9 @@ isValidAuth(HTTP::Auth &res) {
         } else if (!isReadableFile(res.getFileRef())) {
             Log.error("Auth::user_file " + res.getFileRef() + " is not readable");
             return 0;
+        } else if (!res.loadData()) {
+            Log.error("Auth::cannot load data from " + res.getFileRef());
+            return 0;
         }
     }
     return 1;
