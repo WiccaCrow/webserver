@@ -212,7 +212,7 @@ Client::reply(void) {
     } while (static_cast<size_t>(sentBytes) < _res.getResLength());
 
     if (_res.shouldBeClosed()) {
-        _fd = -1; 
+        _fd = -1;
     }
 }
 

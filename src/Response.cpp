@@ -1,7 +1,7 @@
 #include "Response.hpp"
 #include "CGI.hpp"
 
-HTTP::Response::Response() {
+HTTP::Response::Response() : _shouldBeClosed(false) {
     methods.insert(std::make_pair("DELETE", &Response::DELETE));
     methods.insert(std::make_pair("HEAD", &Response::HEAD));
     methods.insert(std::make_pair("GET", &Response::GET));
@@ -104,7 +104,6 @@ HTTP::Response::fileToResponse(std::string resourcePath) {
         setErrorResponse(INTERNAL_SERVER_ERROR);
         return "";
     }
-    resourceFile.close();
     // if (bufSize > SIZE_FOR_CHUNKED) {
     //     _res += "Transfer-Encoding: chunked\r\n\r\n";
     //     return (TransferEncodingChunked(buffer.str(), bufSize));
@@ -213,14 +212,13 @@ HTTP::Response::contentForGetHead(void) {
     // чтобы мне уже с этим приходило
     const std::string &resourcePath = _req->getResolvedPath();
 
-    _res = "HTTP/1.1 200 OK\r\n"
-           "connection: keep-alive\r\n"
-           "keep-Alive: timeout=55, max=1000\r\n";
-    if (!resourceExists(resourcePath)) {
+     if (!resourceExists(resourcePath)) {
         setErrorResponse(NOT_FOUND);
         return "";
     }
-    if (!_req->isAuthorized() && _req->getLocation()->getAuthRef().isSet()) {
+
+    // Should be moved upper
+    if (_req->getLocation()->getAuthRef().isSet() && !_req->isAuthorized()) {
         // If no Authorization header provided
         Log.debug("Authenticate");
         _res = statusLines[UNAUTHORIZED];
@@ -232,6 +230,9 @@ HTTP::Response::contentForGetHead(void) {
         return "";
     }
 
+    _res = "HTTP/1.1 200 OK\r\n"
+           "connection: keep-alive\r\n"
+           "keep-Alive: timeout=55, max=1000\r\n";
     // Path is dir
     if (isDirectory(resourcePath)) {
         // в дальнейшем заменить на геттер из req

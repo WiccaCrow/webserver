@@ -3,11 +3,11 @@
 NAME 		   =   webserv
 
 CXX            =   clang++
-CPPFLAGS       =   -Wall -Wextra -Werror -std=c++98 -g
+CPPFLAGS       =   -Wall -Wextra -Werror -std=c++98 -g -fstandalone-debug
 # CXX		   =   g++
 # CPPFLAGS     =   -Wall -Wextra -Werror -Wpedantic -std=c++98 -g 
 
-ifeq ($(OS),Linux)
+ifeq ($(shell uname), Linux)
 	LIBCRYPT   = -lcrypt
 endif
 
@@ -63,11 +63,9 @@ $(NAME): $(OSOURCE)
 	$(CXX) $(CPPFLAGS) $^ -o $(NAME) $(LIBJSONFLAGS) $(LIBCRYPT)
 
 clean:
-	$(MAKE) -C $(LIBJSONFOLDER) clean
 	rm -rf $(OSOURCEFOLDER) YoupiBanane
 
 fclean: clean
-	$(MAKE) -C $(LIBJSONFOLDER) fclean
 	rm -rf $(NAME)
 
 re: fclean all

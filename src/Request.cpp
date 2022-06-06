@@ -33,6 +33,7 @@ Request::operator=(const Request &other) {
         _bodySize              = other._bodySize;
         _body                  = other._body;
         _parseFlags            = other._parseFlags;
+        _isAuthorized          = other._isAuthorized;
     }
     return *this;
 }

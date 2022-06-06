@@ -7,6 +7,7 @@
 #include <crypt.h>
 
 #include "Logger.hpp"
+#include "Utils.hpp"
 
 namespace HTTP {
 
@@ -30,7 +31,7 @@ class Auth {
     void setFile(const std::string &);
     void setRealm(const std::string &);
 
-    bool isAuthorized(const std::string &) const;
+    bool isAuthorized(const std::string) const;
 };
 
 }

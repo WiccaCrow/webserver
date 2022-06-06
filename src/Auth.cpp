@@ -7,14 +7,16 @@ Auth::Auth(void) : _set(false) {}
 Auth::~Auth(void) {}
 
 static bool 
-splitCredentials(const std::string &line, std::pair<std::string, std::string> &crds) {
+splitCredentials(const std::string &line, std::pair<std::string, std::string> &ref) {
     
+    std::pair<std::string, std::string> crds;
     size_t pos = line.find(':');
     if (pos == std::string::npos) {
         return false;
     }
     crds.first = line.substr(0, pos);
     crds.second = line.substr(pos + 1);
+    ref = crds;
     return true;
 }
 
@@ -72,21 +74,23 @@ Auth::setRealm(const std::string &realm) {
 }
 
 bool 
-Auth::isAuthorized(const std::string &line) const {
-    std::pair<std::string, std::string> crds;
-    if (!splitCredentials(line, crds)) {
+Auth::isAuthorized(const std::string line) const {
+    char salt[2] = { 0 };
+    std::vector<std::string> crds = split(line, ":");
+    if (crds.size() < 2) {
         Log.error("Auth::invalid credentials of the user: " + line);
         return false;
     }
 
-    std::map<std::string, std::string>::const_iterator it = _data.find(crds.first);
+    std::map<std::string, std::string>::const_iterator it = _data.find(crds[0]);
     if (it == _data.end()) {
-        Log.debug("Auth::user not found: " + crds.first);
+        Log.debug("Auth::user not found: " + crds[0]);
         return false;
     }
 
-    char salt[2] = { it->second[0], it->second[1] };
-    std::string encrypted = crypt(crds.second.c_str(), salt);
+    salt[0] = it->second[0];
+    salt[1] = it->second[1];
+    std::string encrypted = crypt(crds[1].c_str(), salt);
     if (it->second != encrypted) {
         Log.debug("Auth::passwords do not match");
         Log.debug("stored: " + it->second);
