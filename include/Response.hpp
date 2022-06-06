@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <utility>
 
+#include "ResponseHeader.hpp"
 #include "Request.hpp"
 #include "Status.hpp"
 #include "Utils.hpp"
