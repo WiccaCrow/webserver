@@ -14,6 +14,8 @@ namespace HTTP {
 
 class Response;
 
+std::string getDateTimeGMT();
+
 class ResponseHeader {
 
 public:
@@ -24,6 +26,7 @@ public:
     Handler     method;
     HeaderCode  hash;
 
+    
     StatusCode handle(Response &res);
 
     StatusCode AcceptPatch(Response &res);

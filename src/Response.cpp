@@ -12,6 +12,102 @@ HTTP::Response::Response() : _shouldBeClosed(false) {
 
 HTTP::Response::~Response() { }
 
+void
+HTTP::Response::DELETE(void) {
+    // чтобы не удалить чистовой сайт я временно добавляю следующую строку:
+    std::string resourcePath = "./testdel";
+    // std::string resourcePath = req->getPath();
+
+    if (!resourceExists(resourcePath)) {
+        setErrorResponse(NOT_FOUND);
+        return;
+    } else if (isDirectory(resourcePath)) {
+        if (rmdirNonEmpty(resourcePath)) {
+            setErrorResponse(FORBIDDEN);
+            return;
+        }
+    } else {
+        if (remove(resourcePath.c_str())) {
+            setErrorResponse(FORBIDDEN);
+            return;
+        }
+    }
+    _res = "HTTP/1.1 200 OK\r\n"
+           "content-length: 60\r\n\r\n"
+           "<html>\n"
+           "  <body>\n"
+           "    <h1>File deleted.</h1>\n"
+           "  </body>\n"
+           "</html>";
+}
+
+void
+HTTP::Response::HEAD(void) {
+    contentForGetHead();
+}
+
+void
+HTTP::Response::GET(void) {
+    _res += contentForGetHead();
+}
+
+void
+HTTP::Response::OPTIONS(void) {
+    std::cout << "OPTIONS" << std::endl;
+    _res                                    = "HTTP/1.1 200 OK\r\n"
+                                              "Allow: ";
+    std::vector<std::string> AllowedMethods = _req->getLocation()->getAllowedMethodsRef();
+    for (int i = 0, nbMetods = AllowedMethods.size(); i < nbMetods;) {
+        _res += AllowedMethods[i];
+        if (++i != nbMetods) {
+            _res += ", ";
+        } else {
+            _res += "\r\n\r\n";
+        }
+    }
+}
+
+void
+HTTP::Response::POST(void) {
+    std::string isCGI = ""; // from config
+    if (isCGI != "") {
+        // doCGI(*_req);
+    } else {
+        _res = "HTTP/1.1 204 No Content\r\n\r\n";
+    }
+}
+
+void
+HTTP::Response::PUT(void) {
+    std::string resourcePath = _req->getPath();
+
+    if (isDirectory(resourcePath)) {
+        setErrorResponse(FORBIDDEN);
+    } else if (isFile(resourcePath)) {
+        if (isWritableFile(resourcePath)) {
+            writeFile(resourcePath);
+            _res = "HTTP/1.1 200 OK\r\n"
+                   "content-length: 67\r\n\r\n"
+                   "<html>\n"
+                   "  <body>\n"
+                   "    <h1>File is overwritten.</h1>\n"
+                   "  </body>\n"
+                   "</html>";
+        } else {
+            setErrorResponse(FORBIDDEN);
+        }
+    } else {
+        writeFile(resourcePath);
+        _res = "HTTP/1.1 201 OK\r\n"
+               "content-length: 60\r\n\r\n"
+               "<html>\n"
+               "  <body>\n"
+               "    <h1>File created.</h1>\n"
+               "  </body>\n"
+               "</html>";
+    }
+}
+
 HTTP::StatusCode
 HTTP::Response::handle(Request &req) {
     std::map<std::string, Response::Handler>::iterator it = methods.find(req.getMethod());
@@ -181,19 +277,6 @@ isCGI(const std::string &filepath, std::map<std::string, HTTP::CGI> &cgis) {
 // contentForHead
 //     makeHeaders
 
-std::string
-getDateTimeGMT() {
-    // e.g. Date: Wed, 21 Oct 2015 07:28:00 GMT
-    time_t rawtime;
-    time(&rawtime);
-    struct tm *info = gmtime(&rawtime);
-    
-    char buff[70];
-    strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
-    
-    return buff;
-}
-
 void
 HTTP::Response::shouldBeClosed(bool flag) {
     _shouldBeClosed = flag;
@@ -283,102 +366,6 @@ HTTP::Response::contentForGetHead(void) {
     } else {
         setErrorResponse(FORBIDDEN);
         return "";
-    }
-}
-
-void
-HTTP::Response::GET(void) {
-    _res += contentForGetHead();
-}
-
-void
-HTTP::Response::HEAD(void) {
-    contentForGetHead();
-}
-
-void
-HTTP::Response::DELETE(void) {
-    // чтобы не удалить чистовой сайт я временно добавляю следующую строку:
-    std::string resourcePath = "./testdel";
-    // std::string resourcePath = req->getPath();
-
-    if (!resourceExists(resourcePath)) {
-        setErrorResponse(NOT_FOUND);
-        return;
-    } else if (isDirectory(resourcePath)) {
-        if (rmdirNonEmpty(resourcePath)) {
-            setErrorResponse(FORBIDDEN);
-            return;
-        }
-    } else {
-        if (remove(resourcePath.c_str())) {
-            setErrorResponse(FORBIDDEN);
-            return;
-        }
-    }
-    _res = "HTTP/1.1 200 OK\r\n"
-           "content-length: 60\r\n\r\n"
-           "<html>\n"
-           "  <body>\n"
-           "    <h1>File deleted.</h1>\n"
-           "  </body>\n"
-           "</html>";
-}
-
-void
-HTTP::Response::POST(void) {
-    std::string isCGI = ""; // from config
-    if (isCGI != "") {
-        // doCGI(*_req);
-    } else {
-        _res = "HTTP/1.1 204 No Content\r\n\r\n";
-    }
-}
-
-void
-HTTP::Response::PUT(void) {
-    std::string resourcePath = _req->getPath();
-
-    if (isDirectory(resourcePath)) {
-        setErrorResponse(FORBIDDEN);
-    } else if (isFile(resourcePath)) {
-        if (isWritableFile(resourcePath)) {
-            writeFile(resourcePath);
-            _res = "HTTP/1.1 200 OK\r\n"
-                   "content-length: 67\r\n\r\n"
-                   "<html>\n"
-                   "  <body>\n"
-                   "    <h1>File is overwritten.</h1>\n"
-                   "  </body>\n"
-                   "</html>";
-        } else {
-            setErrorResponse(FORBIDDEN);
-        }
-    } else {
-        writeFile(resourcePath);
-        _res = "HTTP/1.1 201 OK\r\n"
-               "content-length: 60\r\n\r\n"
-               "<html>\n"
-               "  <body>\n"
-               "    <h1>File created.</h1>\n"
-               "  </body>\n"
-               "</html>";
-    }
-}
-
-void
-HTTP::Response::OPTIONS(void) {
-    std::cout << "OPTIONS" << std::endl;
-    _res                                    = "HTTP/1.1 200 OK\r\n"
-                                              "Allow: ";
-    std::vector<std::string> AllowedMethods = _req->getLocation()->getAllowedMethodsRef();
-    for (int i = 0, nbMetods = AllowedMethods.size(); i < nbMetods;) {
-        _res += AllowedMethods[i];
-        if (++i != nbMetods) {
-            _res += ", ";
-        } else {
-            _res += "\r\n\r\n";
-        }
     }
 }
 
