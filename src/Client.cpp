@@ -116,7 +116,7 @@ Client::receive(void) {
     ReadSock::Status stat;
     while (true) {
         line = "";
-        if (!(_req.getFlags() & PARSED_HEADERS) || !(_req.getFlags() & PARSED_SL)) {
+        if (!_req.set(PARSED_HEADERS) || !_req.set(PARSED_SL)) {
             stat = _reader.getline(s, line);
         } else {
             stat = _reader.getline_for_chunked(s, line, _req);

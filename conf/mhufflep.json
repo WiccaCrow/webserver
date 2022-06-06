@@ -39,7 +39,8 @@
                     "alias": "/Users/mhufflep/Desktop/serv/pages/site",
                     "autoindex": true,
                     "CGI": {
-                        ".js": "/usr/local/bin/node"
+                        ".js": "/usr/local/bin/node",
+                        ".py": "/usr/bin/python"
                     },
                     "index": [ "index.html" ],
                     "post_max_body": 200,

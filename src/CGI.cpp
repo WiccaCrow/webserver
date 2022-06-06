@@ -49,57 +49,96 @@ setValue(char *const env, const std::string &value) {
     strncat(env, value.c_str(), 1023 - strlen(env));
 }
 
+void
+CGI::linkRequest(Request *req) {
+    _req = req;
+}
+
 // This version passes all the env, including system
 // Currently env pass with setEnv function.
 void
-CGI::setFullEnv(Request &req) {
+CGI::setFullEnv(void) {
     setenv("PATH_INFO", "", 1);
 
-    setenv("PATH_TRANSLATED", req.getResolvedPath().c_str(), 1); // ?
+    setenv("PATH_TRANSLATED", _req->getResolvedPath().c_str(), 1); // ?
 
-    setenv("REMOTE_HOST", "", 1);
-    setenv("REMOTE_ADDR", "", 1);
+    setenv("REMOTE_HOST", _req->getHeaderValue(HOST).c_str(), 1);
+    setenv("REMOTE_ADDR", _req->getClient()->getIpAddr().c_str(), 1);
     setenv("REMOTE_USER", "", 1);
     setenv("REMOTE_IDENT", "", 1);
 
-    setenv("AUTH_TYPE", "Basic", 1);
-    setenv("QUERY_STRING", req.getQueryString().c_str(), 1);
-    setenv("REQUEST_METHOD", req.getMethod().c_str(), 1);
-    setenv("SCRIPT_NAME", req.getResolvedPath().c_str(), 1);
-    setenv("CONTENT_LENGTH", to_string(req.getBody().length()).c_str(), 1);
-    setenv("CONTENT_TYPE", req.getHeaderValue(CONTENT_TYPE).c_str(), 1);
+    setenv("AUTH_TYPE", _req->getLocation()->getAuthRef().isSet() ? "Basic" : "", 1);
+    setenv("QUERY_STRING", _req->getQueryString().c_str(), 1);
+    setenv("REQUEST_METHOD", _req->getMethod().c_str(), 1);
+    setenv("SCRIPT_NAME", _req->getResolvedPath().c_str(), 1);
+    setenv("CONTENT_LENGTH", to_string(_req->getBody().length()).c_str(), 1);
+    setenv("CONTENT_TYPE", _req->getHeaderValue(CONTENT_TYPE).c_str(), 1);
 
-    setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
-    setenv("SERVER_NAME", "localhost", 1);
-    setenv("SERVER_SOFTWARE", "webserv/1.0", 1);
+    setenv("GATEWAY_INTERFACE", GATEWAY_INTERFACE, 1);
+    setenv("SERVER_NAME",  _req->getUriRef().getAuthority().c_str(), 1);
+    setenv("SERVER_SOFTWARE", SERVER_SOFTWARE, 1);
     setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
 
     // Current server block
-    setenv("SERVER_PORT", to_string(req.getServerBlock()->getPort()).c_str(), 1); // 80
+    setenv("SERVER_PORT", to_string(_req->getServerBlock()->getPort()).c_str(), 1); // 80
     setenv("REDIRECT_STATUS", "200", 1);
 }
 
 void
-CGI::setEnv(Request &req) {
+CGI::setEnv(void) {
 
+    // PATH_INFO
     setValue(env[0], "");
-    setValue(env[1], req.getResolvedPath()); // Definitely not like that
-    setValue(env[2], req.getHeaderValue(HOST)); // host, maybe should be without port
-    setValue(env[3], req.getClient()->getIpAddr()); // ipv4 addr
-    setValue(env[4], ""); // user
-    setValue(env[5], ""); // ident
-    setValue(env[6], ""); // auth
-    setValue(env[7], req.getQueryString());
-    setValue(env[8], req.getMethod());
-    setValue(env[9], req.getResolvedPath());
-    setValue(env[10], to_string(req.getBody().length()));
-    setValue(env[11], req.getHeaderValue(CONTENT_TYPE));
+    
+    // PATH_TRANSLATED
+    setValue(env[1], _req->getResolvedPath()); // Definitely not like that
+    
+    // REMOTE_HOST
+    setValue(env[2], _req->getHeaderValue(HOST)); // host, maybe should be without port
+    
+    // REMOTE_ADDR
+    setValue(env[3], _req->getClient()->getIpAddr()); // ipv4 addr
+    
+    // REMOTE_USER
+    setValue(env[4], "");
+    
+    // REMOTE_IDENT
+    setValue(env[5], "");
+    
+    // AUTH_TYPE
+    setValue(env[6], _req->getLocation()->getAuthRef().isSet() ? "Basic" : "");
+    
+    // QUERY_STRING
+    setValue(env[7], _req->getQueryString());
+    
+    // REQUEST_METHOD
+    setValue(env[8], _req->getMethod());
+    
+    // SCRIPT_NAME
+    setValue(env[9], _req->getResolvedPath());
+    
+    // CONTENT_LENGTH
+    setValue(env[10], to_string(_req->getBody().length()));
+    
+    // CONTENT_TYPE
+    setValue(env[11], _req->getHeaderValue(CONTENT_TYPE));
+    
+    // GATEWAY_INTERFACE
     setValue(env[12], GATEWAY_INTERFACE);
-    setValue(env[13], req.getUriRef().getAuthority()); // Not like that
+    
+    // SERVER_NAME
+    setValue(env[13], _req->getUriRef().getAuthority()); // Not like that!
+    
+    // SERVER_SOFTWARE
     setValue(env[14], SERVER_SOFTWARE);
+    
+    // SERVER_PROTOCOL
     setValue(env[15], "HTTP/1.1");
-    setValue(env[16], to_string(req.getServerBlock()->getPort()));
+    
+    // SERVER_PORT
+    setValue(env[16], to_string(_req->getServerBlock()->getPort()));
 
+    // REDIRECT_STATUS
     setValue(env[17], "200");
 }
 
@@ -221,18 +260,17 @@ CGI::exec() {
         }
     }
 
-    // if (req.getBody() != "") {
-    //     if (write(in[1], req.getBody().c_str(), req.getBody().length()) == -1) {
-    //         log_error("CGI::write: ");
-    //         restore_std(tmp[0], tmp[1]);
-    //         close_pipe(tmp[0], tmp[1]);
-    //         close_pipe(in[0], in[1]);
-    //         close_pipe(out[0], out[1]);
-    //         kill(childPID, SIGKILL);
-    //         req.setStatus(HTTP::INTERNAL_SERVER_ERROR);
-    //         return 0;
-    //     }
-    // }
+    if (_req->getBody() != "") {
+        if (write(in[1], _req->getBody().c_str(), _req->getBody().length()) == -1) {
+            log_error("CGI::write: ");
+            restore_std(tmp[0], tmp[1]);
+            close_pipe(tmp[0], tmp[1]);
+            close_pipe(in[0], in[1]);
+            close_pipe(out[0], out[1]);
+            kill(childPID, SIGKILL);
+            return 0;
+        }
+    }
 
     restore_std(tmp[0], tmp[1]);
     close_pipe(tmp[0], tmp[1]);

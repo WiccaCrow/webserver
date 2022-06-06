@@ -32,6 +32,7 @@ private:
     bool _isCompiled;
 
     std::string _res;
+    Request *   _req;
 
 public:
     CGI(void);
@@ -41,8 +42,9 @@ public:
     void setCompiled(bool);
     bool isCompiled(void);
 
-    void setEnv(Request &req);
-    void setFullEnv(Request &req);
+    void linkRequest(Request *req);
+    void setEnv(void);
+    void setFullEnv(void);
     void setExecPath(const std::string);
     bool setScriptPath(const std::string);
     void reset(void);

@@ -160,7 +160,8 @@ HTTP::Response::getContentType(std::string resourcePath) {
 std::string
 HTTP::Response::passToCGI(CGI &cgi) {
     cgi.reset();
-    cgi.setEnv(*_req);
+    cgi.linkRequest(_req);
+    cgi.setEnv();
     if (!cgi.exec()) {
         _req->setStatus(HTTP::BAD_GATEWAY);
         setErrorResponse(_req->getStatus());
