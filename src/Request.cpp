@@ -81,7 +81,7 @@ Request::getProtocol() const {
     return _protocol;
 }
 
-const std::map<HeaderCode, Header> &
+const std::map<uint32_t, Header> &
 Request::getHeaders() const {
     return _headers;
 }
@@ -124,22 +124,12 @@ Request::removeFlag(uint8_t flag) {
 void
 Request::clear() {
     _method = "";
-    // _uri.clear();
     _protocol = "";
     _headers.clear();
-    _flag_getline_bodySize = true;
-    _bodySize              = 0;
     _body.clear();
+    _bodySize = 0;
     _parseFlags = 0;
-
-    // _method.clear();
-    // _uri.clear();
-    // _protocol.clear();
-    // _headers.clear();
-    // _flag_getline_bodySize = true;
-    // _bodySize = 0;
-    // _body.clear();
-    // _parseFlags = 0;
+    _flag_getline_bodySize = true;
 }
 
 const std::string &
@@ -162,61 +152,71 @@ Request::setAuthFlag(bool flag) {
     _isAuthorized = flag;
 }
 
-
 const std::string 
-Request::getHeaderValue(HeaderCode key) const {
-    std::map<HeaderCode, Header>::const_iterator it = _headers.find(key);
+Request::getHeaderValue(uint32_t key) const {
+    std::map<uint32_t, Header>::const_iterator it = _headers.find(key);
     if (it == _headers.end()) {
         return "";
     }
     return it->second.value;
 }
 
+int
+Request::set(uint8_t flag) const {
+    return _parseFlags & flag;
+}
+
 StatusCode
 Request::parseLine(std::string line) {
-    if (!(getFlags() & PARSED_SL)) {
-        return (_status = parseStartLine(line));
-    } else if (!(getFlags() & PARSED_HEADERS)) {
-        return (_status = parseHeader(line));
-    } else if (!(getFlags() & PARSED_BODY)) {
-        return (_status = parseBody(line));
+    if (!set(PARSED_SL)) {
+        return !line.empty() ? parseSL(line) : CONTINUE;
+    } else if (!set(PARSED_HEADERS)) {
+        return !line.empty() ? parseHeader(line) : checkHeaders();
+    } else if (!set(PARSED_BODY)) {
+        return (parseBody(line));
     } else {
-        return (_status = PROCESSING);
+        return PROCESSING;
     }
 }
 
 StatusCode
-Request::parseStartLine(const std::string &line) {
-    if (line.empty()) {
-        return CONTINUE;
-    } // ?
-    Log.debug("###################################################################");
+Request::parseSL(const std::string &line) {
+  
+    Log.debug("----------------------");
     Log.debug(line);
+    
     size_t pos = 0;
-    _method    = getWord(line, ' ', pos);
-    Log.debug("METHOD: " + _method);
-    if (!isValidMethod(_method)) {
-        Log.debug("Request::parseStartLine: Method is not implemented");
-        return NOT_IMPLEMENTED;
-    }
+    _method = getWord(line, ' ', pos);
 
     skipSpaces(line, pos);
     _rawURI = getWord(line, ' ', pos);
     Log.debug("PATH: " + _rawURI);
-    _uri.parse(_rawURI);
-    // if (isValidPath(_rawURI)) {
-    //     Log.debug("Invalid URI");
-    //     return BAD_REQUEST;
-    // }
-
+    
     skipSpaces(line, pos);
     _protocol = getWord(line, ' ', pos);
 
     skipSpaces(line, pos);
     if (line[pos]) {
-        Log.debug("Forbidden symbols at the end of the line");
+        Log.debug("Forbidden symbols at the end of the SL");
         return BAD_REQUEST;
     }
+
+    return checkSL();
+}
+
+StatusCode
+Request::checkSL(void) {
+    if (!isValidMethod(_method)) {
+        Log.debug("Request::parseSL: Method " + _method + " is not implemented");
+        return NOT_IMPLEMENTED;
+    }
+
+    // if (isValidPath(_rawURI)) {
+    //     Log.debug("Invalid URI");
+    //     return BAD_REQUEST;
+    // }
+
+    _uri.parse(_rawURI);
 
     if (!isValidProtocol(_protocol)) {
         return BAD_REQUEST;
@@ -225,11 +225,13 @@ Request::parseStartLine(const std::string &line) {
     } else if (_major != 1 || _minor != 1) { // Supports only http/1.1 now
         return BAD_REQUEST;
     }
-
     setFlag(PARSED_SL);
+
     return CONTINUE;
 }
 
+
+// Need to move to another place so config and request could use the same array
 bool
 Request::isValidMethod(const std::string &method) {
     static const std::string validMethods[9] = {
@@ -261,80 +263,69 @@ Request::isValidProtocol(const std::string &protocol) {
     return true;
 }
 
-StatusCode
-Request::parseHeader(std::string line) {
-    if (line.empty()) {
-        setFlag(PARSED_HEADERS);
-        Log.debug("Request::parseHeader: Headers are parsed");
-
-        // _location = _servBlock->matchLocation(_uri._path);
-        if (_location->getAliasRef().empty()) {
-            _resolvedPath = _location->getRootRef();
-            if (_uri._path[0] == '/' && _uri._path.length() > 1) {
-                _resolvedPath += _uri._path.substr(1);
-            }
-        } else {
-            // Alias used, watch carefully about / case
-            Log.info("alias: " + _location->getAliasRef());
-            Log.info("uri.path: " + _uri._path);
-            _resolvedPath = _location->getAliasRef();
-            if (_uri._path.length() > _location->getPathRef().length()) {
-                Log.info("append: " + _uri._path.substr(_location->getPathRef().length()));
-                _resolvedPath += _uri._path.substr(_location->getPathRef().length());
-            }
+void
+Request::resolvePath(void) {
+    if (_location->getAliasRef().empty()) {
+        _resolvedPath = _location->getRootRef();
+        if (_uri._path[0] == '/' && _uri._path.length() > 1) {
+            _resolvedPath += _uri._path.substr(1);
         }
-        Log.debug("PHYSICAL_PATH:" + _resolvedPath);
+    } else {
+        _resolvedPath = _location->getAliasRef();
+        if (_uri._path.length() > _location->getPathRef().length()) {
+            _resolvedPath += _uri._path.substr(_location->getPathRef().length());
+        }
+    }
+    Log.debug("Request::Resolved path:" + _resolvedPath);
+}
 
-        if (_headers.find(HOST) == _headers.end()) {
-            Log.error("Host not founded");
+StatusCode
+Request::checkHeaders(void) {
+
+    if (!headerExists(HOST)) {
+        Log.error("Host not found");
+        return BAD_REQUEST;
+    }
+
+    // PUT or POST or PATCH
+    if (_method[0] == 'P') {
+        if (!headerExists(TRANSFER_ENCODING) && !headerExists(CONTENT_LENGTH)) {
+            Log.error("Transfer-Encoding/Content-Length is missing in request");
+            return LENGTH_REQUIRED;
+        } else if (headerExists(TRANSFER_ENCODING) && headerExists(CONTENT_LENGTH)) {
+            Log.error("Transfer-Encoding and Content-Length is mutually exclusive");
             return BAD_REQUEST;
         }
-
-        // PUT or POST or PATCH
-        if (_method[0] == 'P') {
-            if (_headers.find(TRANSFER_ENCODING) == _headers.end() &&
-                _headers.find(CONTENT_LENGTH) == _headers.end()) {
-                Log.error("No Transfer-Encoding or Content-Length in request");
-                return LENGTH_REQUIRED;
-            }
-            return CONTINUE;
-        }
-        return PROCESSING;
+        return CONTINUE;
     }
-    // Log.debug(line); // Print headers
-    size_t sepPos = line.find(':');
-    if (sepPos == std::string::npos) {
-        return BAD_REQUEST;
-    } 
+    setFlag(PARSED_HEADERS);
+    return PROCESSING;
+}
 
-    // toLowerCase(line);
-
+StatusCode
+Request::parseHeader(const std::string &line) {
     Header header;
-    header.key = line.substr(0, sepPos);
-    toLowerCase(header.key);
-    header.value = line.substr(sepPos + 1);
-    
-    trim(header.value, " \t\r\n");
 
-    header.hash = static_cast<HeaderCode>(crc(header.key.c_str(), header.key.length()));
-
-    if (header.handle(*this) == BAD_REQUEST) {
-        // Not all unsupported headers should lead to bad request
-        Log.debug("Request::parseHeader: Maybe header is not supported");
-        Log.debug(header.key + "|" + to_string((unsigned long)header.hash));
+    if (!header.parse(line)) {
         return BAD_REQUEST;
     }
-    
+
     // dublicate header
     if (_headers.find(header.hash) != _headers.end()) {
         Log.error("Dublicate header");
         return BAD_REQUEST;
     }
 
-    // Copying here need to replace
+    if (header.handle(*this) == BAD_REQUEST) {
+        Log.debug("Request::parseHeader: Maybe header is not supported");
+        Log.debug(header.key + "|" + to_string((unsigned long)header.hash));
+        return BAD_REQUEST;
+    }
     _headers.insert(std::make_pair(header.hash, header));
     return CONTINUE;
 }
+
+
 
 StatusCode
 Request::parseChunked(const std::string &line) {
@@ -378,12 +369,17 @@ Request::writeBody(const std::string &body) {
     return (PROCESSING);
 }
 
+bool
+Request::headerExists(const HeaderCode code) {
+    return (_headers.find(code) != _headers.end());
+}
+
 StatusCode
 Request::parseBody(const std::string &line) {
     Log.debug("Request::parseBody");
-    if (_headers.find(TRANSFER_ENCODING) != _headers.end()) {
+    if (headerExists(TRANSFER_ENCODING)) {
         return (parseChunked(line));
-    } else if (_headers.find(CONTENT_LENGTH) != _headers.end()) {
+    } else if (headerExists(TRANSFER_ENCODING)) {
         setFlag(PARSED_BODY);
         return writeBody(line);
     }

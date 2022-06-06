@@ -5,6 +5,24 @@
 
 namespace HTTP {
 
+bool
+Header::parse(const std::string &line) {
+    
+    // Log.debug(line);
+    size_t colonPos = line.find(':');
+    if (colonPos == std::string::npos) {
+        return false;
+    }
+
+    key = line.substr(0, colonPos);
+    toLowerCase(key);
+    value = line.substr(colonPos + 1);
+    trim(value, " \t\r\n");
+
+    hash = crc(key.c_str(), key.length());
+    return true;
+}
+
 StatusCode
 Header::handle(Request &req) {
     std::map<uint32_t, Header::Handler>::const_iterator it = validHeaders.find(hash);
@@ -106,6 +124,32 @@ Header::CacheControl(Request &req) {
 
 StatusCode
 Header::Connection(Request &req) {
+    (void)req;
+    return CONTINUE;
+}
+
+StatusCode
+Header::ContentLength(Request &req) {
+    const std::map<uint32_t, HTTP::Header> headers = req.getHeaders();
+    if (headers.find(TRANSFER_ENCODING) != headers.end()) {
+        return BAD_REQUEST;
+    }
+
+    long long length = strtoll(value.c_str(), NULL, 10);
+    if (length > LONG_MAX) {
+        return PAYLOAD_TOO_LARGE;
+    }
+    if (length < 0) {
+        return BAD_REQUEST;
+    }
+    req.setBodySizeFlag(false);
+    req.setBodySize(length);
+
+    return CONTINUE;
+}
+
+StatusCode
+Header::ContentType(Request &req) {
     (void)req;
     return CONTINUE;
 }
@@ -234,7 +278,7 @@ Header::TransferEncoding(Request &req) {
     std::set<std::string> acceptedValues;
     acceptedValues.insert("chunked");
 
-    const std::map<HeaderCode, HTTP::Header> headers = req.getHeaders();
+    const std::map<uint32_t, HTTP::Header> headers = req.getHeaders();
     if (headers.find(CONTENT_LENGTH) != headers.end()) {
         return BAD_REQUEST;
     }
@@ -262,36 +306,10 @@ Header::UserAgent(Request &req) {
     return CONTINUE;
 }
 
-StatusCode
-Header::ContentLength(Request &req) {
-    const std::map<HeaderCode, HTTP::Header> headers = req.getHeaders();
-    if (headers.find(TRANSFER_ENCODING) != headers.end()) {
-        return BAD_REQUEST;
-    }
-
-    long long length = strtoll(value.c_str(), NULL, 10);
-    if (length > LONG_MAX) {
-        return PAYLOAD_TOO_LARGE;
-    }
-    if (length < 0) {
-        return BAD_REQUEST;
-    }
-    req.setBodySizeFlag(false);
-    req.setBodySize(length);
-
-    return CONTINUE;
-}
-
 // StatusCode Header::SetCookie(Request &req) {
 //     (void)req;
 //     return CONTINUE;
 // }
-
-StatusCode
-Header::ContentType(Request &req) {
-    (void)req;
-    return CONTINUE;
-}
 
 StatusCode
 Header::Upgrade(Request &req) {

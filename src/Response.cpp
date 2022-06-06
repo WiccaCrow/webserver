@@ -16,6 +16,7 @@ HTTP::StatusCode
 HTTP::Response::handle(Request &req) {
     std::map<std::string, Response::Handler>::iterator it = methods.find(req.getMethod());
 
+    req.resolvePath();
     setRequest(&req);
     if (it == methods.end()) {
         return METHOD_NOT_ALLOWED;

@@ -138,11 +138,9 @@ Client::receive(void) {
             }
 
             case ReadSock::LINE_FOUND: {
-                _req.parseLine(line);
+                _req.setStatus(_req.parseLine(line));
                 if (_req.getStatus() != HTTP::CONTINUE) {
                     setRequestFormed(true);
-                    // _res.setFormed(true);
-                    // _req.setFormed(true);
                     return;
                 }
                 break;
@@ -157,7 +155,10 @@ Client::receive(void) {
 void
 Client::checkIfFailed(void) {
 
-    if (_req.getStatus() == HTTP::BAD_REQUEST || _req.getStatus() == HTTP::REQUEST_TIMEOUT || _req.getStatus() == HTTP::INTERNAL_SERVER_ERROR || _req.getStatus() == HTTP::PAYLOAD_TOO_LARGE) {
+    if (_req.getStatus() == HTTP::BAD_REQUEST || 
+        _req.getStatus() == HTTP::REQUEST_TIMEOUT ||
+        _req.getStatus() == HTTP::INTERNAL_SERVER_ERROR ||
+        _req.getStatus() == HTTP::PAYLOAD_TOO_LARGE) {
         setFd(-1);
     }
 }
@@ -188,7 +189,7 @@ Client::process(void) {
         _res.setErrorResponse(status);
     } else if (status == HTTP::OK) {
         if (_res.handle(_req) == METHOD_NOT_ALLOWED) {
-            _res.setErrorResponse(status = HTTP::METHOD_NOT_ALLOWED);
+            _res.setErrorResponse(METHOD_NOT_ALLOWED);
         }
     }
 }

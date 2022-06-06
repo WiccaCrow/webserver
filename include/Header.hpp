@@ -22,7 +22,9 @@ public:
     std::string key;
     std::string value;
     Handler     method;
-    HeaderCode  hash;
+    uint32_t  hash;
+
+    bool parse(const std::string &line);
 
     StatusCode handle(Request &req);
     StatusCode A_IM(Request &req);

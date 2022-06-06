@@ -4,7 +4,6 @@
 #include <string>
 #include <fstream>
 #include <unistd.h>
-#include <crypt.h>
 
 #include "Logger.hpp"
 #include "Utils.hpp"

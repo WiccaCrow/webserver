@@ -3,12 +3,13 @@
 NAME 		   =   webserv
 
 CXX            =   clang++
-CPPFLAGS       =   -Wall -Wextra -Werror -std=c++98 -g -fstandalone-debug
+CPPFLAGS       =   -Wall -Wextra -Werror -std=c++98 -g 
 # CXX		   =   g++
 # CPPFLAGS     =   -Wall -Wextra -Werror -Wpedantic -std=c++98 -g 
 
 ifeq ($(shell uname), Linux)
 	LIBCRYPT   = -lcrypt
+	CPPFLAGS   += -fstandalone-debug
 endif
 
 SOURCEFILES     =	main.cpp \
