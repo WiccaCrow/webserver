@@ -106,6 +106,8 @@ private:
     // bool isValidPath(const std::string &path);
     bool isValidProtocol(const std::string &protocol);
     bool headerExists(const HeaderCode code);
+    bool headerExists(const uint32_t code);
+
 
 public:
     // for chunked

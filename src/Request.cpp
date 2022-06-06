@@ -293,6 +293,7 @@ Request::resolvePath(void) {
 StatusCode
 Request::checkHeaders(void) {
 
+    setFlag(PARSED_HEADERS);
     if (!headerExists(HOST)) {
         Log.error("Host not found");
         return BAD_REQUEST;
@@ -309,7 +310,7 @@ Request::checkHeaders(void) {
         }
         return CONTINUE;
     }
-    setFlag(PARSED_HEADERS);
+    Log.debug("Request::ParsedHeaders");
     return PROCESSING;
 }
 
@@ -322,7 +323,7 @@ Request::parseHeader(const std::string &line) {
     }
 
     // dublicate header
-    if (_headers.find(header.hash) != _headers.end()) {
+    if (headerExists(header.hash)) {
         Log.error("Dublicate header");
         return BAD_REQUEST;
     }
@@ -382,6 +383,11 @@ Request::writeBody(const std::string &body) {
 
 bool
 Request::headerExists(const HeaderCode code) {
+    return headerExists(static_cast<uint32_t>(code));
+}
+
+bool
+Request::headerExists(const uint32_t code) {
     return (_headers.find(code) != _headers.end());
 }
 

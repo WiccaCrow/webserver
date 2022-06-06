@@ -121,11 +121,11 @@ Client::receive(void) {
         } else {
             stat = _reader.getline_for_chunked(s, line, _req);
         }
+
         switch (stat) {
             case ReadSock::RECV_END:
-                Log.debug("Client::recv_env " + to_string(_fd));
+                Log.debug("Client::receive_end " + to_string(_fd));
                 setFd(-1);
-                // need to erase from map of clients in server
             case ReadSock::INVALID_FD:
                 return;
             case ReadSock::LINE_NOT_FOUND:

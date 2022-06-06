@@ -8,7 +8,7 @@ namespace HTTP {
 bool
 Header::parse(const std::string &line) {
     
-    // Log.debug(line);
+    Log.debug(line);
     size_t colonPos = line.find(':');
     if (colonPos == std::string::npos) {
         return false;
@@ -199,6 +199,7 @@ Header::Host(Request &req) {
 
     req.setServerBlock(g_server->matchServerBlock(req.getClient()->getServerPort(), "", uri._host));
     req.setLocation(req.getServerBlock()->matchLocation(req.getUriRef()._path));
+    req.resolvePath();
     return CONTINUE;
 }
 
