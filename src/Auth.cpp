@@ -20,7 +20,9 @@ splitCredentials(const std::string &line, std::pair<std::string, std::string> &c
 
 bool 
 Auth::loadData(void) {
-    std::ifstream in(_file);
+    std::ifstream in;
+
+    in.open(_file.c_str());
 
     if (!in.is_open() || !in.good()) {
         Log.error("Auth::Cannot open file " + _file);

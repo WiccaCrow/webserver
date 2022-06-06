@@ -10,6 +10,10 @@
             "CGI": {
                 ".py": "/usr/bin/python3.9"
             },
+            "auth_basic": {
+                "realm": "eternity",
+                "user_file": ".htpasswd"
+            },
             "methods_allowed": [ "GET", "POST" ],
             "post_max_body": 100,
             "autoindex": true,
