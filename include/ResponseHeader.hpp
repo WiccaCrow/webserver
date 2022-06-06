@@ -22,7 +22,7 @@ public:
     std::string key;
     std::string value;
     Handler     method;
-    HeaderCode  hash;
+    uint32_t  hash;
 
     StatusCode handle(Response &res);
 

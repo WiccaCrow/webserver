@@ -49,6 +49,7 @@ private:
     uint8_t       _parseFlags;
 
     bool                         _isAuthorized;
+    uint32_t                     _storedHash;
 
 public:
     Request();
@@ -116,6 +117,9 @@ public:
 
     bool isAuthorized(void) const;
     void setAuthFlag(bool);
+
+    uint32_t getStoredHash() const;
+    void          setStoredHash(uint32_t);
 };
 
 } // namespace HTTP

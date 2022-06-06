@@ -87,31 +87,35 @@ StatusCode
 Header::Authorization(Request &req) {
     (void)req;
     const Auth &auth = req.getLocation()->getAuthRef();
-    Log.debug("Authorization::Entered");
     if (auth.isSet()) {
-        Log.debug("Authorization::Started");
-
+        Log.debug("Authorization::" + value);
         std::vector<std::string> splitted = split(value, " ");
 
-        if (splitted[0] == "Basic") {
-            
-            std::string decoded = Base64::decode(splitted[1]);
-            Log.debug("Authorization::Decoded Base64:" + decoded);
-            if (decoded != "") {
-                req.setAuthFlag(auth.isAuthorized(decoded));
-                if (req.isAuthorized()) {
-                    Log.debug("Authorization::Succeed");
-                } else {
-                    Log.debug("Authorization::Failed");
-                }
-
-            } else {
-                Log.debug("Authorization::Invalid Base64 string");
-            }
-        } else {
+        if (splitted[0] != "Basic") {
             Log.debug("Authorization::Only Basic supported for now " + splitted[0]);
+            return NOT_IMPLEMENTED;
         }
 
+        uint32_t receivedHash = crc(splitted[1].c_str(), splitted[1].length());
+        if (!splitted[1].empty() && receivedHash == req.getStoredHash()) {
+            Log.debug("Authorization::Identical hash detected");
+            return CONTINUE;
+        }
+
+        std::string decoded = Base64::decode(splitted[1]);
+        Log.debug("Authorization::Decoded Base64:" + decoded);
+        if (decoded == "") {
+            Log.debug("Authorization::Invalid Base64 string");
+            return UNAUTHORIZED;
+        }
+
+        req.setAuthFlag(auth.isAuthorized(decoded));
+        if (req.isAuthorized()) {
+            req.setStoredHash(receivedHash);
+            Log.debug("Authorization::Succeed");
+        } else {
+            Log.debug("Authorization::Failed");
+        }
     }
     return CONTINUE;
 }

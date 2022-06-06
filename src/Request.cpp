@@ -9,7 +9,8 @@ Request::Request()
     , _flag_getline_bodySize(true)
     , _bodySize(0)
     , _parseFlags(PARSED_NONE)
-    , _isAuthorized(false) {
+    , _isAuthorized(false)
+    , _storedHash(0) {
 }
 
 Request::~Request() { }
@@ -119,6 +120,16 @@ Request::setFlag(uint8_t flag) {
 void
 Request::removeFlag(uint8_t flag) {
     _parseFlags &= ~flag;
+}
+
+uint32_t
+Request::getStoredHash() const {
+    return _storedHash;
+}
+
+void
+Request::setStoredHash(uint32_t hash) {
+    _storedHash = hash;
 }
 
 void
