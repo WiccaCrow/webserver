@@ -26,7 +26,7 @@ public:
     Handler     method;
     uint32_t  hash;
 
-    ResponseHeader(std::string keyToSet);
+    ResponseHeader(std::string keyToSet, uint32_t hashToSet);
 
     void setKey(std::string &keyToSet);
 

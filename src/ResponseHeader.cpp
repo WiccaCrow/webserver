@@ -28,7 +28,7 @@ ResponseHeader::handleHeader(Response &res) {
     return (this->*method)(res);
 }
 
-ResponseHeader::ResponseHeader(std::string keyToSet) : key(keyToSet) { }
+ResponseHeader::ResponseHeader(std::string keyToSet, uint32_t hashToSet) : key(keyToSet), hash(hashToSet) { }
 
 void
 ResponseHeader::setKey(std::string &keyToSet) {
@@ -122,6 +122,7 @@ ResponseHeader::ContentType(Response &res) {
 void
 ResponseHeader::Date(Response &res) {
     (void)res;
+    value = getDateTimeGMT();
 }
 
 void

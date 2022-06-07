@@ -31,7 +31,7 @@ public:
     typedef void (Response::*Handler)();
     std::map<std::string, Handler> methods;
 
-    std::map<std::string, ResponseHeader> headers;
+    std::map<uint32_t, ResponseHeader> headers;
 
     Response();
     ~Response();

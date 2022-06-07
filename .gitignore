@@ -39,6 +39,7 @@
 *.log
 
 # Other
+testdel/
 webserv
 .DS_Store
 .vscode

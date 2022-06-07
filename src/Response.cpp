@@ -9,8 +9,9 @@ HTTP::Response::Response() : _shouldBeClosed(false) {
     methods.insert(std::make_pair("POST", &Response::POST));
     methods.insert(std::make_pair("PUT", &Response::PUT));
 
-    headers.insert(std::make_pair("content-length", ResponseHeader("content-length")));
-    headers.insert(std::make_pair("connection", ResponseHeader("connection")));
+    headers.insert(std::make_pair(CONTENT_LENGTH, ResponseHeader("content-length", CONTENT_LENGTH)));
+    headers.insert(std::make_pair(CONNECTION, ResponseHeader("connection", CONNECTION)));
+    headers.insert(std::make_pair(DATE, ResponseHeader("date", DATE)));
     // headers.insert(std::make_pair("content-type", ""));
     // headers.insert(std::make_pair("last-modified", ""));
     // headers.insert(std::make_pair("access-control-allow-methods", ""));
@@ -44,12 +45,13 @@ HTTP::Response::makeHeaders() {
 
     std::string headersToReturn = statusLines[_req->getStatus()];
 
-    std::map<std::string, ResponseHeader>::iterator it    = headers.begin();
-    std::map<std::string, ResponseHeader>::iterator itEnd = headers.end();
+    std::map<uint32_t, ResponseHeader>::iterator it    = headers.begin();
+    std::map<uint32_t, ResponseHeader>::iterator itEnd = headers.end();
     for (; it != itEnd; ++it) {
-        it->second.hash = static_cast<HeaderCode>(crc(it->second.key.c_str(), it->second.key.length()));
         it->second.handleHeader(*this);
-        headersToReturn += it->second.key + ": " + it->second.value + "\r\n";
+        if (!it->second.value.empty()) {
+            headersToReturn += it->second.key + ": " + it->second.value + "\r\n";
+        }
     }
 
     headersToReturn += "\r\n";
