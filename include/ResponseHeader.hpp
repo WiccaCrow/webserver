@@ -19,75 +19,78 @@ std::string getDateTimeGMT();
 class ResponseHeader {
 
 public:
-    typedef StatusCode (ResponseHeader::*Handler)(Response &res);
+    typedef void (ResponseHeader::*Handler)(Response &res);
 
     std::string key;
     std::string value;
     Handler     method;
     HeaderCode  hash;
 
-    
-    StatusCode handle(Response &res);
+    ResponseHeader(std::string keyToSet);
 
-    StatusCode AcceptPatch(Response &res);
-    StatusCode AcceptRanges(Response &res);
-    StatusCode Age(Response &res);
-    StatusCode Allow(Response &res);
-    StatusCode AltSvc(Response &res);
-    StatusCode CacheControl(Response &res);
-    StatusCode Connection(Response &res);
-    StatusCode ContentDisposition(Response &res);
-    StatusCode ContentEncoding(Response &res);
-    StatusCode ContentLanguage(Response &res);
-    StatusCode ContentLength(Response &res);
-    StatusCode ContentLocation(Response &res);
-    StatusCode ContentRange(Response &res);
-    StatusCode ContentType(Response &res);
-    StatusCode Date(Response &res);
-    StatusCode DeltaBase(Response &res);
-    StatusCode Expires(Response &res);
-    StatusCode ETag(Response &res);
-    StatusCode IM(Response &res);
-    StatusCode KeepAlive(Response &res);
-    StatusCode Host(Response &res);
-    StatusCode LastModified(Response &res);
-    StatusCode Link(Response &res);
-    StatusCode Location(Response &res);
-    StatusCode Pragma(Response &res);
-    StatusCode ProxyAuthenticate(Response &res);
-    StatusCode PublicKeyPins(Response &res);
-    StatusCode RetryAfter(Response &res);
-    StatusCode Server(Response &res);
-    StatusCode SetCookie(Response &res);
-    StatusCode StrictTransportSecurity(Response &res);
-    StatusCode Trailer(Response &res);
-    StatusCode TransferEncoding(Response &res);
-    StatusCode Tk(Response &res);
-    StatusCode Upgrade(Response &res);
-    StatusCode Vary(Response &res);
-    StatusCode Via(Response &res);
-    StatusCode Warning(Response &res);
-    StatusCode WWWAuthenticate(Response &res);
+    void setKey(std::string &keyToSet);
+
+    void handleHeader(Response &res);
+
+    void AcceptPatch(Response &res);
+    void AcceptRanges(Response &res);
+    void Age(Response &res);
+    void Allow(Response &res);
+    void AltSvc(Response &res);
+    void CacheControl(Response &res);
+    void Connection(Response &res);
+    void ContentDisposition(Response &res);
+    void ContentEncoding(Response &res);
+    void ContentLanguage(Response &res);
+    void ContentLength(Response &res);
+    void ContentLocation(Response &res);
+    void ContentRange(Response &res);
+    void ContentType(Response &res);
+    void Date(Response &res);
+    void DeltaBase(Response &res);
+    void Expires(Response &res);
+    void ETag(Response &res);
+    void IM(Response &res);
+    void KeepAlive(Response &res);
+    void Host(Response &res);
+    void LastModified(Response &res);
+    void Link(Response &res);
+    void Location(Response &res);
+    void Pragma(Response &res);
+    void ProxyAuthenticate(Response &res);
+    void PublicKeyPins(Response &res);
+    void RetryAfter(Response &res);
+    void Server(Response &res);
+    void SetCookie(Response &res);
+    void StrictTransportSecurity(Response &res);
+    void Trailer(Response &res);
+    void TransferEncoding(Response &res);
+    void Tk(Response &res);
+    void Upgrade(Response &res);
+    void Vary(Response &res);
+    void Via(Response &res);
+    void Warning(Response &res);
+    void WWWAuthenticate(Response &res);
 
     // Non-standard
-    StatusCode ContentSecurityPolicy(Response &res);
-    StatusCode Refresh(Response &res);
-    StatusCode XPoweredBy(Response &res);
-    StatusCode XRequestID(Response &res);
-    StatusCode XUACompatible(Response &res);
-    StatusCode XXSSProtection(Response &res);
+    void ContentSecurityPolicy(Response &res);
+    void Refresh(Response &res);
+    void XPoweredBy(Response &res);
+    void XRequestID(Response &res);
+    void XUACompatible(Response &res);
+    void XXSSProtection(Response &res);
 
     // Cors
-    StatusCode AccessControlAllowOrigin(Response &res);
-    StatusCode AccessControlAllowCredentials(Response &res);
-    StatusCode AccessControlExposeHeaders(Response &res);
-    StatusCode AccessControlMaxAge(Response &res);
-    StatusCode AccessControlAllowMethods(Response &res);
-    StatusCode AccessControlAllowHeaders(Response &res);
+    void AccessControlAllowOrigin(Response &res);
+    void AccessControlAllowCredentials(Response &res);
+    void AccessControlExposeHeaders(Response &res);
+    void AccessControlMaxAge(Response &res);
+    void AccessControlAllowMethods(Response &res);
+    void AccessControlAllowHeaders(Response &res);
 
-    StatusCode NotSupported(Response &res);
+    void NotSupported(Response &res);
 };
 
-// extern const std::map<uint32_t, ResponseHeader::Handler> validHeaders;
+extern const std::map<uint32_t, ResponseHeader::Handler> validResponseHeaders;
 
 } // namespace HTTP
