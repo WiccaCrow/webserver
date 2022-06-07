@@ -59,8 +59,8 @@ HTTP::Response::makeHeaders() {
 void
 HTTP::Response::DELETE(void) {
     // чтобы не удалить чистовой сайт я временно добавляю следующую строку:
-    std::string resourcePath = "./testdel";
-    // std::string resourcePath = req->getPath();
+    // std::string resourcePath = "./testdel";
+    std::string resourcePath = _req->getResolvedPath();
 
     if (!resourceExists(resourcePath)) {
         setErrorResponse(NOT_FOUND);

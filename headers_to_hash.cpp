@@ -119,58 +119,10 @@ std::vector<std::string>::iterator it = vecStrToHash.begin();
 std::vector<std::string>::iterator itEnd = vecStrToHash.end();
 
 for (; it != itEnd; ++it) {
-    (std::transform(it->begin(), it->end(),it->begin(), ::toupper));
-    std::cout << *it << " = " << crc(it->c_str(), it->length()) << "," << std::endl;
+    std::string key = *it;
+    (std::transform(key.begin(), key.end(), key.begin(), ::toupper));
+    (std::transform(it->begin(), it->end(), it->begin(), ::tolower));
+    std::cout << key << " = " << crc(it->c_str(), it->length()) << "," << std::endl;
 }
     return 0;
 }
-
-// ACCEPT_PATCH = 2497852388,
-// ACCEPT_RANGES = 1197009904,
-// AGE = 932663864,
-// ALLOW = 2300412504,
-// ALT_SVC = 4119793501,
-// CACHE_CONTROL = 3753264162,
-// CONNECTION = 577269337,
-// CONTENT_DISPOSITION = 4001436277,
-// CONTENT_ENCODING = 310986126,
-// CONTENT_LANGUAGE = 2920992116,
-// CONTENT_LENGTH = 908684477,
-// CONTENT_LOCATION = 610219274,
-// CONTENT_RANGE = 525247874,
-// CONTENT_TYPE = 2522705751,
-// DATE = 2618022606,
-// DELTA_BASE = 1665559895,
-// ETAG = 3890305800,
-// EXPIRES = 2782500502,
-// IM = 1745869726,
-// LAST_MODIFIED = 1575109159,
-// LINK = 3765317,
-// LOCATION = 2561480071,
-// PRAGMA = 3991851436,
-// PROXY_AUTHENTICATE = 287484819,
-// PUBLIC_KEY_PINS = 3785789262,
-// RETRY_AFTER = 3191225420,
-// SERVER = 2861896304,
-// SET_COOKIE = 2440063574,
-// STRICT_TRANSPORT_SECURITY = 3021744255,
-// TRAILER = 4191429204,
-// TRANSFER_ENCODING = 2402070769,
-// TK = 2113934007,
-// UPGRADE = 2284030464,
-// VARY = 608222739,
-// VIA = 3071282778,
-// WARNING = 2131452636,
-// WWW_AUTHENTICATE = 2594199665,
-// ACCESS_CONTROL_ALLOW_ORIGIN = 1811182213,
-// ACCESS_CONTROL_ALLOW_CREDENTIALS = 464411840,
-// ACCESS_CONTROL_EXPOSE_HEADERS = 507788480,
-// ACCESS_CONTROL_MAX_AGE = 3087891980,
-// ACCESS_CONTROL_ALLOW_METHODS = 182753353,
-// ACCESS_CONTROL_ALLOW_HEADERS = 2869239973,
-// CONTENT_SECURITY_POLICY = 2584228645,
-// REFRESH = 1606704865,
-// X_POWERED_BY = 3624624665,
-// X_REQUEST_ID = 3388546943,
-// X_UA_COMPATIBLE = 1026726863,
-// X_XSS_PROTECTION = 3660959272,
