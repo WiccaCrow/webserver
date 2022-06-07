@@ -114,6 +114,7 @@ vecStrToHash.push_back(static_cast<std::string>("X-Powered-By"));
 vecStrToHash.push_back(static_cast<std::string>("X-Request-ID"));
 vecStrToHash.push_back(static_cast<std::string>("X-UA-Compatible"));
 vecStrToHash.push_back(static_cast<std::string>("X-XSS-Protection"));
+vecStrToHash.push_back(static_cast<std::string>("Keep-Alive")); 
 
 std::vector<std::string>::iterator it = vecStrToHash.begin();
 std::vector<std::string>::iterator itEnd = vecStrToHash.end();

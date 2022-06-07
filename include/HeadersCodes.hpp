@@ -26,6 +26,7 @@ enum HeaderCode {
     IF_NONE_MATCH                  = 1529156225,
     IF_RANGE                       = 2893522586,
     IF_UNMODIFIED_SINCE            = 462614015,
+    KEEP_ALIVE                     = 3308361288,
     MAX_FORWARDS                   = 2957174193,
     ORIGIN                         = 3740358174,
     PRAGMA                         = 487986730,
