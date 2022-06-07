@@ -13,11 +13,11 @@ HTTP::Response::initMethodsHeaders(void) {
     methods.insert(std::make_pair("OPTIONS", &Response::OPTIONS));
     methods.insert(std::make_pair("POST", &Response::POST));
     methods.insert(std::make_pair("PUT", &Response::PUT));
-
     headers.insert(std::make_pair(CONTENT_LENGTH, ResponseHeader("content-length", CONTENT_LENGTH)));
     headers.insert(std::make_pair(CONNECTION, ResponseHeader("connection", CONNECTION)));
     headers.insert(std::make_pair(DATE, ResponseHeader("date", DATE)));
     headers.insert(std::make_pair(CONTENT_TYPE, ResponseHeader("content-type", CONTENT_TYPE)));
+    headers.insert(std::make_pair(SERVER, ResponseHeader("server", SERVER)));
     // headers.insert(std::make_pair("last-modified", ""));
     // headers.insert(std::make_pair("access-control-allow-methods", ""));
     // headers.insert(std::make_pair("Access-Control-Allow-Origin", ""));

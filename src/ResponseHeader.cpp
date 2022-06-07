@@ -194,6 +194,7 @@ ResponseHeader::RetryAfter(Response &res) {
 void
 ResponseHeader::Server(Response &res) {
     (void)res;
+    value = SERVER_SOFTWARE;
 }
 
 void
@@ -318,61 +319,57 @@ static std::map<uint32_t, ResponseHeader::Handler>
 initResponseHeadersMap(void) {
     std::map<uint32_t, ResponseHeader::Handler> tmp;
 
-    tmp.insert(std::make_pair(A_IM, &ResponseHeader::AcceptPatch));
-    tmp.insert(std::make_pair(ACCEPT, &ResponseHeader::AcceptRanges));
-    tmp.insert(std::make_pair(ACCEPT_CHARSET, &ResponseHeader::Age));
-    tmp.insert(std::make_pair(ACCEPT_ENCODING, &ResponseHeader::Allow));
-    tmp.insert(std::make_pair(ACCEPT_LANGUAGE, &ResponseHeader::AltSvc));
+    tmp.insert(std::make_pair(ACCEPT_PATCH, &ResponseHeader::AcceptPatch));
+    tmp.insert(std::make_pair(ACCEPT_RANGES, &ResponseHeader::AcceptRanges));
+    tmp.insert(std::make_pair(AGE, &ResponseHeader::Age));
+    tmp.insert(std::make_pair(ALLOW, &ResponseHeader::Allow));
+    tmp.insert(std::make_pair(ALT_SVC, &ResponseHeader::AltSvc));
     tmp.insert(std::make_pair(CACHE_CONTROL, &ResponseHeader::CacheControl));
     tmp.insert(std::make_pair(CONNECTION, &ResponseHeader::Connection));
-    tmp.insert(std::make_pair(COOKIE, &ResponseHeader::ContentDisposition));
-    tmp.insert(std::make_pair(ACCEPT_DATETIME, &ResponseHeader::ContentEncoding));
-    tmp.insert(std::make_pair(ACCESS_CONTROL_REQUEST_METHOD, &ResponseHeader::ContentLanguage));
+    tmp.insert(std::make_pair(CONTENT_DISPOSITION, &ResponseHeader::ContentDisposition));
+    tmp.insert(std::make_pair(CONTENT_ENCODING, &ResponseHeader::ContentEncoding));
+    tmp.insert(std::make_pair(CONTENT_LANGUAGE, &ResponseHeader::ContentLanguage));
     tmp.insert(std::make_pair(CONTENT_LENGTH, &ResponseHeader::ContentLength));
-    tmp.insert(std::make_pair(ACCESS_CONTROL_REQUEST_HEADERS, &ResponseHeader::ContentLocation));
-    tmp.insert(std::make_pair(AUTHORIZATION, &ResponseHeader::ContentRange));
+    tmp.insert(std::make_pair(CONTENT_LOCATION, &ResponseHeader::ContentLocation));
+    tmp.insert(std::make_pair(CONTENT_RANGE, &ResponseHeader::ContentRange));
     tmp.insert(std::make_pair(CONTENT_TYPE, &ResponseHeader::ContentType));
     tmp.insert(std::make_pair(DATE, &ResponseHeader::Date));
-    tmp.insert(std::make_pair(EXPECT, &ResponseHeader::DeltaBase));
-    tmp.insert(std::make_pair(FORWARDED, &ResponseHeader::Expires));
-    tmp.insert(std::make_pair(FROM, &ResponseHeader::ETag));
-    tmp.insert(std::make_pair(IF_MATCH, &ResponseHeader::IM));
-    tmp.insert(std::make_pair(IF_MODIFIED_SINCE, &ResponseHeader::KeepAlive));
+    tmp.insert(std::make_pair(DELTA_BASE, &ResponseHeader::DeltaBase));
+    tmp.insert(std::make_pair(EXPIRES, &ResponseHeader::Expires));
+    tmp.insert(std::make_pair(ETAG, &ResponseHeader::ETag));
+    tmp.insert(std::make_pair(IM, &ResponseHeader::IM));
+    tmp.insert(std::make_pair(KEEP_ALIVE, &ResponseHeader::KeepAlive));
     tmp.insert(std::make_pair(HOST, &ResponseHeader::Host));
-    tmp.insert(std::make_pair(IF_NONE_MATCH, &ResponseHeader::LastModified));
-    tmp.insert(std::make_pair(IF_RANGE, &ResponseHeader::Link));
-    tmp.insert(std::make_pair(IF_UNMODIFIED_SINCE, &ResponseHeader::Location));
+    tmp.insert(std::make_pair(LAST_MODIFIED, &ResponseHeader::LastModified));
+    tmp.insert(std::make_pair(LINK, &ResponseHeader::Link));
+    tmp.insert(std::make_pair(LOCATION, &ResponseHeader::Location));
     tmp.insert(std::make_pair(PRAGMA, &ResponseHeader::Pragma));
-    tmp.insert(std::make_pair(MAX_FORWARDS, &ResponseHeader::ProxyAuthenticate));
-    tmp.insert(std::make_pair(ORIGIN, &ResponseHeader::PublicKeyPins));
-    tmp.insert(std::make_pair(PROXY_AUTHORIZATION, &ResponseHeader::RetryAfter));
-    tmp.insert(std::make_pair(RANGE, &ResponseHeader::Server));
-    tmp.insert(std::make_pair(REFERER, &ResponseHeader::SetCookie));
-    tmp.insert(std::make_pair(TE, &ResponseHeader::StrictTransportSecurity));
-    tmp.insert(std::make_pair(USER_AGENT, &ResponseHeader::Trailer));
+    tmp.insert(std::make_pair(PROXY_AUTHENTICATE, &ResponseHeader::ProxyAuthenticate));
+    tmp.insert(std::make_pair(PUBLIC_KEY_PINS, &ResponseHeader::PublicKeyPins));
+    tmp.insert(std::make_pair(RETRY_AFTER, &ResponseHeader::RetryAfter));
+    tmp.insert(std::make_pair(SERVER, &ResponseHeader::Server));
+    tmp.insert(std::make_pair(SET_COOKIE, &ResponseHeader::SetCookie));
+    tmp.insert(std::make_pair(STRICT_TRANSPORT_SECURITY, &ResponseHeader::StrictTransportSecurity));
+    tmp.insert(std::make_pair(TRAILER, &ResponseHeader::Trailer));
     tmp.insert(std::make_pair(TRANSFER_ENCODING, &ResponseHeader::TransferEncoding));
-    tmp.insert(std::make_pair(DNT, &ResponseHeader::Tk));
+    tmp.insert(std::make_pair(TK, &ResponseHeader::Tk));
     tmp.insert(std::make_pair(UPGRADE, &ResponseHeader::Upgrade));
-    tmp.insert(std::make_pair(X_REQUESTED_WITH, &ResponseHeader::Vary));
+    tmp.insert(std::make_pair(VARY, &ResponseHeader::Vary));
     tmp.insert(std::make_pair(VIA, &ResponseHeader::Via));
     tmp.insert(std::make_pair(WARNING, &ResponseHeader::Warning));
-    tmp.insert(std::make_pair(X_CSRF_TOKEN, &ResponseHeader::WWWAuthenticate));
-
-    tmp.insert(std::make_pair(SEC_FETCH_DEST, &ResponseHeader::ContentSecurityPolicy));
-    tmp.insert(std::make_pair(SEC_FETCH_MODE, &ResponseHeader::Refresh));
-    tmp.insert(std::make_pair(SEC_FETCH_SITE, &ResponseHeader::XPoweredBy));
-    tmp.insert(std::make_pair(SEC_FETCH_USER, &ResponseHeader::XRequestID));
-    tmp.insert(std::make_pair(UPGRADE_INSECURE_REQUESTS, &ResponseHeader::XUACompatible));
-    tmp.insert(std::make_pair(SEC_CH_UA, &ResponseHeader::XXSSProtection));
-
-    tmp.insert(std::make_pair(SEC_GPC, &ResponseHeader::AccessControlAllowOrigin));
-    tmp.insert(std::make_pair(SEC_CH_UA_MOBILE, &ResponseHeader::AccessControlAllowCredentials));
-    tmp.insert(std::make_pair(SEC_CH_UA_PLATFORM, &ResponseHeader::AccessControlExposeHeaders));
-    tmp.insert(std::make_pair(SEC_GPC, &ResponseHeader::AccessControlMaxAge));
-    tmp.insert(std::make_pair(SEC_CH_UA_MOBILE, &ResponseHeader::AccessControlAllowMethods));
-    tmp.insert(std::make_pair(SEC_CH_UA_PLATFORM, &ResponseHeader::AccessControlAllowHeaders));
-
-    tmp.insert(std::make_pair(PURPOSE, &ResponseHeader::NotSupported));
+    tmp.insert(std::make_pair(WWW_AUTHENTICATE, &ResponseHeader::WWWAuthenticate));
+    tmp.insert(std::make_pair(CONTENT_SECURITY_POLICY, &ResponseHeader::ContentSecurityPolicy));
+    tmp.insert(std::make_pair(REFRESH, &ResponseHeader::Refresh));
+    tmp.insert(std::make_pair(X_POWERED_BY, &ResponseHeader::XPoweredBy));
+    tmp.insert(std::make_pair(X_REQUEST_ID, &ResponseHeader::XRequestID));
+    tmp.insert(std::make_pair(X_UA_COMPATIBLE, &ResponseHeader::XUACompatible));
+    tmp.insert(std::make_pair(X_XSS_PROTECTION, &ResponseHeader::XXSSProtection));
+    tmp.insert(std::make_pair(ACCESS_CONTROL_ALLOW_ORIGIN, &ResponseHeader::AccessControlAllowOrigin));
+    tmp.insert(std::make_pair(ACCESS_CONTROL_ALLOW_CREDENTIALS, &ResponseHeader::AccessControlAllowCredentials));
+    tmp.insert(std::make_pair(ACCESS_CONTROL_EXPOSE_HEADERS, &ResponseHeader::AccessControlExposeHeaders));
+    tmp.insert(std::make_pair(ACCESS_CONTROL_MAX_AGE, &ResponseHeader::AccessControlMaxAge));
+    tmp.insert(std::make_pair(ACCESS_CONTROL_ALLOW_METHODS, &ResponseHeader::AccessControlAllowMethods));
+    tmp.insert(std::make_pair(ACCESS_CONTROL_ALLOW_HEADERS, &ResponseHeader::AccessControlAllowHeaders));
 
     return tmp;
 }
