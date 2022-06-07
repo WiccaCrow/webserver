@@ -27,9 +27,9 @@ StatusCode
 Header::handle(Request &req) {
     std::map<uint32_t, Header::Handler>::const_iterator it = validHeaders.find(hash);
 
+    // If header is invalid, it will be ignored
     if (it == validHeaders.end()) {
-        // Or bad request
-        return BAD_REQUEST;
+        return CONTINUE;
     }
     method = it->second;
     return (this->*method)(req);
@@ -126,16 +126,21 @@ Header::CacheControl(Request &req) {
     return CONTINUE;
 }
 
+// All connections are considered as 'keep-alive' unless declared 'closed'
+// In the current version, the list of 'hop-by-hop' directives (if exists in value) are deleted and ignored
 StatusCode
 Header::Connection(Request &req) {
+    toLowerCase(value);
+    if (value != "close" && value.find("close") != std::string::npos) {
+        value = "close";
+    }
     (void)req;
     return CONTINUE;
 }
 
 StatusCode
 Header::ContentLength(Request &req) {
-    const std::map<uint32_t, HTTP::Header> headers = req.getHeaders();
-    if (headers.find(TRANSFER_ENCODING) != headers.end()) {
+    if (req.isHeaderExists(TRANSFER_ENCODING)) {
         return BAD_REQUEST;
     }
 
@@ -160,7 +165,19 @@ Header::ContentType(Request &req) {
 
 StatusCode
 Header::Cookie(Request &req) {
-    (void)req;
+    std::map<std::string, std::string> cookie;
+
+    std::vector<std::string> cookie_pairs = split(value, " ;");
+    for (size_t i = 0; i < cookie_pairs.size(); ++i) {
+        size_t colonPos = cookie_pairs[i].find(':');
+        if (colonPos == std::string::npos) {
+            continue;
+        }
+        std::string cookie_key = cookie_pairs[i].substr(0, colonPos);
+        std::string cookie_value = cookie_pairs[i].substr(colonPos + 1);
+        cookie[cookie_key] = cookie_value;
+    }
+    req.setCookie(cookie);
     return CONTINUE;
 }
 
@@ -285,8 +302,7 @@ Header::TransferEncoding(Request &req) {
     std::set<std::string> acceptedValues;
     acceptedValues.insert("chunked");
 
-    const std::map<uint32_t, HTTP::Header> headers = req.getHeaders();
-    if (headers.find(CONTENT_LENGTH) != headers.end()) {
+    if (req.isHeaderExists(CONTENT_LENGTH)) {
         return BAD_REQUEST;
     }
 
@@ -312,11 +328,6 @@ Header::UserAgent(Request &req) {
     (void)req;
     return CONTINUE;
 }
-
-// StatusCode Header::SetCookie(Request &req) {
-//     (void)req;
-//     return CONTINUE;
-// }
 
 StatusCode
 Header::Upgrade(Request &req) {

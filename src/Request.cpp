@@ -35,6 +35,7 @@ Request::operator=(const Request &other) {
         _body                  = other._body;
         _parseFlags            = other._parseFlags;
         _isAuthorized          = other._isAuthorized;
+        _cookie               = other._cookie;
     }
     return *this;
 }
@@ -294,19 +295,16 @@ StatusCode
 Request::checkHeaders(void) {
 
     setFlag(PARSED_HEADERS);
-    if (!headerExists(HOST)) {
+    if (!isHeaderExists(HOST)) {
         Log.error("Host not found");
         return BAD_REQUEST;
     }
 
     // PUT or POST or PATCH
     if (_method[0] == 'P') {
-        if (!headerExists(TRANSFER_ENCODING) && !headerExists(CONTENT_LENGTH)) {
+        if (!isHeaderExists(TRANSFER_ENCODING) && !isHeaderExists(CONTENT_LENGTH)) {
             Log.error("Transfer-Encoding/Content-Length is missing in request");
             return LENGTH_REQUIRED;
-        } else if (headerExists(TRANSFER_ENCODING) && headerExists(CONTENT_LENGTH)) {
-            Log.error("Transfer-Encoding and Content-Length is mutually exclusive");
-            return BAD_REQUEST;
         }
         return CONTINUE;
     }
@@ -323,16 +321,12 @@ Request::parseHeader(const std::string &line) {
     }
 
     // dublicate header
-    if (headerExists(header.hash)) {
+    if (isHeaderExists(header.hash)) {
         Log.error("Dublicate header");
         return BAD_REQUEST;
     }
 
-    if (header.handle(*this) == BAD_REQUEST) {
-        Log.debug("Request::parseHeader: Maybe header is not supported");
-        Log.debug(header.key + "|" + to_string((unsigned long)header.hash));
-        return BAD_REQUEST;
-    }
+    header.handle(*this);
     _headers.insert(std::make_pair(header.hash, header));
     return CONTINUE;
 }
@@ -382,21 +376,21 @@ Request::writeBody(const std::string &body) {
 }
 
 bool
-Request::headerExists(const HeaderCode code) {
-    return headerExists(static_cast<uint32_t>(code));
+Request::isHeaderExists(const HeaderCode code) {
+    return isHeaderExists(static_cast<uint32_t>(code));
 }
 
 bool
-Request::headerExists(const uint32_t code) {
+Request::isHeaderExists(const uint32_t code) {
     return (_headers.find(code) != _headers.end());
 }
 
 StatusCode
 Request::parseBody(const std::string &line) {
     Log.debug("Request::parseBody");
-    if (headerExists(TRANSFER_ENCODING)) {
+    if (isHeaderExists(TRANSFER_ENCODING)) {
         return (parseChunked(line));
-    } else if (headerExists(TRANSFER_ENCODING)) {
+    } else if (isHeaderExists(TRANSFER_ENCODING)) {
         setFlag(PARSED_BODY);
         return writeBody(line);
     }
@@ -426,6 +420,16 @@ Request::setBodySize(unsigned long size) {
 void
 Request::setStatus(const HTTP::StatusCode &status) {
     _status = status;
+}
+
+const std::map<std::string, std::string> &
+Request::getCookie(void) {
+    return _cookie;
+}
+
+void
+Request::setCookie(std::map<std::string, std::string> cookie) {
+    _cookie = cookie;
 }
 
 } // namespace HTTP
