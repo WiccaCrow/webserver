@@ -36,7 +36,7 @@ public:
     Response(void);
     ~Response(void);
 
-    void initHeaders(void);
+    void initMethodsHeaders(void);
     void clear(void);
 
     StatusCode handle(Request &req);

@@ -35,7 +35,7 @@ public:
 
     Client &operator=(const Client &client);
 
-    void initResponseHeaders(void);
+    void initResponseMethodsHeaders(void);
 
     void setFd(int fd);
     int  getFd(void) const;

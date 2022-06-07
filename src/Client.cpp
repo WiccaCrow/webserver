@@ -35,8 +35,8 @@ Client::operator=(const Client &client) {
 }
 
 void 
-Client::initResponseHeaders(void) {
-    _res.initHeaders();
+Client::initResponseMethodsHeaders(void) {
+    _res.initMethodsHeaders();
 }
 
 void

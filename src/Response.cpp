@@ -1,7 +1,12 @@
 #include "Response.hpp"
 #include "CGI.hpp"
 
-HTTP::Response::Response() : _shouldBeClosed(false) {
+HTTP::Response::Response() : _shouldBeClosed(false) { }
+
+HTTP::Response::~Response() { }
+
+void
+HTTP::Response::initMethodsHeaders(void) {
     methods.insert(std::make_pair("DELETE", &Response::DELETE));
     methods.insert(std::make_pair("HEAD", &Response::HEAD));
     methods.insert(std::make_pair("GET", &Response::GET));
@@ -9,12 +14,6 @@ HTTP::Response::Response() : _shouldBeClosed(false) {
     methods.insert(std::make_pair("POST", &Response::POST));
     methods.insert(std::make_pair("PUT", &Response::PUT));
 
-}
-
-HTTP::Response::~Response() { }
-
-void
-HTTP::Response::initHeaders(void) {
     headers.insert(std::make_pair(CONTENT_LENGTH, ResponseHeader("content-length", CONTENT_LENGTH)));
     headers.insert(std::make_pair(CONNECTION, ResponseHeader("connection", CONNECTION)));
     headers.insert(std::make_pair(DATE, ResponseHeader("date", DATE)));
@@ -69,8 +68,8 @@ HTTP::Response::makeHeaders() {
 void
 HTTP::Response::DELETE(void) {
     // чтобы не удалить чистовой сайт я временно добавляю следующую строку:
-    std::string resourcePath = "./testdel";
-    // std::string resourcePath = _req->getResolvedPath();
+    // std::string resourcePath = "./testdel";
+    std::string resourcePath = _req->getResolvedPath();
 
     if (!resourceExists(resourcePath)) {
         setErrorResponse(NOT_FOUND);
