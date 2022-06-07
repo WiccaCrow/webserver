@@ -171,21 +171,20 @@ HTTP::Response::contentForGetHead(void) {
     // чтобы мне уже с этим приходило
     const std::string &resourcePath = _req->getResolvedPath();
 
-     if (!resourceExists(resourcePath)) {
-        setErrorResponse(NOT_FOUND);
-        return "";
-    }
-
     // Should be moved upper
     if (_req->getLocation()->getAuthRef().isSet() && !_req->isAuthorized()) {
         // If no Authorization header provided
-        Log.debug("Authenticate");
+        Log.debug("Authenticate::Unauthorized");
         _res = statusLines[UNAUTHORIZED];
         _res += "Date: " + getDateTimeGMT() + "\r\n";
-        _res += "Connection: close\r\n";
         _res += "WWW-Authenticate: Basic realm=\"" + _req->getLocation()->getAuthRef().getRealmRef() + "\"\r\n";
         _res += "\r\n\r\n";
         shouldBeClosed(true);
+        return "";
+    }
+    
+    if (!resourceExists(resourcePath)) {
+        setErrorResponse(NOT_FOUND);
         return "";
     }
 
@@ -248,7 +247,6 @@ HTTP::StatusCode
 HTTP::Response::handle(Request &req) {
     std::map<std::string, Response::Handler>::iterator it = methods.find(req.getMethod());
 
-    setRequest(&req);
     if (it == methods.end()) {
         return METHOD_NOT_ALLOWED;
     }

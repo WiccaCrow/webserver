@@ -42,6 +42,7 @@ Client::initResponseHeaders(void) {
 void
 Client::linkRequest(void) {
     _req.setClient(this);
+    _res.setRequest(&_req);
 }
 
 int
