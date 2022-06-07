@@ -34,7 +34,7 @@ private:
     std::string                  _rawURI;
     std::string                  _protocol;
     std::string                  _resolvedPath;
-    std::map<uint32_t, Header> _headers;
+    std::map<uint32_t, Header>   _headers;
     HTTP::StatusCode             _status;
     int                          _major : 4;
     int                          _minor : 4;
@@ -50,6 +50,8 @@ private:
 
     bool                         _isAuthorized;
     uint32_t                     _storedHash;
+
+    std::map<std::string, std::string> _cookie;
 
 public:
     Request();
@@ -84,7 +86,7 @@ public:
 
     bool empty();
 
-    int set(uint8_t flag) const;
+    int  set(uint8_t flag) const;
     void setFlag(uint8_t flag);
     void removeFlag(uint8_t flag);
     void clear(void);
@@ -105,8 +107,6 @@ private:
     bool isValidMethod(const std::string &method);
     // bool isValidPath(const std::string &path);
     bool isValidProtocol(const std::string &protocol);
-    bool headerExists(const HeaderCode code);
-    bool headerExists(const uint32_t code);
 
 
 public:
@@ -118,10 +118,15 @@ public:
     void          setStatus(const HTTP::StatusCode &status);
 
     bool isAuthorized(void) const;
+    bool isHeaderExists(const HeaderCode code);
+    bool isHeaderExists(const uint32_t code);
     void setAuthFlag(bool);
 
-    uint32_t getStoredHash() const;
+    uint32_t      getStoredHash() const;
     void          setStoredHash(uint32_t);
+
+    const std::map<std::string, std::string> &getCookie(void);
+    void setCookie(std::map<std::string, std::string> cookie);
 };
 
 } // namespace HTTP
