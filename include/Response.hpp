@@ -15,6 +15,7 @@
 #include "Request.hpp"
 #include "Status.hpp"
 #include "Utils.hpp"
+#include "CRC.hpp"
 
 namespace HTTP {
 // # define SIZE_FOR_CHUNKED 4096
@@ -29,6 +30,8 @@ class Response {
 public:
     typedef void (Response::*Handler)();
     std::map<std::string, Handler> methods;
+
+    std::map<std::string, ResponseHeader> headers;
 
     Response();
     ~Response();
@@ -57,6 +60,8 @@ public:
     std::string fileToResponse(std::string resourcePath);
     std::string listing(const std::string &resourcePath);
     void        writeFile(const std::string &resourcePath);
+
+    std::string makeHeaders();
 
     std::string passToCGI(CGI &cgi);
 
