@@ -118,8 +118,8 @@ public:
     void          setStatus(const HTTP::StatusCode &status);
 
     bool isAuthorized(void) const;
-    bool isHeaderExists(const HeaderCode code);
-    bool isHeaderExists(const uint32_t code);
+    bool isHeaderExist(const HeaderCode code);
+    bool isHeaderExist(const uint32_t code);
     void setAuthFlag(bool);
 
     uint32_t      getStoredHash() const;

@@ -295,14 +295,14 @@ StatusCode
 Request::checkHeaders(void) {
 
     setFlag(PARSED_HEADERS);
-    if (!isHeaderExists(HOST)) {
+    if (!isHeaderExist(HOST)) {
         Log.error("Host not found");
         return BAD_REQUEST;
     }
 
     // PUT or POST or PATCH
     if (_method[0] == 'P') {
-        if (!isHeaderExists(TRANSFER_ENCODING) && !isHeaderExists(CONTENT_LENGTH)) {
+        if (!isHeaderExist(TRANSFER_ENCODING) && !isHeaderExist(CONTENT_LENGTH)) {
             Log.error("Transfer-Encoding/Content-Length is missing in request");
             return LENGTH_REQUIRED;
         }
@@ -321,7 +321,7 @@ Request::parseHeader(const std::string &line) {
     }
 
     // dublicate header
-    if (isHeaderExists(header.hash)) {
+    if (isHeaderExist(header.hash)) {
         Log.error("Dublicate header");
         return BAD_REQUEST;
     }
@@ -376,21 +376,21 @@ Request::writeBody(const std::string &body) {
 }
 
 bool
-Request::isHeaderExists(const HeaderCode code) {
-    return isHeaderExists(static_cast<uint32_t>(code));
+Request::isHeaderExist(const HeaderCode code) {
+    return isHeaderExist(static_cast<uint32_t>(code));
 }
 
 bool
-Request::isHeaderExists(const uint32_t code) {
+Request::isHeaderExist(const uint32_t code) {
     return (_headers.find(code) != _headers.end());
 }
 
 StatusCode
 Request::parseBody(const std::string &line) {
     Log.debug("Request::parseBody");
-    if (isHeaderExists(TRANSFER_ENCODING)) {
+    if (isHeaderExist(TRANSFER_ENCODING)) {
         return (parseChunked(line));
-    } else if (isHeaderExists(TRANSFER_ENCODING)) {
+    } else if (isHeaderExist(TRANSFER_ENCODING)) {
         setFlag(PARSED_BODY);
         return writeBody(line);
     }

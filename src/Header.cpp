@@ -140,7 +140,7 @@ Header::Connection(Request &req) {
 
 StatusCode
 Header::ContentLength(Request &req) {
-    if (req.isHeaderExists(TRANSFER_ENCODING)) {
+    if (req.isHeaderExist(TRANSFER_ENCODING)) {
         return BAD_REQUEST;
     }
 
@@ -302,7 +302,7 @@ Header::TransferEncoding(Request &req) {
     std::set<std::string> acceptedValues;
     acceptedValues.insert("chunked");
 
-    if (req.isHeaderExists(CONTENT_LENGTH)) {
+    if (req.isHeaderExist(CONTENT_LENGTH)) {
         return BAD_REQUEST;
     }
 
