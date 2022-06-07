@@ -197,6 +197,8 @@ Header::Host(Request &req) {
         return BAD_REQUEST;
     }
 
+    // Dangerous because of segfault if there's some header 
+    // that needs serverblock or location data before Host is arrived
     req.setServerBlock(g_server->matchServerBlock(req.getClient()->getServerPort(), "", uri._host));
     req.setLocation(req.getServerBlock()->matchLocation(req.getUriRef()._path));
     req.resolvePath();
