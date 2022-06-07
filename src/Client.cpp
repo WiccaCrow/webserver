@@ -34,6 +34,11 @@ Client::operator=(const Client &client) {
     return *this;
 }
 
+void 
+Client::initResponseHeaders(void) {
+    _res.initHeaders();
+}
+
 void
 Client::linkRequest(void) {
     _req.setClient(this);

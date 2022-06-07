@@ -28,15 +28,16 @@ class Response {
     bool _shouldBeClosed;
 
 public:
-    typedef void (Response::*Handler)();
+    typedef void (Response::*Handler)(void);
     std::map<std::string, Handler> methods;
 
     std::map<uint32_t, ResponseHeader> headers;
 
-    Response();
-    ~Response();
+    Response(void);
+    ~Response(void);
 
-    void clear();
+    void initHeaders(void);
+    void clear(void);
 
     StatusCode handle(Request &req);
 
@@ -61,7 +62,7 @@ public:
     std::string listing(const std::string &resourcePath);
     void        writeFile(const std::string &resourcePath);
 
-    std::string makeHeaders();
+    std::string makeHeaders(void);
 
     std::string passToCGI(CGI &cgi);
 
@@ -74,6 +75,7 @@ public:
     void               setLeftToSend(size_t n);
     void               setRequest(Request *req);
     Request           *getRequest(void) const;
+    void               setStatus(HTTP::StatusCode &status);
 
     bool            shouldBeClosed(void) const;
     void            shouldBeClosed(bool);

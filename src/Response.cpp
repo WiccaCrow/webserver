@@ -9,10 +9,16 @@ HTTP::Response::Response() : _shouldBeClosed(false) {
     methods.insert(std::make_pair("POST", &Response::POST));
     methods.insert(std::make_pair("PUT", &Response::PUT));
 
+}
+
+HTTP::Response::~Response() { }
+
+void
+HTTP::Response::initHeaders(void) {
     headers.insert(std::make_pair(CONTENT_LENGTH, ResponseHeader("content-length", CONTENT_LENGTH)));
     headers.insert(std::make_pair(CONNECTION, ResponseHeader("connection", CONNECTION)));
     headers.insert(std::make_pair(DATE, ResponseHeader("date", DATE)));
-    // headers.insert(std::make_pair("content-type", ""));
+    headers.insert(std::make_pair(CONTENT_TYPE, ResponseHeader("content-type", CONTENT_TYPE)));
     // headers.insert(std::make_pair("last-modified", ""));
     // headers.insert(std::make_pair("access-control-allow-methods", ""));
     // headers.insert(std::make_pair("Access-Control-Allow-Origin", ""));
@@ -21,11 +27,7 @@ HTTP::Response::Response() : _shouldBeClosed(false) {
     // headers.insert(std::make_pair("Access-Control-Max-Age", ""));
     // headers.insert(std::make_pair("Access-Control-Allow-Methods", ""));
     // headers.insert(std::make_pair("Access-Control-Allow-Headers", ""));
-
-
 }
-
-HTTP::Response::~Response() { }
 
 std::map<std::string, HTTP::CGI>::iterator
 isCGI(const std::string &filepath, std::map<std::string, HTTP::CGI> &cgis) {
@@ -45,6 +47,12 @@ HTTP::Response::makeHeaders() {
 
     std::string headersToReturn = statusLines[_req->getStatus()];
 
+    if ((_req->getStatus() >= BAD_REQUEST) ||
+        // (если не cgi и методы GET HEAD еще обдумать) ||
+        (_req->getMethod() == "PUT" || _req->getMethod() == "DELETE")) {
+        headers.find(CONTENT_TYPE)->second.value = "text/html; charset=UTF-8";
+    }
+
     std::map<uint32_t, ResponseHeader>::iterator it    = headers.begin();
     std::map<uint32_t, ResponseHeader>::iterator itEnd = headers.end();
     for (; it != itEnd; ++it) {
@@ -61,8 +69,8 @@ HTTP::Response::makeHeaders() {
 void
 HTTP::Response::DELETE(void) {
     // чтобы не удалить чистовой сайт я временно добавляю следующую строку:
-    // std::string resourcePath = "./testdel";
-    std::string resourcePath = _req->getResolvedPath();
+    std::string resourcePath = "./testdel";
+    // std::string resourcePath = _req->getResolvedPath();
 
     if (!resourceExists(resourcePath)) {
         setErrorResponse(NOT_FOUND);
@@ -186,7 +194,6 @@ HTTP::Response::contentForGetHead(void) {
            "keep-Alive: timeout=55, max=1000\r\n";
     // Path is dir
     if (isDirectory(resourcePath)) {
-        // в дальнейшем заменить на геттер из req
         if (resourcePath[resourcePath.length() - 1] != '/') {
             _res = statusLines[MOVED_PERMANENTLY];
             _res += "Location: " + _req->getRawUri() + "/\r\n"
@@ -440,4 +447,9 @@ HTTP::Response::setLeftToSend(size_t n) {
 size_t
 HTTP::Response::getLeftToSendSize() {
     return (_resLeftToSend.size());
+}
+
+void
+HTTP::Response::setStatus(HTTP::StatusCode &status) {
+    getRequest()->setStatus(status);
 }

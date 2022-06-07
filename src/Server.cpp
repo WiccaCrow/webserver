@@ -254,6 +254,7 @@ Server::connectClient(size_t id) {
         }
 
         _clients.insert(std::make_pair(clientId, HTTP::Client()));
+        _clients[clientId].initResponseHeaders();
         _clients[clientId].linkRequest();
         _clients[clientId].setFd(fd);
         _clients[clientId].setPort(ntohs(clientData.sin_port));
