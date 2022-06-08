@@ -1,7 +1,8 @@
 #include "Response.hpp"
 #include "CGI.hpp"
+#include "Client.hpp"
 
-HTTP::Response::Response() : _shouldBeClosed(false) {
+HTTP::Response::Response() : _req(NULL), _client(NULL) {
     methods.insert(std::make_pair("DELETE", &Response::DELETE));
     methods.insert(std::make_pair("HEAD", &Response::HEAD));
     methods.insert(std::make_pair("GET", &Response::GET));
@@ -179,7 +180,7 @@ HTTP::Response::contentForGetHead(void) {
         _res += "Date: " + getDateTimeGMT() + "\r\n";
         _res += "WWW-Authenticate: Basic realm=\"" + _req->getLocation()->getAuthRef().getRealmRef() + "\"\r\n";
         _res += "\r\n\r\n";
-        shouldBeClosed(true);
+        _client->shouldBeClosed(true);
         return "";
     }
     
@@ -191,13 +192,14 @@ HTTP::Response::contentForGetHead(void) {
     _res = "HTTP/1.1 200 OK\r\n"
            "connection: keep-alive\r\n"
            "keep-Alive: timeout=55, max=1000\r\n";
+    
     // Path is dir
     if (isDirectory(resourcePath)) {
         if (resourcePath[resourcePath.length() - 1] != '/') {
             _res = statusLines[MOVED_PERMANENTLY];
             _res += "Location: " + _req->getRawUri() + "/\r\n"
-                                                       "Content-Type: text/html\r\n"
-                                                       "Connection: keep-alive\r\n\r\n\r\n";
+                    "Content-Type: text/html\r\n"
+                    "Connection: keep-alive\r\n\r\n\r\n";
             // body
             return "";
         }
@@ -269,6 +271,16 @@ HTTP::Response::setRequest(Request *req) {
 HTTP::Request *
 HTTP::Response::getRequest(void) const {
     return _req;
+}
+
+void
+HTTP::Response::setClient(HTTP::Client *client) {
+    _client = client;
+}
+
+HTTP::Client *
+HTTP::Response::getClient(void) {
+    return _client;
 }
 
 std::string
@@ -398,16 +410,6 @@ HTTP::Response::listing(const std::string &resourcePath) {
 
 // contentForHead
 //     makeHeaders
-
-void
-HTTP::Response::shouldBeClosed(bool flag) {
-    _shouldBeClosed = flag;
-}
-
-bool 
-HTTP::Response::shouldBeClosed(void) const {
-    return _shouldBeClosed;
-}
 
 void
 HTTP::Response::writeFile(const std::string &resourcePath) {

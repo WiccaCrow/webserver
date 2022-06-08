@@ -8,7 +8,8 @@ Client::Client()
     : _fd(-1)
     , _clientPort(0)
     , _requestFormed(false)
-    , _responseFormed(true) { }
+    , _responseFormed(true)
+    , _shouldBeClosed(false) { }
 
 Client::~Client() {
 }
@@ -42,6 +43,7 @@ Client::initResponseHeaders(void) {
 void
 Client::linkRequest(void) {
     _req.setClient(this);
+    _res.setClient(this);
     _res.setRequest(&_req);
 }
 
@@ -108,6 +110,16 @@ Client::isResponseFormed() const {
 void
 Client::setResponseFormed(bool formed) {
     _responseFormed = formed;
+}
+
+void
+Client::shouldBeClosed(bool flag) {
+    _shouldBeClosed = flag;
+}
+
+bool 
+Client::shouldBeClosed(void) const {
+    return _shouldBeClosed;
 }
 
 void
@@ -218,7 +230,7 @@ Client::reply(void) {
         }
     } while (static_cast<size_t>(sentBytes) < _res.getResLength());
 
-    if (_res.shouldBeClosed()) {
+    if (shouldBeClosed()) {
         _fd = -1;
     }
 }

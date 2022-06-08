@@ -28,6 +28,8 @@ private:
     ServerBlock    *_servBlock;
     static ReadSock _reader;
 
+    bool        _shouldBeClosed;
+
 public:
     Client(void);
     Client(const Client &client);
@@ -63,6 +65,9 @@ public:
     void reply(void);
     void checkIfFailed(void);
     void clearData(void);
+
+    bool            shouldBeClosed(void) const;
+    void            shouldBeClosed(bool);
 };
 
 }

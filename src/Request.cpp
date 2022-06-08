@@ -1,4 +1,5 @@
 #include "Request.hpp"
+#include "Client.hpp"
 
 namespace HTTP {
 

@@ -19,13 +19,16 @@
 
 namespace HTTP {
 // # define SIZE_FOR_CHUNKED 4096
+
+class Client;
+
 class Response {
 
     std::string _res;
     std::string _resLeftToSend;
     Request    *_req;
+    Client     *_client;
     std::string _body;
-    bool _shouldBeClosed;
 
 public:
     typedef void (Response::*Handler)(void);
@@ -77,8 +80,8 @@ public:
     Request           *getRequest(void) const;
     void               setStatus(HTTP::StatusCode &status);
 
-    bool            shouldBeClosed(void) const;
-    void            shouldBeClosed(bool);
+    void            setClient(Client *client);
+    Client *        getClient(void);
 
     // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);
 };

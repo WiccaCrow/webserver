@@ -1,6 +1,7 @@
 #include "ResponseHeader.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
+#include "Client.hpp"
 
 namespace HTTP {
 
@@ -72,7 +73,7 @@ ResponseHeader::Connection(Response &res) {
         return ;
     }
     if (res.getRequest()->getHeaderValue(CONNECTION) == "close") {
-        res.shouldBeClosed(true);
+        res.getClient()->shouldBeClosed(true);
         value = "close";
     } else {
         value = "keep-alive";
