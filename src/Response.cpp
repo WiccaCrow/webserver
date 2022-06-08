@@ -18,6 +18,7 @@ HTTP::Response::initMethodsHeaders(void) {
     headers.insert(std::make_pair(DATE, ResponseHeader("date", DATE)));
     headers.insert(std::make_pair(CONTENT_TYPE, ResponseHeader("content-type", CONTENT_TYPE)));
     headers.insert(std::make_pair(SERVER, ResponseHeader("server", SERVER)));
+    headers.insert(std::make_pair(LOCATION, ResponseHeader("location", LOCATION)));
     // headers.insert(std::make_pair("last-modified", ""));
     // headers.insert(std::make_pair("access-control-allow-methods", ""));
     // headers.insert(std::make_pair("Access-Control-Allow-Origin", ""));
@@ -97,12 +98,16 @@ HTTP::Response::DELETE(void) {
 
 void
 HTTP::Response::HEAD(void) {
-    contentForGetHead();
+    if (!contentForGetHead()) {
+        _res = makeHeaders();
+    }
 }
 
 void
 HTTP::Response::GET(void) {
-    _res += contentForGetHead();
+    if (!contentForGetHead()) {
+        _res = makeHeaders() + _body;
+    }
 }
 
 void
@@ -162,17 +167,12 @@ HTTP::Response::PUT(void) {
     }
 }
 
-std::string
+int
 HTTP::Response::contentForGetHead(void) {
-    // resourcePath (часть root) будет браться из конфига
-    // root
-    // если в конфиге без /, то добавить /,
-    // чтобы мне уже с этим приходило
     const std::string &resourcePath = _req->getResolvedPath();
-
-     if (!resourceExists(resourcePath)) {
-        setErrorResponse(NOT_FOUND);
-        return "";
+std::cout << "     resourcePath " << resourcePath << std::endl;
+    if (!resourceExists(resourcePath)) {
+        return setErrorResponse(NOT_FOUND);
     }
 
     // Should be moved upper
@@ -185,21 +185,15 @@ HTTP::Response::contentForGetHead(void) {
         _res += "WWW-Authenticate: Basic realm=\"" + _req->getLocation()->getAuthRef().getRealmRef() + "\"\r\n";
         _res += "\r\n\r\n";
         shouldBeClosed(true);
-        return "";
+        return 1;
     }
 
-    _res = "HTTP/1.1 200 OK\r\n"
-           "connection: keep-alive\r\n"
-           "keep-Alive: timeout=55, max=1000\r\n";
     // Path is dir
     if (isDirectory(resourcePath)) {
         if (resourcePath[resourcePath.length() - 1] != '/') {
-            _res = statusLines[MOVED_PERMANENTLY];
-            _res += "Location: " + _req->getRawUri() + "/\r\n"
-                                                       "Content-Type: text/html\r\n"
-                                                       "Connection: keep-alive\r\n\r\n\r\n";
-            // body
-            return "";
+            _req->setStatus(HTTP::MOVED_PERMANENTLY);
+            headers.find(LOCATION)->second.value = _req->getRawUri() + "/";
+            return 0;
         }
         // find index file
         for (std::vector<std::string>::const_iterator iter = _req->getLocation()->getIndexRef().begin();
@@ -213,7 +207,7 @@ HTTP::Response::contentForGetHead(void) {
                 if (it != _req->getLocation()->getCGIsRef().end()) {
                     return passToCGI(it->second);
                 }
-                _res += getContentType(path);
+                headers.find(CONTENT_TYPE)->second.value = getContentType(path);
                 return (fileToResponse(path));
             }
         }
@@ -224,22 +218,19 @@ HTTP::Response::contentForGetHead(void) {
         if (it != _req->getLocation()->getCGIsRef().end()) {
             return passToCGI(it->second);
         }
-        _res += getContentType(resourcePath);
+        headers.find(CONTENT_TYPE)->second.value = getContentType(resourcePath);
         return (fileToResponse(resourcePath));
     } else {
         // not readable files and other types and file not exist
-        setErrorResponse(FORBIDDEN);
-        return "";
+        return setErrorResponse(FORBIDDEN);
     }
     // dir listing. autoindex on
     if (_req->getLocation()->getAutoindexRef() == true && isDirectory(resourcePath)) {
-        _res += "content-type: text/html; charset=utf-8\r\n";
-        // std::cout << "_res:" + _res << std::endl << std::endl;
+        headers.find(CONTENT_TYPE)->second.value = "content-type: text/html; charset=utf-8";
         return (listing(resourcePath));
         // 403. autoindex off
     } else {
-        setErrorResponse(FORBIDDEN);
-        return "";
+        return setErrorResponse(FORBIDDEN);
     }
 }
 
@@ -279,7 +270,7 @@ HTTP::Response::getContentType(std::string resourcePath) {
         if (resourcePath[i] == '.') {
             std::map<std::string, std::string>::const_iterator iter = MIMEs.find(resourcePath.substr(i + 1));
             if (iter != MIMEs.end()) {
-                contType = "content-type: " + iter->second;
+                contType = iter->second;
                 if (iter->second == "text") {
                     contType += "; charset=utf-8";
                 }
@@ -291,18 +282,18 @@ HTTP::Response::getContentType(std::string resourcePath) {
     return (contType);
 }
 
-std::string
+int
 HTTP::Response::passToCGI(CGI &cgi) {
     cgi.reset();
     cgi.linkRequest(_req);
     cgi.setEnv();
     if (!cgi.exec()) {
         _req->setStatus(HTTP::BAD_GATEWAY);
-        setErrorResponse(_req->getStatus());
-
-        return "";
+        return setErrorResponse(_req->getStatus());
     }
-    return cgi.getResult();
+    // выделить отдельно заголовки и в _body только body положить
+    _body = cgi.getResult();
+    return 0;
 }
 
 // std::string HTTP::Response::TransferEncodingChunked(std::string buffer, size_t bufSize) {
@@ -319,33 +310,30 @@ HTTP::Response::passToCGI(CGI &cgi) {
 //     return ("");
 // }
 
-std::string
+int
 HTTP::Response::fileToResponse(std::string resourcePath) {
-    // std::cout << "file to response:          " << resourcePath << std::endl;
     std::ifstream resourceFile;
     resourceFile.open(resourcePath.c_str(), std::ifstream::in);
     if (!resourceFile.is_open()) {
-        setErrorResponse(FORBIDDEN);
-        return "";
+        return setErrorResponse(FORBIDDEN);
     }
 
     std::stringstream buffer;
     buffer << resourceFile.rdbuf();
     long bufSize = buffer.tellp();
     if (bufSize == -1) {
-        setErrorResponse(INTERNAL_SERVER_ERROR);
-        return "";
+        return setErrorResponse(INTERNAL_SERVER_ERROR);
     }
     // if (bufSize > SIZE_FOR_CHUNKED) {
     //     _res += "Transfer-Encoding: chunked\r\n\r\n";
     //     return (TransferEncodingChunked(buffer.str(), bufSize));
     // } else {
-    _res += "content-length: " + to_string((unsigned long)bufSize) + "\r\n\r\n";
-    return (_body = buffer.str());
+    _body = buffer.str();
+    return 0;
     // }
 }
 
-std::string
+int
 HTTP::Response::listing(const std::string &resourcePath) {
     std::string pathToDir;
     _body = "<!DOCTYPE html>\n"
@@ -363,15 +351,13 @@ HTTP::Response::listing(const std::string &resourcePath) {
     DIR *r_opndir;
     r_opndir = opendir(resourcePath.c_str());
     if (NULL == r_opndir) {
-        setErrorResponse(INTERNAL_SERVER_ERROR);
-        return "";
+        return setErrorResponse(INTERNAL_SERVER_ERROR);
     } else {
         struct dirent *dirContent;
         // dirContent = readdir(r_opndir);
         while ((dirContent = readdir(r_opndir))) {
             if (NULL == dirContent) {
-                setErrorResponse(INTERNAL_SERVER_ERROR);
-                return "";
+                return setErrorResponse(INTERNAL_SERVER_ERROR);
             }
 
             _body += "   <a href=\"" + _req->getPath();
@@ -387,8 +373,7 @@ HTTP::Response::listing(const std::string &resourcePath) {
         _body += "</body></html>";
     }
     closedir(r_opndir);
-    _res += "content-length: " + to_string(_body.length()) + "\r\n\r\n";
-    return (_body);
+    return 0;
 }
 
 // Request

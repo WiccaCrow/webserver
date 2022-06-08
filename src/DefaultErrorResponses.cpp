@@ -1,6 +1,6 @@
 #include "Response.hpp"
 
-void
+int
 HTTP::Response::setErrorResponse(HTTP::StatusCode status) {
     std::map<HTTP::StatusCode, const char *>::const_iterator iter = errorResponses.find(status);
 
@@ -14,6 +14,7 @@ HTTP::Response::setErrorResponse(HTTP::StatusCode status) {
     setStatus(status);
     _body = iter->second;
     _res = makeHeaders() + _body;
+    return 1;
 }
 
 static std::map<HTTP::StatusCode, const char *>
