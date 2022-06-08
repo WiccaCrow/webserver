@@ -24,6 +24,7 @@ SOURCEFILES     =	main.cpp \
 					CRC.cpp \
 					URI.cpp \
 					CGI.cpp \
+					SHA1.cpp \
 					Redirect.cpp \
 					Client.cpp \
 					Logger.cpp \
