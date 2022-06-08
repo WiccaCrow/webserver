@@ -60,8 +60,7 @@ processChunk(void) {
 }
 
 static void
-copyChuck(uint32_t *W, const uint8_t *str, size_t bytes) {
-    size_t k = 0;
+copyChuck(uint32_t *W, const uint8_t *str) {
     size_t i = 0;
     for (size_t j = 0; j < 16; j++) {    
         unsigned char tmp = str[i] ? str[i] : 0x80;
@@ -87,13 +86,13 @@ SHA1(const std::string &msg) {
     size_t i = 0;
     const size_t chucksCount = (msg.length() / 64) + 1;
     for (size_t index = 1; index < chucksCount; index++) {
-        copyChuck(W, (uint8_t *)(str + i), 64);
+        copyChuck(W, (str + i));
         i += 64;
         processChunk();
     }
+
     memset((void *)W, 0, 64);
-    copyChuck(W, (str + i), msg.length() - i);
-    
+    copyChuck(W, (str + i));
     W[14] = static_cast<uint32_t>((bits >> 32));
     W[15] = static_cast<uint32_t>((bits << 32) >> 32);    
     processChunk();
