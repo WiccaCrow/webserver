@@ -39,7 +39,7 @@ public:
     Response(void);
     ~Response(void);
 
-    void initHeaders(void);
+    void initMethodsHeaders(void);
     void clear(void);
 
     StatusCode handle(Request &req);
@@ -48,7 +48,7 @@ public:
     static const std::map<std::string, std::string>       MIMEs;
     static const std::map<HTTP::StatusCode, const char *> errorResponses;
 
-    void setErrorResponse(HTTP::StatusCode status);
+    int setErrorResponse(HTTP::StatusCode status);
 
     // methods
 
@@ -59,15 +59,15 @@ public:
     void POST(void);
     void PUT(void);
     // void        generateHeaders(Request &req);
-    std::string contentForGetHead(void);
-    std::string getContentType(std::string resourcePath);
-    std::string fileToResponse(std::string resourcePath);
-    std::string listing(const std::string &resourcePath);
+    int contentForGetHead(void);
+    int fileToResponse(std::string resourcePath);
+    int listing(const std::string &resourcePath);
     void        writeFile(const std::string &resourcePath);
+    std::string getContentType(std::string resourcePath);
 
     std::string makeHeaders(void);
 
-    std::string passToCGI(CGI &cgi);
+    int passToCGI(CGI &cgi);
 
     // to send response
     size_t             getResLength(void);

@@ -36,8 +36,8 @@ Client::operator=(const Client &client) {
 }
 
 void 
-Client::initResponseHeaders(void) {
-    _res.initHeaders();
+Client::initResponseMethodsHeaders(void) {
+    _res.initMethodsHeaders();
 }
 
 void
@@ -197,15 +197,10 @@ Client::process(void) {
 
     Log.debug("Client::process -> fd: " + to_string(_fd));
 
-    HTTP::StatusCode status = _req.getStatus();
-
-    if (status == HTTP::PROCESSING) {
-        status = HTTP::OK;
-    }
-
-    if (status >= HTTP::BAD_REQUEST) {
-        _res.setErrorResponse(status);
-    } else if (status == HTTP::OK) {
+    if (_req.getStatus() >= HTTP::BAD_REQUEST) {
+        _res.setErrorResponse(_req.getStatus());
+    } else if (_req.getStatus() == HTTP::PROCESSING) {
+        _req.setStatus(HTTP::OK);;
         if (_res.handle(_req) == METHOD_NOT_ALLOWED) {
             _res.setErrorResponse(METHOD_NOT_ALLOWED);
         }
