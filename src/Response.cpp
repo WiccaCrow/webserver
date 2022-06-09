@@ -136,7 +136,9 @@ HTTP::Response::POST(void) {
     if (isCGI != "") {
         // doCGI(*_req);
     } else {
-        _res = "HTTP/1.1 204 No Content\r\n\r\n";
+        _req->setStatus(NO_CONTENT);
+        // _res = "HTTP/1.1 204 No Content\r\n\r\n";
+        _res = makeHeaders();
     }
 }
 
@@ -214,7 +216,7 @@ HTTP::Response::contentForGetHead(void) {
         }
         // find index file
         const std::vector<std::string> &indexes = _req->getLocation()->getIndexRef();
-        for (int i = 0; static_cast<size_t>(i) < indexes.size(); ++i) {
+        for (size_t i = 0; i < indexes.size(); ++i) {
             // put index file to response
             std::string path = resourcePath + indexes[i];
             if (isFile(path)) {

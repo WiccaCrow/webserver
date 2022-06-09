@@ -44,11 +44,13 @@ ResponseHeader::Age(Response &res) {
 
 void
 ResponseHeader::Allow(Response &res) {
-    std::vector<std::string> AllowedMethods = res.getRequest()->getLocation()->getAllowedMethodsRef();
-    for (int i = 0, nbMetods = AllowedMethods.size(); i < nbMetods;) {
-        value += AllowedMethods[i];
-        if (++i != nbMetods) {
-            value += ", ";
+    if (res.getRequest()->getMethod() == "OPTIONS") {
+        std::vector<std::string> AllowedMethods = res.getRequest()->getLocation()->getAllowedMethodsRef();
+        for (int i = 0, nbMetods = AllowedMethods.size(); i < nbMetods;) {
+            value += AllowedMethods[i];
+            if (++i != nbMetods) {
+                value += ", ";
+            }
         }
     }
 }
