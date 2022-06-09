@@ -43,7 +43,7 @@
                     "methods_allowed": [ "GET", "POST" ]                 
                 },
                 "/feedback": {
-                    "root": "/Users/mhufflep/Desktop/serv/pages/site",
+                    "alias": "/Users/mhufflep/Desktop/serv/pages/site",
                     "CGI": {
                         ".py": "/usr/bin/python",
                         ".js": "/usr/local/bin/node"

@@ -349,23 +349,17 @@ HTTP::Response::fileToResponse(std::string resourcePath) {
 
     std::stringstream buffer;
     buffer << resourceFile.rdbuf();
-    long bufSize = buffer.tellp();
-    Log.debug("Response:: bufSize: " + to_string(bufSize));
-    if (bufSize == -1) {
+    if (buffer.tellp() == -1) {
         return setErrorResponse(INTERNAL_SERVER_ERROR);
     }
+
     // if (bufSize > SIZE_FOR_CHUNKED) {
     //     _res += "Transfer-Encoding: chunked\r\n\r\n";
     //     return (TransferEncodingChunked(buffer.str(), bufSize));
-    // } else {
-
-    // _res += "content-length: " + to_string((unsigned long)bufSize) + "\r\n\r\n";
-    // return (_body = buffer.str());
+    // }
 
     _body = buffer.str();
-    Log.debug("Response:: bodySize: " + to_string(_body.size()));
     return 0;
-    // }
 }
 
 int
@@ -423,7 +417,7 @@ HTTP::Response::listing(const std::string &resourcePath) {
 void
 HTTP::Response::writeFile(const std::string &resourcePath) {
     std::ofstream outputToNewFile(resourcePath.c_str(),
-        std::ios_base::out | std::ios_base::trunc); // output file
+        std::ios_base::out | std::ios_base::trunc);
     outputToNewFile << _req->getBody();               // запись строки в файл
     outputToNewFile.close();
 }

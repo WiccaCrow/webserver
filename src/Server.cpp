@@ -112,7 +112,8 @@ Server::pollInHandler(size_t id) {
     if (id < _servBlocks.size()) {
         connectClient(id);
         return 1;
-    } else if (_clients[id].isResponseFormed()) {
+    } else if (!_clients[id].isResponseFormed()) {
+
         _clients[id].receive();
 
         if (_clients[id].getFd() == -1) {
@@ -132,8 +133,8 @@ Server::pollHupHandler(size_t id) {
 
 void
 Server::pollOutHandler(size_t id) {
-    if (_clients[id].isRequestFormed()) { // Not response, but request formed
-        _clients[id].process();           // Response is formed only after process
+    if (_clients[id].isRequestFormed()) {
+        _clients[id].process();           
         _clients[id].reply();
         _clients[id].checkIfFailed();
         _clients[id].clearData();

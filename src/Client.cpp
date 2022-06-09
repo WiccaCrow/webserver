@@ -8,7 +8,7 @@ Client::Client()
     : _fd(-1)
     , _clientPort(0)
     , _requestFormed(false)
-    , _responseFormed(true)
+    , _responseFormed(false)
     , _shouldBeClosed(false) { }
 
 Client::~Client() {
@@ -186,7 +186,7 @@ Client::clearData(void) {
     _res.clear();
     _req.clear();
     _requestFormed  = false;
-    _responseFormed = true;
+    _responseFormed = false;
 }
 
 void
@@ -222,13 +222,11 @@ Client::reply(void) {
 
     size_t sentBytes = 0;
     do {
-        _res.setLeftToSend(sentBytes);
-        long n = send(_fd, _res.getLeftToSend(), _res.getLeftToSendSize(), 0);
-        if (n < 0) {
-            _req.setStatus(INTERNAL_SERVER_ERROR);
-            break;
+        long n = send(_fd, _res.getResponse() + sentBytes, _res.getResLength() - sentBytes, 0);
+        if (n > 0) {
+            sentBytes += n;
+            Log.error("Client:: sent " + to_string(n) + " bytes, " + to_string(sentBytes) + "/" + to_string(_res.getResLength()));
         }
-        sentBytes += n;
     } while (sentBytes < _res.getResLength());
 
     if (shouldBeClosed()) {
