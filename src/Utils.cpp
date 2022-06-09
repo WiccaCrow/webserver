@@ -299,11 +299,8 @@ getDateTimeGMT() {
     // e.g. Date: Wed, 21 Oct 2015 07:28:00 GMT
     time_t rawtime;
     time(&rawtime);
-    struct tm *info = gmtime(&rawtime);
-    
-    char buff[29];
-    strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
-    return buff;
+
+    return getTimeStringGMT(&rawtime);
 }
 
 std::string
@@ -317,14 +314,19 @@ getEtagFile(const std::string &filename) {
 }
 
 std::string
-getLastModifiedFileGMT(const std::string &filename) {
+getLastModifiedTimeGMT(const std::string &filename) {
     struct stat state;
 
     if (stat(filename.c_str(), &state) < 0) {
         return "";
     }
 
-    struct tm *info = gmtime(&state.st_mtime);
+    return getTimeStringGMT(&state.st_mtime);
+}
+
+static std::string
+getTimeStringGMT(time_t *time) {
+    struct tm *info = gmtime(time);
 
     char buff[29];
     strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);

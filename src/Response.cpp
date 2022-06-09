@@ -194,12 +194,10 @@ HTTP::Response::contentForGetHead(void) {
 
     // Should be moved upper
     if (_req->getLocation()->getAuthRef().isSet() && !_req->isAuthorized()) {
-        // If no Authorization header provided
-        Log.debug("Authenticate::Unauthorized");
-        _res = statusLines[UNAUTHORIZED];
-        _res += "Date: " + getDateTimeGMT() + "\r\n";
-        _res += "WWW-Authenticate: Basic realm=\"" + _req->getLocation()->getAuthRef().getRealmRef() + "\"\r\n";
-        _res += "\r\n\r\n";
+        Log.debug("Authenticate:: Unauthorized");
+        _req->setStatus(UNAUTHORIZED);
+        addHeader(DATE, getDateTimeGMT());
+        addHeader(WWW_AUTHENTICATE);
         _client->shouldBeClosed(true);
         return 1;
     }
@@ -208,7 +206,6 @@ HTTP::Response::contentForGetHead(void) {
     if (isDirectory(resourcePath)) {
         if (resourcePath[resourcePath.length() - 1] != '/') {
             _req->setStatus(MOVED_PERMANENTLY);
-            // headers.find(LOCATION)->second.value = _req->getRawUri() + "/";
             addHeader(LOCATION, _req->getRawUri() + "/");
             addHeader(CONTENT_TYPE, "text/html");
 
@@ -233,8 +230,8 @@ HTTP::Response::contentForGetHead(void) {
                     return passToCGI(it->second);
                 }
                 addHeader(CONTENT_TYPE, getContentType(path));
-                _res += "ETag: " + getEtagFile(path) + "\r\n";
-                _res += "Last-Modified: " + getLastModifiedFileGMT(path) + "\r\n";
+                addHeader(ETAG, getEtagFile(path));
+                addHeader(LAST_MODIFIED, getLastModifiedTimeGMT(path));
                 _res += getContentType(path);
                 return fileToResponse(path);
             }
@@ -247,8 +244,8 @@ HTTP::Response::contentForGetHead(void) {
             return passToCGI(it->second);
         }
         addHeader(CONTENT_TYPE, getContentType(resourcePath));
-        _res += "ETag: " + getEtagFile(resourcePath) + "\r\n";
-        _res += "Last-Modified: " + getLastModifiedFileGMT(resourcePath) + "\r\n";
+        addHeader(ETAG, getEtagFile(resourcePath));
+        addHeader(LAST_MODIFIED, getLastModifiedTimeGMT(resourcePath));
         return fileToResponse(resourcePath);
     } else {
         // not readable files and other types and file not exist
@@ -257,7 +254,6 @@ HTTP::Response::contentForGetHead(void) {
     // dir listing. autoindex on
     if (_req->getLocation()->getAutoindexRef() == true && isDirectory(resourcePath)) {
         addHeader(CONTENT_TYPE, "text/html; charset=utf-8");
-        // headers.find(CONTENT_TYPE)->second.value = "text/html; charset=utf-8";
         // std::cout << "_res:" + _res << std::endl << std::endl;
         return listing(resourcePath);
         // 403. autoindex off
