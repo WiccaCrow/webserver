@@ -75,6 +75,11 @@ HTTP::Response::addHeader(HeaderCode code, std::string value) {
 }
 
 void
+HTTP::Response::addHeader(HeaderCode code) {
+    headers.find(code)->second.handleHeader(*this);
+}
+
+void
 HTTP::Response::DELETE(void) {
     // чтобы не удалить чистовой сайт я временно добавляю следующую строку:
     // std::string resourcePath = "./testdel";

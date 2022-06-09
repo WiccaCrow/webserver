@@ -68,7 +68,7 @@ public:
 
     std::string makeHeaders(void);
     void        addHeader(HeaderCode code, std::string value);
-
+    void        addHeader(HeaderCode code);
 
     int passToCGI(CGI &cgi);
 
