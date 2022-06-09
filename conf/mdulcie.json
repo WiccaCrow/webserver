@@ -41,6 +41,10 @@
                     "index": [ "index.html", "index.php" ],
                     "methods_allowed": [ "GET" ],
                     "post_max_body": 300
+                },
+                "/put": {
+                    "alias": "/home/user/Desktop/github/webserver/put",
+                    "methods_allowed": [ "PUT" ]
                 }
             }
         }

@@ -143,33 +143,31 @@ HTTP::Response::POST(void) {
 
 void
 HTTP::Response::PUT(void) {
-    std::string resourcePath = _req->getPath();
-
+    std::string resourcePath = _req->getResolvedPath();
     if (isDirectory(resourcePath)) {
         setErrorResponse(FORBIDDEN);
+        return ;
     } else if (isFile(resourcePath)) {
         if (isWritableFile(resourcePath)) {
             writeFile(resourcePath);
-            _res = "HTTP/1.1 200 OK\r\n"
-                   "content-length: 67\r\n\r\n"
-                   "<html>\n"
-                   "  <body>\n"
-                   "    <h1>File is overwritten.</h1>\n"
-                   "  </body>\n"
-                   "</html>";
+            _body = "<html>\n"
+                    "  <body>\n"
+                    "    <h1>File is overwritten.</h1>\n"
+                    "  </body>\n"
+                    "</html>";
         } else {
             setErrorResponse(FORBIDDEN);
+            return ;
         }
     } else {
         writeFile(resourcePath);
-        _res = "HTTP/1.1 201 OK\r\n"
-               "content-length: 60\r\n\r\n"
-               "<html>\n"
-               "  <body>\n"
-               "    <h1>File created.</h1>\n"
-               "  </body>\n"
-               "</html>";
+        _body = "<html>\n"
+                "  <body>\n"
+                "    <h1>File created.</h1>\n"
+                "  </body>\n"
+                "</html>";
     }
+    _res = makeHeaders() + _body;
 }
 
 int
@@ -426,8 +424,7 @@ void
 HTTP::Response::writeFile(const std::string &resourcePath) {
     std::ofstream outputToNewFile(resourcePath.c_str(),
         std::ios_base::out | std::ios_base::trunc);
-    outputToNewFile << _req->getBody();               // запись строки в файл
-    outputToNewFile.close();
+    outputToNewFile << _req->getBody();
 }
 
 const std::string &
