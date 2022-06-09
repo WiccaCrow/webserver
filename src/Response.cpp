@@ -53,7 +53,7 @@ HTTP::Response::makeHeaders() {
     if ((_req->getStatus() >= BAD_REQUEST) ||
         // (если не cgi и методы GET HEAD еще обдумать) ||
         (_req->getMethod() == "PUT" || _req->getMethod() == "DELETE")) {
-        headers.find(CONTENT_TYPE)->second.value = "text/html; charset=UTF-8";
+        addHeader(CONTENT_TYPE, "text/html; charset=UTF-8");
     }
 
     std::map<uint32_t, ResponseHeader>::iterator it    = headers.begin();
@@ -67,6 +67,16 @@ HTTP::Response::makeHeaders() {
 
     headersToReturn += "\r\n";
     return headersToReturn;
+}
+
+void
+HTTP::Response::addHeader(HeaderCode code, std::string value) {
+    headers.find(code)->second.value = value;
+}
+
+void
+HTTP::Response::addHeader(HeaderCode code) {
+    headers.find(code)->second.handleHeader(*this);
 }
 
 void
@@ -198,8 +208,9 @@ HTTP::Response::contentForGetHead(void) {
     if (isDirectory(resourcePath)) {
         if (resourcePath[resourcePath.length() - 1] != '/') {
             _req->setStatus(MOVED_PERMANENTLY);
-            headers.find(LOCATION)->second.value = _req->getRawUri() + "/";
-            // headers.find(CONTENT_TYPE)->second.value = "text/html";
+            // headers.find(LOCATION)->second.value = _req->getRawUri() + "/";
+            addHeader(LOCATION, _req->getRawUri() + "/");
+            addHeader(CONTENT_TYPE, "text/html");
 
             _body = "<html>\n"
                     "  <body>\n"
@@ -221,11 +232,11 @@ HTTP::Response::contentForGetHead(void) {
                 if (it != _req->getLocation()->getCGIsRef().end()) {
                     return passToCGI(it->second);
                 }
-                headers.find(CONTENT_TYPE)->second.value = getContentType(path);
+                addHeader(CONTENT_TYPE, getContentType(path));
                 _res += "ETag: " + getEtagFile(path) + "\r\n";
                 _res += "Last-Modified: " + getLastModifiedFileGMT(path) + "\r\n";
                 _res += getContentType(path);
-                return (fileToResponse(path));
+                return fileToResponse(path);
             }
         }
         // Path is file; put Path file to response
@@ -235,8 +246,7 @@ HTTP::Response::contentForGetHead(void) {
         if (it != _req->getLocation()->getCGIsRef().end()) {
             return passToCGI(it->second);
         }
-
-        headers.find(CONTENT_TYPE)->second.value = getContentType(resourcePath);
+        addHeader(CONTENT_TYPE, getContentType(resourcePath));
         _res += "ETag: " + getEtagFile(resourcePath) + "\r\n";
         _res += "Last-Modified: " + getLastModifiedFileGMT(resourcePath) + "\r\n";
         return fileToResponse(resourcePath);
@@ -246,7 +256,8 @@ HTTP::Response::contentForGetHead(void) {
     }
     // dir listing. autoindex on
     if (_req->getLocation()->getAutoindexRef() == true && isDirectory(resourcePath)) {
-        headers.find(CONTENT_TYPE)->second.value = "text/html; charset=utf-8";
+        addHeader(CONTENT_TYPE, "text/html; charset=utf-8");
+        // headers.find(CONTENT_TYPE)->second.value = "text/html; charset=utf-8";
         // std::cout << "_res:" + _res << std::endl << std::endl;
         return listing(resourcePath);
         // 403. autoindex off
