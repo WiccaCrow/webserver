@@ -5,9 +5,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <vector>
+#include "SHA1.hpp"
 
 std::vector<std::string> split(const std::string &source, const std::string &delimiters);
 void        trim(std::string &s, const char *t);
+
+std::string getDateTimeGMT();
 
 std::string itoh(int nb);
 std::string getWord(const std::string &line, char delimiter, size_t &pos);
@@ -37,3 +40,5 @@ bool isReadableFile(const std::string &filename);
 bool isExecutableFile(const std::string &filename);
 bool checkRegFilePerms(const std::string &filename, int perm);
 int  rmdirNonEmpty(std::string &resourceDel);
+std::string getEtagFile(const std::string &filename);
+std::string getLastModifiedFileGMT(const std::string &filename);

@@ -14,8 +14,6 @@ namespace HTTP {
 
 class Response;
 
-std::string getDateTimeGMT();
-
 class ResponseHeader {
 
 public:

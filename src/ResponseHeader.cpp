@@ -2,20 +2,9 @@
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Client.hpp"
+#include "Utils.hpp"
 
 namespace HTTP {
-
-std::string
-getDateTimeGMT() {
-    // e.g. Date: Wed, 21 Oct 2015 07:28:00 GMT
-    time_t rawtime;
-    time(&rawtime);
-    struct tm *info = gmtime(&rawtime);
-    
-    char buff[70];
-    strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
-    return buff;
-}
 
 void
 ResponseHeader::handleHeader(Response &res) {

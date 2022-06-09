@@ -1,4 +1,7 @@
 #include "Utils.hpp"
+#include "SHA1.hpp"
+
+#include <vector>
 #include <dirent.h>
 #include <sys/stat.h>
 
@@ -289,4 +292,41 @@ rmdirNonEmpty(std::string &resourceDel) {
     }
 
     return 0;
+}
+
+std::string
+getDateTimeGMT() {
+    // e.g. Date: Wed, 21 Oct 2015 07:28:00 GMT
+    time_t rawtime;
+    time(&rawtime);
+    struct tm *info = gmtime(&rawtime);
+    
+    char buff[29];
+    strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
+    return buff;
+}
+
+std::string
+getEtagFile(const std::string &filename) {
+    struct stat state;
+
+    if (stat(filename.c_str(), &state) < 0) {
+        return "";
+    }
+    return SHA1(to_string(state.st_mtime));
+}
+
+std::string
+getLastModifiedFileGMT(const std::string &filename) {
+    struct stat state;
+
+    if (stat(filename.c_str(), &state) < 0) {
+        return "";
+    }
+
+    struct tm *info = gmtime(&state.st_mtime);
+
+    char buff[29];
+    strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
+    return buff;
 }

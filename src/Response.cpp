@@ -224,6 +224,9 @@ HTTP::Response::contentForGetHead(void) {
                     return passToCGI(it->second);
                 }
                 addHeader(CONTENT_TYPE, getContentType(path));
+                _res += "ETag: " + getEtagFile(path) + "\r\n";
+                _res += "Last-Modified: " + getLastModifiedFileGMT(path) + "\r\n";
+                _res += getContentType(path);
                 return fileToResponse(path);
             }
         }
@@ -234,8 +237,9 @@ HTTP::Response::contentForGetHead(void) {
         if (it != _req->getLocation()->getCGIsRef().end()) {
             return passToCGI(it->second);
         }
-
         addHeader(CONTENT_TYPE, getContentType(resourcePath));
+        _res += "ETag: " + getEtagFile(resourcePath) + "\r\n";
+        _res += "Last-Modified: " + getLastModifiedFileGMT(resourcePath) + "\r\n";
         return fileToResponse(resourcePath);
     } else {
         // not readable files and other types and file not exist
