@@ -55,7 +55,13 @@ ResponseHeader::Age(Response &res) {
 
 void
 ResponseHeader::Allow(Response &res) {
-    (void)res;
+    std::vector<std::string> AllowedMethods = res.getRequest()->getLocation()->getAllowedMethodsRef();
+    for (int i = 0, nbMetods = AllowedMethods.size(); i < nbMetods;) {
+        value += AllowedMethods[i];
+        if (++i != nbMetods) {
+            value += ", ";
+        }
+    }
 }
 
 void
@@ -80,6 +86,7 @@ ResponseHeader::Connection(Response &res) {
         res.getClient()->shouldBeClosed(true);
         value = "close";
     } else {
+        res.getClient()->shouldBeClosed(false);
         value = "keep-alive";
         ResponseHeader &ka = res.headers[KEEP_ALIVE];
         ka.handleHeader(res);

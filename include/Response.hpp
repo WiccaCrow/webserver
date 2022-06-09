@@ -30,6 +30,7 @@ class Response {
     Request    *_req;
     Client     *_client;
     std::string _body;
+    std::string _additionalHeaders;
 
 public:
     typedef void (Response::*Handler)(void);
