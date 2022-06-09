@@ -290,3 +290,15 @@ rmdirNonEmpty(std::string &resourceDel) {
 
     return 0;
 }
+
+std::string
+getDateTimeGMT() {
+    // e.g. Date: Wed, 21 Oct 2015 07:28:00 GMT
+    time_t rawtime;
+    time(&rawtime);
+    struct tm *info = gmtime(&rawtime);
+    
+    char buff[29];
+    strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
+    return buff;
+}

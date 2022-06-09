@@ -9,6 +9,8 @@
 std::vector<std::string> split(const std::string &source, const std::string &delimiters);
 void        trim(std::string &s, const char *t);
 
+std::string getDateTimeGMT();
+
 std::string itoh(int nb);
 std::string getWord(const std::string &line, char delimiter, size_t &pos);
 
