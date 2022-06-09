@@ -15,13 +15,14 @@ HTTP::Response::initMethodsHeaders(void) {
     methods.insert(std::make_pair("OPTIONS", &Response::OPTIONS));
     methods.insert(std::make_pair("POST", &Response::POST));
     methods.insert(std::make_pair("PUT", &Response::PUT));
-    headers.insert(std::make_pair(CONTENT_LENGTH, ResponseHeader("content-length", CONTENT_LENGTH)));
+    headers.insert(std::make_pair(ALLOW, ResponseHeader("allow", ALLOW)));
     headers.insert(std::make_pair(CONNECTION, ResponseHeader("connection", CONNECTION)));
-    headers.insert(std::make_pair(KEEP_ALIVE, ResponseHeader("keep-alive", KEEP_ALIVE)));
-    headers.insert(std::make_pair(DATE, ResponseHeader("date", DATE)));
+    headers.insert(std::make_pair(CONTENT_LENGTH, ResponseHeader("content-length", CONTENT_LENGTH)));
     headers.insert(std::make_pair(CONTENT_TYPE, ResponseHeader("content-type", CONTENT_TYPE)));
-    headers.insert(std::make_pair(SERVER, ResponseHeader("server", SERVER)));
+    headers.insert(std::make_pair(DATE, ResponseHeader("date", DATE)));
+    headers.insert(std::make_pair(KEEP_ALIVE, ResponseHeader("keep-alive", KEEP_ALIVE)));
     headers.insert(std::make_pair(LOCATION, ResponseHeader("location", LOCATION)));
+    headers.insert(std::make_pair(SERVER, ResponseHeader("server", SERVER)));
     // headers.insert(std::make_pair("last-modified", ""));
     // headers.insert(std::make_pair("access-control-allow-methods", ""));
     // headers.insert(std::make_pair("Access-Control-Allow-Origin", ""));
@@ -65,6 +66,7 @@ HTTP::Response::makeHeaders() {
         }
     }
 
+    headersToReturn += _additionalHeaders;
     headersToReturn += "\r\n";
     return headersToReturn;
 }
@@ -125,18 +127,7 @@ HTTP::Response::GET(void) {
 
 void
 HTTP::Response::OPTIONS(void) {
-    std::cout << "OPTIONS" << std::endl;
-    _res = "HTTP/1.1 200 OK\r\n"
-            "Allow: ";
-    std::vector<std::string> AllowedMethods = _req->getLocation()->getAllowedMethodsRef();
-    for (int i = 0, nbMetods = AllowedMethods.size(); i < nbMetods;) {
-        _res += AllowedMethods[i];
-        if (++i != nbMetods) {
-            _res += ", ";
-        } else {
-            _res += "\r\n\r\n";
-        }
-    }
+    _res = makeHeaders();
 }
 
 void
