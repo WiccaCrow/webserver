@@ -2,7 +2,7 @@
     "servers": {
         "httpBlock": {
             "port": 8080,
-            "server_names": [ "localhost" ],
+            "server_names": ["localhost"],
             "error_pages": {
                 "400": "./pages/error_pages/400.html",
                 "403": "./pages/error_pages/403.html",
@@ -19,12 +19,16 @@
                 "504": "./pages/error_pages/504.html",
                 "505": "./pages/error_pages/505.html"
             },
-            "methods_allowed": [ "GET", "PUT" ],
+            "methods_allowed": ["GET", "PUT"],
             "post_max_body": 100,
             "autoindex": true,
-            "index": [ "index.html" ],
+            "index": ["index.html"],
             "locations": {
                 "/about": {
+                    "auth_basic": {
+                        "realm": "eternity",
+                        "user_file": ".htpasswd"
+                    },
                     "alias": "./pages/site",
                     "CGI": {
                         ".pl": "/usr/bin/perl",
@@ -33,9 +37,9 @@
                         ".cgi": ""
                     },
                     "autoindex": true,
-                    "index": [ "index.html" ],
+                    "index": ["index.html"],
                     "post_max_body": 200,
-                    "methods_allowed": [ "GET", "POST" ]                 
+                    "methods_allowed": ["GET", "POST"]                 
                 },
                 "/feedback": {
                     "root": "./pages/site",
@@ -44,7 +48,7 @@
                         ".js": "/usr/local/bin/node"
                     },
                     "autoindex": false,
-                    "index": [ "index.html", "index.php" ],
+                    "index": ["index.html", "index.php"],
                     "methods_allowed": [ "DELETE" ],
                     "post_max_body": 300
                 }
