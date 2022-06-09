@@ -137,7 +137,6 @@ HTTP::Response::POST(void) {
         // doCGI(*_req);
     } else {
         _req->setStatus(NO_CONTENT);
-        // _res = "HTTP/1.1 204 No Content\r\n\r\n";
         _res = makeHeaders();
     }
 }
