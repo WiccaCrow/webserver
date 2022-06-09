@@ -144,6 +144,7 @@ Header::Connection(Request &req) {
 StatusCode
 Header::ContentLength(Request &req) {
     if (req.isHeaderExist(TRANSFER_ENCODING)) {
+        Log.debug("ContentLength:: TE");
         return BAD_REQUEST;
     }
 
@@ -152,6 +153,7 @@ Header::ContentLength(Request &req) {
         return PAYLOAD_TOO_LARGE;
     }
     if (length < 0) {
+        Log.debug("ContentLength:: " + to_string(length));
         return BAD_REQUEST;
     }
     req.setBodySizeFlag(false);

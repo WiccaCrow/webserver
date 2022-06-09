@@ -190,10 +190,13 @@ Request::set(uint8_t flag) const {
 StatusCode
 Request::parseLine(std::string line) {
     if (!set(PARSED_SL)) {
+        // Log.debug("Request::ParseLine1: " + line);
         return !line.empty() ? parseSL(line) : CONTINUE;
     } else if (!set(PARSED_HEADERS)) {
+        // Log.debug("Request::ParseLine2: " + line);
         return !line.empty() ? parseHeader(line) : checkHeaders();
     } else if (!set(PARSED_BODY)) {
+        // Log.debug("Request::ParseLine3: " + line);
         return (parseBody(line));
     } else {
         return PROCESSING;
@@ -315,6 +318,7 @@ Request::checkHeaders(void) {
             Log.error("Transfer-Encoding/Content-Length is missing in request");
             return LENGTH_REQUIRED;
         }
+        Log.debug("Request::ParsedHeaders::Continue");
         return CONTINUE;
     }
     Log.debug("Request::ParsedHeaders");
@@ -399,7 +403,7 @@ Request::parseBody(const std::string &line) {
     Log.debug("Request::parseBody");
     if (isHeaderExist(TRANSFER_ENCODING)) {
         return (parseChunked(line));
-    } else if (isHeaderExist(TRANSFER_ENCODING)) {
+    } else if (isHeaderExist(CONTENT_LENGTH)) {
         setFlag(PARSED_BODY);
         return writeBody(line);
     }
