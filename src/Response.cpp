@@ -222,7 +222,10 @@ HTTP::Response::contentForGetHead(void) {
                     return passToCGI(it->second);
                 }
                 headers.find(CONTENT_TYPE)->second.value = getContentType(path);
-                return fileToResponse(path);
+                _res += "ETag: " + getEtagFile(path) + "\r\n";
+                _res += "Last-Modified: " + getLastModifiedFileGMT(path) + "\r\n";
+                _res += getContentType(path);
+                return (fileToResponse(path));
             }
         }
         // Path is file; put Path file to response
@@ -234,6 +237,8 @@ HTTP::Response::contentForGetHead(void) {
         }
 
         headers.find(CONTENT_TYPE)->second.value = getContentType(resourcePath);
+        _res += "ETag: " + getEtagFile(resourcePath) + "\r\n";
+        _res += "Last-Modified: " + getLastModifiedFileGMT(resourcePath) + "\r\n";
         return fileToResponse(resourcePath);
     } else {
         // not readable files and other types and file not exist
