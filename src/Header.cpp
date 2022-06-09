@@ -107,7 +107,7 @@ Header::Authorization(Request &req) {
 
         std::string decoded = Base64::decode(splitted[1]);
         Log.debug("Authorization::Decoded Base64:" + decoded);
-        if (decoded == "") {
+        if (decoded.empty()) {
             Log.debug("Authorization::Invalid Base64 string");
             return UNAUTHORIZED;
         }

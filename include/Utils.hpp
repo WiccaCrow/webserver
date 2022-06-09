@@ -41,4 +41,4 @@ bool isExecutableFile(const std::string &filename);
 bool checkRegFilePerms(const std::string &filename, int perm);
 int  rmdirNonEmpty(std::string &resourceDel);
 std::string getEtagFile(const std::string &filename);
-std::string getLastModifiedFileGMT(const std::string &filename);
+std::string getLastModifiedTimeGMT(const std::string &filename);

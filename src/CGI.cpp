@@ -260,7 +260,7 @@ CGI::exec() {
         }
     }
 
-    if (_req->getBody() != "") {
+    if (!_req->getBody().empty()) {
         if (write(in[1], _req->getBody().c_str(), _req->getBody().length()) == -1) {
             log_error("CGI::write: ");
             restore_std(tmp[0], tmp[1]);

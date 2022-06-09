@@ -2,8 +2,7 @@
 #include "CGI.hpp"
 #include "Client.hpp"
 
-HTTP::Response::Response() : _req(NULL), _client(NULL) {
-}
+HTTP::Response::Response() : _req(NULL), _client(NULL) {}
 
 HTTP::Response::~Response() { }
 
@@ -23,6 +22,8 @@ HTTP::Response::initMethodsHeaders(void) {
     headers.insert(std::make_pair(KEEP_ALIVE, ResponseHeader("keep-alive", KEEP_ALIVE)));
     headers.insert(std::make_pair(LOCATION, ResponseHeader("location", LOCATION)));
     headers.insert(std::make_pair(SERVER, ResponseHeader("server", SERVER)));
+    headers.insert(std::make_pair(ETAG, ResponseHeader("etag", ETAG)));
+    headers.insert(std::make_pair(LAST_MODIFIED, ResponseHeader("last-modified", LAST_MODIFIED)));
     // headers.insert(std::make_pair("last-modified", ""));
     // headers.insert(std::make_pair("access-control-allow-methods", ""));
     // headers.insert(std::make_pair("Access-Control-Allow-Origin", ""));
@@ -133,7 +134,7 @@ HTTP::Response::OPTIONS(void) {
 void
 HTTP::Response::POST(void) {
     std::string isCGI = ""; // from config
-    if (isCGI != "") {
+    if (!isCGI.empty()) {
         // doCGI(*_req);
     } else {
         _res = "HTTP/1.1 204 No Content\r\n\r\n";
@@ -199,10 +200,9 @@ HTTP::Response::contentForGetHead(void) {
             _req->setStatus(MOVED_PERMANENTLY);
             addHeader(LOCATION, _req->getRawUri() + "/");
             addHeader(CONTENT_TYPE, "text/html");
-
             _body = "<html>\n"
                     "  <body>\n"
-                    "    <h1>redirect.</h1>\n"
+                    "    <h1>Redirect.</h1>\n"
                     "  </body>\n"
                     "</html>\r\n";
             _res = makeHeaders() + _body;
@@ -211,7 +211,7 @@ HTTP::Response::contentForGetHead(void) {
         }
         // find index file
         const std::vector<std::string> &indexes = _req->getLocation()->getIndexRef();
-        for (int i = 0; static_cast<size_t>(i) < indexes.size(); ++i) {
+        for (size_t i = 0; i < indexes.size(); ++i) {
             // put index file to response
             std::string path = resourcePath + indexes[i];
             if (isFile(path)) {
@@ -245,7 +245,6 @@ HTTP::Response::contentForGetHead(void) {
     // dir listing. autoindex on
     if (_req->getLocation()->getAutoindexRef() == true && isDirectory(resourcePath)) {
         addHeader(CONTENT_TYPE, "text/html; charset=utf-8");
-        // std::cout << "_res:" + _res << std::endl << std::endl;
         return listing(resourcePath);
         // 403. autoindex off
     } else {

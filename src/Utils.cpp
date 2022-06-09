@@ -294,6 +294,15 @@ rmdirNonEmpty(std::string &resourceDel) {
     return 0;
 }
 
+static std::string
+getTimeStringGMT(time_t *time) {
+    struct tm *info = gmtime(time);
+
+    char buff[29];
+    strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
+    return buff;
+}
+
 std::string
 getDateTimeGMT() {
     // e.g. Date: Wed, 21 Oct 2015 07:28:00 GMT
@@ -322,13 +331,4 @@ getLastModifiedTimeGMT(const std::string &filename) {
     }
 
     return getTimeStringGMT(&state.st_mtime);
-}
-
-static std::string
-getTimeStringGMT(time_t *time) {
-    struct tm *info = gmtime(time);
-
-    char buff[29];
-    strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
-    return buff;
 }

@@ -9,17 +9,15 @@ HTTP::Response::setErrorResponse(HTTP::StatusCode status) {
 
     // if serverblock has error-pages, but response doesn't have a reference to serverblock
     // std::map<int, std::string>::iterator it = getRequest()->getServerBlock()->getErrPathsRef();
-    if (response == "") {
+    if (response.empty()) {
         Log.error("Unknown response error code: " + to_string(static_cast<int>(status)));
         // Should be removed after development
-        // exit(66);
         setStatus(INTERNAL_SERVER_ERROR);
         _body = errorResponses[66];
-        _res = makeHeaders() + _body;
-        return 1;
+    } else {
+        setStatus(status);
+        _body = response;
     }
-    setStatus(status);
-    _body = response;
     _res = makeHeaders() + _body;
     return 1;
 }

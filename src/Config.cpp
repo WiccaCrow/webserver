@@ -415,7 +415,7 @@ isValidRedirect(Redirect &res) {
         if (res.getCodeRef() < 300 && res.getCodeRef() > 308) {
             Log.error("Redirect code \"" + to_string(res.getCodeRef()) + "\"is invalid");
             return 0;
-        } else if (res.getURIRef() == "") {
+        } else if (res.getURIRef().empty()) {
             Log.error("Redirect uri is empty");
             return 0;
         }
