@@ -169,9 +169,13 @@ HTTP::Response::PUT(void) {
 
 int
 HTTP::Response::contentForGetHead(void) {
+    // resourcePath (часть root) будет браться из конфига
+    // root
+    // если в конфиге без /, то добавить /,
+    // чтобы мне уже с этим приходило
     const std::string &resourcePath = _req->getResolvedPath();
-std::cout << "     resourcePath " << resourcePath << std::endl;
-    if (!resourceExists(resourcePath)) {
+
+     if (!resourceExists(resourcePath)) {
         return setErrorResponse(NOT_FOUND);
     }
 
@@ -191,9 +195,12 @@ std::cout << "     resourcePath " << resourcePath << std::endl;
     // Path is dir
     if (isDirectory(resourcePath)) {
         if (resourcePath[resourcePath.length() - 1] != '/') {
-            _req->setStatus(HTTP::MOVED_PERMANENTLY);
+            _req->setStatus(MOVED_PERMANENTLY);
             headers.find(LOCATION)->second.value = _req->getRawUri() + "/";
-            return 0;
+            headers.find(CONTENT_TYPE)->second.value = "text/html";
+            _res = makeHeaders();
+            // body
+            return 1;
         }
         // find index file
         for (std::vector<std::string>::const_iterator iter = _req->getLocation()->getIndexRef().begin();
@@ -207,8 +214,8 @@ std::cout << "     resourcePath " << resourcePath << std::endl;
                 if (it != _req->getLocation()->getCGIsRef().end()) {
                     return passToCGI(it->second);
                 }
-                headers.find(CONTENT_TYPE)->second.value = getContentType(path);
-                return (fileToResponse(path));
+                // headers.find(CONTENT_TYPE)->second.value = getContentType(path);
+                return fileToResponse(path);
             }
         }
         // Path is file; put Path file to response
@@ -218,16 +225,18 @@ std::cout << "     resourcePath " << resourcePath << std::endl;
         if (it != _req->getLocation()->getCGIsRef().end()) {
             return passToCGI(it->second);
         }
-        headers.find(CONTENT_TYPE)->second.value = getContentType(resourcePath);
-        return (fileToResponse(resourcePath));
+
+        // headers.find(CONTENT_TYPE)->second.value = getContentType(resourcePath);
+        return fileToResponse(resourcePath);
     } else {
         // not readable files and other types and file not exist
         return setErrorResponse(FORBIDDEN);
     }
     // dir listing. autoindex on
     if (_req->getLocation()->getAutoindexRef() == true && isDirectory(resourcePath)) {
-        headers.find(CONTENT_TYPE)->second.value = "content-type: text/html; charset=utf-8";
-        return (listing(resourcePath));
+        headers.find(CONTENT_TYPE)->second.value = "text/html; charset=utf-8";
+        // std::cout << "_res:" + _res << std::endl << std::endl;
+        return listing(resourcePath);
         // 403. autoindex off
     } else {
         return setErrorResponse(FORBIDDEN);
@@ -274,7 +283,6 @@ HTTP::Response::getContentType(std::string resourcePath) {
                 if (iter->second == "text") {
                     contType += "; charset=utf-8";
                 }
-                contType += "\r\n";
             }
             break;
         }
@@ -291,7 +299,6 @@ HTTP::Response::passToCGI(CGI &cgi) {
         _req->setStatus(HTTP::BAD_GATEWAY);
         return setErrorResponse(_req->getStatus());
     }
-    // выделить отдельно заголовки и в _body только body положить
     _body = cgi.getResult();
     return 0;
 }

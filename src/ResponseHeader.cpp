@@ -71,7 +71,8 @@ ResponseHeader::Connection(Response &res) {
     if (value.empty() == false) {
         return ;
     }
-    if (res.getRequest()->getHeaderValue(CONNECTION) == "close") {
+    if (res.getRequest()->getStatus() != MOVED_PERMANENTLY && 
+        res.getRequest()->getHeaderValue(CONNECTION) == "close") {
         res.shouldBeClosed(true);
         value = "close";
     } else {
@@ -99,8 +100,8 @@ ResponseHeader::ContentLength(Response &res) {
     if (value.empty() == false) {
         return ;
     }
-    if (res.getBody().size()) {
-        value = to_string(res.getBody().size());
+    if (res.getBody().length()) {
+        value = to_string(res.getBody().length());
     }
 }
 
