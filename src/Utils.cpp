@@ -309,11 +309,8 @@ getLastModifiedFileGMT(const std::string &filename) {
         return "";
     }
 
-    time(&state.st_mtime);
     struct tm *info = gmtime(&state.st_mtime);
-    
-    char buff[70];
+    char buff[29];
     strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
-    std::cout << "     " << buff << std::endl;
     return buff;
 }
