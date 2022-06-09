@@ -197,24 +197,29 @@ HTTP::Response::contentForGetHead(void) {
         if (resourcePath[resourcePath.length() - 1] != '/') {
             _req->setStatus(MOVED_PERMANENTLY);
             headers.find(LOCATION)->second.value = _req->getRawUri() + "/";
-            headers.find(CONTENT_TYPE)->second.value = "text/html";
-            _res = makeHeaders();
+            // headers.find(CONTENT_TYPE)->second.value = "text/html";
+
+            _body = "<html>\n"
+                    "  <body>\n"
+                    "    <h1>redirect.</h1>\n"
+                    "  </body>\n"
+                    "</html>\r\n";
+            _res = makeHeaders() + _body;
             // body
             return 1;
         }
         // find index file
-        for (std::vector<std::string>::const_iterator iter = _req->getLocation()->getIndexRef().begin();
-             iter != _req->getLocation()->getIndexRef().end();
-             ++iter) {
+        const std::vector<std::string> &indexes = _req->getLocation()->getIndexRef();
+        for (int i = 0; static_cast<size_t>(i) < indexes.size(); ++i) {
             // put index file to response
-            std::string path = resourcePath + *iter;
+            std::string path = resourcePath + indexes[i];
             if (isFile(path)) {
                 std::map<std::string, HTTP::CGI>::iterator it;
                 it = isCGI(path, _req->getLocation()->getCGIsRef());
                 if (it != _req->getLocation()->getCGIsRef().end()) {
                     return passToCGI(it->second);
                 }
-                // headers.find(CONTENT_TYPE)->second.value = getContentType(path);
+                headers.find(CONTENT_TYPE)->second.value = getContentType(path);
                 return fileToResponse(path);
             }
         }
@@ -226,7 +231,7 @@ HTTP::Response::contentForGetHead(void) {
             return passToCGI(it->second);
         }
 
-        // headers.find(CONTENT_TYPE)->second.value = getContentType(resourcePath);
+        headers.find(CONTENT_TYPE)->second.value = getContentType(resourcePath);
         return fileToResponse(resourcePath);
     } else {
         // not readable files and other types and file not exist
@@ -260,6 +265,12 @@ HTTP::Response::clear() {
     _res.clear();
     _resLeftToSend.clear();
     _body.clear();
+
+    std::map<uint32_t, ResponseHeader>::iterator it = headers.begin();
+    std::map<uint32_t, ResponseHeader>::iterator end = headers.end();
+    for (; it != end; it++) {
+        it->second.value = "";
+    }
 }
 
 void
@@ -335,6 +346,10 @@ HTTP::Response::fileToResponse(std::string resourcePath) {
     //     _res += "Transfer-Encoding: chunked\r\n\r\n";
     //     return (TransferEncodingChunked(buffer.str(), bufSize));
     // } else {
+
+    // _res += "content-length: " + to_string((unsigned long)bufSize) + "\r\n\r\n";
+    // return (_body = buffer.str());
+
     _body = buffer.str();
     return 0;
     // }

@@ -202,15 +202,16 @@ Client::reply(void) {
 
     Log.debug("Client::reply -> fd: " + to_string(_fd));
 
-    long sentBytes = 0;
+    size_t sentBytes = 0;
     do {
-        _res.setLeftToSend(sentBytes);
-        sentBytes += send(_fd, _res.getLeftToSend(), _res.getLeftToSendSize(), 0);
-        if (sentBytes < 0) {
+        // _res.setLeftToSend(sentBytes);
+        long n = send(_fd, _res.getResponse() + sentBytes, _res.getResLength() - sentBytes, 0);
+        if (n < 0) {
             _req.setStatus(INTERNAL_SERVER_ERROR);
             break;
         }
-    } while (static_cast<size_t>(sentBytes) < _res.getResLength());
+        sentBytes += n;
+    } while (sentBytes < _res.getResLength());
 
     if (_res.shouldBeClosed()) {
         _fd = -1;
