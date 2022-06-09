@@ -137,12 +137,20 @@ Request::setStoredHash(uint32_t hash) {
 void
 Request::clear() {
     _method = "";
+    _rawURI = "";
     _protocol = "";
+    _uri.clear();
     _headers.clear();
     _body.clear();
+    _resolvedPath = "";
     _bodySize = 0;
     _parseFlags = 0;
     _flag_getline_bodySize = true;
+
+    _headers.clear();
+    _status = OK;
+    _minor = 0;
+    _major = 0;
 }
 
 const std::string &

@@ -4,7 +4,7 @@
 #include <string>
 
 #ifndef SERVER_SOFTWARE
-    # define SERVER_SOFTWARE "Webserv/1.0.0"
+    # define SERVER_SOFTWARE "webserv/1.0.0"
 #endif
 
 #ifndef GATEWAY_INTERFACE

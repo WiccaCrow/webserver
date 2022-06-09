@@ -24,8 +24,9 @@ public:
     std::string key;
     std::string value;
     Handler     method;
-    uint32_t  hash;
+    uint32_t    hash;
 
+    ResponseHeader();
     ResponseHeader(std::string keyToSet, uint32_t hashToSet);
 
     void setKey(std::string &keyToSet);

@@ -9,6 +9,15 @@ std::string URI::getAuthority(void) const {
     return _host;
 }
 
+void URI::clear(void) {
+    _scheme = "";
+    _host = "";
+    _port = "";
+    _path = "";
+    _query = "";
+    _fragment = "";
+}
+
 void URI::parse(std::string uri) {
 
     if (uri.length() == 0)

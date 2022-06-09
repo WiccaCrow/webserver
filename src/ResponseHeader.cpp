@@ -14,7 +14,6 @@ getDateTimeGMT() {
     
     char buff[70];
     strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
-    stime
     return buff;
 }
 
@@ -28,6 +27,8 @@ ResponseHeader::handleHeader(Response &res) {
     method = it->second;
     return (this->*method)(res);
 }
+
+ResponseHeader::ResponseHeader() : hash(0) { }
 
 ResponseHeader::ResponseHeader(std::string keyToSet, uint32_t hashToSet) : key(keyToSet), hash(hashToSet) { }
 
@@ -69,14 +70,19 @@ ResponseHeader::CacheControl(Response &res) {
 
 void
 ResponseHeader::Connection(Response &res) {
+
     if (value.empty() == false) {
         return ;
     }
+        
+    // res.getRequest()->getStatus() != MOVED_PERMANENTLY && 
     if (res.getRequest()->getHeaderValue(CONNECTION) == "close") {
         res.getClient()->shouldBeClosed(true);
         value = "close";
     } else {
         value = "keep-alive";
+        ResponseHeader &ka = res.headers[KEEP_ALIVE];
+        ka.handleHeader(res);
     }
 }
 
@@ -100,8 +106,8 @@ ResponseHeader::ContentLength(Response &res) {
     if (value.empty() == false) {
         return ;
     }
-    if (res.getBody().size()) {
-        value = to_string(res.getBody().size());
+    if (res.getBody().length()) {
+        value = to_string(res.getBody().length());
     }
 }
 

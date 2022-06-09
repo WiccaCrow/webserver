@@ -205,7 +205,7 @@ Client::process(void) {
     if (_req.getStatus() >= HTTP::BAD_REQUEST) {
         _res.setErrorResponse(_req.getStatus());
     } else if (_req.getStatus() == HTTP::PROCESSING) {
-        _req.setStatus(HTTP::OK);;
+        _req.setStatus(HTTP::OK);
         if (_res.handle(_req) == METHOD_NOT_ALLOWED) {
             _res.setErrorResponse(METHOD_NOT_ALLOWED);
         }
@@ -220,15 +220,16 @@ Client::reply(void) {
 
     Log.debug("Client::reply -> fd: " + to_string(_fd));
 
-    long sentBytes = 0;
+    size_t sentBytes = 0;
     do {
         _res.setLeftToSend(sentBytes);
-        sentBytes += send(_fd, _res.getLeftToSend(), _res.getLeftToSendSize(), 0);
-        if (sentBytes < 0) {
+        long n = send(_fd, _res.getLeftToSend(), _res.getLeftToSendSize(), 0);
+        if (n < 0) {
             _req.setStatus(INTERNAL_SERVER_ERROR);
             break;
         }
-    } while (static_cast<size_t>(sentBytes) < _res.getResLength());
+        sentBytes += n;
+    } while (sentBytes < _res.getResLength());
 
     if (shouldBeClosed()) {
         _fd = -1;

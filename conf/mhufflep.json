@@ -26,10 +26,6 @@
                 ".js": "/usr/local/bin/node",
                 ".cgi": ""
             },
-            "auth_basic": {
-                "realm": "eternity",
-                "user_file": ".htpasswd"
-            },
             "methods_allowed": [ "GET", "PUT" ],
             "post_max_body": 100,
             "autoindex": true,
@@ -51,6 +47,10 @@
                     "CGI": {
                         ".py": "/usr/bin/python",
                         ".js": "/usr/local/bin/node"
+                    },
+                    "auth_basic": {
+                        "realm": "eternity",
+                        "user_file": ".htpasswd"
                     },
                     "autoindex": false,
                     "index": [ "index.html", "index.php" ],

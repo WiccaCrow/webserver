@@ -17,6 +17,7 @@ HTTP::Response::initMethodsHeaders(void) {
     methods.insert(std::make_pair("PUT", &Response::PUT));
     headers.insert(std::make_pair(CONTENT_LENGTH, ResponseHeader("content-length", CONTENT_LENGTH)));
     headers.insert(std::make_pair(CONNECTION, ResponseHeader("connection", CONNECTION)));
+    headers.insert(std::make_pair(KEEP_ALIVE, ResponseHeader("keep-alive", KEEP_ALIVE)));
     headers.insert(std::make_pair(DATE, ResponseHeader("date", DATE)));
     headers.insert(std::make_pair(CONTENT_TYPE, ResponseHeader("content-type", CONTENT_TYPE)));
     headers.insert(std::make_pair(SERVER, ResponseHeader("server", SERVER)));
@@ -115,8 +116,8 @@ HTTP::Response::GET(void) {
 void
 HTTP::Response::OPTIONS(void) {
     std::cout << "OPTIONS" << std::endl;
-    _res                                    = "HTTP/1.1 200 OK\r\n"
-                                              "Allow: ";
+    _res = "HTTP/1.1 200 OK\r\n"
+            "Allow: ";
     std::vector<std::string> AllowedMethods = _req->getLocation()->getAllowedMethodsRef();
     for (int i = 0, nbMetods = AllowedMethods.size(); i < nbMetods;) {
         _res += AllowedMethods[i];
@@ -171,10 +172,13 @@ HTTP::Response::PUT(void) {
 
 int
 HTTP::Response::contentForGetHead(void) {
+    // resourcePath (часть root) будет браться из конфига
+    // root
+    // если в конфиге без /, то добавить /,
+    // чтобы мне уже с этим приходило
     const std::string &resourcePath = _req->getResolvedPath();
-    std::cout << "     resourcePath " << resourcePath << std::endl;
 
-    if (!resourceExists(resourcePath)) {
+     if (!resourceExists(resourcePath)) {
         return setErrorResponse(NOT_FOUND);
     }
 
@@ -193,16 +197,24 @@ HTTP::Response::contentForGetHead(void) {
     // Path is dir
     if (isDirectory(resourcePath)) {
         if (resourcePath[resourcePath.length() - 1] != '/') {
-            _req->setStatus(HTTP::MOVED_PERMANENTLY);
+            _req->setStatus(MOVED_PERMANENTLY);
             headers.find(LOCATION)->second.value = _req->getRawUri() + "/";
-            return 0;
+            // headers.find(CONTENT_TYPE)->second.value = "text/html";
+
+            _body = "<html>\n"
+                    "  <body>\n"
+                    "    <h1>redirect.</h1>\n"
+                    "  </body>\n"
+                    "</html>\r\n";
+            _res = makeHeaders() + _body;
+            // body
+            return 1;
         }
         // find index file
-        for (std::vector<std::string>::const_iterator iter = _req->getLocation()->getIndexRef().begin();
-             iter != _req->getLocation()->getIndexRef().end();
-             ++iter) {
+        const std::vector<std::string> &indexes = _req->getLocation()->getIndexRef();
+        for (int i = 0; static_cast<size_t>(i) < indexes.size(); ++i) {
             // put index file to response
-            std::string path = resourcePath + *iter;
+            std::string path = resourcePath + indexes[i];
             if (isFile(path)) {
                 std::map<std::string, HTTP::CGI>::iterator it;
                 it = isCGI(path, _req->getLocation()->getCGIsRef());
@@ -210,7 +222,7 @@ HTTP::Response::contentForGetHead(void) {
                     return passToCGI(it->second);
                 }
                 headers.find(CONTENT_TYPE)->second.value = getContentType(path);
-                return (fileToResponse(path));
+                return fileToResponse(path);
             }
         }
         // Path is file; put Path file to response
@@ -220,16 +232,18 @@ HTTP::Response::contentForGetHead(void) {
         if (it != _req->getLocation()->getCGIsRef().end()) {
             return passToCGI(it->second);
         }
+
         headers.find(CONTENT_TYPE)->second.value = getContentType(resourcePath);
-        return (fileToResponse(resourcePath));
+        return fileToResponse(resourcePath);
     } else {
         // not readable files and other types and file not exist
         return setErrorResponse(FORBIDDEN);
     }
     // dir listing. autoindex on
     if (_req->getLocation()->getAutoindexRef() == true && isDirectory(resourcePath)) {
-        headers.find(CONTENT_TYPE)->second.value = "content-type: text/html; charset=utf-8";
-        return (listing(resourcePath));
+        headers.find(CONTENT_TYPE)->second.value = "text/html; charset=utf-8";
+        // std::cout << "_res:" + _res << std::endl << std::endl;
+        return listing(resourcePath);
         // 403. autoindex off
     } else {
         return setErrorResponse(FORBIDDEN);
@@ -249,9 +263,15 @@ HTTP::Response::handle(Request &req) {
 
 void
 HTTP::Response::clear() {
-    _res.clear();
-    _resLeftToSend.clear();
-    _body.clear();
+
+    _res = "";
+    _body = "";
+
+    std::map<uint32_t, ResponseHeader>::iterator it = headers.begin();
+    std::map<uint32_t, ResponseHeader>::iterator end = headers.end();
+    for (; it != end; it++) {
+        it->second.value = "";
+    }
 }
 
 void
@@ -285,7 +305,6 @@ HTTP::Response::getContentType(std::string resourcePath) {
                 if (iter->second == "text") {
                     contType += "; charset=utf-8";
                 }
-                contType += "\r\n";
             }
             break;
         }
@@ -302,7 +321,6 @@ HTTP::Response::passToCGI(CGI &cgi) {
         _req->setStatus(HTTP::BAD_GATEWAY);
         return setErrorResponse(_req->getStatus());
     }
-    // выделить отдельно заголовки и в _body только body положить
     _body = cgi.getResult();
     return 0;
 }
@@ -332,6 +350,7 @@ HTTP::Response::fileToResponse(std::string resourcePath) {
     std::stringstream buffer;
     buffer << resourceFile.rdbuf();
     long bufSize = buffer.tellp();
+    Log.debug("Response:: bufSize: " + to_string(bufSize));
     if (bufSize == -1) {
         return setErrorResponse(INTERNAL_SERVER_ERROR);
     }
@@ -339,7 +358,12 @@ HTTP::Response::fileToResponse(std::string resourcePath) {
     //     _res += "Transfer-Encoding: chunked\r\n\r\n";
     //     return (TransferEncodingChunked(buffer.str(), bufSize));
     // } else {
+
+    // _res += "content-length: " + to_string((unsigned long)bufSize) + "\r\n\r\n";
+    // return (_body = buffer.str());
+
     _body = buffer.str();
+    Log.debug("Response:: bodySize: " + to_string(_body.size()));
     return 0;
     // }
 }

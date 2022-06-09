@@ -60,11 +60,11 @@ public:
     void POST(void);
     void PUT(void);
     // void        generateHeaders(Request &req);
-    int contentForGetHead(void);
-    int fileToResponse(std::string resourcePath);
-    int listing(const std::string &resourcePath);
-    void        writeFile(const std::string &resourcePath);
+    int         contentForGetHead(void);
     std::string getContentType(std::string resourcePath);
+    int         fileToResponse(std::string resourcePath);
+    int         listing(const std::string &resourcePath);
+    void        writeFile(const std::string &resourcePath);
 
     std::string makeHeaders(void);
 

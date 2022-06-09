@@ -18,6 +18,7 @@ struct URI {
 
     void parse(std::string uri);
     std::string getAuthority(void) const;
+    void clear(void);
 
 };
 
