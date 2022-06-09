@@ -290,3 +290,30 @@ rmdirNonEmpty(std::string &resourceDel) {
 
     return 0;
 }
+
+std::string
+getEtagFile(const std::string &filename) {
+    struct stat state;
+
+    if (stat(filename.c_str(), &state) < 0) {
+        return "";
+    }
+    return SHA1(to_string(state.st_mtime));
+}
+
+std::string
+getLastModifiedFileGMT(const std::string &filename) {
+    struct stat state;
+
+    if (stat(filename.c_str(), &state) < 0) {
+        return "";
+    }
+
+    time(&state.st_mtime);
+    struct tm *info = gmtime(&state.st_mtime);
+    
+    char buff[70];
+    strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
+    std::cout << "     " << buff << std::endl;
+    return buff;
+}
