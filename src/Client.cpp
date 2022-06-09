@@ -197,6 +197,11 @@ Client::process(void) {
 
     Log.debug("Client::process -> fd: " + to_string(_fd));
 
+    // if (_req.getLocation()->getAuthRef().isSet() && !_req.isAuthorized()) {
+    //     shouldBeClosed(true);
+    // }
+
+
     if (_req.getStatus() >= HTTP::BAD_REQUEST) {
         _res.setErrorResponse(_req.getStatus());
     } else if (_req.getStatus() == HTTP::PROCESSING) {

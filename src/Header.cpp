@@ -2,8 +2,11 @@
 #include "Request.hpp"
 #include "Server.hpp"
 #include "Base64.hpp"
+#include <sys/stat.h>
 
 namespace HTTP {
+
+std::map<std::string, std::string> g_etags;
 
 bool
 Header::parse(const std::string &line) {
@@ -224,20 +227,105 @@ Header::Host(Request &req) {
 
 StatusCode
 Header::IfMatch(Request &req) {
-    (void)req;
+
+    // remove
+    if (true) return CONTINUE;
+
+    std::vector<std::string> tags = split(value, ", \"");
+
+    if (tags[0] == "*") {
+        if (tags.size() == 1) {
+            Log.debug("IfMatch:: Any allowed ");
+            return CONTINUE;
+        } else {
+            Log.debug("IfMatch:: Invalid format: " + value);
+            // Maybe not bad request
+            return BAD_REQUEST;
+        }
+    } 
+
+    std::map<std::string, std::string>::const_iterator itStored;
+    itStored = g_etags.find(req.getResolvedPath());
+    if (itStored == g_etags.end()) {
+        Log.debug("IfMatch:: No etag value found for " + req.getResolvedPath());
+        return PRECONDITION_FAILED;
+    }
+
+    std::vector<std::string>::iterator itMatched;
+    itMatched = std::find(tags.begin(), tags.end(), itStored->second);
+    if (itMatched == tags.end()) {
+        Log.debug("IfMatch:: None of etag values matched " + *itMatched);
+        return PRECONDITION_FAILED;
+    }
     return CONTINUE;
 }
 
 StatusCode
 Header::IfModifiedSince(Request &req) {
     (void)req;
+
+    if (true) return CONTINUE;
+
+    struct tm tm;
+    if (!strptime(value.c_str(), "%a, %-e %b %Y %H:%M:%S GMT", &tm)) {
+        Log.debug("IfModifiedSince:: Cannot read datetime " + value);
+        return BAD_REQUEST;
+    }
+
+    // if pathResolved()
+    struct stat state;
+    if (req.getResolvedPath() != "") {
+
+        if (stat(req.getResolvedPath().c_str(), &state) < 0) {
+            Log.debug("IfModifiedSince:: ");
+            return CONTINUE;
+        }
+
+        // if equal
+        return NOT_MODIFIED;
+    }
     return CONTINUE;
 }
 
 StatusCode
 Header::IfNoneMatch(Request &req) {
     (void)req;
-    return CONTINUE;
+
+    // remove
+    if (true) return CONTINUE;
+
+    std::vector<std::string> tags = split(value, ", \"");
+
+    if (tags[0] == "*") {
+        // Another handler
+        if (tags.size() == 1) {
+            Log.debug("IfNoneMatch:: Any allowed ");
+            return CONTINUE;
+        } else {
+            Log.debug("IfNoneMatch:: Invalid format: " + value);
+            // Maybe not bad request
+            return BAD_REQUEST;
+        }
+    } 
+
+    std::map<std::string, std::string>::const_iterator itStored;
+    itStored = g_etags.find(req.getResolvedPath());
+    if (itStored == g_etags.end()) {
+        Log.debug("IfNoneMatch:: [OK] No etag value found for " + req.getResolvedPath());
+        return CONTINUE;
+    }
+
+    std::vector<std::string>::iterator itMatched;
+    itMatched = std::find(tags.begin(), tags.end(), itStored->second);
+    if (itMatched == tags.end()) {
+        Log.debug("IfNoneMatch:: None of etag values matched " + *itMatched);
+        return CONTINUE;
+    }
+
+    if (req.getMethod() == "GET" || req.getMethod() == "HEAD") {
+        return NOT_MODIFIED;
+    }
+    return PRECONDITION_FAILED;
 }
 
 StatusCode

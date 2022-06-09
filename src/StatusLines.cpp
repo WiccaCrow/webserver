@@ -2,7 +2,7 @@
 
 namespace HTTP {
 
-StatusLines::StatusLines() : _empty("") {
+StatusLines::StatusLines() {
     // 1xx informational response
     _statusLines[CONTINUE]            = "HTTP/1.1 100 Continue\r\n";
     _statusLines[SWITCHING_PROTOCOLS] = "HTTP/1.1 101 Switching Protocols\r\n";
@@ -87,7 +87,7 @@ StatusLines::StatusLines() : _empty("") {
 StatusLines::~StatusLines() {}
 
 const std::string &StatusLines::operator[](StatusCode code) const {
-    c_iter it = _statusLines.find(code);
+    std::map<int, std::string>::const_iterator it = _statusLines.find(code);
     if (it == _statusLines.end()) {
         return _empty;
     }

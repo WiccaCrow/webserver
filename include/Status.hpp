@@ -84,10 +84,7 @@ enum StatusCode {
 class StatusLines {
     
     private:
-        typedef std::map<HTTP::StatusCode, std::string>::const_iterator c_iter;
-        typedef std::map<HTTP::StatusCode, std::string>::const_iterator iter;
-
-        std::map<HTTP::StatusCode, std::string> _statusLines;
+        std::map<int, std::string> _statusLines;
         const std::string _empty;
     
     public:

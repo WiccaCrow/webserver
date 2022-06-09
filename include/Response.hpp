@@ -18,6 +18,7 @@
 #include "CRC.hpp"
 
 namespace HTTP {
+
 // # define SIZE_FOR_CHUNKED 4096
 
 class Client;
@@ -46,7 +47,7 @@ public:
 
     //  for errors
     static const std::map<std::string, std::string>       MIMEs;
-    static const std::map<HTTP::StatusCode, const char *> errorResponses;
+    // static const std::map<HTTP::StatusCode, std::string> errorResponses;
 
     int setErrorResponse(HTTP::StatusCode status);
 
@@ -78,7 +79,7 @@ public:
     void               setLeftToSend(size_t n);
     void               setRequest(Request *req);
     Request           *getRequest(void) const;
-    void               setStatus(HTTP::StatusCode &status);
+    void               setStatus(HTTP::StatusCode status);
 
     void            setClient(Client *client);
     Client *        getClient(void);

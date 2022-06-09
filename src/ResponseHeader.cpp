@@ -14,7 +14,7 @@ getDateTimeGMT() {
     
     char buff[70];
     strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
-    
+    stime
     return buff;
 }
 
@@ -246,6 +246,7 @@ ResponseHeader::Warning(Response &res) {
 void
 ResponseHeader::WWWAuthenticate(Response &res) {
     (void)res;
+    value = "Basic realm=\"" + res.getRequest()->getLocation()->getAuthRef().getRealmRef() + "\"";
 }
 
 // Non-standard

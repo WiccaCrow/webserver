@@ -1,26 +1,31 @@
 #include "Response.hpp"
+#include "ErrorResponses.hpp"
+
+namespace HTTP {
 
 int
 HTTP::Response::setErrorResponse(HTTP::StatusCode status) {
-    std::map<HTTP::StatusCode, const char *>::const_iterator iter = errorResponses.find(status);
+    const std::string &response = errorResponses[status];
 
     // if serverblock has error-pages, but response doesn't have a reference to serverblock
-    if (iter == errorResponses.end()) {
-        Log.error(to_string(static_cast<int>(status)));
-        Log.error("Unknown error response. Please let me know or add to the ResponseErrCode.cpp file. Wicca");
+    // std::map<int, std::string>::iterator it = getRequest()->getServerBlock()->getErrPathsRef();
+    if (response == "") {
+        Log.error("Unknown response error code: " + to_string(static_cast<int>(status)));
         // Should be removed after development
-        exit(66);
+        // exit(66);
+        setStatus(INTERNAL_SERVER_ERROR);
+        _body = errorResponses[66];
+        _res = makeHeaders() + _body;
+        return 1;
     }
     setStatus(status);
-    _body = iter->second;
+    _body = response;
     _res = makeHeaders() + _body;
     return 1;
 }
 
-static std::map<HTTP::StatusCode, const char *>
-initDefaultErrorResponses() {
-    std::map<HTTP::StatusCode, const char *> responses;
-    responses.insert(std::make_pair(HTTP::BAD_REQUEST,
+ErrorResponses::ErrorResponses() {
+    _errorResponses.insert(std::make_pair(HTTP::BAD_REQUEST,
         // "HTTP/1.1 400 Bad Request\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -42,7 +47,7 @@ initDefaultErrorResponses() {
         "<title>Error 400 (Bad Request)</title>\n"
         "<p><b>400.</b> That's an error.\n"
         "<p><err_text>Invalid or illegal request.</err_text>"));
-    responses.insert(std::make_pair(HTTP::FORBIDDEN,
+    _errorResponses.insert(std::make_pair(HTTP::FORBIDDEN,
         // "HTTP/1.1 403 Forbidden\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -64,7 +69,7 @@ initDefaultErrorResponses() {
         "<title>Error 403 (Forbidden)</title>\n"
         "<p><b>403.</b> Forbidden.\n"
         "<p><err_text>You may not have sufficient rights to perform the action..</err_text>"));
-    responses.insert(std::make_pair(HTTP::NOT_FOUND,
+    _errorResponses.insert(std::make_pair(HTTP::NOT_FOUND,
         // "HTTP/1.1 404 Not Found\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -86,7 +91,7 @@ initDefaultErrorResponses() {
         "<title>Error 404 (Not Found)</title>\n"
         "<p><b>404.</b> Page not found.\n"
         "<p><err_text>Not found anything matching the Request-URI.</err_text>"));
-    responses.insert(std::make_pair(HTTP::METHOD_NOT_ALLOWED,
+    _errorResponses.insert(std::make_pair(HTTP::METHOD_NOT_ALLOWED,
         // "HTTP/1.1 405 Method Not Allowed\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -109,7 +114,7 @@ initDefaultErrorResponses() {
         "<p><b>405.</b> The method not supported by the target resource."
         "<p><err_text> The method received in the request-line is known by the "
         "<p>origin server but not supported by the target resource.</err_text>"));
-    responses.insert(std::make_pair(HTTP::REQUEST_TIMEOUT,
+    _errorResponses.insert(std::make_pair(HTTP::REQUEST_TIMEOUT,
         // "HTTP/1.1 408 Timeout\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -133,7 +138,7 @@ initDefaultErrorResponses() {
         "<p><b>408.</b> Request Timeout.\n"
         "<p><err_text>The server did not receive a complete request message within "
         "the time that it was prepared to wait.</err_text>"));
-    responses.insert(std::make_pair(HTTP::LENGTH_REQUIRED,
+    _errorResponses.insert(std::make_pair(HTTP::LENGTH_REQUIRED,
         // "HTTP/1.1 411 Length Required\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -156,7 +161,7 @@ initDefaultErrorResponses() {
         "<p><b>411.</b> Length Required.\n"
         "<p><err_text>For the specified resource, the client must "
         "specify the Content-Length in the request header.</err_text>"));
-    responses.insert(std::make_pair(HTTP::PAYLOAD_TOO_LARGE,
+    _errorResponses.insert(std::make_pair(HTTP::PAYLOAD_TOO_LARGE,
         // "HTTP/1.1 413 Payload Too Large\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -179,7 +184,7 @@ initDefaultErrorResponses() {
         "<title>Error 413 (Payload Too Large)</title>\n"
         "<p><b>413.</b> Payload Too Large.\n"
         "<p><err_text>The request body is too large.</err_text>"));
-    responses.insert(std::make_pair(HTTP::URI_TOO_LONG,
+    _errorResponses.insert(std::make_pair(HTTP::URI_TOO_LONG,
         // "HTTP/1.1 414 URI Too Long\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -203,7 +208,7 @@ initDefaultErrorResponses() {
         "<p><b>414.</b> URI Too Long.\n"
         "<p><err_text>The URI in the request is too long "
         "for this server.</err_text>"));
-    responses.insert(std::make_pair(HTTP::UNSUPPORTED_MEDIA_TYPE,
+    _errorResponses.insert(std::make_pair(HTTP::UNSUPPORTED_MEDIA_TYPE,
         // "HTTP/1.1 415 Unsupported Media Type\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -226,7 +231,7 @@ initDefaultErrorResponses() {
         "<p><b>415.</b> Unsupported Media Type.\n"
         "<p><err_text>Content format not supported by the server."
         "</err_text>"));
-    responses.insert(std::make_pair(HTTP::INTERNAL_SERVER_ERROR,
+    _errorResponses.insert(std::make_pair(HTTP::INTERNAL_SERVER_ERROR,
         // "HTTP/1.1 500 Internal Server Error\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -249,7 +254,7 @@ initDefaultErrorResponses() {
         "<p><b>500.</b> Internal Server Error.\n"
         "<p><err_text>An unexpected error prevented the "
         "request from being completed.</err_text>"));
-    responses.insert(std::make_pair(HTTP::NOT_IMPLEMENTED,
+    _errorResponses.insert(std::make_pair(HTTP::NOT_IMPLEMENTED,
         // "HTTP/1.1 501 Not Implemented\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -271,7 +276,7 @@ initDefaultErrorResponses() {
         "<title>Error 501 (Not Implemented)</title>\n"
         "<p><b>501.</b> Not Implemented."
         "<p><err_text> Unknown method in request.</err_text>"));
-    responses.insert(std::make_pair(HTTP::BAD_GATEWAY,
+    _errorResponses.insert(std::make_pair(HTTP::BAD_GATEWAY,
         // "HTTP/1.1 502 Bad Gateway\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -293,7 +298,7 @@ initDefaultErrorResponses() {
         "<title>Error 502 (Bad Gateway)</title>\n"
         "<p><b>502.</b> Bad Gateway."
         "<p><err_text>It happens...</err_text>"));
-    responses.insert(std::make_pair(HTTP::GATEWAY_TIMEOUT,
+    _errorResponses.insert(std::make_pair(HTTP::GATEWAY_TIMEOUT,
         // "HTTP/1.1 504 Gateway Timeout\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -317,7 +322,7 @@ initDefaultErrorResponses() {
         "<p><err_text>The server did not wait for a "
         "response from the upstream server to complete "
         "the current request.</err_text>"));
-    responses.insert(std::make_pair(HTTP::HTTP_VERSION_NOT_SUPPORTED,
+    _errorResponses.insert(std::make_pair(HTTP::HTTP_VERSION_NOT_SUPPORTED,
         // "HTTP/1.1 505 HTTP Version Not Supported\r\n"
         // "Content-Type: text/html; charset=UTF-8\r\n"
         // "Referrer-Policy: no-referrer\r\n"
@@ -339,9 +344,44 @@ initDefaultErrorResponses() {
         "<title>Error 505 (HTTP Version Not Supported)</title>\n"
         "<p><b>505.</b> HTTP Version Not Supported."
         "<p><err_text>HTTP version not supported.</err_text>"));
-    return (responses);
+    _errorResponses.insert(std::make_pair(66,
+        // "HTTP/1.1 505 HTTP Version Not Supported\r\n"
+        // "Content-Type: text/html; charset=UTF-8\r\n"
+        // "Referrer-Policy: no-referrer\r\n"
+        // "Content-length: 575\r\n"
+        // "\r\n"
+        "<!DOCTYPE html>\n"
+        "<html lang=en>\n"
+        "<meta charset=utf-8>\n"
+        "<style>\n"
+        "*{margin:0;padding:0}html{font:15px/22px arial,"
+        "sans-serif}html{background:#fff;color:#222;"
+        "padding:15px}body{margin:7% auto 0;max-width:"
+        "390px;min-height:180px;padding:30px 0 15px}p"
+        "{margin:11px 0 22px;overflow:hidden}err_text"
+        "{color:#777;text-decoration:none}"
+        "@media screen and (max-width:772px){body{background:none;"
+        "margin-top:0;max-width:none;padding-right:0}}\n"
+        "</style>\n"
+        "<title>Error ??? (Unknown response error code)</title>\n"
+        "<p><b>???.</b> Unknown response error code."
+        "<p><err_text>HTTP version not supported.</err_text>"));
 }
 
-const std::map<HTTP::StatusCode, const char *>
-HTTP::Response::errorResponses = initDefaultErrorResponses();
+ErrorResponses::~ErrorResponses() {}
 
+const std::string &ErrorResponses::operator[](StatusCode code) const {
+    return this->operator[](static_cast<int>(code));
+}
+
+const std::string &ErrorResponses::operator[](int code) const {
+    std::map<int, std::string>::const_iterator it = _errorResponses.find(code);
+    if (it == _errorResponses.end()) {
+        return _empty;
+    }
+    return it->second;
+}
+
+const ErrorResponses errorResponses;
+
+}

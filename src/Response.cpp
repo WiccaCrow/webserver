@@ -173,6 +173,7 @@ int
 HTTP::Response::contentForGetHead(void) {
     const std::string &resourcePath = _req->getResolvedPath();
     std::cout << "     resourcePath " << resourcePath << std::endl;
+
     if (!resourceExists(resourcePath)) {
         return setErrorResponse(NOT_FOUND);
     }
@@ -434,6 +435,6 @@ HTTP::Response::getLeftToSendSize() {
 }
 
 void
-HTTP::Response::setStatus(HTTP::StatusCode &status) {
+HTTP::Response::setStatus(HTTP::StatusCode status) {
     getRequest()->setStatus(status);
 }

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <map>
+#include <string>
+
 #ifndef SERVER_SOFTWARE
     # define SERVER_SOFTWARE "Webserv/1.0.0"
 #endif
@@ -11,3 +14,5 @@
 class Server;
 
 extern Server *g_server;
+
+extern std::map<std::string, std::string> g_etags;
