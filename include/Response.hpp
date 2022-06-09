@@ -67,6 +67,8 @@ public:
     void        writeFile(const std::string &resourcePath);
 
     std::string makeHeaders(void);
+    void        addHeader(HeaderCode code, std::string value);
+
 
     int passToCGI(CGI &cgi);
 
