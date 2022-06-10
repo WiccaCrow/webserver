@@ -29,6 +29,7 @@ class Response {
     Client     *_client;
     std::string _body;
     std::string _additionalHeaders;
+    size_t      _bodyLength;
 
 public:
     typedef void (Response::*Handler)(void);
@@ -45,7 +46,7 @@ public:
     StatusCode handle(Request &req);
 
     //  for errors
-    static const std::map<std::string, std::string>       MIMEs;
+    static const std::map<std::string, std::string> MIMEs;
 
     int setErrorResponse(HTTP::StatusCode status);
 
@@ -58,7 +59,7 @@ public:
     void POST(void);
     void PUT(void);
 
-    // void        generateHeaders(Request &req);
+    void        unauthorized(void);
     int         contentForGetHead(void);
     int         redirectForDirectory(const std::string &resourcePath);
     bool        isSetIndexFile(std::string &resourcePath);
@@ -80,6 +81,7 @@ public:
     size_t             getResLength(void);
     const char        *getResponse(void);
     const std::string &getBody(void) const;
+    void               setBody(const std::string &);
     void               setRequest(Request *req);
     Request           *getRequest(void) const;
     StatusCode         getStatus();

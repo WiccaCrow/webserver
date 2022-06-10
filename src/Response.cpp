@@ -4,34 +4,33 @@
 
 std::map<std::string, HTTP::CGI>::iterator
 isCGI(const std::string &filepath, std::map<std::string, HTTP::CGI> &cgis) {
-    std::map<std::string, HTTP::CGI>::iterator it  = cgis.begin();
-    std::map<std::string, HTTP::CGI>::iterator end = cgis.end();
-    for (; it != end; it++) {
+    std::map<std::string, HTTP::CGI>::iterator it = cgis.begin();
+    for (; it != cgis.end(); it++) {
         if (endsWith(filepath, it->first)) {
             it->second.setScriptPath(filepath);
             return it;
         }
     }
-    return end;
+    return cgis.end();
 }
 
-HTTP::Response::Response() : _req(NULL), _client(NULL) {}
+HTTP::Response::Response() : _req(NULL), _client(NULL), _bodyLength(0) {}
 
 HTTP::Response::~Response() { }
 
 void
 HTTP::Response::initMethodsHeaders(void) {
-    methods.insert(std::make_pair("DELETE", &Response::DELETE));
-    methods.insert(std::make_pair("HEAD", &Response::HEAD));
     methods.insert(std::make_pair("GET", &Response::GET));
-    methods.insert(std::make_pair("OPTIONS", &Response::OPTIONS));
-    methods.insert(std::make_pair("POST", &Response::POST));
     methods.insert(std::make_pair("PUT", &Response::PUT));
+    methods.insert(std::make_pair("POST", &Response::POST));
+    methods.insert(std::make_pair("HEAD", &Response::HEAD));
+    methods.insert(std::make_pair("DELETE", &Response::DELETE));
+    methods.insert(std::make_pair("OPTIONS", &Response::OPTIONS));
 
-    headers.push_back(ResponseHeader(CONNECTION));
-    headers.push_back(ResponseHeader(KEEP_ALIVE));
     headers.push_back(ResponseHeader(DATE));
     headers.push_back(ResponseHeader(SERVER));
+    headers.push_back(ResponseHeader(KEEP_ALIVE));
+    headers.push_back(ResponseHeader(CONNECTION));
     headers.push_back(ResponseHeader(CONTENT_TYPE));
     headers.push_back(ResponseHeader(CONTENT_LENGTH));
 }
@@ -41,6 +40,7 @@ HTTP::Response::clear() {
 
     _res = "";
     _body = "";
+    _bodyLength = 0;
     
     std::list<ResponseHeader>::iterator posIt = headers.begin();
     std::advance(posIt, 6);
@@ -54,14 +54,26 @@ HTTP::Response::clear() {
 
 HTTP::StatusCode
 HTTP::Response::handle(Request &req) {
-    std::map<std::string, Response::Handler>::iterator it = methods.find(req.getMethod());
+    std::map<std::string, Response::Handler>::iterator it;
 
-    if (it == methods.end()) {
-        return METHOD_NOT_ALLOWED;
+    if (_req->authNeeded() && !_req->isAuthorized()) {
+        this->unauthorized();
+    } else {
+        it = methods.find(_req->getMethod());
+        (this->*(it->second))();
     }
 
-    (this->*(it->second))();
+    _res = makeHeaders() + getBody();
     return req.getStatus();
+}
+
+void
+HTTP::Response::unauthorized(void) {
+    Log.debug("Response:: Unauthorized");
+    setStatus(UNAUTHORIZED);
+    addHeader(DATE, getDateTimeGMT());
+    addHeader(WWW_AUTHENTICATE);
+    _client->shouldBeClosed(true);
 }
 
 void
@@ -83,28 +95,25 @@ HTTP::Response::DELETE(void) {
         }
     }
     setStatus(OK);
-    _body = "<html>\n"
+    setBody("<html>\n"
             "  <body>\n"
             "    <h1>File deleted.</h1>\n"
             "  </body>\n"
-            "</html>";
-    _res = makeHeaders() + _body;
+            "</html>");
 }
 
 void
 HTTP::Response::HEAD(void) {
-    if (contentForGetHead()) {
-        _res = makeHeaders();
-    } else {
+    if (!contentForGetHead()) {
         setErrorResponse(getStatus());
+    } else {
+        _body = "";
     }
 }
 
 void
 HTTP::Response::GET(void) {
-    if (contentForGetHead()) {
-        _res = makeHeaders() + _body;
-    } else {
+    if (!contentForGetHead()) {
         setErrorResponse(getStatus());
     }
 }
@@ -112,17 +121,16 @@ HTTP::Response::GET(void) {
 void
 HTTP::Response::OPTIONS(void) {
     addHeader(ALLOW);
-    _res = makeHeaders();
 }
 
 void
 HTTP::Response::POST(void) {
-    std::string isCGI = ""; // from config
-    if (!isCGI.empty()) {
-        // doCGI(*_req);
+    std::map<std::string, CGI>::iterator it;
+    it = isCGI(_req->getResolvedPath(), _req->getLocation()->getCGIsRef());
+    if (it != _req->getLocation()->getCGIsRef().end()) {
+        passToCGI(it->second);
     } else {
         setStatus(NO_CONTENT);
-        _res = makeHeaders();
     }
 }
 
@@ -135,24 +143,23 @@ HTTP::Response::PUT(void) {
     } else if (isFile(resourcePath)) {
         if (isWritableFile(resourcePath)) {
             writeFile(resourcePath);
-            _body = "<html>\n"
+            setBody("<html>\n"
                     "  <body>\n"
                     "    <h1>File is overwritten.</h1>\n"
                     "  </body>\n"
-                    "</html>";
+                    "</html>");
         } else {
             setErrorResponse(FORBIDDEN);
             return ;
         }
     } else {
         writeFile(resourcePath);
-        _body = "<html>\n"
+        setBody("<html>\n"
                 "  <body>\n"
                 "    <h1>File created.</h1>\n"
                 "  </body>\n"
-                "</html>";
+                "</html>");
     }
-    _res = makeHeaders() + _body;
 }
 
 int
@@ -162,16 +169,6 @@ HTTP::Response::contentForGetHead(void) {
     if (!resourceExists(resourcePath)) {
         setStatus(NOT_FOUND);
         return 0;
-    }
-    
-    if (_req->getLocation()->getAuthRef().isSet() && !_req->isAuthorized()) {
-        Log.debug("Authenticate:: Unauthorized");
-        setStatus(UNAUTHORIZED);
-        addHeader(DATE, getDateTimeGMT());
-        addHeader(WWW_AUTHENTICATE);
-        addHeader(CONNECTION, "close");
-        _client->shouldBeClosed(true);
-        return 1;
     }
 
     if (isDirectory(resourcePath)) {
@@ -185,7 +182,7 @@ HTTP::Response::contentForGetHead(void) {
     } else if (isFile(resourcePath)) {
         return makeGetHeadResponseForFile(resourcePath);
     } else {
-        // not readable files and other types and file not exist
+        // not readable files and other types
         setStatus(FORBIDDEN);
         return 0;
     }
@@ -197,11 +194,11 @@ HTTP::Response::redirectForDirectory(const std::string &resourcePath) {
         setStatus(MOVED_PERMANENTLY);
         addHeader(LOCATION, _req->getRawUri() + "/");
         addHeader(CONTENT_TYPE, "text/html");
-        _body = "<html>\n"
+        setBody("<html>\n"
                 "  <body>\n"
-                "    <h1>Redirect.</h1>\n"
+                "    <h1>Redirect 301</h1>\n"
                 "  </body>\n"
-                "</html>\r\n";
+                "</html>\r\n");
         return 1;
     }
     return 0;
@@ -235,11 +232,11 @@ HTTP::Response::makeGetHeadResponseForFile(const std::string &resourcePath) {
 
 int
 HTTP::Response::directoryListing(const std::string &resourcePath) {
-    // dir listing. autoindex on
+    // autoindex on
     if (_req->getLocation()->getAutoindexRef() == true && isDirectory(resourcePath)) {
         addHeader(CONTENT_TYPE, "text/html; charset=utf-8");
         return listing(resourcePath);
-    // 403. autoindex off
+    // autoindex off (403)
     } else {
         setStatus(FORBIDDEN);
         return 0;
@@ -267,7 +264,7 @@ HTTP::Response::fileToResponse(std::string resourcePath) {
     //     return (TransferEncodingChunked(buffer.str(), bufSize));
     // }
 
-    _body = buffer.str();
+    setBody(buffer.str());
     return 1;
 }
 
@@ -278,39 +275,31 @@ HTTP::Response::listing(const std::string &resourcePath) {
             "<html>\n"
             "   <head>\n"
             "       <meta charset=\"UTF-8\">\n"
-            "       <title> ";
-    _body += _req->getPath() + " </title>\n"
-                               "   </head>\n"
-                               "<body>\n"
-                               "   <h1> Index on ";
-    _body += _req->getPath() + " </h1>\n"
-                               "   <p>\n"
-                               "   <hr>\n";
-    DIR *r_opndir;
-    r_opndir = opendir(resourcePath.c_str());
+            "       <title> " + _req->getPath() + " </title>\n"
+            "   </head>\n"
+            "<body>\n"
+            "   <h1> Index on " + _req->getPath() + " </h1>\n"
+            "   <p>\n"
+            "   <hr>\n";
+    DIR *r_opndir = opendir(resourcePath.c_str());
     if (NULL == r_opndir) {
         setStatus(INTERNAL_SERVER_ERROR);
         return 0;
     } else {
         struct dirent *dirContent;
-        // dirContent = readdir(r_opndir);
         while ((dirContent = readdir(r_opndir))) {
             if (NULL == dirContent) {
                 setStatus(INTERNAL_SERVER_ERROR);
                 return 0;
             }
-
-            _body += "   <a href=\"" + _req->getPath();
-            if (_body[_body.length() - 1] != '/') {
-                _body += "/";
-            }
+            _body += "<a href=\"" + _req->getPath();
             _body += dirContent->d_name;
             _body += "\">\n<br>";
             _body += dirContent->d_name;
             _body += "</a>\n";
-            // dirContent = readdir(r_opndir);
         }
         _body += "</body></html>";
+        setBody(_body);
     }
     closedir(r_opndir);
     return 1;
@@ -402,7 +391,7 @@ HTTP::Response::passToCGI(CGI &cgi) {
         setStatus(HTTP::BAD_GATEWAY);
         return 0;
     }
-    _body = cgi.getResult();
+    setBody(cgi.getResult());
     return 1;
 }
 
@@ -419,6 +408,12 @@ HTTP::Response::getResponse() {
 const std::string &
 HTTP::Response::getBody() const {
     return _body;
+}
+
+void
+HTTP::Response::setBody(const std::string &body) {
+    _body = body;
+    _bodyLength = _body.length();
 }
 
 void

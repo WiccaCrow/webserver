@@ -63,8 +63,8 @@ public:
     ServerBlock *getServerBlock() const;
     void         setServerBlock(ServerBlock *);
 
-    Location    *getLocation(void);
-    void         setLocation(Location *);
+    Location       *getLocation(void);
+    void            setLocation(Location *);
 
     const Client *getClient() const;
     void          setClient(Client *);
@@ -117,6 +117,8 @@ public:
     void          setBodySize(unsigned long size);
     void          setStatus(const HTTP::StatusCode &status);
 
+
+    bool authNeeded(void);
     bool isAuthorized(void) const;
     bool isHeaderExist(const HeaderCode code);
     bool isHeaderExist(const uint32_t code);

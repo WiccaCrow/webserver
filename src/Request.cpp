@@ -164,6 +164,11 @@ Request::getResolvedPath() const {
 }
 
 bool
+Request::authNeeded(void) {
+    return getLocation()->getAuthRef().isSet();
+}
+
+bool
 Request::isAuthorized(void) const {
     return _isAuthorized;
 }
@@ -190,13 +195,10 @@ Request::set(uint8_t flag) const {
 StatusCode
 Request::parseLine(std::string line) {
     if (!set(PARSED_SL)) {
-        // Log.debug("Request::ParseLine1: " + line);
         return !line.empty() ? parseSL(line) : CONTINUE;
     } else if (!set(PARSED_HEADERS)) {
-        // Log.debug("Request::ParseLine2: " + line);
         return !line.empty() ? parseHeader(line) : checkHeaders();
     } else if (!set(PARSED_BODY)) {
-        // Log.debug("Request::ParseLine3: " + line);
         return (parseBody(line));
     } else {
         return PROCESSING;
