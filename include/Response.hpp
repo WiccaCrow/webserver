@@ -60,11 +60,12 @@ public:
     void OPTIONS(void);
     void POST(void);
     void PUT(void);
+
     // void        generateHeaders(Request &req);
     int         contentForGetHead(void);
-    std::string getContentType(std::string resourcePath);
     int         fileToResponse(std::string resourcePath);
     int         listing(const std::string &resourcePath);
+    std::string getContentType(std::string resourcePath);
     void        writeFile(const std::string &resourcePath);
 
     std::string makeHeaders(void);
@@ -76,10 +77,7 @@ public:
     // to send response
     size_t             getResLength(void);
     const char        *getResponse(void);
-    const char        *getLeftToSend(void);
-    size_t             getLeftToSendSize(void);
     const std::string &getBody(void) const;
-    void               setLeftToSend(size_t n);
     void               setRequest(Request *req);
     Request           *getRequest(void) const;
     void               setStatus(HTTP::StatusCode status);

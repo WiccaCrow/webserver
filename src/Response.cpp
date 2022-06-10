@@ -2,6 +2,19 @@
 #include "CGI.hpp"
 #include "Client.hpp"
 
+std::map<std::string, HTTP::CGI>::iterator
+isCGI(const std::string &filepath, std::map<std::string, HTTP::CGI> &cgis) {
+    std::map<std::string, HTTP::CGI>::iterator it  = cgis.begin();
+    std::map<std::string, HTTP::CGI>::iterator end = cgis.end();
+    for (; it != end; it++) {
+        if (endsWith(filepath, it->first)) {
+            it->second.setScriptPath(filepath);
+            return it;
+        }
+    }
+    return end;
+}
+
 HTTP::Response::Response() : _req(NULL), _client(NULL) {}
 
 HTTP::Response::~Response() { }
@@ -34,52 +47,28 @@ HTTP::Response::initMethodsHeaders(void) {
     // headers.insert(std::make_pair("Access-Control-Allow-Headers", ""));
 }
 
-std::map<std::string, HTTP::CGI>::iterator
-isCGI(const std::string &filepath, std::map<std::string, HTTP::CGI> &cgis) {
-    std::map<std::string, HTTP::CGI>::iterator it  = cgis.begin();
-    std::map<std::string, HTTP::CGI>::iterator end = cgis.end();
+void
+HTTP::Response::clear() {
+
+    _res = "";
+    _body = "";
+
+    std::map<uint32_t, ResponseHeader>::iterator it = headers.begin();
+    std::map<uint32_t, ResponseHeader>::iterator end = headers.end();
     for (; it != end; it++) {
-        if (endsWith(filepath, it->first)) {
-            it->second.setScriptPath(filepath);
-            return it;
-        }
+        it->second.value = "";
     }
-    return end;
 }
 
-std::string
-HTTP::Response::makeHeaders() {
+HTTP::StatusCode
+HTTP::Response::handle(Request &req) {
+    std::map<std::string, Response::Handler>::iterator it = methods.find(req.getMethod());
 
-    std::string headersToReturn = statusLines[_req->getStatus()];
-
-    if ((_req->getStatus() >= BAD_REQUEST) ||
-        // (если не cgi и методы GET HEAD еще обдумать) ||
-        (_req->getMethod() == "PUT" || _req->getMethod() == "DELETE")) {
-        addHeader(CONTENT_TYPE, "text/html; charset=UTF-8");
+    if (it == methods.end()) {
+        return METHOD_NOT_ALLOWED;
     }
-
-    std::map<uint32_t, ResponseHeader>::iterator it    = headers.begin();
-    std::map<uint32_t, ResponseHeader>::iterator itEnd = headers.end();
-    for (; it != itEnd; ++it) {
-        it->second.handleHeader(*this);
-        if (!it->second.value.empty()) {
-            headersToReturn += it->second.key + ": " + it->second.value + "\r\n";
-        }
-    }
-
-    headersToReturn += _additionalHeaders;
-    headersToReturn += "\r\n";
-    return headersToReturn;
-}
-
-void
-HTTP::Response::addHeader(HeaderCode code, std::string value) {
-    headers.find(code)->second.value = value;
-}
-
-void
-HTTP::Response::addHeader(HeaderCode code) {
-    headers.find(code)->second.handleHeader(*this);
+    (this->*(it->second))();
+    return req.getStatus();
 }
 
 void
@@ -109,7 +98,6 @@ HTTP::Response::DELETE(void) {
             "  </body>\n"
             "</html>";
     _res = makeHeaders() + _body;
-
 }
 
 void
@@ -121,8 +109,10 @@ HTTP::Response::HEAD(void) {
 
 void
 HTTP::Response::GET(void) {
-    if (!contentForGetHead()) {
+    if (contentForGetHead()) {
         _res = makeHeaders() + _body;
+    } else {
+        std::cout << "GET 1" << std::endl << std::endl;
     }
 }
 
@@ -179,7 +169,7 @@ HTTP::Response::contentForGetHead(void) {
     // чтобы мне уже с этим приходило
     const std::string &resourcePath = _req->getResolvedPath();
 
-     if (!resourceExists(resourcePath)) {
+    if (!resourceExists(resourcePath)) {
         return setErrorResponse(NOT_FOUND);
     }
 
@@ -204,7 +194,6 @@ HTTP::Response::contentForGetHead(void) {
                     "    <h1>Redirect.</h1>\n"
                     "  </body>\n"
                     "</html>\r\n";
-            _res = makeHeaders() + _body;
             // body
             return 1;
         }
@@ -222,7 +211,6 @@ HTTP::Response::contentForGetHead(void) {
                 addHeader(CONTENT_TYPE, getContentType(path));
                 addHeader(ETAG, getEtagFile(path));
                 addHeader(LAST_MODIFIED, getLastModifiedTimeGMT(path));
-                _res += getContentType(path);
                 return fileToResponse(path);
             }
         }
@@ -251,95 +239,6 @@ HTTP::Response::contentForGetHead(void) {
     }
 }
 
-HTTP::StatusCode
-HTTP::Response::handle(Request &req) {
-    std::map<std::string, Response::Handler>::iterator it = methods.find(req.getMethod());
-
-    if (it == methods.end()) {
-        return METHOD_NOT_ALLOWED;
-    }
-    (this->*(it->second))();
-    return req.getStatus();
-}
-
-void
-HTTP::Response::clear() {
-
-    _res = "";
-    _body = "";
-
-    std::map<uint32_t, ResponseHeader>::iterator it = headers.begin();
-    std::map<uint32_t, ResponseHeader>::iterator end = headers.end();
-    for (; it != end; it++) {
-        it->second.value = "";
-    }
-}
-
-void
-HTTP::Response::setRequest(Request *req) {
-    _req = req;
-}
-
-HTTP::Request *
-HTTP::Response::getRequest(void) const {
-    return _req;
-}
-
-void
-HTTP::Response::setClient(HTTP::Client *client) {
-    _client = client;
-}
-
-HTTP::Client *
-HTTP::Response::getClient(void) {
-    return _client;
-}
-
-std::string
-HTTP::Response::getContentType(std::string resourcePath) {
-    std::string contType;
-    for (int i = resourcePath.length() - 1; i >= 0; --i) {
-        if (resourcePath[i] == '.') {
-            std::map<std::string, std::string>::const_iterator iter = MIMEs.find(resourcePath.substr(i + 1));
-            if (iter != MIMEs.end()) {
-                contType = iter->second;
-                if (iter->second == "text") {
-                    contType += "; charset=utf-8";
-                }
-            }
-            break;
-        }
-    }
-    return (contType);
-}
-
-int
-HTTP::Response::passToCGI(CGI &cgi) {
-    cgi.reset();
-    cgi.linkRequest(_req);
-    cgi.setEnv();
-    if (!cgi.exec()) {
-        _req->setStatus(HTTP::BAD_GATEWAY);
-        return setErrorResponse(_req->getStatus());
-    }
-    _body = cgi.getResult();
-    return 0;
-}
-
-// std::string HTTP::Response::TransferEncodingChunked(std::string buffer, size_t bufSize) {
-//     size_t i = 0;
-//     std::string sizeChunck = itoh(SIZE_FOR_CHUNKED) + "\r\n";
-//     while (bufSize > i + SIZE_FOR_CHUNKED) {
-//         _res += sizeChunck;
-//         _res += buffer.substr(i, (size_t)SIZE_FOR_CHUNKED) + "\r\n";
-//         i += SIZE_FOR_CHUNKED;
-//     }
-//     _res += itoh(bufSize - i) + "\r\n";
-//     _res += buffer.substr(i, bufSize - i) + "\r\n"
-//             "0\r\n\r\n";
-//     return ("");
-// }
-
 int
 HTTP::Response::fileToResponse(std::string resourcePath) {
     std::ifstream resourceFile;
@@ -360,7 +259,7 @@ HTTP::Response::fileToResponse(std::string resourcePath) {
     // }
 
     _body = buffer.str();
-    return 0;
+    return 1;
 }
 
 int
@@ -403,8 +302,137 @@ HTTP::Response::listing(const std::string &resourcePath) {
         _body += "</body></html>";
     }
     closedir(r_opndir);
-    return 0;
+    return 1;
 }
+
+std::string
+HTTP::Response::getContentType(std::string resourcePath) {
+    std::string contType;
+    for (int i = resourcePath.length() - 1; i >= 0; --i) {
+        if (resourcePath[i] == '.') {
+            std::map<std::string, std::string>::const_iterator iter = MIMEs.find(resourcePath.substr(i + 1));
+            if (iter != MIMEs.end()) {
+                contType = iter->second;
+                if (iter->second == "text") {
+                    contType += "; charset=utf-8";
+                }
+            }
+            break;
+        }
+    }
+    return (contType);
+}
+
+void
+HTTP::Response::writeFile(const std::string &resourcePath) {
+    std::ofstream outputToNewFile(resourcePath.c_str(),
+        std::ios_base::out | std::ios_base::trunc);
+    outputToNewFile << _req->getBody();
+}
+
+std::string
+HTTP::Response::makeHeaders() {
+
+    std::string headersToReturn = statusLines[_req->getStatus()];
+
+    if ((_req->getStatus() >= BAD_REQUEST) ||
+        // (если не cgi и методы GET HEAD еще обдумать) ||
+        (_req->getMethod() == "PUT" || _req->getMethod() == "DELETE")) {
+        addHeader(CONTENT_TYPE, "text/html; charset=UTF-8");
+    }
+
+    std::map<uint32_t, ResponseHeader>::iterator it    = headers.begin();
+    std::map<uint32_t, ResponseHeader>::iterator itEnd = headers.end();
+    for (; it != itEnd; ++it) {
+        it->second.handleHeader(*this);
+        if (!it->second.value.empty()) {
+            headersToReturn += it->second.key + ": " + it->second.value + "\r\n";
+        }
+    }
+
+    headersToReturn += _additionalHeaders;
+    headersToReturn += "\r\n";
+    return headersToReturn;
+}
+
+void
+HTTP::Response::addHeader(HeaderCode code, std::string value) {
+    headers.find(code)->second.value = value;
+}
+
+void
+HTTP::Response::addHeader(HeaderCode code) {
+    headers.find(code)->second.handleHeader(*this);
+}
+
+int
+HTTP::Response::passToCGI(CGI &cgi) {
+    cgi.reset();
+    cgi.linkRequest(_req);
+    cgi.setEnv();
+    if (!cgi.exec()) {
+        _req->setStatus(HTTP::BAD_GATEWAY);
+        return setErrorResponse(_req->getStatus());
+    }
+    _body = cgi.getResult();
+    return 1;
+}
+
+size_t
+HTTP::Response::getResLength() {
+    return (_res.length());
+}
+
+const char *
+HTTP::Response::getResponse() {
+    return (_res.c_str());
+}
+
+const std::string &
+HTTP::Response::getBody() const {
+    return _body;
+}
+
+void
+HTTP::Response::setRequest(Request *req) {
+    _req = req;
+}
+
+HTTP::Request *
+HTTP::Response::getRequest(void) const {
+    return _req;
+}
+
+
+void
+HTTP::Response::setStatus(HTTP::StatusCode status) {
+    getRequest()->setStatus(status);
+}
+
+void
+HTTP::Response::setClient(HTTP::Client *client) {
+    _client = client;
+}
+
+HTTP::Client *
+HTTP::Response::getClient(void) {
+    return _client;
+}
+
+// std::string HTTP::Response::TransferEncodingChunked(std::string buffer, size_t bufSize) {
+//     size_t i = 0;
+//     std::string sizeChunck = itoh(SIZE_FOR_CHUNKED) + "\r\n";
+//     while (bufSize > i + SIZE_FOR_CHUNKED) {
+//         _res += sizeChunck;
+//         _res += buffer.substr(i, (size_t)SIZE_FOR_CHUNKED) + "\r\n";
+//         i += SIZE_FOR_CHUNKED;
+//     }
+//     _res += itoh(bufSize - i) + "\r\n";
+//     _res += buffer.substr(i, bufSize - i) + "\r\n"
+//             "0\r\n\r\n";
+//     return ("");
+// }
+
 
 // Request
 
@@ -414,45 +442,3 @@ HTTP::Response::listing(const std::string &resourcePath) {
 
 // contentForHead
 //     makeHeaders
-
-void
-HTTP::Response::writeFile(const std::string &resourcePath) {
-    std::ofstream outputToNewFile(resourcePath.c_str(),
-        std::ios_base::out | std::ios_base::trunc);
-    outputToNewFile << _req->getBody();
-}
-
-const std::string &
-HTTP::Response::getBody() const {
-    return _body;
-}
-
-const char *
-HTTP::Response::getResponse() {
-    return (_res.c_str());
-}
-
-size_t
-HTTP::Response::getResLength() {
-    return (_res.length());
-}
-
-const char *
-HTTP::Response::getLeftToSend() {
-    return (_resLeftToSend.c_str());
-}
-
-void
-HTTP::Response::setLeftToSend(size_t n) {
-    _resLeftToSend = _res.substr(n);
-}
-
-size_t
-HTTP::Response::getLeftToSendSize() {
-    return (_resLeftToSend.size());
-}
-
-void
-HTTP::Response::setStatus(HTTP::StatusCode status) {
-    getRequest()->setStatus(status);
-}

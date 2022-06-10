@@ -298,7 +298,7 @@ static std::string
 getTimeStringGMT(time_t *time) {
     struct tm *info = gmtime(time);
 
-    char buff[29];
+    char buff[50];
     strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
     return buff;
 }

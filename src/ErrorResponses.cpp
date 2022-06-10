@@ -19,7 +19,7 @@ HTTP::Response::setErrorResponse(HTTP::StatusCode status) {
         _body = response;
     }
     _res = makeHeaders() + _body;
-    return 1;
+    return 0;
 }
 
 ErrorResponses::ErrorResponses() {
