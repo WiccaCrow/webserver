@@ -158,10 +158,7 @@ HTTP::Response::PUT(void) {
 
 int
 HTTP::Response::contentForGetHead(void) {
-    // resourcePath (часть root) будет браться из конфига
-    // root
-    // если в конфиге без /, то добавить /,
-    // чтобы мне уже с этим приходило
+
     const std::string &resourcePath = _req->getResolvedPath();
 
     if (!resourceExists(resourcePath)) {
@@ -188,7 +185,7 @@ HTTP::Response::contentForGetHead(void) {
             addHeader(CONTENT_TYPE, "text/html");
             _body = "<html>\n"
                     "  <body>\n"
-                    "    <h1>Redirect.</h1>\n"
+                    "    <h1>301 Redirect</h1>\n"
                     "  </body>\n"
                     "</html>\r\n";
             return 1;
@@ -346,9 +343,9 @@ HTTP::Response::makeHeaders() {
     std::list<ResponseHeader>::iterator it    = headers.begin();
     std::list<ResponseHeader>::iterator itEnd = headers.end();
     for (; it != itEnd; ++it) {
-        it->handleHeader(*this);
+        it->handle(*this);
         if (!it->value.empty()) {
-            headersToReturn += it->key + ": " + it->value + "\r\n";
+            headersToReturn += headerNames[it->hash] + ": " + it->value + "\r\n";
         }
     }
 

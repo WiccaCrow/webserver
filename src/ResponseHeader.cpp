@@ -1,42 +1,28 @@
 #include "ResponseHeader.hpp"
-#include "Request.hpp"
-#include "Response.hpp"
 #include "Client.hpp"
-#include "Utils.hpp"
 
 namespace HTTP {
 
 void
-ResponseHeader::handleHeader(Response &res) {
-    std::map<uint32_t, ResponseHeader::Handler>::const_iterator it = validResponseHeaders.find(hash);
+ResponseHeader::handle(Response &res) {
+    std::map<uint32_t, ResponseHeader::Handler>::const_iterator it;
+    it = validResponseHeaders.find(hash);
 
     if (it == validResponseHeaders.end()) {
+        Log.debug("RequestHeader:: Unknown header: " + headerNames[hash]);
+        Log.debug("RequestHeader:: Value: " + value);
+        Log.debug("RequestHeader:: Hash: " + to_string(hash));
         return ;
     }
     method = it->second;
     return (this->*method)(res);
 }
 
+ResponseHeader::ResponseHeader() : Header() { }
 
-bool operator==(const ResponseHeader &h1, const ResponseHeader &h2) {
-    return h1.hash == h2.hash;
-}
+ResponseHeader::ResponseHeader(uint32_t hash) : Header(hash) { }
 
-bool operator!=(const ResponseHeader &h1, const ResponseHeader &h2) {
-    return h1.hash != h2.hash;
-}
-
-ResponseHeader::ResponseHeader() : hash(0) { }
-
-ResponseHeader::ResponseHeader(uint32_t hash) : key(headerNames[hash]), hash(hash) { }
-
-ResponseHeader::ResponseHeader(uint32_t hash, const std::string &value) : key(headerNames[hash]), value(value), hash(hash) { }
-
-void
-ResponseHeader::setKey(std::string &key) {
-    this->key = key;
-}
-
+ResponseHeader::ResponseHeader(uint32_t hash, const std::string &value) :  Header(hash, value) { }
 
 void
 ResponseHeader::AcceptPatch(Response &res) {
@@ -91,7 +77,7 @@ ResponseHeader::Connection(Response &res) {
         // res.getClient()->shouldBeClosed(false);
         value = "keep-alive";
         ResponseHeader *ptr = res.getHeader(KEEP_ALIVE);
-        ptr->handleHeader(res);
+        ptr->handle(res);
     }
 }
 

@@ -36,7 +36,7 @@ Request::operator=(const Request &other) {
         _body                  = other._body;
         _parseFlags            = other._parseFlags;
         _isAuthorized          = other._isAuthorized;
-        _cookie               = other._cookie;
+        _cookie                = other._cookie;
     }
     return *this;
 }
@@ -84,7 +84,7 @@ Request::getProtocol() const {
     return _protocol;
 }
 
-const std::map<uint32_t, Header> &
+const std::map<uint32_t, RequestHeader> &
 Request::getHeaders() const {
     return _headers;
 }
@@ -175,7 +175,7 @@ Request::setAuthFlag(bool flag) {
 
 const std::string 
 Request::getHeaderValue(uint32_t key) const {
-    std::map<uint32_t, Header>::const_iterator it = _headers.find(key);
+    std::map<uint32_t, RequestHeader>::const_iterator it = _headers.find(key);
     if (it == _headers.end()) {
         return "";
     }
@@ -300,7 +300,7 @@ Request::resolvePath(void) {
             _resolvedPath += _uri._path.substr(_location->getPathRef().length());
         }
     }
-    Log.debug("Request::Resolved path:" + _resolvedPath);
+    Log.debug("Request::Resolved path: " + _resolvedPath);
 }
 
 StatusCode
@@ -308,26 +308,26 @@ Request::checkHeaders(void) {
 
     setFlag(PARSED_HEADERS);
     if (!isHeaderExist(HOST)) {
-        Log.error("Host not found");
+        Log.error("Request:: Host not found");
         return BAD_REQUEST;
     }
 
     // PUT or POST or PATCH
     if (_method[0] == 'P') {
         if (!isHeaderExist(TRANSFER_ENCODING) && !isHeaderExist(CONTENT_LENGTH)) {
-            Log.error("Transfer-Encoding/Content-Length is missing in request");
+            Log.error("Request:: Transfer-Encoding/Content-Length is missing in request");
             return LENGTH_REQUIRED;
         }
         Log.debug("Request::ParsedHeaders::Continue");
         return CONTINUE;
     }
-    Log.debug("Request::ParsedHeaders");
+    Log.debug("Request::ParsedHeaders::Processing");
     return PROCESSING;
 }
 
 StatusCode
 Request::parseHeader(const std::string &line) {
-    Header header;
+    RequestHeader header;
 
     if (!header.parse(line)) {
         return BAD_REQUEST;

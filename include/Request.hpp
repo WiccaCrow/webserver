@@ -9,7 +9,7 @@
 
 #include "CRC.hpp"
 #include "Globals.hpp"
-#include "Header.hpp"
+#include "RequestHeader.hpp"
 #include "Location.hpp"
 #include "Logger.hpp"
 #include "ServerBlock.hpp"
@@ -34,7 +34,7 @@ private:
     std::string                  _rawURI;
     std::string                  _protocol;
     std::string                  _resolvedPath;
-    std::map<uint32_t, Header>   _headers;
+    std::map<uint32_t, RequestHeader>   _headers;
     HTTP::StatusCode             _status;
     int                          _major : 4;
     int                          _minor : 4;
@@ -69,15 +69,15 @@ public:
     const Client *getClient() const;
     void          setClient(Client *);
 
-    const std::string                  &getPath() const;
-    const std::string                  &getMethod() const;
-    const std::string                  &getProtocol() const;
-    const std::map<uint32_t, Header> &getHeaders() const;
-    const std::string                  &getBody() const;
-    const uint8_t                      &getFlags() const;
-    const HTTP::StatusCode             &getStatus() const;
-    URI                                &getUriRef();
-    const std::string                  &getRawUri() const;
+    const std::string                       &getPath() const;
+    const std::string                       &getMethod() const;
+    const std::string                       &getProtocol() const;
+    const std::map<uint32_t, RequestHeader> &getHeaders() const;
+    const std::string                       &getBody() const;
+    const uint8_t                           &getFlags() const;
+    const HTTP::StatusCode                  &getStatus() const;
+    URI                                     &getUriRef();
+    const std::string                       &getRawUri() const;
 
     // Needed to be improved
     const std::string &getQueryString() const;

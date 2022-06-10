@@ -9,28 +9,25 @@
 #include "Globals.hpp"
 #include "HeadersCodes.hpp"
 #include "Status.hpp"
+#include "Header.hpp"
+#include "Utils.hpp"
+
 
 namespace HTTP {
 
 class Response;
 
-class ResponseHeader {
+class ResponseHeader : public Header {
 
 public:
     typedef void (ResponseHeader::*Handler)(Response &res);
-
-    std::string key;
-    std::string value;
     Handler     method;
-    uint32_t    hash;
 
     ResponseHeader();
     ResponseHeader(uint32_t hash);
     ResponseHeader(uint32_t hash, const std::string &value);
 
-    void setKey(std::string &key);
-
-    void handleHeader(Response &res);
+    void handle(Response &res);
 
     void AcceptPatch(Response &res);
     void AcceptRanges(Response &res);
@@ -89,9 +86,6 @@ public:
     void AccessControlAllowHeaders(Response &res);
 
     void NotSupported(Response &res);
-
-    friend bool operator==(const ResponseHeader &h1, const ResponseHeader &h2);
-    friend bool operator!=(const ResponseHeader &h1, const ResponseHeader &h2);
 };
 
 extern const std::map<uint32_t, ResponseHeader::Handler> validResponseHeaders;

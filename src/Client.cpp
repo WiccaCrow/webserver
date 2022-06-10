@@ -202,7 +202,6 @@ Client::process(void) {
     //     shouldBeClosed(true);
     // }
 
-
     if (_req.getStatus() >= HTTP::BAD_REQUEST) {
         _res.setErrorResponse(_req.getStatus());
     } else if (_req.getStatus() == HTTP::PROCESSING) {
@@ -221,12 +220,14 @@ Client::reply(void) {
 
     Log.debug("Client::reply -> fd: " + to_string(_fd));
 
+    // Log.debug("\n" + std::string(_res.getResponse()) + "\n");
+
     size_t sentBytes = 0;
     do {
         long n = send(_fd, _res.getResponse() + sentBytes, _res.getResLength() - sentBytes, 0);
         if (n > 0) {
             sentBytes += n;
-            Log.error("Client::sent " + to_string(sentBytes) + "/" + to_string(_res.getResLength()) + " bytes");
+            Log.debug("Client::sent " + to_string(sentBytes) + "/" + to_string(_res.getResLength()) + " bytes");
         }
     } while (sentBytes < _res.getResLength());
 
