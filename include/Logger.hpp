@@ -6,7 +6,9 @@
 #include <string>
 #include <sstream>
 
-
+#ifndef LOGS_DIR
+#define LOGS_DIR "logs"
+#endif
 class Logger {
 
 private:
@@ -25,8 +27,9 @@ public:
     void info(const std::string &s);
     void debug(const std::string &s);
     void error(const std::string &s);
-    void setLogFile(const std::string &logfile);
+    void enableLogFile(void);
     void print(uint8_t flag, const std::string &msg);
+    std::string makeTimeString(char dateSep = '/', char sep = ' ', char timeSep = ':');
 };
 
 extern const int LOG_DEBUG;

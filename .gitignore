@@ -44,7 +44,7 @@ webserv
 .DS_Store
 .vscode
 .obj/
-.obj
+logs/
 .deps/
 .idea
 *.out

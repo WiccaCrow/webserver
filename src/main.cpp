@@ -6,7 +6,7 @@ Server *g_server;
 int
 main(int ac, char **av) {
     Log.setFlags(LOG_INFO | LOG_ERROR | LOG_DEBUG);
-    Log.setLogFile("test.log");
+    Log.enableLogFile();
 
     if (ac > 2) {
         Log.error("Usage: " + std::string(av[0]) + " [config.json]");

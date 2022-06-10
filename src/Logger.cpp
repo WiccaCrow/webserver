@@ -13,14 +13,17 @@ Logger::Logger()
 }
 
 void
-Logger::setLogFile(const std::string &logfile) {
-    _logToFile = true;
-    _logfile   = logfile;
+Logger::enableLogFile(void) {
 
-    _out.open(logfile.c_str(), std::ios_base::out | std::ios_base::trunc);
+    _logToFile = true;
+    _logfile   = std::string(LOGS_DIR) + "/" + Log.makeTimeString('-','_','-') + ".log";
+
+    _out.open(_logfile.c_str(), std::ios_base::out | std::ios_base::trunc);
 
     if (!_out.good()) {
-        std::cerr << "Logger: cannot open file " << logfile;
+        std::cerr << "Logger: cannot open/create file " << _logfile << std::endl;
+    } else {
+        std::cout << "Logger: log into " << _logfile.c_str() << std::endl;
     }
 }
 
@@ -39,22 +42,22 @@ addNumber(std::stringstream &ss, int num) {
     ss << num;
 }
 
-static std::string 
-makeTimeString() {
+std::string 
+Logger::makeTimeString(char dateSep, char sep, char timeSep) {
     time_t cur = time(NULL);
     tm *ct = localtime(&cur);
 
     std::stringstream ss;
     addNumber(ss, ct->tm_mday);
-    ss << "/";
+    ss << dateSep;
     addNumber(ss, ct->tm_mon + 1);
-    ss << "/";
+    ss << dateSep;
     addNumber(ss, ct->tm_year + 1900);
-    ss << " ";
+    ss << sep;
     addNumber(ss, ct->tm_hour);
-    ss << ":";
+    ss << timeSep;
     addNumber(ss, ct->tm_min);
-    ss << ":";
+    ss << timeSep;
     addNumber(ss, ct->tm_sec);
     return ss.str();
 }

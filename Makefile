@@ -22,6 +22,7 @@ SRCS_DIR     = src
 OBJS_DIR     = .obj
 DEPS_DIR     = .deps
 INCLUDE_DIR  = include
+LOGS_DIR     = logs
 
 SRCS     =  Auth.cpp                Location.cpp             SHA1.cpp         \
             Base64.cpp              Logger.cpp               Server.cpp       \
@@ -56,6 +57,7 @@ libjson:
 makedir:
 	@if ! [ -d ${OBJS_DIR} ] ; then mkdir ${OBJS_DIR} ; fi
 	@if ! [ -d ${DEPS_DIR} ] ; then mkdir ${DEPS_DIR} ; fi
+	@if ! [ -d ${LOGS_DIR} ] ; then mkdir ${LOGS_DIR} ; fi
 
 
 $(NAME): $(OBJS)
@@ -64,10 +66,10 @@ $(NAME): $(OBJS)
 -include $(DEPS)
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
 	$(CXX) $(CPPFLAGS) -c $< -o $@ -I $(INCLUDE_DIR) -I $(LIBJSONINCLUDE) \
-        -MMD -MF $(patsubst ${OBJS_DIR}/%.o,${DEPS_DIR}/%.d,$@)
+        -MMD -MF $(patsubst ${OBJS_DIR}/%.o,${DEPS_DIR}/%.d,$@) -D LOGS_DIR=\"${LOGS_DIR}\"
 
 clean:
-	rm -rf ${DEPS_DIR} ${OBJS_DIR} YoupiBanane
+	rm -rf ${DEPS_DIR} ${OBJS_DIR} ${LOGS_DIR} YoupiBanane
 
 fclean: clean
 	rm -rf $(NAME)
