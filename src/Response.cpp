@@ -111,6 +111,7 @@ HTTP::Response::GET(void) {
 
 void
 HTTP::Response::OPTIONS(void) {
+    addHeader(ALLOW);
     _res = makeHeaders();
 }
 
