@@ -52,8 +52,8 @@ HTTP::Response::clear() {
     }
 }
 
-HTTP::StatusCode
-HTTP::Response::handle(Request &req) {
+void
+HTTP::Response::handle(void) {
     std::map<std::string, Response::Handler>::iterator it;
 
     if (getStatus() >= HTTP::BAD_REQUEST) {
@@ -66,7 +66,6 @@ HTTP::Response::handle(Request &req) {
     }
 
     _res = makeHeaders() + getBody();
-    return req.getStatus();
 }
 
 void

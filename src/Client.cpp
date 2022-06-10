@@ -202,7 +202,7 @@ Client::process(void) {
         _req.setStatus(HTTP::OK);
     }
 
-    _res.handle(_req);
+    _res.handle();
 }
 
 void

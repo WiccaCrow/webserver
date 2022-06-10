@@ -43,7 +43,7 @@ public:
     void initMethodsHeaders(void);
     void clear(void);
 
-    StatusCode handle(Request &req);
+    void handle(void);
 
     //  for errors
     static const std::map<std::string, std::string> MIMEs;
