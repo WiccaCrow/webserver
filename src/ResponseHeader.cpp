@@ -17,13 +17,24 @@ ResponseHeader::handleHeader(Response &res) {
     return (this->*method)(res);
 }
 
+
+bool operator==(const ResponseHeader &h1, const ResponseHeader &h2) {
+    return h1.hash == h2.hash;
+}
+
+bool operator!=(const ResponseHeader &h1, const ResponseHeader &h2) {
+    return h1.hash != h2.hash;
+}
+
 ResponseHeader::ResponseHeader() : hash(0) { }
 
-ResponseHeader::ResponseHeader(std::string keyToSet, uint32_t hashToSet) : key(keyToSet), hash(hashToSet) { }
+ResponseHeader::ResponseHeader(uint32_t hash) : key(headerNames[hash]), hash(hash) { }
+
+ResponseHeader::ResponseHeader(uint32_t hash, const std::string &value) : key(headerNames[hash]), value(value), hash(hash) { }
 
 void
-ResponseHeader::setKey(std::string &keyToSet) {
-    key = keyToSet;
+ResponseHeader::setKey(std::string &key) {
+    this->key = key;
 }
 
 
@@ -79,8 +90,8 @@ ResponseHeader::Connection(Response &res) {
     } else {
         // res.getClient()->shouldBeClosed(false);
         value = "keep-alive";
-        ResponseHeader &ka = res.headers[KEEP_ALIVE];
-        ka.handleHeader(res);
+        ResponseHeader *ptr = res.getHeader(KEEP_ALIVE);
+        ptr->handleHeader(res);
     }
 }
 
@@ -158,7 +169,8 @@ ResponseHeader::Host(Response &res) {
 void
 ResponseHeader::KeepAlive(Response &res) {
     (void)res;
-    if (res.headers[CONNECTION].value != "close") {
+    ResponseHeader *ptr = res.getHeader(CONNECTION);
+    if (ptr && ptr->value != "close") {
         value = "timeout=55, max=1000";
     }
 }

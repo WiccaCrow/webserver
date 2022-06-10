@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "ResponseHeader.hpp"
+#include "HeaderNames.hpp"
 #include "Request.hpp"
 #include "Status.hpp"
 #include "Utils.hpp"
@@ -37,7 +38,6 @@ public:
     typedef void (Response::*Handler)(void);
     std::map<std::string, Handler> methods;
 
-    // std::map<uint32_t, ResponseHeader> headers;
     std::list<ResponseHeader> headers;
 
     Response(void);
@@ -50,7 +50,6 @@ public:
 
     //  for errors
     static const std::map<std::string, std::string>       MIMEs;
-    // static const std::map<HTTP::StatusCode, std::string> errorResponses;
 
     int setErrorResponse(HTTP::StatusCode status);
 
@@ -70,8 +69,9 @@ public:
     std::string getContentType(std::string resourcePath);
     void        writeFile(const std::string &resourcePath);
 
+    ResponseHeader *getHeader(HeaderCode code);
     std::string makeHeaders(void);
-    void        addHeader(HeaderCode code, std::string value);
+    void        addHeader(HeaderCode code, const std::string &value);
     void        addHeader(HeaderCode code);
 
     int passToCGI(CGI &cgi);

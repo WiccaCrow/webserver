@@ -28,28 +28,12 @@ HTTP::Response::initMethodsHeaders(void) {
     methods.insert(std::make_pair("POST", &Response::POST));
     methods.insert(std::make_pair("PUT", &Response::PUT));
 
-
-    // headers.insert(std::make_pair(ALLOW, ResponseHeader("allow", ALLOW)));
-    // headers.insert(std::make_pair(LOCATION, ResponseHeader("location", LOCATION)));
-    // headers.insert(std::make_pair(ETAG, ResponseHeader("etag", ETAG)));
-    // headers.insert(std::make_pair(LAST_MODIFIED, ResponseHeader("last-modified", LAST_MODIFIED)));
-    // headers.insert(std::make_pair(WWW_AUTHENTICATE, ResponseHeader("www-authenticate", WWW_AUTHENTICATE)));
-
-  
-    headers.push_back(ResponseHeader("connection", CONNECTION));
-    headers.push_back(ResponseHeader("keep-alive", KEEP_ALIVE));
-    headers.push_back(ResponseHeader("date", DATE));
-    headers.push_back(ResponseHeader("server", SERVER));
-    headers.push_back(ResponseHeader("content-type", CONTENT_TYPE));
-    headers.push_back(ResponseHeader("content-length", CONTENT_LENGTH));
-    // headers.insert(std::make_pair("last-modified", ""));
-    // headers.insert(std::make_pair("access-control-allow-methods", ""));
-    // headers.insert(std::make_pair("Access-Control-Allow-Origin", ""));
-    // headers.insert(std::make_pair("Access-Control-Allow-Credentials", ""));
-    // headers.insert(std::make_pair("Access-Control-Expose-Headers", ""));
-    // headers.insert(std::make_pair("Access-Control-Max-Age", ""));
-    // headers.insert(std::make_pair("Access-Control-Allow-Methods", ""));
-    // headers.insert(std::make_pair("Access-Control-Allow-Headers", ""));
+    headers.push_back(ResponseHeader(CONNECTION));
+    headers.push_back(ResponseHeader(KEEP_ALIVE));
+    headers.push_back(ResponseHeader(DATE));
+    headers.push_back(ResponseHeader(SERVER));
+    headers.push_back(ResponseHeader(CONTENT_TYPE));
+    headers.push_back(ResponseHeader(CONTENT_LENGTH));
 }
 
 void
@@ -58,11 +42,13 @@ HTTP::Response::clear() {
     _res = "";
     _body = "";
     
-    headers.erase(std::advance(headers.begin(), 6), headers.end());
+    std::list<ResponseHeader>::iterator posIt = headers.begin();
+    std::advance(posIt, 6);
+    headers.erase(posIt, headers.end());
 
     std::list<ResponseHeader>::iterator it = headers.begin();
     for (; it != headers.end(); it++) {
-        it->second.value = "";
+        it->value = "";
     }
 }
 
@@ -205,7 +191,6 @@ HTTP::Response::contentForGetHead(void) {
                     "    <h1>Redirect.</h1>\n"
                     "  </body>\n"
                     "</html>\r\n";
-            // body
             return 1;
         }
         // find index file
@@ -358,12 +343,12 @@ HTTP::Response::makeHeaders() {
         addHeader(CONTENT_TYPE, "text/html; charset=UTF-8");
     }
 
-    std::map<uint32_t, ResponseHeader>::iterator it    = headers.begin();
-    std::map<uint32_t, ResponseHeader>::iterator itEnd = headers.end();
+    std::list<ResponseHeader>::iterator it    = headers.begin();
+    std::list<ResponseHeader>::iterator itEnd = headers.end();
     for (; it != itEnd; ++it) {
-        it->second.handleHeader(*this);
-        if (!it->second.value.empty()) {
-            headersToReturn += it->second.key + ": " + it->second.value + "\r\n";
+        it->handleHeader(*this);
+        if (!it->value.empty()) {
+            headersToReturn += it->key + ": " + it->value + "\r\n";
         }
     }
 
@@ -372,28 +357,31 @@ HTTP::Response::makeHeaders() {
     return headersToReturn;
 }
 
-// static bool
-// isEqualHash(ResponseHeader &header) {
-//     header.hash
-// }
-
-void
-HTTP::Response::addHeader(HeaderCode code, std::string value) {
-    std::list<ResponseHeader>::iterator it = std::find_if(headers.begin(), headers.end(), code);
+HTTP::ResponseHeader *
+HTTP::Response::getHeader(HeaderCode code) {
+    std::list<ResponseHeader>::iterator it;
+    it = std::find(headers.begin(), headers.end(), ResponseHeader(code));
 
     if (it == headers.end()) {
-        headers.push_back(ResponseHeader());
+        return NULL;
+    } else {
+        return &(*it);
     }
-    headers.find(code)->second.value = value;
+}
+
+void
+HTTP::Response::addHeader(HeaderCode code, const std::string &value) {
+    ResponseHeader *ptr = getHeader(code);
+    if (ptr == NULL) {
+        headers.push_back(ResponseHeader(code, value));
+    } else {
+        ptr->value = value;
+    }
 }
 
 void
 HTTP::Response::addHeader(HeaderCode code) {
-    std::list<ResponseHeader>::iterator it = headers.find(code);
-
-    if (it == headers.end()) {
-        headers.push_back(ResponseHeader());
-    }
+    addHeader(code, "");
 }
 
 int

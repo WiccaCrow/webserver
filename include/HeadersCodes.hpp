@@ -1,6 +1,5 @@
 #pragma once
 
-
 enum HeaderCode {
     A_IM                           = 360142786,
     ACCEPT                         = 3005279540,

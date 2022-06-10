@@ -25,9 +25,10 @@ public:
     uint32_t    hash;
 
     ResponseHeader();
-    ResponseHeader(std::string keyToSet, uint32_t hashToSet);
+    ResponseHeader(uint32_t hash);
+    ResponseHeader(uint32_t hash, const std::string &value);
 
-    void setKey(std::string &keyToSet);
+    void setKey(std::string &key);
 
     void handleHeader(Response &res);
 
@@ -88,6 +89,9 @@ public:
     void AccessControlAllowHeaders(Response &res);
 
     void NotSupported(Response &res);
+
+    friend bool operator==(const ResponseHeader &h1, const ResponseHeader &h2);
+    friend bool operator!=(const ResponseHeader &h1, const ResponseHeader &h2);
 };
 
 extern const std::map<uint32_t, ResponseHeader::Handler> validResponseHeaders;
