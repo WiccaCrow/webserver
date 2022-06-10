@@ -158,11 +158,7 @@ HTTP::Response::PUT(void) {
 
 int
 HTTP::Response::contentForGetHead(void) {
-    // resourcePath (часть root) будет браться из конфига
-    // root
-    // если в конфиге без /, то добавить /,
-    // чтобы мне уже с этим приходило
-    const std::string &resourcePath = _req->getResolvedPath();
+    std::string resourcePath = _req->getResolvedPath();
 
     if (!resourceExists(resourcePath)) {
         setStatus(NOT_FOUND);
@@ -180,57 +176,72 @@ HTTP::Response::contentForGetHead(void) {
         return 1;
     }
 
-    // Path is dir
     if (isDirectory(resourcePath)) {
-        if (resourcePath[resourcePath.length() - 1] != '/') {
-            setStatus(MOVED_PERMANENTLY);
-            addHeader(LOCATION, _req->getRawUri() + "/");
-            addHeader(CONTENT_TYPE, "text/html");
-            _body = "<html>\n"
-                    "  <body>\n"
-                    "    <h1>Redirect.</h1>\n"
-                    "  </body>\n"
-                    "</html>\r\n";
+        if (redirectForDirectory(resourcePath)) {
             return 1;
+        } else if (isSetIndexFile(resourcePath)) {
+            return makeGetHeadResponseForFile(resourcePath);
+        } else {
+            return directoryListing(resourcePath);
         }
-        // find index file
-        const std::vector<std::string> &indexes = _req->getLocation()->getIndexRef();
-        for (size_t i = 0; i < indexes.size(); ++i) {
-            // put index file to response
-            std::string path = resourcePath + indexes[i];
-            if (isFile(path)) {
-                std::map<std::string, HTTP::CGI>::iterator it;
-                it = isCGI(path, _req->getLocation()->getCGIsRef());
-                if (it != _req->getLocation()->getCGIsRef().end()) {
-                    return passToCGI(it->second);
-                }
-                addHeader(CONTENT_TYPE, getContentType(path));
-                addHeader(ETAG, getEtagFile(path));
-                addHeader(LAST_MODIFIED, getLastModifiedTimeGMT(path));
-                return fileToResponse(path);
-            }
-        }
-        // Path is file; put Path file to response
     } else if (isFile(resourcePath)) {
-        std::map<std::string, CGI>::iterator it;
-        it = isCGI(resourcePath, _req->getLocation()->getCGIsRef());
-        if (it != _req->getLocation()->getCGIsRef().end()) {
-            return passToCGI(it->second);
-        }
-        addHeader(CONTENT_TYPE, getContentType(resourcePath));
-        addHeader(ETAG, getEtagFile(resourcePath));
-        addHeader(LAST_MODIFIED, getLastModifiedTimeGMT(resourcePath));
-        return fileToResponse(resourcePath);
+        return makeGetHeadResponseForFile(resourcePath);
     } else {
         // not readable files and other types and file not exist
         setStatus(FORBIDDEN);
         return 0;
     }
+}
+
+int
+HTTP::Response::redirectForDirectory(const std::string &resourcePath) {
+    if (resourcePath[resourcePath.length() - 1] != '/') {
+        setStatus(MOVED_PERMANENTLY);
+        addHeader(LOCATION, _req->getRawUri() + "/");
+        addHeader(CONTENT_TYPE, "text/html");
+        _body = "<html>\n"
+                "  <body>\n"
+                "    <h1>Redirect.</h1>\n"
+                "  </body>\n"
+                "</html>\r\n";
+        return 1;
+    }
+    return 0;
+}
+
+bool
+HTTP::Response::isSetIndexFile(std::string &resourcePath) {
+    const std::vector<std::string> &indexes = _req->getLocation()->getIndexRef();
+    for (size_t i = 0; i < indexes.size(); ++i) {
+        std::string path = resourcePath + indexes[i];
+        if (isFile(path)) {
+            resourcePath = path;
+            return true;
+        }
+    }
+    return false;
+}
+
+int
+HTTP::Response::makeGetHeadResponseForFile(const std::string &resourcePath) {
+    std::map<std::string, CGI>::iterator it;
+    it = isCGI(resourcePath, _req->getLocation()->getCGIsRef());
+    if (it != _req->getLocation()->getCGIsRef().end()) {
+        return passToCGI(it->second);
+    }
+    addHeader(CONTENT_TYPE, getContentType(resourcePath));
+    addHeader(ETAG, getEtagFile(resourcePath));
+    addHeader(LAST_MODIFIED, getLastModifiedTimeGMT(resourcePath));
+    return fileToResponse(resourcePath);
+}
+
+int
+HTTP::Response::directoryListing(const std::string &resourcePath) {
     // dir listing. autoindex on
     if (_req->getLocation()->getAutoindexRef() == true && isDirectory(resourcePath)) {
         addHeader(CONTENT_TYPE, "text/html; charset=utf-8");
         return listing(resourcePath);
-        // 403. autoindex off
+    // 403. autoindex off
     } else {
         setStatus(FORBIDDEN);
         return 0;

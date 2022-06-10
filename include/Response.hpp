@@ -64,6 +64,10 @@ public:
 
     // void        generateHeaders(Request &req);
     int         contentForGetHead(void);
+    int         redirectForDirectory(const std::string &resourcePath);
+    bool        isSetIndexFile(std::string &resourcePath);
+    int         makeGetHeadResponseForFile(const std::string &resourcePath);
+    int         directoryListing(const std::string &resourcePath);
     int         fileToResponse(std::string resourcePath);
     int         listing(const std::string &resourcePath);
     std::string getContentType(std::string resourcePath);
