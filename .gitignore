@@ -45,6 +45,7 @@ webserv
 .vscode
 .obj/
 .obj
+.deps/
 .idea
 *.out
 *.out.dSYM
