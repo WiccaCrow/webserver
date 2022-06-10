@@ -18,10 +18,10 @@ endif
 #                              Directories & Files                                #
 ###################################################################################
 
-SRCS_DIR   	  =   src
-OBJS_DIR 	  =   .obj
-DEPS_DIR	  =	  .deps
-INCLUDE_DIR   =   include
+SRCS_DIR     = src
+OBJS_DIR     = .obj
+DEPS_DIR     = .deps
+INCLUDE_DIR  = include
 
 SRCS     =  Auth.cpp                Location.cpp             SHA1.cpp         \
             Base64.cpp              Logger.cpp               Server.cpp       \
@@ -32,8 +32,8 @@ SRCS     =  Auth.cpp                Location.cpp             SHA1.cpp         \
             ErrorResponses.cpp      ResponseContType.cpp     main.cpp         \
             Header.cpp              ResponseHeader.cpp
 
-OBJS 	 =	$(addprefix $(OBJS_DIR)/, $(SRCS:.cpp=.o))
-DEPS	 =	$(addprefix $(DEPS_DIR)/, $(SRCS:.cpp=.d))
+OBJS = $(addprefix $(OBJS_DIR)/, $(SRCS:.cpp=.o))
+DEPS = $(addprefix $(DEPS_DIR)/, $(SRCS:.cpp=.d))
 
 ###################################################################################
 #                                   Libjson                                       #
@@ -64,7 +64,7 @@ $(NAME): $(OBJS)
 -include $(DEPS)
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
 	$(CXX) $(CPPFLAGS) -c $< -o $@ -I $(INCLUDE_DIR) -I $(LIBJSONINCLUDE) \
-    -MMD -MF $(patsubst ${OBJS_DIR}/%.o,${DEPS_DIR}/%.d,$@)
+        -MMD -MF $(patsubst ${OBJS_DIR}/%.o,${DEPS_DIR}/%.d,$@)
 
 clean:
 	rm -rf ${DEPS_DIR} ${OBJS_DIR} YoupiBanane
