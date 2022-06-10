@@ -27,16 +27,21 @@ HTTP::Response::initMethodsHeaders(void) {
     methods.insert(std::make_pair("OPTIONS", &Response::OPTIONS));
     methods.insert(std::make_pair("POST", &Response::POST));
     methods.insert(std::make_pair("PUT", &Response::PUT));
-    headers.insert(std::make_pair(ALLOW, ResponseHeader("allow", ALLOW)));
-    headers.insert(std::make_pair(CONNECTION, ResponseHeader("connection", CONNECTION)));
-    headers.insert(std::make_pair(CONTENT_LENGTH, ResponseHeader("content-length", CONTENT_LENGTH)));
-    headers.insert(std::make_pair(CONTENT_TYPE, ResponseHeader("content-type", CONTENT_TYPE)));
-    headers.insert(std::make_pair(DATE, ResponseHeader("date", DATE)));
-    headers.insert(std::make_pair(KEEP_ALIVE, ResponseHeader("keep-alive", KEEP_ALIVE)));
-    headers.insert(std::make_pair(LOCATION, ResponseHeader("location", LOCATION)));
-    headers.insert(std::make_pair(SERVER, ResponseHeader("server", SERVER)));
-    headers.insert(std::make_pair(ETAG, ResponseHeader("etag", ETAG)));
-    headers.insert(std::make_pair(LAST_MODIFIED, ResponseHeader("last-modified", LAST_MODIFIED)));
+
+
+    // headers.insert(std::make_pair(ALLOW, ResponseHeader("allow", ALLOW)));
+    // headers.insert(std::make_pair(LOCATION, ResponseHeader("location", LOCATION)));
+    // headers.insert(std::make_pair(ETAG, ResponseHeader("etag", ETAG)));
+    // headers.insert(std::make_pair(LAST_MODIFIED, ResponseHeader("last-modified", LAST_MODIFIED)));
+    // headers.insert(std::make_pair(WWW_AUTHENTICATE, ResponseHeader("www-authenticate", WWW_AUTHENTICATE)));
+
+  
+    headers.push_back(ResponseHeader("connection", CONNECTION));
+    headers.push_back(ResponseHeader("keep-alive", KEEP_ALIVE));
+    headers.push_back(ResponseHeader("date", DATE));
+    headers.push_back(ResponseHeader("server", SERVER));
+    headers.push_back(ResponseHeader("content-type", CONTENT_TYPE));
+    headers.push_back(ResponseHeader("content-length", CONTENT_LENGTH));
     // headers.insert(std::make_pair("last-modified", ""));
     // headers.insert(std::make_pair("access-control-allow-methods", ""));
     // headers.insert(std::make_pair("Access-Control-Allow-Origin", ""));
@@ -52,10 +57,11 @@ HTTP::Response::clear() {
 
     _res = "";
     _body = "";
+    
+    headers.erase(std::advance(headers.begin(), 6), headers.end());
 
-    std::map<uint32_t, ResponseHeader>::iterator it = headers.begin();
-    std::map<uint32_t, ResponseHeader>::iterator end = headers.end();
-    for (; it != end; it++) {
+    std::list<ResponseHeader>::iterator it = headers.begin();
+    for (; it != headers.end(); it++) {
         it->second.value = "";
     }
 }
@@ -102,8 +108,10 @@ HTTP::Response::DELETE(void) {
 
 void
 HTTP::Response::HEAD(void) {
-    if (!contentForGetHead()) {
+    if (contentForGetHead()) {
         _res = makeHeaders();
+    } else {
+        setErrorResponse(NOT_FOUND);
     }
 }
 
@@ -113,6 +121,7 @@ HTTP::Response::GET(void) {
         _res = makeHeaders() + _body;
     } else {
         std::cout << "GET 1" << std::endl << std::endl;
+        setErrorResponse(getStatus());
     }
 }
 
@@ -170,15 +179,17 @@ HTTP::Response::contentForGetHead(void) {
     const std::string &resourcePath = _req->getResolvedPath();
 
     if (!resourceExists(resourcePath)) {
-        return setErrorResponse(NOT_FOUND);
+        setStatus(NOT_FOUND);
+        return 0;
     }
 
     // Should be moved upper
     if (_req->getLocation()->getAuthRef().isSet() && !_req->isAuthorized()) {
         Log.debug("Authenticate:: Unauthorized");
-        _req->setStatus(UNAUTHORIZED);
+        setStatus(UNAUTHORIZED);
         addHeader(DATE, getDateTimeGMT());
         addHeader(WWW_AUTHENTICATE);
+        addHeader(CONNECTION, "close");
         _client->shouldBeClosed(true);
         return 1;
     }
@@ -186,7 +197,7 @@ HTTP::Response::contentForGetHead(void) {
     // Path is dir
     if (isDirectory(resourcePath)) {
         if (resourcePath[resourcePath.length() - 1] != '/') {
-            _req->setStatus(MOVED_PERMANENTLY);
+            setStatus(MOVED_PERMANENTLY);
             addHeader(LOCATION, _req->getRawUri() + "/");
             addHeader(CONTENT_TYPE, "text/html");
             _body = "<html>\n"
@@ -227,7 +238,8 @@ HTTP::Response::contentForGetHead(void) {
         return fileToResponse(resourcePath);
     } else {
         // not readable files and other types and file not exist
-        return setErrorResponse(FORBIDDEN);
+        setStatus(FORBIDDEN);
+        return 0;
     }
     // dir listing. autoindex on
     if (_req->getLocation()->getAutoindexRef() == true && isDirectory(resourcePath)) {
@@ -235,7 +247,8 @@ HTTP::Response::contentForGetHead(void) {
         return listing(resourcePath);
         // 403. autoindex off
     } else {
-        return setErrorResponse(FORBIDDEN);
+        setStatus(FORBIDDEN);
+        return 0;
     }
 }
 
@@ -244,13 +257,15 @@ HTTP::Response::fileToResponse(std::string resourcePath) {
     std::ifstream resourceFile;
     resourceFile.open(resourcePath.c_str(), std::ifstream::in);
     if (!resourceFile.is_open()) {
-        return setErrorResponse(FORBIDDEN);
+        setStatus(FORBIDDEN);
+        return 0;
     }
 
     std::stringstream buffer;
     buffer << resourceFile.rdbuf();
     if (buffer.tellp() == -1) {
-        return setErrorResponse(INTERNAL_SERVER_ERROR);
+        setStatus(INTERNAL_SERVER_ERROR);
+        return 0;
     }
 
     // if (bufSize > SIZE_FOR_CHUNKED) {
@@ -280,13 +295,15 @@ HTTP::Response::listing(const std::string &resourcePath) {
     DIR *r_opndir;
     r_opndir = opendir(resourcePath.c_str());
     if (NULL == r_opndir) {
-        return setErrorResponse(INTERNAL_SERVER_ERROR);
+        setStatus(INTERNAL_SERVER_ERROR);
+        return 0;
     } else {
         struct dirent *dirContent;
         // dirContent = readdir(r_opndir);
         while ((dirContent = readdir(r_opndir))) {
             if (NULL == dirContent) {
-                return setErrorResponse(INTERNAL_SERVER_ERROR);
+                setStatus(INTERNAL_SERVER_ERROR);
+                return 0;
             }
 
             _body += "   <a href=\"" + _req->getPath();
@@ -355,14 +372,28 @@ HTTP::Response::makeHeaders() {
     return headersToReturn;
 }
 
+// static bool
+// isEqualHash(ResponseHeader &header) {
+//     header.hash
+// }
+
 void
 HTTP::Response::addHeader(HeaderCode code, std::string value) {
+    std::list<ResponseHeader>::iterator it = std::find_if(headers.begin(), headers.end(), code);
+
+    if (it == headers.end()) {
+        headers.push_back(ResponseHeader());
+    }
     headers.find(code)->second.value = value;
 }
 
 void
 HTTP::Response::addHeader(HeaderCode code) {
-    headers.find(code)->second.handleHeader(*this);
+    std::list<ResponseHeader>::iterator it = headers.find(code);
+
+    if (it == headers.end()) {
+        headers.push_back(ResponseHeader());
+    }
 }
 
 int
@@ -371,8 +402,8 @@ HTTP::Response::passToCGI(CGI &cgi) {
     cgi.linkRequest(_req);
     cgi.setEnv();
     if (!cgi.exec()) {
-        _req->setStatus(HTTP::BAD_GATEWAY);
-        return setErrorResponse(_req->getStatus());
+        setStatus(HTTP::BAD_GATEWAY);
+        return 0;
     }
     _body = cgi.getResult();
     return 1;
@@ -403,6 +434,10 @@ HTTP::Response::getRequest(void) const {
     return _req;
 }
 
+HTTP::StatusCode
+HTTP::Response::getStatus() {
+    return getRequest()->getStatus();
+}
 
 void
 HTTP::Response::setStatus(HTTP::StatusCode status) {
@@ -432,13 +467,3 @@ HTTP::Response::getClient(void) {
 //             "0\r\n\r\n";
 //     return ("");
 // }
-
-
-// Request
-
-// contentForGet
-//     makeHeaders
-//     makeBody
-
-// contentForHead
-//     makeHeaders

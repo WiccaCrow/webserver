@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <list>
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +37,8 @@ public:
     typedef void (Response::*Handler)(void);
     std::map<std::string, Handler> methods;
 
-    std::map<uint32_t, ResponseHeader> headers;
+    // std::map<uint32_t, ResponseHeader> headers;
+    std::list<ResponseHeader> headers;
 
     Response(void);
     ~Response(void);
@@ -80,6 +82,7 @@ public:
     const std::string &getBody(void) const;
     void               setRequest(Request *req);
     Request           *getRequest(void) const;
+    StatusCode         getStatus();
     void               setStatus(HTTP::StatusCode status);
 
     void            setClient(Client *client);

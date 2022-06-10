@@ -71,13 +71,13 @@ ResponseHeader::Connection(Response &res) {
     if (value.empty() == false) {
         return ;
     }
-        
+
     // res.getRequest()->getStatus() != MOVED_PERMANENTLY && 
     if (res.getRequest()->getHeaderValue(CONNECTION) == "close") {
         res.getClient()->shouldBeClosed(true);
         value = "close";
     } else {
-        res.getClient()->shouldBeClosed(false);
+        // res.getClient()->shouldBeClosed(false);
         value = "keep-alive";
         ResponseHeader &ka = res.headers[KEEP_ALIVE];
         ka.handleHeader(res);
@@ -158,7 +158,9 @@ ResponseHeader::Host(Response &res) {
 void
 ResponseHeader::KeepAlive(Response &res) {
     (void)res;
-    value = "timeout=55, max=1000";
+    if (res.headers[CONNECTION].value != "close") {
+        value = "timeout=55, max=1000";
+    }
 }
 
 void

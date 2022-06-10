@@ -219,7 +219,7 @@ Client::reply(void) {
     }
 
     Log.debug("Client::reply -> fd: " + to_string(_fd));
-    std::cout << "     Client::reply: _res = " << _res.getResponse() << std::endl;
+    std::cout << std::endl << _res.getResponse() << std::endl;
 
     size_t sentBytes = 0;
     do {
