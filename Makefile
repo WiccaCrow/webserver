@@ -1,81 +1,85 @@
-.PHONY: clean fclean re all libjson
+.PHONY: clean fclean re all libjson makedir
 
-NAME 		   =   webserv
+NAME = webserv
 
-CXX            =   clang++
-CPPFLAGS       =   -Wall -Wextra -Werror -std=c++98 -g
-# CXX		   =   g++
-# CPPFLAGS     =   -Wall -Wextra -Werror -Wpedantic -std=c++98 -g 
+###################################################################################
+#                               Compiler & Flags                                  #
+###################################################################################
+
+CXX       =   clang++
+CPPFLAGS  =   -Wall -Wextra -Werror -std=c++98 -g
 
 ifeq ($(shell uname), Linux)
 	LIBCRYPT   = -lcrypt
 	CPPFLAGS   += -fstandalone-debug
 endif
 
-SOURCEFILES     =	main.cpp \
-				    Server.cpp \
-					Auth.cpp \
-					Base64.cpp \
-					Request.cpp \
-					ReadSock.cpp \
-					Request.cpp \
-					ServerBlock.cpp \
-					Utils.cpp \
-					CRC.cpp \
-					URI.cpp \
-					CGI.cpp \
-					SHA1.cpp \
-					Redirect.cpp \
-					Client.cpp \
-					Logger.cpp \
-					Response.cpp \
-					Header.cpp \
-					ResponseHeader.cpp \
-					ResponseContType.cpp \
-					StatusLines.cpp \
-					DefaultErrorResponses.cpp \
-					Config.cpp \
-					Location.cpp
+###################################################################################
+#                              Directories & Files                                #
+###################################################################################
 
-LIBJSONFOLDER = json-parser
-LIBJSONINCLUDE = ./$(LIBJSONFOLDER)/src
-LIBJSONFLAGS = -ljson -L ./$(LIBJSONFOLDER) -I ${LIBJSONINCLUDE} 
+SRCS_DIR   	  =   src
+OBJS_DIR 	  =   .obj
+DEPS_DIR	  =	  .deps
+INCLUDE_DIR   =   include
 
-PAGES           =   pages/
-SOURCEFOLDER    =   src/
-OSOURCEFOLDER   =   .obj/
-INCLUDEFOLDER   =   include/
+SRCS     =	Auth.cpp                Location.cpp             SHA1.cpp         \
+			Base64.cpp              Logger.cpp               Server.cpp       \
+			CGI.cpp                 ReadSock.cpp             ServerBlock.cpp  \
+			CRC.cpp                 Redirect.cpp             StatusLines.cpp  \
+			Client.cpp              Request.cpp              URI.cpp          \
+			Config.cpp              Response.cpp             Utils.cpp        \
+			ErrorResponses.cpp      ResponseContType.cpp     main.cpp         \
+			Header.cpp              ResponseHeader.cpp
 
-SOURCE          =   $(addprefix $(SOURCEFOLDER), $(SOURCEFILES))
-OSOURCE         =   $(addprefix $(OSOURCEFOLDER), $(SOURCEFILES:.cpp=.o))
+OBJS 	 =	$(addprefix $(OBJS_DIR)/, $(SRCS:.cpp=.o))
+DEPS	 =	$(addprefix $(DEPS_DIR)/, $(SRCS:.cpp=.d))
 
-all: libjson objdir $(NAME)
+###################################################################################
+#                                   Libjson                                       #
+###################################################################################
 
-objdir:
-	@if ! [ -d ${OSOURCEFOLDER} ] ; then mkdir ${OSOURCEFOLDER} ; fi
+LIBJSONDIR = json-parser
+LIBJSONINCLUDE = ./${LIBJSONDIR}/src
+LIBJSONFLAGS = -ljson -L ./${LIBJSONDIR} -I ${LIBJSONINCLUDE} 
 
-$(OSOURCEFOLDER)%.o: $(SOURCEFOLDER)%.cpp
-	$(CXX) $(CPPFLAGS) -c $< -o $@ -I $(INCLUDEFOLDER) -I $(LIBJSONINCLUDE)
+###################################################################################
+#                                    Cycle                                        #
+###################################################################################
+
+all: libjson makedir $(NAME)
 
 libjson:
-	@if ! [ "$(ls $(LIBJSONFOLDER))" ] ; then git submodule update --init; fi
-	$(MAKE) -C $(LIBJSONFOLDER) all
+	@if ! [ "$(ls $(LIBJSONDIR))" ] ; then git submodule update --init; fi
+	$(MAKE) -C $(LIBJSONDIR) all
 
-$(NAME): $(OSOURCE)
+makedir:
+	@if ! [ -d ${OBJS_DIR} ] ; then mkdir ${OBJS_DIR} ; fi
+	@if ! [ -d ${DEPS_DIR} ] ; then mkdir ${DEPS_DIR} ; fi
+
+
+$(NAME): $(OBJS)
 	$(CXX) $(CPPFLAGS) $^ -o $(NAME) $(LIBJSONFLAGS) $(LIBCRYPT)
 
+-include $(DEPS)
+$(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
+	$(CXX) $(CPPFLAGS) -c $< -o $@ -I $(INCLUDE_DIR) -I $(LIBJSONINCLUDE) -MMD -MF $(patsubst ${OBJS_DIR}/%.o,${DEPS_DIR}/%.d,$@)
+
 clean:
-	rm -rf $(OSOURCEFOLDER) YoupiBanane
+	rm -rf ${DEPS_DIR} ${OBJS_DIR} YoupiBanane
 
 fclean: clean
 	rm -rf $(NAME)
 
 re: fclean all
 
+###################################################################################
+#                                    Tests                                        #
+###################################################################################
+
 cgi:
 	gcc ./pages/site/cgi/printenv.c -o ./pages/site/cgi/printenv.cgi
 
-# for tests
 YoupiBanane:
 	mkdir -p YoupiBanane/nop YoupiBanane/Yeah
 	touch ./YoupiBanane/youpi.bad_extension ./YoupiBanane/youpi.bla
