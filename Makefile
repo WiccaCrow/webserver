@@ -23,14 +23,14 @@ OBJS_DIR 	  =   .obj
 DEPS_DIR	  =	  .deps
 INCLUDE_DIR   =   include
 
-SRCS     =	Auth.cpp                Location.cpp             SHA1.cpp         \
-			Base64.cpp              Logger.cpp               Server.cpp       \
-			CGI.cpp                 ReadSock.cpp             ServerBlock.cpp  \
-			CRC.cpp                 Redirect.cpp             StatusLines.cpp  \
-			Client.cpp              Request.cpp              URI.cpp          \
-			Config.cpp              Response.cpp             Utils.cpp        \
-			ErrorResponses.cpp      ResponseContType.cpp     main.cpp         \
-			Header.cpp              ResponseHeader.cpp
+SRCS     =  Auth.cpp                Location.cpp             SHA1.cpp         \
+            Base64.cpp              Logger.cpp               Server.cpp       \
+            CGI.cpp                 ReadSock.cpp             ServerBlock.cpp  \
+            CRC.cpp                 Redirect.cpp             StatusLines.cpp  \
+            Client.cpp              Request.cpp              URI.cpp          \
+            Config.cpp              Response.cpp             Utils.cpp        \
+            ErrorResponses.cpp      ResponseContType.cpp     main.cpp         \
+            Header.cpp              ResponseHeader.cpp
 
 OBJS 	 =	$(addprefix $(OBJS_DIR)/, $(SRCS:.cpp=.o))
 DEPS	 =	$(addprefix $(DEPS_DIR)/, $(SRCS:.cpp=.d))
