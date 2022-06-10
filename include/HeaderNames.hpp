@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HeadersCodes.hpp"
+#include <stdint.h>
 #include <string>
 #include <map>
 

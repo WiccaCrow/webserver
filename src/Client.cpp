@@ -31,6 +31,7 @@ Client::operator=(const Client &client) {
         _serverPort     = client._serverPort;
         _requestFormed  = client._requestFormed;
         _responseFormed = client._responseFormed;
+        _shouldBeClosed = client._shouldBeClosed;
     }
     return *this;
 }
