@@ -8,13 +8,10 @@
 #include "SHA1.hpp"
 
 std::vector<std::string> split(const std::string &source, const std::string &delimiters);
-void        trim(std::string &s, const char *t);
-
-std::string getDateTimeGMT();
-
-std::string itoh(int nb);
 std::string getWord(const std::string &line, char delimiter, size_t &pos);
+std::string itoh(int nb);
 
+void        trim(std::string &s, const char *t);
 void        toLowerCase(std::string &s);
 void        skipSpaces(const std::string &line, size_t &pos);
 
@@ -40,5 +37,7 @@ bool isReadableFile(const std::string &filename);
 bool isExecutableFile(const std::string &filename);
 bool checkRegFilePerms(const std::string &filename, int perm);
 int  rmdirNonEmpty(std::string &resourceDel);
+
+std::string getDateTimeGMT();
 std::string getEtagFile(const std::string &filename);
 std::string getLastModifiedTimeGMT(const std::string &filename);

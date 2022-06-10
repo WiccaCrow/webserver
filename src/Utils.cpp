@@ -305,7 +305,7 @@ getTimeStringGMT(time_t *time) {
 
 std::string
 getDateTimeGMT() {
-    // e.g. Date: Wed, 21 Oct 2015 07:28:00 GMT
+
     time_t rawtime;
     time(&rawtime);
 

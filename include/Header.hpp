@@ -5,9 +5,9 @@
 
 #include "CRC.hpp"
 #include "Utils.hpp"
-#include "Base64.hpp"
 #include "Status.hpp"
 #include "Globals.hpp"
+#include "HeaderNames.hpp"
 #include "HeadersCodes.hpp"
 
 namespace HTTP {

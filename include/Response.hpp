@@ -12,12 +12,8 @@
 #include <unistd.h>
 #include <utility>
 
-#include "ResponseHeader.hpp"
-#include "HeaderNames.hpp"
 #include "Request.hpp"
-#include "Status.hpp"
-#include "Utils.hpp"
-#include "CRC.hpp"
+#include "ResponseHeader.hpp"
 
 namespace HTTP {
 

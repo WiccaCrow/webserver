@@ -6,9 +6,7 @@
 #include <stdint.h>
 #include <string>
 
-#include "Globals.hpp"
-#include "HeadersCodes.hpp"
-#include "Status.hpp"
+#include "Base64.hpp"
 #include "Header.hpp"
 
 namespace HTTP {
