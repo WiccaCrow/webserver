@@ -198,14 +198,11 @@ Client::process(void) {
 
     Log.debug("Client::process -> fd: " + to_string(_fd));
 
-    if (_req.getStatus() >= HTTP::BAD_REQUEST) {
-        _res.setErrorResponse(_req.getStatus());
-    } else if (_req.getStatus() == HTTP::PROCESSING) {
+    if (_req.getStatus() == HTTP::PROCESSING) {
         _req.setStatus(HTTP::OK);
-        if (_res.handle(_req) == METHOD_NOT_ALLOWED) {
-            _res.setErrorResponse(METHOD_NOT_ALLOWED);
-        }
     }
+
+    _res.handle(_req);
 }
 
 void

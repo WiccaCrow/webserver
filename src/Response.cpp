@@ -56,7 +56,9 @@ HTTP::StatusCode
 HTTP::Response::handle(Request &req) {
     std::map<std::string, Response::Handler>::iterator it;
 
-    if (_req->authNeeded() && !_req->isAuthorized()) {
+    if (getStatus() >= HTTP::BAD_REQUEST) {
+        this->setErrorResponse(getStatus());
+    } else if (_req->authNeeded() && !_req->isAuthorized()) {
         this->unauthorized();
     } else {
         it = methods.find(_req->getMethod());
