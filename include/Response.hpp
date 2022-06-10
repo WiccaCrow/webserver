@@ -82,6 +82,8 @@ public:
     const char        *getResponse(void);
     const std::string &getBody(void) const;
     void               setBody(const std::string &);
+    size_t             getBodyLength(void) const;
+    void               setBodyLength(size_t);
     void               setRequest(Request *req);
     Request           *getRequest(void) const;
     StatusCode         getStatus();

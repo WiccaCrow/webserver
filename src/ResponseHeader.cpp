@@ -101,8 +101,8 @@ ResponseHeader::ContentLength(Response &res) {
     if (value.empty() == false) {
         return ;
     }
-    if (res.getBody().length()) {
-        value = to_string(res.getBody().length());
+    if (res.getBodyLength() != 0) {
+        value = to_string(res.getBodyLength());
     }
 }
 

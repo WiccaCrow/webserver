@@ -415,7 +415,17 @@ HTTP::Response::getBody() const {
 void
 HTTP::Response::setBody(const std::string &body) {
     _body = body;
-    _bodyLength = _body.length();
+    setBodyLength(_body.length());
+}
+
+size_t
+HTTP::Response::getBodyLength(void) const {
+    return _bodyLength;
+}
+
+void
+HTTP::Response::setBodyLength(size_t len) {
+    _bodyLength = len;
 }
 
 void
