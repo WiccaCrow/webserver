@@ -32,7 +32,7 @@
             "index": [ "index.html" ],
             "locations": {
                 "/about": {
-                    "alias": "/Users/mhufflep/Desktop/serv/pages/site",
+                    "alias": "/Users/mhufflep/Downloads",
                     "autoindex": true,
                     "CGI": {
                         ".js": "/usr/local/bin/node",

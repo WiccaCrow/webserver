@@ -1,0 +1,47 @@
+PUT /testdel HTTP/1.1
+host: localhost:8080
+Authorization: Basic bWh1ZmZsZXA6cXdlcXdlcXdl
+transfer-encoding: chunked
+
+5
+12345
+2
+12
+0
+
+PUT /testdel HTTP/1.1
+host: localhost:8080
+Authorization: Basic bWh1ZmZsZXA6cXdlcXdlcXdl
+transfer-encoding: chunked
+
+POST /testdel HTTP/1.1
+host: localhost:8080
+Authorization: Basic bWh1ZmZsZXA6cXdlcXdlcXdl
+transfer-encoding: chunked
+
+DELETE /testdel HTTP/1.1
+host: localhost:8080
+Authorization: Basic bWh1ZmZsZXA6cXdlcXdlcXdl
+
+
+GET / HTTP/1.1
+host: localhost:8080
+Authorization: Basic bWh1ZmZsZXA6cXdlcXdlcXdl
+
+HEAD / HTTP/1.1
+host: localhost:8080
+Authorization: Basic bWh1ZmZsZXA6cXdlcXdlcXdl
+
+OPTIONS / HTTP/1.1
+host: localhost:8080
+Authorization: Basic bWh1ZmZsZXA6cXdlcXdlcXdl
+
+POST /testdel HTTP/1.1
+host: localhost:8080
+Authorization: Basic bWh1ZmZsZXA6cXdlcXdlcXdl
+Content-length: 
+
+PUT /testdel HTTP/1.1
+host: localhost:8080
+Authorization: Basic bWh1ZmZsZXA6cXdlcXdlcXdl
+Content-length:

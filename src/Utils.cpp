@@ -1,14 +1,14 @@
 #include "Utils.hpp"
 #include "SHA1.hpp"
 
-#include <vector>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <vector>
 
 std::vector<std::string>
 split(const std::string &source, const std::string &delimiters = " ") {
-    size_t prev = 0;
-    size_t currentPos = 0;
+    size_t                   prev       = 0;
+    size_t                   currentPos = 0;
     std::vector<std::string> results;
 
     while ((currentPos = source.find_first_of(delimiters, prev)) != std::string::npos) {
@@ -40,13 +40,13 @@ itoh(int nb) {
     return inhex;
 }
 
-static inline std::string &
+inline std::string &
 rtrim(std::string &s, const char *t) {
     s.erase(s.find_last_not_of(t) + 1);
     return s;
 }
 
-static inline std::string &
+inline std::string &
 ltrim(std::string &s, const char *t) {
     s.erase(0, s.find_first_not_of(t));
     return s;
@@ -66,9 +66,9 @@ toLowerCase(std::string &s) {
 }
 
 std::string
-getWord(const std::string &line, char delimiter, size_t &pos) {
+getWord(const std::string &line, const char *delims, size_t &pos) {
     size_t tmp = pos;
-    size_t end = pos = line.find(delimiter, pos);
+    size_t end = pos = line.find(delims, pos);
 
     if (end == std::string::npos)
         end = pos = line.length();
@@ -146,8 +146,7 @@ isValidRegName(const std::string &regname) {
     for (size_t i = 0; i < regname.length(); ++i) {
         if (isPctEncoded(regname.c_str() + i)) {
             i += 2;
-        } else if (!isUnreserved(regname[i]) &&
-                   !isSubDelims(regname[i])) {
+        } else if (!isUnreserved(regname[i]) && !isSubDelims(regname[i])) {
             return false;
         }
     }

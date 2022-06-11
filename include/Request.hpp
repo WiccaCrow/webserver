@@ -9,9 +9,9 @@
 
 #include "CRC.hpp"
 #include "Globals.hpp"
-#include "RequestHeader.hpp"
 #include "Location.hpp"
 #include "Logger.hpp"
+#include "RequestHeader.hpp"
 #include "ServerBlock.hpp"
 #include "Status.hpp"
 #include "URI.hpp"
@@ -29,27 +29,28 @@ class Client;
 class Request {
 
 private:
-    std::string                  _method;
-    URI                          _uri;
-    std::string                  _rawURI;
-    std::string                  _protocol;
-    std::string                  _resolvedPath;
-    std::map<uint32_t, RequestHeader>   _headers;
-    HTTP::StatusCode             _status;
-    int                          _major : 4;
-    int                          _minor : 4;
+    std::string                       _method;
+    URI                               _uri;
+    std::string                       _rawURI;
+    std::string                       _protocol;
+    std::string                       _resolvedPath;
+    std::map<uint32_t, RequestHeader> _headers;
+    HTTP::StatusCode                  _status;
+    int                               _major : 4;
+    int                               _minor : 4;
 
     ServerBlock *_servBlock;
     Location    *_location;
     Client      *_client;
 
-    bool          _flag_getline_bodySize;
-    unsigned long _bodySize;
+    bool           _isChuckSize;
+    size_t        _chunkSize;
+    size_t        _bodySize;
     std::string   _body;
     uint8_t       _parseFlags;
 
-    bool                         _isAuthorized;
-    uint32_t                     _storedHash;
+    bool     _isAuthorized;
+    uint32_t _storedHash;
 
     std::map<std::string, std::string> _cookie;
 
@@ -63,8 +64,8 @@ public:
     ServerBlock *getServerBlock() const;
     void         setServerBlock(ServerBlock *);
 
-    Location       *getLocation(void);
-    void            setLocation(Location *);
+    Location *getLocation(void);
+    void      setLocation(Location *);
 
     const Client *getClient() const;
     void          setClient(Client *);
@@ -91,32 +92,32 @@ public:
     void removeFlag(uint8_t flag);
     void clear(void);
 
+    void parseLine(std::string &line);
+
     StatusCode parseSL(const std::string &line);
     StatusCode parseHeader(const std::string &line);
-    StatusCode parseChunked(const std::string &line);
-    StatusCode writeChunkedSize(const std::string &line);
+    StatusCode parseChunk(const std::string &line);
+    StatusCode writeChunkSize(const std::string &line);
+    StatusCode writeChuck(const std::string &line);
     StatusCode parseBody(const std::string &line);
     StatusCode writeBody(const std::string &line);
-    StatusCode parseLine(std::string line);
 
     StatusCode checkSL(void);
     StatusCode checkHeaders(void);
-    void resolvePath(void);
+    void       resolvePath(void);
 
 private:
     bool isValidMethod(const std::string &method);
     // bool isValidPath(const std::string &path);
     bool isValidProtocol(const std::string &protocol);
 
-
 public:
     // for chunked
     bool          getBodySizeFlag();
     void          setBodySizeFlag(bool isSize);
-    unsigned long getBodySize();
-    void          setBodySize(unsigned long size);
+    size_t        getBodySize();
+    void          setBodySize(size_t size);
     void          setStatus(const HTTP::StatusCode &status);
-
 
     bool authNeeded(void);
     bool isAuthorized(void) const;
@@ -124,11 +125,11 @@ public:
     bool isHeaderExist(const uint32_t code);
     void setAuthFlag(bool);
 
-    uint32_t      getStoredHash() const;
-    void          setStoredHash(uint32_t);
+    uint32_t getStoredHash() const;
+    void     setStoredHash(uint32_t);
 
     const std::map<std::string, std::string> &getCookie(void);
-    void setCookie(std::map<std::string, std::string> cookie);
+    void                                      setCookie(std::map<std::string, std::string> cookie);
 };
 
 } // namespace HTTP

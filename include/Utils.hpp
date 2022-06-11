@@ -1,19 +1,22 @@
 #pragma once
 
-#include <iostream>
+#include "SHA1.hpp"
 #include <cstring>
+#include <iostream>
 #include <stdlib.h>
 #include <unistd.h>
 #include <vector>
-#include "SHA1.hpp"
 
 std::vector<std::string> split(const std::string &source, const std::string &delimiters);
-std::string getWord(const std::string &line, char delimiter, size_t &pos);
-std::string itoh(int nb);
+std::string              getWord(const std::string &line, const char *delims, size_t &pos);
+std::string              itoh(int nb);
 
-void        trim(std::string &s, const char *t);
-void        toLowerCase(std::string &s);
-void        skipSpaces(const std::string &line, size_t &pos);
+std::string &rtrim(std::string &s, const char *t);
+std::string &ltrim(std::string &s, const char *t);
+
+void trim(std::string &s, const char *t);
+void toLowerCase(std::string &s);
+void skipSpaces(const std::string &line, size_t &pos);
 
 #if __cplusplus < 201103L
 
