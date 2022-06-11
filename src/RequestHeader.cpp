@@ -123,7 +123,7 @@ RequestHeader::Connection(Request &req) {
 StatusCode
 RequestHeader::ContentLength(Request &req) {
     if (req.isHeaderExist(TRANSFER_ENCODING)) {
-        Log.debug("ContentLength:: TE");
+        Log.debug("ContentLength::ContentLength: TransferEncoding header exist");
         return BAD_REQUEST;
     }
 
@@ -157,9 +157,9 @@ RequestHeader::Cookie(Request &req) {
         if (colonPos == std::string::npos) {
             continue;
         }
-        std::string cookie_key = cookie_pairs[i].substr(0, colonPos);
+        std::string cookie_key   = cookie_pairs[i].substr(0, colonPos);
         std::string cookie_value = cookie_pairs[i].substr(colonPos + 1);
-        cookie[cookie_key] = cookie_value;
+        cookie[cookie_key]       = cookie_value;
     }
     req.setCookie(cookie);
     return CONTINUE;
@@ -195,10 +195,11 @@ RequestHeader::Host(Request &req) {
     uri.parse(value);
 
     if (!isValidHost(uri._host)) {
+        Log.error("Host: Invalid Host " + uri._host);
         return BAD_REQUEST;
     }
 
-    // Dangerous because of segfault if there's some header 
+    // Dangerous because of segfault if there's some header
     // that needs serverblock or location data before Host is arrived
     req.setServerBlock(g_server->matchServerBlock(req.getClient()->getServerPort(), "", uri._host));
     req.setLocation(req.getServerBlock()->matchLocation(req.getUriRef()._path));
@@ -210,7 +211,8 @@ StatusCode
 RequestHeader::IfMatch(Request &req) {
 
     // remove
-    if (true) return CONTINUE;
+    if (true)
+        return CONTINUE;
 
     std::vector<std::string> tags = split(value, ", \"");
 
@@ -223,7 +225,7 @@ RequestHeader::IfMatch(Request &req) {
             // Maybe not bad request
             return BAD_REQUEST;
         }
-    } 
+    }
 
     std::map<std::string, std::string>::const_iterator itStored;
     itStored = g_etags.find(req.getResolvedPath());
@@ -245,7 +247,8 @@ StatusCode
 RequestHeader::IfModifiedSince(Request &req) {
     (void)req;
 
-    if (true) return CONTINUE;
+    if (true)
+        return CONTINUE;
 
     struct tm tm;
     if (!strptime(value.c_str(), "%a, %-e %b %Y %H:%M:%S GMT", &tm)) {
@@ -257,8 +260,8 @@ RequestHeader::IfModifiedSince(Request &req) {
     if (req.getResolvedPath() != "") {
 
         // if (stat(req.getResolvedPath().c_str(), &state) < 0) {
-            // Log.debug("IfModifiedSince:: ");
-            return CONTINUE;
+        // Log.debug("IfModifiedSince:: ");
+        return CONTINUE;
         // }
         // if equal
         // return NOT_MODIFIED;
@@ -271,7 +274,8 @@ RequestHeader::IfNoneMatch(Request &req) {
     (void)req;
 
     // remove
-    if (true) return CONTINUE;
+    if (true)
+        return CONTINUE;
 
     std::vector<std::string> tags = split(value, ", \"");
 
@@ -285,7 +289,7 @@ RequestHeader::IfNoneMatch(Request &req) {
             // Maybe not bad request
             return BAD_REQUEST;
         }
-    } 
+    }
 
     std::map<std::string, std::string>::const_iterator itStored;
     itStored = g_etags.find(req.getResolvedPath());
@@ -370,6 +374,7 @@ RequestHeader::TransferEncoding(Request &req) {
     acceptedValues.insert("chunked");
 
     if (req.isHeaderExist(CONTENT_LENGTH)) {
+        Log.debug("ContentLength::TransferEncoding: ContentLength header exist");
         return BAD_REQUEST;
     }
 
@@ -380,7 +385,7 @@ RequestHeader::TransferEncoding(Request &req) {
             return NOT_IMPLEMENTED;
         }
     }
-
+    req.setBodySizeFlag(true);
     return CONTINUE;
 }
 

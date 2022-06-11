@@ -21,10 +21,9 @@ Client::Client(const Client &client) {
 Client &
 Client::operator=(const Client &client) {
     if (this != &client) {
-        _req       = client._req;
-        _res       = client._res;
-        _servBlock = client._servBlock;
-        // Not think it is correct
+        _req            = client._req;
+        _res            = client._res;
+        _servBlock      = client._servBlock;
         _fd             = client._fd;
         _ipAddr         = client._ipAddr;
         _clientPort     = client._clientPort;
@@ -36,7 +35,7 @@ Client::operator=(const Client &client) {
     return *this;
 }
 
-void 
+void
 Client::initResponseMethodsHeaders(void) {
     _res.initMethodsHeaders();
 }
@@ -118,7 +117,7 @@ Client::shouldBeClosed(bool flag) {
     _shouldBeClosed = flag;
 }
 
-bool 
+bool
 Client::shouldBeClosed(void) const {
     return _shouldBeClosed;
 }
@@ -126,47 +125,31 @@ Client::shouldBeClosed(void) const {
 void
 Client::receive(void) {
 
-    std::string line;
-
-    struct s_sock s = { _fd, ReadSock::PERM_READ };
+    if (_fd < 0) {
+        return;
+    }
 
     Log.debug("Client::receive -> fd:" + to_string(_fd));
 
-    ReadSock::Status stat;
     while (true) {
-        line = "";
-        if (!_req.set(PARSED_HEADERS) || !_req.set(PARSED_SL)) {
-            stat = _reader.getline(s, line);
-        } else {
-            stat = _reader.getline_for_chunked(s, line, _req);
-        }
+        std::string line;
 
-        switch (stat) {
-            case ReadSock::RECV_END:
-                Log.debug("Client::receive_end " + to_string(_fd));
-                setFd(-1);
-            case ReadSock::INVALID_FD:
-                return;
-            case ReadSock::LINE_NOT_FOUND:
-                return;
-
-            case ReadSock::RECV_END_NB: {
-                // Need to parse maybe
-                // because the data could remain from the previous requests
-                return;
-            }
-
+        switch (_reader.getline(_fd, line)) {
             case ReadSock::LINE_FOUND: {
-                _req.setStatus(_req.parseLine(line));
+                _req.parseLine(line);
                 if (_req.getStatus() != HTTP::CONTINUE) {
                     setRequestFormed(true);
                     return;
+                } else {
+                    break;
                 }
-                break;
             }
-            default: {
+            case ReadSock::RECV_CLOSED: {
+                Log.debug("Client::Connection closed" + to_string(_fd));
+                setFd(-1);
                 return;
             }
+            default: return;
         }
     }
 }
@@ -174,10 +157,7 @@ Client::receive(void) {
 void
 Client::checkIfFailed(void) {
 
-    if (_req.getStatus() == HTTP::BAD_REQUEST || 
-        _req.getStatus() == HTTP::REQUEST_TIMEOUT ||
-        _req.getStatus() == HTTP::INTERNAL_SERVER_ERROR ||
-        _req.getStatus() == HTTP::PAYLOAD_TOO_LARGE) {
+    if (_req.getStatus() == HTTP::BAD_REQUEST || _req.getStatus() == HTTP::REQUEST_TIMEOUT || _req.getStatus() == HTTP::INTERNAL_SERVER_ERROR || _req.getStatus() == HTTP::PAYLOAD_TOO_LARGE) {
         setFd(-1);
     }
 }
