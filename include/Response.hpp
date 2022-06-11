@@ -75,6 +75,9 @@ public:
     void        addHeader(HeaderCode code, const std::string &value);
     void        addHeader(HeaderCode code);
 
+    std::map<std::string, CGI>::iterator
+        isCGI(const std::string &filepath, std::map<std::string, CGI> &cgis);
+    
     int passToCGI(CGI &cgi);
 
     // to send response

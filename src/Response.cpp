@@ -2,18 +2,6 @@
 #include "CGI.hpp"
 #include "Client.hpp"
 
-std::map<std::string, HTTP::CGI>::iterator
-isCGI(const std::string &filepath, std::map<std::string, HTTP::CGI> &cgis) {
-    std::map<std::string, HTTP::CGI>::iterator it = cgis.begin();
-    for (; it != cgis.end(); it++) {
-        if (endsWith(filepath, it->first)) {
-            it->second.setScriptPath(filepath);
-            return it;
-        }
-    }
-    return cgis.end();
-}
-
 namespace HTTP {
 
 Response::Response() : _req(NULL), _client(NULL), _bodyLength(0) {}
@@ -383,6 +371,18 @@ Response::addHeader(HeaderCode code, const std::string &value) {
 void
 Response::addHeader(HeaderCode code) {
     addHeader(code, "");
+}
+
+std::map<std::string, CGI>::iterator
+Response::isCGI(const std::string &filepath, std::map<std::string, CGI> &cgis) {
+    std::map<std::string, CGI>::iterator it = cgis.begin();
+    for (; it != cgis.end(); it++) {
+        if (endsWith(filepath, it->first)) {
+            it->second.setScriptPath(filepath);
+            return it;
+        }
+    }
+    return cgis.end();
 }
 
 int
