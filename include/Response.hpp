@@ -28,8 +28,9 @@ class Response {
     Request    *_req;
     Client     *_client;
     std::string _body;
-    std::string _additionalHeaders;
+    std::string _extraHeaders;
     size_t      _bodyLength;
+    bool        _isFormed;
 
 public:
     typedef void (Response::*Handler)(void);
@@ -70,17 +71,19 @@ public:
     std::string getContentType(std::string resourcePath);
     void        writeFile(const std::string &resourcePath);
 
-    ResponseHeader *getHeader(HeaderCode code);
+    ResponseHeader *getHeader(uint32_t hash);
     std::string makeHeaders(void);
-    void        addHeader(HeaderCode code, const std::string &value);
-    void        addHeader(HeaderCode code);
+    void        addHeader(uint32_t hash, const std::string &value);
+    void        addHeader(uint32_t hash);
 
     std::map<std::string, CGI>::iterator
         isCGI(const std::string &filepath, std::map<std::string, CGI> &cgis);
     
     int passToCGI(CGI &cgi);
+    int recognizeHeaders(CGI &cgi);
 
-    // to send response
+    // setters, getters
+    //     to send response
     size_t             getResLength(void);
     const char        *getResponse(void);
     const std::string &getBody(void) const;
@@ -94,6 +97,11 @@ public:
 
     void            setClient(Client *client);
     Client *        getClient(void);
+
+    bool    isFormed(void) const;
+    void    isFormed(bool formed);
+
+    int             checkCGIBodyLength(void);
 
     // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);
 };

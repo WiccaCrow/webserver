@@ -2,13 +2,9 @@
 
 namespace HTTP {
 
-ReadSock Client::_reader;
-
 Client::Client()
     : _fd(-1)
     , _clientPort(0)
-    , _requestFormed(false)
-    , _responseFormed(false)
     , _shouldBeClosed(false) { }
 
 Client::~Client() {
@@ -28,8 +24,6 @@ Client::operator=(const Client &client) {
         _ipAddr         = client._ipAddr;
         _clientPort     = client._clientPort;
         _serverPort     = client._serverPort;
-        _requestFormed  = client._requestFormed;
-        _responseFormed = client._responseFormed;
         _shouldBeClosed = client._shouldBeClosed;
     }
     return *this;
@@ -92,24 +86,14 @@ Client::getHostname() const {
     return _clientPort != 0 ? _ipAddr + ":" + to_string(_clientPort) : _ipAddr;
 }
 
-bool
-Client::isRequestFormed() const {
-    return _requestFormed;
+const Request &
+Client::getRequest() const {
+    return _req;
 }
 
-void
-Client::setRequestFormed(bool formed) {
-    _requestFormed = formed;
-}
-
-bool
-Client::isResponseFormed() const {
-    return _responseFormed;
-}
-
-void
-Client::setResponseFormed(bool formed) {
-    _responseFormed = formed;
+const Response &
+Client::getResponse() const {
+    return _res;
 }
 
 void
@@ -123,42 +107,21 @@ Client::shouldBeClosed(void) const {
 }
 
 void
-Client::receive(void) {
-
-    if (_fd < 0) {
-        return;
-    }
-
-    Log.debug("Client::receive -> fd:" + to_string(_fd));
-
-    while (true) {
-        std::string line;
-
-        switch (_reader.getline(_fd, line)) {
-            case ReadSock::LINE_FOUND: {
-                _req.parseLine(line);
-                if (_req.getStatus() != HTTP::CONTINUE) {
-                    setRequestFormed(true);
-                    return;
-                } else {
-                    break;
-                }
-            }
-            case ReadSock::RECV_CLOSED: {
-                Log.debug("Client::Connection closed" + to_string(_fd));
-                setFd(-1);
-                return;
-            }
-            default: return;
-        }
-    }
-}
-
-void
 Client::checkIfFailed(void) {
 
-    if (_req.getStatus() == HTTP::BAD_REQUEST || _req.getStatus() == HTTP::REQUEST_TIMEOUT || _req.getStatus() == HTTP::INTERNAL_SERVER_ERROR || _req.getStatus() == HTTP::PAYLOAD_TOO_LARGE) {
-        setFd(-1);
+    static const size_t size = 4;
+    static const StatusCode failedStatus[size] = {
+        BAD_REQUEST,
+        REQUEST_TIMEOUT,
+        INTERNAL_SERVER_ERROR,
+        PAYLOAD_TOO_LARGE
+    };
+
+    for (size_t i = 0; i < size; i++) {
+        if (_req.getStatus() == failedStatus[i]) {
+            setFd(-1);
+            return ;
+        } 
     }
 }
 
@@ -166,8 +129,6 @@ void
 Client::clearData(void) {
     _res.clear();
     _req.clear();
-    _requestFormed  = false;
-    _responseFormed = false;
 }
 
 void
@@ -197,10 +158,11 @@ Client::reply(void) {
 
     size_t sentBytes = 0;
     do {
+        
         long n = send(_fd, _res.getResponse() + sentBytes, _res.getResLength() - sentBytes, 0);
         if (n > 0) {
             sentBytes += n;
-            Log.debug("Client::sent " + to_string(sentBytes) + "/" + to_string(_res.getResLength()) + " bytes");
+            Log.debug("Client:: " + to_string(sentBytes) + "/" + to_string(_res.getResLength()) + " bytes sent");
         }
     } while (sentBytes < _res.getResLength());
 
@@ -208,5 +170,85 @@ Client::reply(void) {
         _fd = -1;
     }
 }
+
+
+static const size_t MAX_PACKET_SIZE = 65536;
+
+int
+Client::readSocket(void) {
+    char buf[MAX_PACKET_SIZE + 1] = { 0 };
+
+    int recvBytes = recv(_fd, buf, MAX_PACKET_SIZE, 0);
+
+    if (recvBytes == 0) {
+        _rem.erase();
+
+    } else if (recvBytes > 0) {
+        buf[recvBytes] = '\0';
+        _rem += buf;
+    }
+    return recvBytes;
+}
+
+Client::Status
+Client::getline(std::string &line) {
+
+    if (!readSocket()) {
+        return SOCK_CLOSED;
+    }
+
+    size_t pos = 0;
+    if (!_req.getBodySize()) {
+        pos = _rem.find("\r\n");
+        if (pos == std::string::npos) {
+            return LINE_NOT_FOUND;
+        }
+        pos += 2;
+    } else {
+        if (_rem.length() < _req.getBodySize()) {
+            return LINE_NOT_FOUND;
+        }
+        pos = _req.getBodySize();
+    }
+
+    line = _rem.substr(0, pos);
+    _rem.erase(0, pos);
+
+    return LINE_FOUND;
+}
+
+
+void
+Client::receive(void) {
+
+    if (_fd < 0) {
+        return;
+    }
+
+    Log.debug("Client::receive [" + to_string(_fd) + "]");
+
+    while (true) {
+        std::string line;
+
+        switch (getline(line)) {
+            case LINE_FOUND: {
+                _req.parseLine(line);
+                if (!_req.isFormed()) {
+                    break ;
+                }
+                return ;
+            }
+            case SOCK_CLOSED: {
+                setFd(-1);
+                return ;
+            }
+            case LINE_NOT_FOUND: {
+                return ;
+            }
+        }
+    }
+}
+
+
 
 }

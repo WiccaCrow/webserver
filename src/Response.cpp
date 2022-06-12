@@ -4,7 +4,11 @@
 
 namespace HTTP {
 
-Response::Response() : _req(NULL), _client(NULL), _bodyLength(0) {}
+Response::Response() 
+            : _req(NULL)
+            , _client(NULL)
+            , _bodyLength(0)
+            , _isFormed(false) {}
 
 Response::~Response() { }
 
@@ -31,6 +35,7 @@ Response::clear() {
     _res = "";
     _body = "";
     _bodyLength = 0;
+    _isFormed = false;
     
     std::list<ResponseHeader>::iterator posIt = headers.begin();
     std::advance(posIt, 6);
@@ -341,15 +346,15 @@ Response::makeHeaders() {
         }
     }
 
-    headersToReturn += _additionalHeaders;
+    headersToReturn += _extraHeaders;
     headersToReturn += "\r\n";
     return headersToReturn;
 }
 
 ResponseHeader *
-Response::getHeader(HeaderCode code) {
+Response::getHeader(uint32_t hash) {
     std::list<ResponseHeader>::iterator it;
-    it = std::find(headers.begin(), headers.end(), ResponseHeader(code));
+    it = std::find(headers.begin(), headers.end(), ResponseHeader(hash));
 
     if (it == headers.end()) {
         return NULL;
@@ -359,18 +364,39 @@ Response::getHeader(HeaderCode code) {
 }
 
 void
-Response::addHeader(HeaderCode code, const std::string &value) {
-    ResponseHeader *ptr = getHeader(code);
+Response::addHeader(uint32_t hash, const std::string &value) {
+    ResponseHeader *ptr = getHeader(hash);
     if (ptr == NULL) {
-        headers.push_back(ResponseHeader(code, value));
+        headers.push_back(ResponseHeader(hash, value));
     } else {
         ptr->value = value;
     }
 }
 
 void
-Response::addHeader(HeaderCode code) {
-    addHeader(code, "");
+Response::addHeader(uint32_t hash) {
+    addHeader(hash, "");
+}
+
+int
+Response::checkCGIBodyLength() {
+
+    ResponseHeader *ptr = getHeader(CONTENT_LENGTH);
+
+    if (ptr != NULL && !ptr->value.empty()) {
+        long long length = strtoll(ptr->value.c_str(), NULL, 10);
+        if (length < 0 || length > LONG_MAX) {
+            Log.debug("Response::CGI:: ContentLength is invalid: " + to_string(length));
+            return 0;
+        }
+        if (static_cast<size_t>(length) != getBodyLength()) {
+            Log.debug("Response::CGI:: ContentLength mismatch");
+            Log.debug("Response::CGI:: expected " + to_string(length));
+            Log.debug("Response::CGI:: got " + to_string(getBodyLength()));
+            return 0;
+        }
+    }
+    return 1;
 }
 
 std::map<std::string, CGI>::iterator
@@ -387,14 +413,30 @@ Response::isCGI(const std::string &filepath, std::map<std::string, CGI> &cgis) {
 
 int
 Response::passToCGI(CGI &cgi) {
-    cgi.reset();
+    cgi.clear();
     cgi.linkRequest(_req);
+    cgi.linkResponse(this);
     cgi.setEnv();
     if (!cgi.exec()) {
         setStatus(BAD_GATEWAY);
         return 0;
     }
-    setBody(cgi.getResult());
+    cgi.parseHeaders();
+    setBody(cgi.getBody());
+    Log.debug("BD: " + getBody());
+
+    if (!checkCGIBodyLength()) {
+        setStatus(BAD_GATEWAY);
+        return 0;
+    }
+
+    _extraHeaders += cgi.getExtraHeaders();
+    std::list<ResponseHeader>::const_iterator it = cgi.getHeaders().begin();
+    std::list<ResponseHeader>::const_iterator end = cgi.getHeaders().end();
+    for (; it != end; ++it) {
+        addHeader(it->hash, it->value);
+    }
+
     return 1;
 }
 
@@ -457,6 +499,16 @@ Response::setClient(Client *client) {
 Client *
 Response::getClient(void) {
     return _client;
+}
+
+bool
+Response::isFormed(void) const {
+    return _isFormed;
+}
+
+void
+Response::isFormed(bool formed) {
+    _isFormed = formed;
 }
 
 // std::string Response::TransferEncodingChunked(std::string buffer, size_t bufSize) {

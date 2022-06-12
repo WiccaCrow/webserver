@@ -3,12 +3,14 @@
 #include <map>
 #include <poll.h>
 #include <sys/socket.h>
+#include <string>
 #include <unistd.h>
 
-#include "ReadSock.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
+#include "Logger.hpp"
 #include "Status.hpp"
+
 
 namespace HTTP {
 
@@ -19,16 +21,28 @@ private:
     int         _clientPort;
     int         _serverPort;
     std::string _ipAddr;
-    bool        _requestFormed;
-    bool        _responseFormed;
+    // bool        _requestFormed;
+    // bool        _responseFormed;
 
     HTTP::Request  _req;
     HTTP::Response _res;
 
     ServerBlock    *_servBlock;
-    static ReadSock _reader;
+    // static ReadSock _reader;
 
     bool        _shouldBeClosed;
+
+    std::string _rem;
+
+    int readSocket(void);
+    
+
+public:
+    enum Status {
+        LINE_NOT_FOUND = -1,
+        SOCK_CLOSED    = 0,
+        LINE_FOUND     = 1
+    };
 
 public:
     Client(void);
@@ -38,6 +52,8 @@ public:
     Client &operator=(const Client &client);
 
     void initResponseMethodsHeaders(void);
+
+    Status getline(std::string &line);
 
     void setFd(int fd);
     int  getFd(void) const;
@@ -54,11 +70,8 @@ public:
     void              linkRequest(void);
     const std::string getHostname(void) const;
 
-    bool isRequestFormed() const;
-    void setRequestFormed(bool);
-
-    bool isResponseFormed() const;
-    void setResponseFormed(bool);
+    const Request &    getRequest() const;
+    const Response &   getResponse() const;
 
     void receive(void);
     void process(void);

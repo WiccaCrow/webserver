@@ -26,7 +26,7 @@
                 ".js": "/usr/local/bin/node",
                 ".cgi": ""
             },
-            "methods_allowed": [ "GET", "PUT" ],
+            "methods_allowed": [ "GET", "PUT", "POST" ],
             "post_max_body": 100,
             "autoindex": true,
             "index": [ "index.html" ],

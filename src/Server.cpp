@@ -112,13 +112,14 @@ Server::pollInHandler(size_t id) {
     if (id < _servBlocks.size()) {
         connectClient(id);
         return 1;
-    } else if (!_clients[id].isResponseFormed()) {
-
+    }
+    
+    if (!_clients[id].getResponse().isFormed()) {
         _clients[id].receive();
+    }
 
-        if (_clients[id].getFd() == -1) {
-            disconnectClient(id);
-        }
+    if (_clients[id].getFd() == -1) {
+        disconnectClient(id);
     }
     return 0;
 }
@@ -133,7 +134,7 @@ Server::pollHupHandler(size_t id) {
 
 void
 Server::pollOutHandler(size_t id) {
-    if (_clients[id].isRequestFormed()) {
+    if (_clients[id].getRequest().isFormed()) {
         _clients[id].process();           
         _clients[id].reply();
         _clients[id].checkIfFailed();
@@ -268,7 +269,7 @@ Server::connectClient(size_t id) {
 
 void
 Server::disconnectClient(size_t id) {
-    Log.debug("Server::disconnectClient -> [" + to_string(_pollfds[id].fd) + "]");
+    Log.debug("Server::disconnectClient [" + to_string(_pollfds[id].fd) + "]");
     _clients.erase(id);
     close(_pollfds[id].fd);
     _pollfds[id].fd      = -1;

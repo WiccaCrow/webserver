@@ -6,9 +6,9 @@ namespace HTTP {
 void
 ResponseHeader::handle(Response &res) {
     std::map<uint32_t, ResponseHeader::Handler>::const_iterator it;
-    it = validResponseHeaders.find(hash);
+    it = validResHeaders.find(hash);
 
-    if (it == validResponseHeaders.end()) {
+    if (it == validResHeaders.end()) {
         Log.debug("RequestHeader:: Unknown header: " + headerNames[hash]);
         Log.debug("RequestHeader:: Value: " + value);
         Log.debug("RequestHeader:: Hash: " + to_string(hash));
@@ -23,6 +23,12 @@ ResponseHeader::ResponseHeader() : Header() { }
 ResponseHeader::ResponseHeader(uint32_t hash) : Header(hash) { }
 
 ResponseHeader::ResponseHeader(uint32_t hash, const std::string &value) :  Header(hash, value) { }
+
+bool
+ResponseHeader::isValid(void) {
+    return (validResHeaders.find(hash) != validResHeaders.end());
+}
+
 
 void
 ResponseHeader::AcceptPatch(Response &res) {
@@ -42,9 +48,9 @@ ResponseHeader::Age(Response &res) {
 void
 ResponseHeader::Allow(Response &res) {
     if (res.getRequest()->getMethod() == "OPTIONS") {
-        std::vector<std::string> AllowedMethods = res.getRequest()->getLocation()->getAllowedMethodsRef();
-        for (int i = 0, nbMetods = AllowedMethods.size(); i < nbMetods;) {
-            value += AllowedMethods[i];
+        std::vector<std::string> &allowedMethods = res.getRequest()->getLocation()->getAllowedMethodsRef();
+        for (int i = 0, nbMetods = allowedMethods.size(); i < nbMetods;) {
+            value += allowedMethods[i];
             if (++i != nbMetods) {
                 value += ", ";
             }
@@ -380,6 +386,6 @@ initResponseHeadersMap(void) {
     return tmp;
 }
 
-const std::map<uint32_t, ResponseHeader::Handler> validResponseHeaders = initResponseHeadersMap();
+const std::map<uint32_t, ResponseHeader::Handler> validResHeaders = initResponseHeadersMap();
 
 }

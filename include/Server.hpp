@@ -18,7 +18,6 @@
 #include "Client.hpp"
 #include "Logger.hpp"
 #include "Request.hpp"
-#include "ReadSock.hpp"
 #include "Response.hpp"
 #include "ServerBlock.hpp"
 
