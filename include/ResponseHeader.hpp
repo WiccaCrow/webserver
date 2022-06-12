@@ -23,6 +23,8 @@ public:
     typedef void (ResponseHeader::*Handler)(Response &res);
     Handler     method;
 
+    bool isValid(void);
+
     ResponseHeader();
     ResponseHeader(uint32_t hash);
     ResponseHeader(uint32_t hash, const std::string &value);
@@ -88,6 +90,6 @@ public:
     void NotSupported(Response &res);
 };
 
-extern const std::map<uint32_t, ResponseHeader::Handler> validResponseHeaders;
+extern const std::map<uint32_t, ResponseHeader::Handler> validResHeaders;
 
 } // namespace HTTP

@@ -19,6 +19,8 @@ public:
     typedef StatusCode (RequestHeader::*Handler)(Request &req);
     Handler     method;
 
+    bool isValid(void);
+
     StatusCode handle(Request &req);
 
     StatusCode A_IM(Request &req);
@@ -74,6 +76,6 @@ public:
     StatusCode NotSupported(Request &req);
 };
 
-extern const std::map<uint32_t, RequestHeader::Handler> validHeaders;
+extern const std::map<uint32_t, RequestHeader::Handler> validReqHeaders;
 
 } // namespace HTTP

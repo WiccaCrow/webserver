@@ -5,12 +5,33 @@
 namespace HTTP {
 
 CGI::CGI(void)
-    : _isCompiled(false) {
+    : _isCompiled(false), _bodyPos(0) {
     for (size_t i = 0; i < 3; i++)
         _args[i] = NULL;
 }
 
 CGI::~CGI() { }
+
+CGI::CGI(const CGI &other) {
+    *this = other;
+}
+
+CGI &CGI::operator=(const CGI &other) {
+    if (this != &other) {
+        _execpath = other._execpath;
+        _filepath = other._filepath;
+        _args[0] = other._args[0];
+        _args[1] = other._args[1];
+        _args[2] = other._args[2];
+        _isCompiled = other._isCompiled;
+        _req = other._req;
+        _res = other._res;
+        // _ss.swap(other._ss);
+        _headers = other._headers;
+        _extraHeaders = other._extraHeaders;
+    }
+    return *this;
+}
 
 static void
 log_error(const std::string &location) {
@@ -52,6 +73,11 @@ setValue(char *const env, const std::string &value) {
 void
 CGI::linkRequest(Request *req) {
     _req = req;
+}
+
+void
+CGI::linkResponse(Response *res) {
+    _res = res;
 }
 
 // This version passes all the env, including system
@@ -168,14 +194,31 @@ CGI::setScriptPath(const std::string path) {
     return true;
 }
 
-const std::string
-CGI::getResult(void) const {
-    return _res;
+std::stringstream &
+CGI::getResult(void) {
+    return _ss;
 }
 
 void
-CGI::reset(void) {
-    _res = "";
+CGI::clear(void) {
+    _headers.clear();
+    _ss.str("");
+    resetStream();
+}
+
+const std::string &
+CGI::getExtraHeaders(void) const {
+    return _extraHeaders;
+}
+
+const std::list<ResponseHeader> &
+CGI::getHeaders(void) const {
+    return _headers;
+}
+
+const std::string 
+CGI::getBody(void) const {
+    return _ss.str().erase(0, _bodyPos);
 }
 
 int
@@ -285,18 +328,20 @@ CGI::exec() {
     if (WIFSIGNALED(status)) {
         log_error("CGI::signaled:" + to_string(WTERMSIG(status)));
         return 0;
+
     } else if (WIFSTOPPED(status)) {
         log_error("CGI::stopped:" + to_string(WSTOPSIG(status)));
         return 0;
-    } else if (WIFEXITED(status)) {
 
+    } else if (WIFEXITED(status)) {
         if (WEXITSTATUS(status)) {
             log_error("CGI::exited:" + to_string(WEXITSTATUS(status)));
             return 0;
         }
 
-        int       readBytes = 1;
-        const int size      = 300;
+        int readBytes = 1;
+
+        const int size = 300;
 
         char buf[size];
         while (readBytes > 0) {
@@ -306,12 +351,51 @@ CGI::exec() {
                 return 1;
             }
             buf[readBytes] = 0;
-            _res += buf;
-        }
-        // Send response to the client in body
+            _ss << buf;
+        } 
     }
     close_pipe(out[0], -1);
     return 1;
+}
+
+void
+CGI::resetStream(void) {
+    _ss.clear();
+    _ss.seekg(0, std::ios::beg);
+}
+
+void
+CGI::parseHeaders(void) {
+
+    for (std::string line; std::getline(_ss, line); ) {
+        
+        ResponseHeader header;
+        
+        rtrim(line, "\r\n");  
+        if (header.parse(line)) {
+            if (header.isValid()) {
+                Log.debug("PB: " + line);
+                _headers.push_back(header);
+            } else if (CGI::extraHeaderEnabled && header.key.find(CGI::extraHeaderPrefix) == 0) {
+                _extraHeaders += line + "\r\n";
+            } else {
+                _extraHeaders.clear();
+                _headers.clear();
+                return ;
+            }
+        } else {
+            if (line.empty()) {
+                if (_headers.size() != 0 || !_extraHeaders.empty()) {
+                    _bodyPos = _ss.tellg();
+                    Log.debug("MT: " + to_string(_bodyPos));
+                    return ;
+                }
+            }
+            _extraHeaders.clear();
+            _headers.clear();
+            return ;
+        }
+    }
 }
 
 static char **
@@ -347,6 +431,8 @@ initEnv() {
 
 char ** const CGI::env = initEnv();
 
+const bool CGI::extraHeaderEnabled = true;
 const std::string CGI::compiledExt = ".cgi";
+const std::string CGI::extraHeaderPrefix = "X-CGI-";
 
 }

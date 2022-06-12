@@ -11,7 +11,7 @@ for param in os.environ.keys():
     print "<tr><td>%s</td><td>%s</td></tr>\n" % (param,os.environ[param])
 print "</table>\n"
 
-print "<label>Body: </label>\n"
+print "<br><label>Request Body: </label>\n"
 for line in fileinput.input():
     print "%s\n" % line
 
