@@ -279,16 +279,16 @@ Response::fileToResponse(std::string resourcePath) {
 int
 Response::listing(const std::string &resourcePath) {
     std::string pathToDir;
-    _body = "<!DOCTYPE html>\n"
-            "<html>\n"
-            "   <head>\n"
-            "       <meta charset=\"UTF-8\">\n"
-            "       <title> " + _req->getPath() + " </title>\n"
-            "   </head>\n"
-            "<body>\n"
-            "   <h1> Index on " + _req->getPath() + " </h1>\n"
-            "   <p>\n"
-            "   <hr>\n";
+    _body = "<!DOCTYPE html>"
+            "<html>"
+            "<head>"
+            "<meta charset=\"UTF-8\">"
+            "<title>" + _req->getPath() + "</title>"
+            "</head>"
+            "<body>"
+            "<h1>Index on " + _req->getPath() + "</h1>"
+            "<p>"
+            "<hr>";
     DIR *r_opndir = opendir(resourcePath.c_str());
     if (NULL == r_opndir) {
         setStatus(INTERNAL_SERVER_ERROR);
@@ -300,11 +300,9 @@ Response::listing(const std::string &resourcePath) {
                 setStatus(INTERNAL_SERVER_ERROR);
                 return 0;
             }
-            _body += "<a href=\"" + _req->getPath();
-            _body += dirContent->d_name;
-            _body += "\">\n<br>";
-            _body += dirContent->d_name;
-            _body += "</a>\n";
+            _body += "<a href=\"" + _req->getPath()
+                    + dirContent->d_name + "\"><br>"
+                    + dirContent->d_name + "</a>";
         }
         _body += "</body></html>";
         setBody(_body);
