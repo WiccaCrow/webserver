@@ -1,139 +1,73 @@
-html , body {
+* {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    width: 100%;
+    color: #212121;
 }
 
-/* https://cssgradient.io/ */
-body {
-    font-family: serif, 'Open Sans', 'Comic Sans', 'Arial-black';
-    /* font-family: Arial; */
+html, body {
+    width: 100vw;
     height: 100vh;
-    overflow: scroll;
-    background-image: url(./img/background2.jpg);
-    background-position: left top;
-    /* background-attachment: scroll; */
-    background-size: 100%;
 }
 
-.header_photo {
-    border: 0px solid rgb(145, 162, 196);
-    border-bottom-width: 1px;
-    display: flex;
-    justify-content: space-evenly;
-    align-items: flex-end;
-    height: 25vh;
-    width: 100%;
-    padding-bottom: 10px;
-    position: absolute;
-    top: 0; left: 0;
+body::before, body::after {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    --grad: radial-gradient(at 25%, red, rgba(255, 0, 0, .2) 50%, transparent 70%);
+    --mask: var(--grad), var(--grad);
+    -webkit-mask: var(--mask);
+    -webkit-mask-composite: source-in;
+    -webkit-mask: var(--mask);
+            mask: var(--mask);
+    -webkit-mask-composite: source-in, xor;
+            mask-composite: intersect;
+    mix-blend-mode: color;
+    content: '';
+}
+body::before {
+    background: #000;
+    -webkit-filter: url(#f);
+            filter: url(#f);
+}
+body::after {
+    background: -webkit-gradient(linear, left top, right top, from(purple), color-stop(20%, navy), to(aqua));
+    background: -o-linear-gradient(left, purple, navy 20%, aqua);
+    background: linear-gradient(90deg, purple, navy 20%, aqua);
 }
 
-.header {
-    border: 0px solid rgb(145, 162, 196);
-    border-bottom-width: 1px;
-    display: flex;
-    justify-content: space-evenly;
-    align-items: flex-end;
-    height: 25vh;
-    width: 100%;
-    padding-bottom: 12px;
-    position: absolute;
-    top: 0;
-}
-
-.photo1 {
-    align-self: center;
-    width: 18vh;
-    height: 18vh;
-    justify-content: center;
-    position: absolute;
-    top: 12,5vh; left: 25vw;
-    /* border-radius: 50%; */
-}
-
-.photo2 {
-    align-self: center;
-    width: 18vh;
-    height: 18vh;
-    justify-content: center;
-    /* position: absolute;
-    top: 12,5vh; left: 46vw; */
-    /* border-radius: 50%; */
-}
-
-.photo3 {
-    align-self: center;
-    width: 18vh;
-    height: 18vh;
-    justify-content: center;
-    position: absolute;
-    top: 12,5vh; right: 25vw;
-    /* border-radius: 50%; */
-}
-
-.photo_img {
+.mySwiper {
     width: 100%;
     height: 100%;
-    border-radius: 50%;
 }
 
-.project_name {
-    height: 5%;
-    margin-bottom: 2%;
-    width: 100%;
-    font-family: serif, 'Open Sans', 'Comic Sans', 'Arial-black';
-    font-size:6vh; /* Browsers that do not support calc ()" functions will take this value.*/
-    font-size:calc(5px + 1.8vw);
-    text-align:center;
-    font-weight: 700;
-    color: rgb(194, 174, 199);
-    position: absolute;
-    top: 21vh;
+.swiper-slide {
+    padding: 2em;
 }
 
-a.knopka {
-    color: rgb(158, 164, 175); /* цвет текста */
-    text-decoration: none; /* убирать подчёркивание у ссылок */
-    user-select: none; /* убирать выделение текста */
-    background: rgba(68, 77, 99, 0.623); /* фон кнопки */
-    outline: none; /* убирать контур в Mozilla */
-    width: 22px;
-    height: 15px;
-    padding: 2px;
-    /* position: fixed; */
-    position: absolute;
-    border: 2px outset rgba(107, 142, 175, 0.808);
-    /* transition: unset butterfly; */
-  } 
-
-.main_part {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    flex-direction: row;
-    width: 100%;
-    padding-top: 26.15vh;
-    font-size: 2.8vh; /* Browsers that do not support calc ()" functions will take this value.*/
-    font-size:calc(12px + 0.7vw);
-    color:rgba(219, 235, 231, 0.795);
+h1 {
+    font-size: 7rem;
+    font-family: 'Roboto Flex', sans-serif;
 }
 
-.main_part > div > ul{
-    margin: 1px;
-    margin: 1vh;
-    background: #111b1b86;
-}
-
-h3 {
-    background: #1f3133a9;
-}
-
-.butterfly {
+#link__webserv-github {
     position: relative;
-    /* cursor: pointer; */
-    width: 30vh;
-    height: 30vh;
-    left: 0;
-    transition: left 5s cubic-bezier(0, 0, 1, 1);
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease-out;
+}
+
+#link__webserv-github:after {
+    content: '🔗';
+    position: absolute;
+    bottom: 1.5rem;
+    font-size: 4.5rem;
+}
+
+#link__webserv-github:visited {
+    color: inherit;
+}
+
+#link__webserv-github:hover {
+    color: #0e9be8;
 }
