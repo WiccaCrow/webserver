@@ -5,9 +5,9 @@ namespace HTTP {
 
 StatusCode
 RequestHeader::handle(Request &req) {
-    std::map<uint32_t, RequestHeader::Handler>::const_iterator it = validHeaders.find(hash);
+    std::map<uint32_t, RequestHeader::Handler>::const_iterator it = validReqHeaders.find(hash);
 
-    if (it == validHeaders.end()) {
+    if (it == validReqHeaders.end()) {
         Log.debug("RequestHeader:: Unknown header: " + key);
         Log.debug("RequestHeader:: Value: " + value);
         Log.debug("RequestHeader:: Hash: " + to_string(hash));
@@ -15,6 +15,11 @@ RequestHeader::handle(Request &req) {
     }
     method = it->second;
     return (this->*method)(req);
+}
+
+bool
+RequestHeader::isValid(void) {
+    return (validReqHeaders.find(hash) != validReqHeaders.end());
 }
 
 StatusCode
@@ -556,6 +561,6 @@ initHeadersMap(void) {
     return tmp;
 }
 
-const std::map<uint32_t, RequestHeader::Handler> validHeaders = initHeadersMap();
+const std::map<uint32_t, RequestHeader::Handler> validReqHeaders = initHeadersMap();
 
 }

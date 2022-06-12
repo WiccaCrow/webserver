@@ -43,7 +43,7 @@ private:
     Location    *_location;
     Client      *_client;
 
-    bool           _isChuckSize;
+    bool          _isChuckSize;
     size_t        _chunkSize;
     size_t        _bodySize;
     std::string   _body;
@@ -51,6 +51,8 @@ private:
 
     bool     _isAuthorized;
     uint32_t _storedHash;
+
+    bool _isFormed;
 
     std::map<std::string, std::string> _cookie;
 
@@ -79,6 +81,9 @@ public:
     const HTTP::StatusCode                  &getStatus() const;
     URI                                     &getUriRef();
     const std::string                       &getRawUri() const;
+
+    bool    isFormed(void) const;
+    void    isFormed(bool formed);
 
     // Needed to be improved
     const std::string &getQueryString() const;
