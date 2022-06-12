@@ -104,7 +104,7 @@ ResponseHeader::ContentLanguage(Response &res) {
 
 void
 ResponseHeader::ContentLength(Response &res) {
-    if (value.empty() == false) {
+    if (!value.empty()) {
         return ;
     }
     if (res.getBodyLength() != 0) {

@@ -27,6 +27,7 @@ class Response {
     std::string _resLeftToSend;
     Request    *_req;
     Client     *_client;
+    CGI        *_cgi;
     std::string _body;
     std::string _extraHeaders;
     size_t      _bodyLength;
@@ -36,6 +37,8 @@ public:
     typedef void (Response::*Handler)(void);
     std::map<std::string, Handler> methods;
 
+    typedef std::list<ResponseHeader>::iterator iter;
+    typedef std::list<ResponseHeader>::const_iterator const_iter;
     std::list<ResponseHeader> headers;
 
     Response(void);
@@ -89,6 +92,7 @@ public:
     void               setBodyLength(size_t);
     void               setRequest(Request *req);
     Request           *getRequest(void) const;
+    const std::string &getStatusLine(void);
     StatusCode         getStatus();
     void               setStatus(HTTP::StatusCode status);
 

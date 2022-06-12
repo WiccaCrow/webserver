@@ -28,18 +28,21 @@ private:
     std::string _execpath;
     std::string _filepath;
     const char *_args[3];
-
     bool        _isCompiled;
 
+    Request    *_req;
+    Response   *_res;
+
+    size_t            _bodyPos;
     std::stringstream _ss;
-    Request           *_req;
-    Response          *_res;
 
     std::list<ResponseHeader> _headers;
-    std::string               _extraHeaders;
-    size_t                    _bodyPos;
+    std::list<ResponseHeader> _extraHeaders;
 
 public:
+    typedef std::list<ResponseHeader>::iterator iter;
+    typedef std::list<ResponseHeader>::iterator const_iter;
+
     CGI(void);
     ~CGI(void);
 
@@ -60,11 +63,13 @@ public:
     void clear(void);
 
     void parseHeaders(void);
+    bool isValidContentLength(void);
 
     const std::list<ResponseHeader> &getHeaders(void) const;
-    const std::string &getExtraHeaders(void) const;
+    const std::list<ResponseHeader> &getExtraHeaders(void) const;
     const std::string getExecPath(void) const;
     const std::string getBody(void) const;
+    size_t getBodyLength(void) ;
     std::stringstream &getResult(void);
 
     static const bool extraHeaderEnabled;

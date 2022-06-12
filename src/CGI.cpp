@@ -202,11 +202,12 @@ CGI::getResult(void) {
 void
 CGI::clear(void) {
     _headers.clear();
+    _extraHeaders.clear();
     _ss.str("");
     resetStream();
 }
 
-const std::string &
+const std::list<ResponseHeader> &
 CGI::getExtraHeaders(void) const {
     return _extraHeaders;
 }
@@ -219,6 +220,14 @@ CGI::getHeaders(void) const {
 const std::string 
 CGI::getBody(void) const {
     return _ss.str().erase(0, _bodyPos);
+}
+
+size_t 
+CGI::getBodyLength(void) {
+    _ss.seekg(0, std::ios::end);
+    size_t end = _ss.tellg();
+    _ss.seekg(_bodyPos);
+    return end - _bodyPos;
 }
 
 int
@@ -374,10 +383,10 @@ CGI::parseHeaders(void) {
         rtrim(line, "\r\n");  
         if (header.parse(line)) {
             if (header.isValid()) {
-                Log.debug("PB: " + line);
                 _headers.push_back(header);
-            } else if (CGI::extraHeaderEnabled && header.key.find(CGI::extraHeaderPrefix) == 0) {
-                _extraHeaders += line + "\r\n";
+            } else if (CGI::extraHeaderEnabled && 
+                header.key.find(CGI::extraHeaderPrefix) == 0) {
+                _extraHeaders.push_back(header);
             } else {
                 _extraHeaders.clear();
                 _headers.clear();
@@ -387,7 +396,6 @@ CGI::parseHeaders(void) {
             if (line.empty()) {
                 if (_headers.size() != 0 || !_extraHeaders.empty()) {
                     _bodyPos = _ss.tellg();
-                    Log.debug("MT: " + to_string(_bodyPos));
                     return ;
                 }
             }
@@ -396,6 +404,27 @@ CGI::parseHeaders(void) {
             return ;
         }
     }
+}
+
+bool
+CGI::isValidContentLength(void) {
+
+    iter it = std::find(_headers.begin(), _headers.end(), ResponseHeader(CONTENT_LENGTH));
+
+    if (it != _headers.end()) {
+        long long length = strtoll(it->value.c_str(), NULL, 10);
+        if (length < 0 || length > LONG_MAX) {
+            Log.debug("Response::CGI:: ContentLength is invalid: " + to_string(length));
+            return false;
+        }
+        if (static_cast<size_t>(length) != getBodyLength()) {
+            Log.debug("Response::CGI:: ContentLength mismatch");
+            Log.debug("Response::CGI:: expected " + to_string(length));
+            Log.debug("Response::CGI:: got " + to_string(getBodyLength()));
+            return false;
+        }
+    }
+    return true;
 }
 
 static char **
