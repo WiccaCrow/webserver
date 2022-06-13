@@ -31,7 +31,7 @@
             "autoindex": true,
             "index": [ "index.html" ],
             "locations": {
-                "/about": {
+                "/try.about": {
                     "alias": "/Users/mhufflep/Downloads",
                     "autoindex": true,
                     "CGI": {

@@ -1,0 +1,47 @@
+{
+    "servers": {
+        "http": {
+            "port": 8080,
+            "server_names": [ "localhost" ],
+            "error_pages": {
+                "404": "./pages/error_pages/404.html",
+                "400": "./pages/error_pages/400.html"
+            },
+            "CGI": {
+                ".bla": "/home/user/Desktop/github/webserver/tests/ubuntu_cgi_tester"
+            },
+            "auth_basic": {
+                "realm": "eternity",
+                "user_file": ".htpasswd"
+            },
+            "methods_allowed": [ "GET", "POST" ],
+            "post_max_body": 100,
+            "autoindex": true,
+            "index": [ "index.html" ],
+            "locations": {
+                "/": {
+                    "alias": "/home/user/Desktop/github/webserver/pages/site",
+                    "autoindex": true,
+                    "index": [ "index.html" ],
+                    "post_max_body": 200,
+                    "methods_allowed": [ "GET" ]                 
+                },
+                "/put_test/": {
+                    "alias": "/home/user/Desktop/github/webserver/tests",
+                    "methods_allowed": [ "PUT" ]
+                },
+                "/post_body": {
+                    "alias": "/home/user/Desktop/github/webserver/tests",
+                    "post_max_body": 100,
+                    "methods_allowed": [ "POST" ]                 
+                },
+                "/directory/": {
+                    "root": "/home/user/Desktop/github/webserver/YoupiBanane",
+                    "autoindex": false,
+                    "index": [ "youpi.bad_extension" ],
+                    "methods_allowed": [ "GET" ]
+                }
+            }
+        }
+    }
+}

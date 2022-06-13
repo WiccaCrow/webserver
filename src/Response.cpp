@@ -7,6 +7,7 @@ namespace HTTP {
 Response::Response() 
             : _req(NULL)
             , _client(NULL)
+            , _cgi(NULL)
             , _bodyLength(0)
             , _isFormed(false) {}
 
@@ -36,13 +37,11 @@ Response::clear() {
     _body = "";
     _bodyLength = 0;
     _isFormed = false;
-    
-    std::list<ResponseHeader>::iterator posIt = headers.begin();
-    std::advance(posIt, 6);
-    headers.erase(posIt, headers.end());
+    _cgi = NULL;
 
-    std::list<ResponseHeader>::iterator it = headers.begin();
-    for (; it != headers.end(); it++) {
+    iter rm = std::next(headers.begin(), 6);
+    headers.erase(rm, headers.end());
+    for (iter it = headers.begin(); it != headers.end(); ++it) {
         it->value = "";
     }
 }
@@ -60,7 +59,7 @@ Response::handle(void) {
         (this->*(it->second))();
     }
 
-    _res = makeHeaders() + getBody();
+    _res = getStatusLine() + makeHeaders() + getBody();
 }
 
 void
@@ -91,11 +90,9 @@ Response::DELETE(void) {
         }
     }
     setStatus(OK);
-    setBody("<html>\n"
-            "  <body>\n"
-            "    <h1>File deleted.</h1>\n"
-            "  </body>\n"
-            "</html>");
+    setBody("<html><body>"
+            " <h1>File deleted.</h1>"
+            "</body></html>");
 }
 
 void
@@ -139,10 +136,10 @@ Response::PUT(void) {
     } else if (isFile(resourcePath)) {
         if (isWritableFile(resourcePath)) {
             writeFile(resourcePath);
-            setBody("<html>\n"
-                    "  <body>\n"
-                    "    <h1>File is overwritten.</h1>\n"
-                    "  </body>\n"
+            setBody("<html>"
+                    "<body>"
+                    " <h1>File is overwritten.</h1>"
+                    "</body>"
                     "</html>");
         } else {
             setErrorResponse(FORBIDDEN);
@@ -150,10 +147,10 @@ Response::PUT(void) {
         }
     } else {
         writeFile(resourcePath);
-        setBody("<html>\n"
-                "  <body>\n"
-                "    <h1>File created.</h1>\n"
-                "  </body>\n"
+        setBody("<html>"
+                "<body>"
+                " <h1>File created.</h1>"
+                "</body>"
                 "</html>");
     }
 }
@@ -190,11 +187,9 @@ Response::redirectForDirectory(const std::string &resourcePath) {
         setStatus(MOVED_PERMANENTLY);
         addHeader(LOCATION, _req->getRawUri() + "/");
         addHeader(CONTENT_TYPE, "text/html");
-        setBody("<html>\n"
-                "  <body>\n"
-                "    <h1>Redirect 301</h1>\n"
-                "  </body>\n"
-                "</html>\r\n");
+        setBody("<html><body>"
+                " <h1>Redirect 301</h1>"
+                "</body></html>");
         return 1;
     }
     return 0;
@@ -232,8 +227,8 @@ Response::directoryListing(const std::string &resourcePath) {
     if (_req->getLocation()->getAutoindexRef() == true && isDirectory(resourcePath)) {
         addHeader(CONTENT_TYPE, "text/html; charset=utf-8");
         return listing(resourcePath);
-    // autoindex off (403)
     } else {
+        // autoindex off
         setStatus(FORBIDDEN);
         return 0;
     }
@@ -267,16 +262,16 @@ Response::fileToResponse(std::string resourcePath) {
 int
 Response::listing(const std::string &resourcePath) {
     std::string pathToDir;
-    _body = "<!DOCTYPE html>\n"
-            "<html>\n"
-            "   <head>\n"
-            "       <meta charset=\"UTF-8\">\n"
-            "       <title> " + _req->getPath() + " </title>\n"
-            "   </head>\n"
-            "<body>\n"
-            "   <h1> Index on " + _req->getPath() + " </h1>\n"
-            "   <p>\n"
-            "   <hr>\n";
+    _body = "<!DOCTYPE html>"
+            "<html>"
+            "<head>"
+            "<meta charset=\"UTF-8\">"
+            "<title>" + _req->getPath() + "</title>"
+            "</head>"
+            "<body>"
+            "<h1>Index on " + _req->getPath() + "</h1>"
+            "<p>"
+            "<hr>";
     DIR *r_opndir = opendir(resourcePath.c_str());
     if (NULL == r_opndir) {
         setStatus(INTERNAL_SERVER_ERROR);
@@ -288,11 +283,9 @@ Response::listing(const std::string &resourcePath) {
                 setStatus(INTERNAL_SERVER_ERROR);
                 return 0;
             }
-            _body += "<a href=\"" + _req->getPath();
-            _body += dirContent->d_name;
-            _body += "\">\n<br>";
-            _body += dirContent->d_name;
-            _body += "</a>\n";
+            _body += "<a href=\"" + _req->getPath()
+                    + dirContent->d_name + "\"><br>"
+                    + dirContent->d_name + "</a>";
         }
         _body += "</body></html>";
         setBody(_body);
@@ -326,10 +319,15 @@ Response::writeFile(const std::string &resourcePath) {
     outputToNewFile << _req->getBody();
 }
 
+const std::string &
+Response::getStatusLine(void) {
+    return statusLines[_req->getStatus()];
+}
+
 std::string
 Response::makeHeaders() {
 
-    std::string headersToReturn = statusLines[_req->getStatus()];
+    std::string allHeaders;
 
     if ((_req->getStatus() >= BAD_REQUEST) ||
         // (если не cgi и методы GET HEAD еще обдумать) ||
@@ -337,18 +335,24 @@ Response::makeHeaders() {
         addHeader(CONTENT_TYPE, "text/html; charset=UTF-8");
     }
 
-    std::list<ResponseHeader>::iterator it    = headers.begin();
-    std::list<ResponseHeader>::iterator itEnd = headers.end();
-    for (; it != itEnd; ++it) {
-        it->handle(*this);
+    for (iter it = headers.begin(); it != headers.end(); ++it) {
+        if (it->value.empty()) {
+            it->handle(*this);
+        }
         if (!it->value.empty()) {
-            headersToReturn += headerNames[it->hash] + ": " + it->value + "\r\n";
+            allHeaders += headerNames[it->hash] + ": " + it->value + "\r\n";
         }
     }
 
-    headersToReturn += _extraHeaders;
-    headersToReturn += "\r\n";
-    return headersToReturn;
+    if (_cgi != NULL) {
+        const_iter it = _cgi->getExtraHeaders().begin();
+        for ( ; it != _cgi->getExtraHeaders().end(); ++it) {
+            allHeaders += it->key + ": " + it->value + "\r\n";
+        }
+    }
+
+    allHeaders += "\r\n";
+    return allHeaders;
 }
 
 ResponseHeader *
@@ -379,40 +383,8 @@ Response::addHeader(uint32_t hash) {
 }
 
 int
-Response::checkCGIBodyLength() {
-
-    ResponseHeader *ptr = getHeader(CONTENT_LENGTH);
-
-    if (ptr != NULL && !ptr->value.empty()) {
-        long long length = strtoll(ptr->value.c_str(), NULL, 10);
-        if (length < 0 || length > LONG_MAX) {
-            Log.debug("Response::CGI:: ContentLength is invalid: " + to_string(length));
-            return 0;
-        }
-        if (static_cast<size_t>(length) != getBodyLength()) {
-            Log.debug("Response::CGI:: ContentLength mismatch");
-            Log.debug("Response::CGI:: expected " + to_string(length));
-            Log.debug("Response::CGI:: got " + to_string(getBodyLength()));
-            return 0;
-        }
-    }
-    return 1;
-}
-
-std::map<std::string, CGI>::iterator
-Response::isCGI(const std::string &filepath, std::map<std::string, CGI> &cgis) {
-    std::map<std::string, CGI>::iterator it = cgis.begin();
-    for (; it != cgis.end(); it++) {
-        if (endsWith(filepath, it->first)) {
-            it->second.setScriptPath(filepath);
-            return it;
-        }
-    }
-    return cgis.end();
-}
-
-int
 Response::passToCGI(CGI &cgi) {
+    _cgi = &cgi;
     cgi.clear();
     cgi.linkRequest(_req);
     cgi.linkResponse(this);
@@ -423,16 +395,14 @@ Response::passToCGI(CGI &cgi) {
     }
     cgi.parseHeaders();
     setBody(cgi.getBody());
-    Log.debug("BD: " + getBody());
 
-    if (!checkCGIBodyLength()) {
+    if (!cgi.isValidContentLength()) {
         setStatus(BAD_GATEWAY);
         return 0;
     }
 
-    _extraHeaders += cgi.getExtraHeaders();
-    std::list<ResponseHeader>::const_iterator it = cgi.getHeaders().begin();
-    std::list<ResponseHeader>::const_iterator end = cgi.getHeaders().end();
+    const_iter it = cgi.getHeaders().begin();
+    const_iter end = cgi.getHeaders().end();
     for (; it != end; ++it) {
         addHeader(it->hash, it->value);
     }
