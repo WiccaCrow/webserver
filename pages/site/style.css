@@ -45,29 +45,34 @@ body::after {
     padding: 2em;
 }
 
+li {
+    list-style-type: none;
+}
+
 h1 {
     font-size: 7rem;
     font-family: 'Roboto Flex', sans-serif;
 }
 
-#link__webserv-github {
+a {
     position: relative;
     color: inherit;
     text-decoration: none;
     transition: color 0.2s ease-out;
 }
 
-#link__webserv-github:after {
+a:after {
     content: '🔗';
     position: absolute;
     bottom: 1.5rem;
+    right: -5.5rem;
     font-size: 4.5rem;
 }
 
-#link__webserv-github:visited {
+a:visited {
     color: inherit;
 }
 
-#link__webserv-github:hover {
+a:hover {
     color: #0e9be8;
 }
