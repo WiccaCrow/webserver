@@ -225,13 +225,55 @@ isValidIpLiteral(const std::string &s) {
     return isValidIpvFuture(s) || isValidIpv6(s);
 }
 
-// bool
-// isSegmentNz() {
-// }
+bool
+isSegmentNz(const std::string &s) {
+
+    for (size_t i = 0; i < s.length(); ++i) {
+        if (isPctEncoded(s.c_str() + i)) {
+            i += 2;
+        } else if (!isUnreserved(s[i]) && !isSubDelims(s[i]) && s[i] != '@') {
+            return false;
+        }
+    }
+    return true;
+}
 
 // bool
 // isSegmentNzNc() {
 // }
+
+size_t
+isValidSegment(const std::string &s) {
+
+    if (s[0] != '/') {
+        return 0;
+    }
+
+    for (size_t i = 1; i < s.length(); ++i) {
+        if (isPctEncoded(s.c_str() + i)) {
+            i += 2;
+        } else if (!isUnreserved(s[i]) && !isSubDelims(s[i]) && !strchr("@:", s[i])) {
+            return i;
+        }
+    }
+    return s.length();
+}
+
+
+bool
+isValidPathAbempty(const std::string &s) {
+
+    for (size_t i = 0; i < s.size(); i++) {
+        size_t pos = isValidSegment(s.substr(i));
+        if (pos == 0) {
+            return false;
+        }
+        else if (pos == s.length()) {
+            return true;
+        }
+    }
+    return true;
+}
 
 bool
 isValidRegName(const std::string &regname) {
@@ -255,27 +297,7 @@ isValidHost(const std::string &s) {
 
 bool
 isValidPath(const std::string &path) {
-
-    if (path[0] != '/') {
-        return false;
-    } else if (path.find("//") != std::string::npos) {
-        return false;
-    }
-
-    char dst[512];
-    strcpy(dst, path.c_str());
-
-    char *token = strtok(dst, "/");
-    while (token != NULL) {
-        size_t len = strlen(token);
-        for (size_t i = 1; i < len; i++) {
-            if (!isalnum(token[i])) {
-                return false;
-            }
-        }
-        token = strtok(NULL, "/");
-    }
-    return true;
+    return isValidPathAbempty(path);
 }
 
 bool
