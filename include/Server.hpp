@@ -28,7 +28,11 @@
 class Server {
 
 private:
-    std::vector<HTTP::ServerBlock> _servBlocks;
+    typedef std::map<int, std::list<HTTP::ServerBlock> >::iterator iter;
+
+
+    std::map<int, std::list<HTTP::ServerBlock> > _sb;
+    // std::vector<HTTP::ServerBlock> _servBlocks;
     std::vector<struct pollfd>     _pollfds;
     std::map<size_t, HTTP::Client> _clients;
     int                            _pollResult;

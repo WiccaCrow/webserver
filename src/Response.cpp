@@ -39,7 +39,8 @@ Response::clear() {
     _isFormed = false;
     _cgi = NULL;
 
-    iter rm = std::next(headers.begin(), 6);
+    iter rm = headers.begin();
+    std::advance(rm, 6);
     headers.erase(rm, headers.end());
     for (iter it = headers.begin(); it != headers.end(); ++it) {
         it->value = "";
@@ -494,5 +495,18 @@ Response::isFormed(bool formed) {
 //             "0\r\n\r\n";
 //     return ("");
 // }
+
+std::map<std::string, CGI>::iterator
+Response::isCGI(const std::string &filepath, std::map<std::string, CGI> &cgis) {
+    std::map<std::string, CGI>::iterator it  = cgis.begin();
+    std::map<std::string, CGI>::iterator end = cgis.end();
+    for (; it != end; it++) {
+        if (endsWith(filepath, it->first)) {
+            it->second.setScriptPath(filepath);
+            return it;
+        }
+    }
+    return end;
+}
 
 } // namespace HTTP

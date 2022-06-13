@@ -26,7 +26,7 @@ Server::Server(const Server &obj) {
 Server &
 Server::operator=(const Server &obj) {
     if (this != &obj) {
-        _servBlocks = obj._servBlocks;
+        _sb         = obj._sb;
         _pollResult = obj._pollResult;
         _pollfds    = obj._pollfds;
         _clients    = obj._clients;
@@ -70,25 +70,14 @@ Server::createListenSocket(const std::string addr, const int port) {
 
 void
 Server::fillServBlocksFds(void) {
-    std::map<int, int> sockets;
 
-    for (size_t i = 0; i < _servBlocks.size(); ++i) {
-        const int                    port = _servBlocks[i].getPort();
-        const std::string           &addr = _servBlocks[i].getAddrRef();
-        std::map<int, int>::iterator it   = sockets.find(port);
-        if (it == sockets.end()) {
-            int fd = createListenSocket(addr, port); // what addr should i use here?
-            sockets.insert(std::make_pair(port, fd));
-            _servBlocks[i].setFd(fd);
-        } else {
-            _servBlocks[i].setFd(it->second);
-        }
+    std::map<int, std::list<HTTP::ServerBlock> >::iterator it = _sb.begin();
+    std::map<int, std::list<HTTP::ServerBlock> >::iterator end = _sb.end();
 
-        struct pollfd tmp = {
-            _servBlocks[i].getFd(),
-            POLLIN,
-            0
-        };
+    for (; it != end; ++it) {
+        int fd = createListenSocket("127.0.0.1", it->first);
+
+        struct pollfd tmp = { fd, POLLIN, 0 };
         _pollfds.push_back(tmp);
     }
 }
@@ -103,13 +92,13 @@ Server::fillServBlocksFds(void) {
 
 void
 Server::addServerBlock(HTTP::ServerBlock &servBlock) {
-    _servBlocks.push_back(servBlock);
+    _sb[servBlock.getPort()].push_back(servBlock);
 }
 
 int
 Server::pollInHandler(size_t id) {
     _pollfds[id].revents = 0;
-    if (id < _servBlocks.size()) {
+    if (id < _sb.size()) {
         connectClient(id);
         return 1;
     }
@@ -127,7 +116,7 @@ Server::pollInHandler(size_t id) {
 void
 Server::pollHupHandler(size_t id) {
     Log.error("POLLHUP occured on the " + to_string(_pollfds[id].fd) + "socket");
-    if (id >= _servBlocks.size()) {
+    if (id >= _sb.size()) {
         disconnectClient(id);
     }
 }
@@ -227,11 +216,17 @@ fdFree(struct pollfd pfd) {
 
 void
 Server::connectClient(size_t id) {
+
+    struct sockaddr_in servData;
+    socklen_t servLen = sizeof(servData);
+    if (getsockname(_pollfds[id].fd, (struct sockaddr *)&servData, &servLen) < 0) {
+        Log.error("Server::getsockname failed for fd = " + to_string(_pollfds[id].fd));
+        return ;
+    }
+
     struct sockaddr_in clientData;
-
-    socklen_t len = sizeof(clientData);
-
-    int fd = accept(_pollfds[id].fd, (struct sockaddr *)&clientData, &len);
+    socklen_t clientLen = sizeof(clientData);
+    int fd = accept(_pollfds[id].fd, (struct sockaddr *)&clientData, &clientLen);
 
     if (fd < 0) {
         handleAcceptError();
@@ -248,19 +243,20 @@ Server::connectClient(size_t id) {
         if (it != _pollfds.end()) {
             it->fd     = fd;
             it->events = POLLIN | POLLOUT;
-            clientId   = it - _pollfds.begin();
+            clientId   = std::distance(_pollfds.begin(), it);
         } else {
             struct pollfd tmp = { fd, POLLIN | POLLOUT, 0 };
             _pollfds.push_back(tmp);
             clientId = _pollfds.size() - 1;
         }
 
+
         _clients.insert(std::make_pair(clientId, HTTP::Client()));
         _clients[clientId].initResponseMethodsHeaders();
         _clients[clientId].linkRequest();
         _clients[clientId].setFd(fd);
         _clients[clientId].setPort(ntohs(clientData.sin_port));
-        _clients[clientId].setServerPort(_servBlocks[id].getPort());
+        _clients[clientId].setServerPort(ntohs(servData.sin_port));
         _clients[clientId].setIpAddr(inet_ntoa(clientData.sin_addr));
 
         Log.debug("Server::connectClient [" + to_string(fd) + "] -> " + _clients[clientId].getHostname());
@@ -277,22 +273,22 @@ Server::disconnectClient(size_t id) {
     _pollfds[id].revents = 0;
 }
 
+using namespace HTTP;
+
 HTTP::ServerBlock *
 Server::matchServerBlock(int port, const std::string &ipaddr, const std::string &host) {
     (void)ipaddr;
 
-    int defaultServerIndex = 0;
-    for (int i = _servBlocks.size() - 1; i >= 0; --i) {
-        if (_servBlocks[i].getPort() == port) {
-            defaultServerIndex = i;
-
-            std::vector<std::string> &sNames = _servBlocks[i].getServerNamesRef();
-            if (std::find(sNames.begin(), sNames.end(), host) != sNames.end()) {
-                Log.debug("Server::matchServerBlock -> " + _servBlocks[i].getBlockName() + " for " + host + ":" + to_string(port));
-                return &_servBlocks[i];
-            }
+    std::list<ServerBlock> &blocks = _sb[port];
+    std::list<ServerBlock>::iterator block = blocks.begin();
+    std::list<ServerBlock>::iterator found = blocks.begin();
+    std::list<ServerBlock>::iterator end = blocks.end();
+    for (; block != end; ++block) {
+        std::vector<std::string> &names = block->getServerNamesRef();
+        if (std::find(names.begin(), names.end(), host) != names.end()) {
+            found = block;
         }
     }
-    Log.debug("Server::matchServerBlock [default] -> " + _servBlocks[defaultServerIndex].getBlockName() + " for " + host + ":" + to_string(port));
-    return &_servBlocks[defaultServerIndex];
+    Log.debug("Server::matchServerBlock -> " + found->getBlockName() + " for " + host + ":" + to_string(port));
+    return &(*blocks.begin());
 }

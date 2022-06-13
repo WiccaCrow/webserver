@@ -196,19 +196,20 @@ RequestHeader::From(Request &req) {
 
 StatusCode
 RequestHeader::Host(Request &req) {
-    URI uri;
-    uri.parse(value);
+    
+    URI &host = req.getHostRef();
+    host.parse(value);
 
-    if (!isValidHost(uri._host)) {
-        Log.error("Host: Invalid Host " + uri._host);
+    if (!isValidHost(host._host)) {
+        Log.error("Host: Invalid Host " + host._host);
         return BAD_REQUEST;
     }
-
-    // Dangerous because of segfault if there's some header
-    // that needs serverblock or location data before Host is arrived
-    req.setServerBlock(g_server->matchServerBlock(req.getClient()->getServerPort(), "", uri._host));
-    req.setLocation(req.getServerBlock()->matchLocation(req.getUriRef()._path));
-    req.resolvePath();
+    
+    if (req.getClient()->getServerPort() != host._port) {
+        Log.error("Host: Port mismatch " + host._port_s);
+        return BAD_REQUEST;
+    }
+    
     return CONTINUE;
 }
 

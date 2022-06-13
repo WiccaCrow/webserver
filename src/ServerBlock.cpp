@@ -15,7 +15,7 @@ ServerBlock::operator=(const ServerBlock &obj) {
     if (this != &obj) {
         _addr            = obj._addr;
         _port            = obj._port;
-        _fd              = obj._fd;
+        // _fd              = obj._fd;
         _blockname       = obj._blockname;
         _server_names    = obj._server_names;
         _locationBase    = obj._locationBase;
@@ -25,15 +25,15 @@ ServerBlock::operator=(const ServerBlock &obj) {
     return (*this);
 }
 
-int
-ServerBlock::getFd(void) {
-    return (_fd);
-}
+// int
+// ServerBlock::getFd(void) {
+//     return (_fd);
+// }
 
-void
-ServerBlock::setFd(int fd) {
-    _fd = fd;
-}
+// void
+// ServerBlock::setFd(int fd) {
+//     _fd = fd;
+// }
 
 void
 ServerBlock::setAddr(const std::string &ipaddr) {

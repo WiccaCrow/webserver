@@ -27,7 +27,7 @@ private:
     HTTP::Request  _req;
     HTTP::Response _res;
 
-    ServerBlock    *_servBlock;
+    // ServerBlock    *_servBlock;
     // static ReadSock _reader;
 
     bool        _shouldBeClosed;

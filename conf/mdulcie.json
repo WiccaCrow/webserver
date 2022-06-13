@@ -24,7 +24,7 @@
                     "autoindex": true,
                     "index": [ "index.html" ],
                     "post_max_body": 200,
-                    "methods_allowed": [ "GET", "POST" ]                 
+                    "methods_allowed": [ "GET", "POST" ]
                 },
                 "/about": {
                     "alias": "/home/user/Desktop/github/webserver/pages/site",

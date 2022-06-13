@@ -1,5 +1,6 @@
 #include "Request.hpp"
 #include "Client.hpp"
+#include "Server.hpp"
 
 namespace HTTP {
 
@@ -114,6 +115,11 @@ Request::getUriRef() {
     return _uri;
 }
 
+URI &
+Request::getHostRef() {
+    return _host;
+}
+
 const std::string &
 Request::getRawUri() const {
     return _rawURI;
@@ -197,6 +203,7 @@ Request::setAuthFlag(bool flag) {
 
 const std::string
 Request::getHeaderValue(uint32_t key) const {
+    // return _headers[key];
     std::map<uint32_t, RequestHeader>::const_iterator it = _headers.find(key);
     if (it == _headers.end()) {
         return "";
@@ -224,8 +231,15 @@ Request::parseLine(std::string &line) {
     }
 
     if (getStatus() != CONTINUE) {
+        if (!_servBlock) {
+            setServerBlock(g_server->matchServerBlock(getClient()->getServerPort(), "", _host._host));
+        }
+        if (!_location) {
+            setLocation(getServerBlock()->matchLocation(_uri._path));
+        }
         isFormed(true);
     }
+
 }
 
 StatusCode
@@ -334,12 +348,18 @@ StatusCode
 Request::checkHeaders(void) {
 
     setFlag(PARSED_HEADERS);
-    if (!isHeaderExist(HOST)) {
-        Log.error("Request:: Host not found");
-        return BAD_REQUEST;
-    } else {
-        _headers.find(HOST)->second.handle(*this);
+    // if (!isHeaderExist(HOST)) {
+    //     Log.error("Request:: Host not found");
+    //     return BAD_REQUEST;
+    // }
+
+    if (!_servBlock) {
+        setServerBlock(g_server->matchServerBlock(getClient()->getServerPort(), "", _host._host));
     }
+    if (!_location) {
+        setLocation(getServerBlock()->matchLocation(_uri._path));
+    }
+    resolvePath();
 
     std::vector<std::string> &allowed = getLocation()->getAllowedMethodsRef();
     if (std::find(allowed.begin(), allowed.end(), _method) == allowed.end()) {
@@ -350,13 +370,10 @@ Request::checkHeaders(void) {
     // Call each header handler
     std::map<uint32_t, RequestHeader>::iterator it;
     for (it = _headers.begin(); it != _headers.end(); it++) {
-        if (it->first != HOST) {
-            StatusCode status = it->second.handle(*this);
-            if (status != CONTINUE) {
-                return status;
-            }
+        StatusCode status = it->second.handle(*this);
+        if (status != CONTINUE) {
+            return status;
         }
-
     }
 
     if (!isHeaderExist(TRANSFER_ENCODING) && !isHeaderExist(CONTENT_LENGTH)) {
