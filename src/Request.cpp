@@ -253,6 +253,7 @@ Request::parseSL(const std::string &line) {
 
     skipSpaces(line, pos);
     _rawURI = getWord(line, " ", pos);
+    _uri.parse(_rawURI);
 
     skipSpaces(line, pos);
     _protocol = getWord(line, " ", pos);
@@ -278,8 +279,6 @@ Request::checkSL(void) {
     //     return BAD_REQUEST;
     // }
 
-    _uri.parse(_rawURI);
-
     if (!isValidProtocol(_protocol)) {
         Log.debug("Request::checkSL: protocol " + _protocol + " is not valid");
         return BAD_REQUEST;
@@ -298,16 +297,6 @@ Request::checkSL(void) {
         setLocation(getServerBlock()->matchLocation(_uri._path));
     }
     resolvePath();
-
-    // GET http://ip:port
-    // GET http://host:port
-    // // hostname == ip
-    // Host: h
-
-    // port -> ipaddr -> servername
-    // GET http://ip:port
-    // port -> ipaddr -> servername
-
 
     setFlag(PARSED_SL);
     return CONTINUE;
@@ -370,8 +359,6 @@ Request::checkHeaders(void) {
     //     return BAD_REQUEST;
     // }
 
-    
-
     // Call each header handler
     std::map<uint32_t, RequestHeader>::iterator it;
     for (it = _headers.begin(); it != _headers.end(); it++) {
@@ -387,13 +374,10 @@ Request::checkHeaders(void) {
         return METHOD_NOT_ALLOWED;
     }
 
-
-
-
     if (!isHeaderExist(TRANSFER_ENCODING) && !isHeaderExist(CONTENT_LENGTH)) {
         // PUT or POST or PATCH
         if (_method[0] == 'P') {
-            Log.error("Request:: Transfer-Encoding/Content-Length is missing in request");
+            Log.error("Request::Transfer-Encoding/Content-Length is missing in request");
             return LENGTH_REQUIRED;
         } else {
             Log.debug("Request::ParsedHeaders::Processing");
@@ -409,13 +393,13 @@ Request::parseHeader(const std::string &line) {
     RequestHeader header;
 
     if (!header.parse(line)) {
-        Log.error("ParseHeader:: Invalid header " + line);
+        Log.debug("ParseHeader:: Invalid header " + line);
         return BAD_REQUEST;
     }
 
     // dublicate header
     if (isHeaderExist(header.hash)) {
-        Log.error("ParseHeader:: Dublicate header");
+        Log.debug("ParseHeader:: Dublicated header");
         return BAD_REQUEST;
     }
 

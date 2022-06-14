@@ -17,23 +17,26 @@ readFile(const std::string &filename) {
 int
 HTTP::Response::setErrorResponse(HTTP::StatusCode status) {
 
-    std::map<int, std::string> &pages = getRequest()->getServerBlock()->getErrPathsRef();
-    std::map<int, std::string>::iterator it = pages.find(status);
-
     std::string response;
-    if (it != pages.end()) {
-        response = readFile(it->second);
-    
-        if (!response.empty()) {
-            setStatus(status);
-            setBody(response);
-            return 0;
+    if (getRequest()->getServerBlock() != NULL) {
+
+        std::map<int, std::string> &pages = getRequest()->getServerBlock()->getErrPathsRef();
+        std::map<int, std::string>::iterator it = pages.find(status);
+
+        if (it != pages.end()) {
+            response = readFile(it->second);
+        
+            if (!response.empty()) {
+                setStatus(status);
+                setBody(response);
+                return 0;
+            }
         }
     }
 
     response = errorResponses[status];
     if (response.empty()) {
-        Log.error("Unknown response error code: " + to_string(static_cast<int>(status)));
+        Log.error("Unknown response code: " + to_string(static_cast<int>(status)));
         setStatus(INTERNAL_SERVER_ERROR);
         setBody(errorResponses[66]);
     } else {

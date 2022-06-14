@@ -19,9 +19,10 @@ class Client {
 
 private:
     int         _fd;
-    int         _clientPort;
-    int         _serverPort;
-    std::string _ipAddr;
+    size_t      _clientPort;
+    std::string _clientIpAddr;
+    size_t      _serverPort;
+    std::string _serverIpAddr;
 
     std::queue<HTTP::Request> _requests;
     std::queue<HTTP::Response> _responses;

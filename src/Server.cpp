@@ -135,7 +135,7 @@ Server::pollInHandler(size_t id) {
 
 void
 Server::pollHupHandler(size_t id) {
-    Log.syserr("POLLHUP occured on the " + to_string(_pollfds[id].fd) + "socket");
+    Log.syserr("Server::POLLHUP occured on the " + to_string(_pollfds[id].fd) + "socket");
     if (id >= _socketsCount) {
         disconnectClient(id);
     }
@@ -157,7 +157,7 @@ Server::pollOutHandler(size_t id) {
 
 void
 Server::pollErrHandler(size_t id) {
-    Log.syserr("POLLERR occured on the " + to_string(_pollfds[id].fd) + "socket");
+    Log.syserr("Server::POLLERR occured on the " + to_string(_pollfds[id].fd) + "socket");
     exit(1);
 }
 
@@ -187,14 +187,14 @@ Server::start(void) {
 
 void
 Server::handlePollError() {
-    Log.syserr(std::string("Poll:: ") + strerror(errno));
+    Log.syserr("Server::poll");
     switch (errno) {
         case EINVAL: {
             struct rlimit rlim;
             getrlimit(RLIMIT_NOFILE, &rlim);
-            Log.syserr("ndfs: " + to_string(_pollfds.size()));
-            Log.syserr("limit(soft): " + to_string(rlim.rlim_cur));
-            Log.syserr("limit(hard): " + to_string(rlim.rlim_max));
+            Log.debug("ndfs: " + to_string(_pollfds.size()));
+            Log.debug("limit(soft): " + to_string(rlim.rlim_cur));
+            Log.debug("limit(hard): " + to_string(rlim.rlim_max));
             break;
         }
         default:
@@ -212,20 +212,6 @@ Server::pollServ(void) {
     }
     if (_pollResult < 0) {
         handlePollError();
-    }
-}
-
-void
-Server::handleAcceptError() {
-    switch (errno) {
-        case EWOULDBLOCK: {
-            // OK, as we use non-blocking sockets
-            break;
-        }
-        default: {
-            Log.syserr("Accept::" + std::string(strerror(errno)));
-            break;
-        }
     }
 }
 
@@ -249,7 +235,7 @@ Server::connectClient(size_t id) {
     int fd = accept(_pollfds[id].fd, (struct sockaddr *)&clientData, &clientLen);
 
     if (fd < 0) {
-        handleAcceptError();
+        Log.syserr("Server::accept");
         return;
     }
 
@@ -264,8 +250,7 @@ Server::connectClient(size_t id) {
         it->events = POLLIN | POLLOUT;
         clientId   = std::distance(_pollfds.begin(), it);
     } else {
-        struct pollfd tmp = { fd, POLLIN | POLLOUT, 0 };
-        _pollfds.push_back(tmp);
+        _pollfds.push_back((struct pollfd) { fd, POLLIN | POLLOUT, 0 });
         clientId = _pollfds.size() - 1;
     }
 
@@ -291,20 +276,19 @@ Server::disconnectClient(size_t id) {
     _pollfds[id].revents = 0;
 }
 
-HTTP::ServerBlock *
-Server::matchServerBlock(size_t port, const std::string &ipaddr, const std::string &host) {
-    (void)ipaddr;
-
-    std::list<HTTP::ServerBlock> &blocks = _serverBlocks[port];
-    std::list<HTTP::ServerBlock>::iterator block = blocks.begin();
-    std::list<HTTP::ServerBlock>::iterator found = blocks.begin();
-    std::list<HTTP::ServerBlock>::iterator end = blocks.end();
-    for (; block != end; ++block) {
-        std::vector<std::string> &names = block->getServerNamesRef();
-        if (std::find(names.begin(), names.end(), host) != names.end()) {
-            found = block;
-        }
-    }
-    Log.debug("Server::matchServerBlock -> " + found->getBlockName() + " for " + host + ":" + to_string(port));
-    return &(*blocks.begin());
-}
+// HTTP::ServerBlock *
+// Server::matchServerBlock(size_t port, const std::string &ipaddr, const std::string &host) {
+//     (void)ipaddr;
+//     std::list<HTTP::ServerBlock> &blocks = _serverBlocks[port];
+//     std::list<HTTP::ServerBlock>::iterator block = blocks.begin();
+//     std::list<HTTP::ServerBlock>::iterator found = blocks.begin();
+//     std::list<HTTP::ServerBlock>::iterator end = blocks.end();
+//     for (; block != end; ++block) {
+//         std::vector<std::string> &names = block->getServerNamesRef();
+//         if (std::find(names.begin(), names.end(), host) != names.end()) {
+//             found = block;
+//         }
+//     }
+//     Log.debug("Server::matchServerBlock -> " + found->getBlockName() + " for " + host + ":" + to_string(port));
+//     return &(*blocks.begin());
+// }

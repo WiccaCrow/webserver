@@ -20,7 +20,6 @@
 namespace HTTP {
 
 class Request;
-class Response;
 
 class CGI {
 
@@ -54,7 +53,6 @@ public:
     bool isCompiled(void);
 
     void linkRequest(Request *req);
-    void linkResponse(Response *res);
     void setEnv(void);
     void setFullEnv(void);
     void setExecPath(const std::string);

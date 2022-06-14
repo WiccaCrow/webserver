@@ -34,19 +34,12 @@ CGI &CGI::operator=(const CGI &other) {
 }
 
 static void
-log_error(const std::string &location) {
-    Log.error(location);
-    Log.error("Errno: " + to_string(errno));
-    Log.error("Description: " + std::string(strerror(errno)));
-}
-
-static void
 restore_std(int in, int out) {
     if (in != -1 && dup2(in, fileno(stdin)) == -1) {
-        log_error("CGI::restore::in: ");
+        Log.syserr("CGI::restore::in: ");
     }
     if (out != -1 && dup2(out, fileno(stdout)) == -1) {
-        log_error("CGI::restore::out: ");
+        Log.syserr("CGI::restore::out: ");
     }
 }
 
@@ -73,11 +66,6 @@ setValue(char *const env, const std::string &value) {
 void
 CGI::linkRequest(Request *req) {
     _req = req;
-}
-
-void
-CGI::linkResponse(Response *res) {
-    _res = res;
 }
 
 // This version passes all the env, including system
@@ -249,12 +237,12 @@ CGI::exec() {
     int out[2] = { -1 };
 
     if (pipe(in) != 0) {
-        log_error("CGI::pipe::in: ");
+        Log.syserr("CGI::pipe::in: ");
         return 0;
     }
 
     if (pipe(out) != 0) {
-        log_error("CGI::pipe::out: ");
+        Log.syserr("CGI::pipe::out: ");
         close_pipe(in[0], in[1]);
         return 0;
     }
@@ -263,7 +251,7 @@ CGI::exec() {
 
     tmp[0] = dup(fileno(stdin));
     if (tmp[0] == -1) {
-        log_error("CGI::backup::in: ");
+        Log.syserr("CGI::backup::in: ");
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
         close_pipe(out[0], out[1]);
@@ -272,7 +260,7 @@ CGI::exec() {
 
     tmp[1] = dup(fileno(stdout));
     if (tmp[1] == -1) {
-        log_error("CGI::backup::out: ");
+        Log.syserr("CGI::backup::out: ");
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
         close_pipe(out[0], out[1]);
@@ -281,7 +269,7 @@ CGI::exec() {
 
     // Redirect for child process
     if (dup2(in[0], fileno(stdin)) == -1) {
-        log_error("CGI::redirect::in: ");
+        Log.syserr("CGI::redirect::in: ");
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
         close_pipe(out[0], out[1]);
@@ -289,7 +277,7 @@ CGI::exec() {
     }
 
     if (dup2(out[1], fileno(stdout)) == -1) {
-        log_error("CGI::redirect::out: ");
+        Log.syserr("CGI::redirect::out: ");
         restore_std(tmp[0], -1);
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
@@ -299,7 +287,7 @@ CGI::exec() {
 
     int childPID = fork();
     if (childPID < 0) {
-        log_error("CGI::fork: ");
+        Log.syserr("CGI::fork: ");
         restore_std(tmp[0], tmp[1]);
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
@@ -314,7 +302,7 @@ CGI::exec() {
 
     if (!_req->getBody().empty()) {
         if (write(in[1], _req->getBody().c_str(), _req->getBody().length()) == -1) {
-            log_error("CGI::write: ");
+            Log.syserr("CGI::write: ");
             restore_std(tmp[0], tmp[1]);
             close_pipe(tmp[0], tmp[1]);
             close_pipe(in[0], in[1]);
@@ -335,16 +323,16 @@ CGI::exec() {
     close_pipe(-1, out[1]);
 
     if (WIFSIGNALED(status)) {
-        log_error("CGI::signaled:" + to_string(WTERMSIG(status)));
+        Log.syserr("CGI::signaled:" + to_string(WTERMSIG(status)));
         return 0;
 
     } else if (WIFSTOPPED(status)) {
-        log_error("CGI::stopped:" + to_string(WSTOPSIG(status)));
+        Log.syserr("CGI::stopped:" + to_string(WSTOPSIG(status)));
         return 0;
 
     } else if (WIFEXITED(status)) {
         if (WEXITSTATUS(status)) {
-            log_error("CGI::exited:" + to_string(WEXITSTATUS(status)));
+            Log.syserr("CGI::exited:" + to_string(WEXITSTATUS(status)));
             return 0;
         }
 
@@ -356,7 +344,7 @@ CGI::exec() {
         while (readBytes > 0) {
             readBytes = read(out[0], buf, size - 1);
             if (readBytes < 0) {
-                log_error("CGI::read");
+                Log.syserr("CGI::read");
                 return 1;
             }
             buf[readBytes] = 0;

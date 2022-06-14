@@ -54,12 +54,11 @@ public:
     void pollServ(void);
     void connectClient(size_t id);
     void disconnectClient(size_t id);
-    void handleAcceptError();
     void handlePollError();
     int  pollInHandler(size_t id);
     void pollHupHandler(size_t id);
     void pollOutHandler(size_t id);
     void pollErrHandler(size_t id);
 
-    HTTP::ServerBlock *matchServerBlock(size_t port, const std::string &ipaddr, const std::string &host);
+    // HTTP::ServerBlock *matchServerBlock(size_t port, const std::string &ipaddr, const std::string &host);
 };
