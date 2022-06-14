@@ -157,14 +157,18 @@ Client::reply(void) {
     Log.debug("Client::reply -> fd: " + to_string(_fd));
     // Log.debug("\n" + std::string(_res.getResponse()) + "\n");
 
-    size_t sentBytes = 0;
+    const char *rsp = _res.getResponse().c_str();
+    size_t total = _res.getResponseLength();
+    size_t sent = 0;
     do {
-        long n = send(_fd, _res.getResponse() + sentBytes, _res.getResLength() - sentBytes, 0);
+        long n = send(_fd, rsp + sent, total - sent, 0);
         if (n > 0) {
-            sentBytes += n;
-            Log.debug("Client:: " + to_string(sentBytes) + "/" + to_string(_res.getResLength()) + " bytes sent");
+            sent += n;
         }
-    } while (sentBytes < _res.getResLength());
+        // if n == 0 ?
+    } while (sent < total);
+
+    Log.debug("Client:: " + to_string(sent) + "/" + to_string(total) + " bytes sent");
 
     if (shouldBeClosed()) {
         _fd = -1;

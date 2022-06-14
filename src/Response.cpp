@@ -411,13 +411,13 @@ Response::passToCGI(CGI &cgi) {
 }
 
 size_t
-Response::getResLength() {
+Response::getResponseLength() {
     return (_res.length());
 }
 
-const char *
+const std::string &
 Response::getResponse() {
-    return (_res.c_str());
+    return _res;
 }
 
 const std::string &

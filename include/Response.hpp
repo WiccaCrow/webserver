@@ -87,8 +87,8 @@ public:
 
     // setters, getters
     //     to send response
-    size_t             getResLength(void);
-    const char        *getResponse(void);
+    size_t             getResponseLength(void);
+    const std::string &getResponse(void);
     const std::string &getBody(void) const;
     void               setBody(const std::string &);
     size_t             getBodyLength(void) const;
