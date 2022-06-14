@@ -1,8 +1,69 @@
 {
     "servers": {
         "http": {
+            "addr": "127.0.0.1",
             "port": 8080,
             "server_names": [ "localhost" ],
+            "error_pages": {
+                "400": "./pages/error_pages/400.html",
+                "403": "./pages/error_pages/403.html",
+                "404": "./pages/error_pages/404.html",
+                "405": "./pages/error_pages/405.html",
+                "408": "./pages/error_pages/408.html",
+                "411": "./pages/error_pages/411.html",
+                "413": "./pages/error_pages/413.html",
+                "414": "./pages/error_pages/414.html",
+                "415": "./pages/error_pages/415.html",
+                "500": "./pages/error_pages/500.html",
+                "501": "./pages/error_pages/501.html",
+                "502": "./pages/error_pages/502.html",
+                "504": "./pages/error_pages/504.html",
+                "505": "./pages/error_pages/505.html"
+            },
+            "CGI": {
+                ".pl": "/usr/bin/perl",
+                ".py": "/usr/bin/python",
+                ".php": "/opt/homebrew/bin/php-cgi",
+                ".js": "/usr/local/bin/node",
+                ".cgi": ""
+            },
+            "methods_allowed": [ "GET", "PUT", "POST" ],
+            "post_max_body": 100,
+            "autoindex": true,
+            "index": [ "index.html" ],
+            "locations": {
+                "/try.about": {
+                    "alias": "/Users/mhufflep/Downloads",
+                    "autoindex": true,
+                    "CGI": {
+                        ".js": "/usr/local/bin/node",
+                        ".py": "/usr/bin/python"
+                    },
+                    "index": [ "index.html" ],
+                    "post_max_body": 200,
+                    "methods_allowed": [ "GET", "POST" ]                 
+                },
+                "/feedback": {
+                    "alias": "/Users/mhufflep/Desktop/serv/pages/site",
+                    "CGI": {
+                        ".py": "/usr/bin/python",
+                        ".js": "/usr/local/bin/node"
+                    },
+                    "auth_basic": {
+                        "realm": "eternity",
+                        "user_file": ".htpasswd"
+                    },
+                    "autoindex": false,
+                    "index": [ "index.html", "index.php" ],
+                    "methods_allowed": [ "DELETE" ],
+                    "post_max_body": 300
+                }
+            }
+        },
+        "http2": {
+            "addr": "172.20.10.2",
+            "port": 8080,
+            "server_names": [ "webserv.com" ],
             "error_pages": {
                 "400": "./pages/error_pages/400.html",
                 "403": "./pages/error_pages/403.html",

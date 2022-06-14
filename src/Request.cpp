@@ -253,7 +253,6 @@ Request::parseSL(const std::string &line) {
 
     skipSpaces(line, pos);
     _rawURI = getWord(line, " ", pos);
-    Log.debug("PATH: " + _rawURI);
 
     skipSpaces(line, pos);
     _protocol = getWord(line, " ", pos);
@@ -291,6 +290,24 @@ Request::checkSL(void) {
         Log.debug("Request::checkSL: protocol " + _method + " is not implemented");
         return BAD_REQUEST;
     }
+
+    if (!_servBlock) {
+        setServerBlock(getClient()->matchServerBlock(_uri._host));
+    }
+    if (!_location) {
+        setLocation(getServerBlock()->matchLocation(_uri._path));
+    }
+    resolvePath();
+
+    // GET http://ip:port
+    // GET http://host:port
+    // // hostname == ip
+    // Host: h
+
+    // port -> ipaddr -> servername
+    // GET http://ip:port
+    // port -> ipaddr -> servername
+
 
     setFlag(PARSED_SL);
     return CONTINUE;
@@ -353,19 +370,7 @@ Request::checkHeaders(void) {
     //     return BAD_REQUEST;
     // }
 
-    if (!_servBlock) {
-        setServerBlock(g_server->matchServerBlock(getClient()->getServerPort(), "", _host._host));
-    }
-    if (!_location) {
-        setLocation(getServerBlock()->matchLocation(_uri._path));
-    }
-    resolvePath();
-
-    std::vector<std::string> &allowed = getLocation()->getAllowedMethodsRef();
-    if (std::find(allowed.begin(), allowed.end(), _method) == allowed.end()) {
-        Log.debug("Request:: Method " + _method + " is not allowed");
-        return METHOD_NOT_ALLOWED;
-    }
+    
 
     // Call each header handler
     std::map<uint32_t, RequestHeader>::iterator it;
@@ -375,6 +380,15 @@ Request::checkHeaders(void) {
             return status;
         }
     }
+
+    std::vector<std::string> &allowed = getLocation()->getAllowedMethodsRef();
+    if (std::find(allowed.begin(), allowed.end(), _method) == allowed.end()) {
+        Log.debug("Request:: Method " + _method + " is not allowed");
+        return METHOD_NOT_ALLOWED;
+    }
+
+
+
 
     if (!isHeaderExist(TRANSFER_ENCODING) && !isHeaderExist(CONTENT_LENGTH)) {
         // PUT or POST or PATCH

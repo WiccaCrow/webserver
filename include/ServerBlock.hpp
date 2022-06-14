@@ -15,7 +15,6 @@ private:
     std::string              _blockname;
     std::string              _addr;
     int                      _port;
-    // int                      _fd;
     std::vector<std::string> _server_names;
 
     Location                        _locationBase;
@@ -33,13 +32,11 @@ public:
     ServerBlock &operator=(const ServerBlock &obj);
 
     // Set atributs
-    // void setFd(int fd);
     void setAddr(const std::string &);
     void setBlockname(const std::string &);
 
     // Get and show atributs
     int          getPort(void) const;
-    // int          getFd(void);
 
 
     std::string                           &getAddrRef(void);

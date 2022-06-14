@@ -8,15 +8,15 @@
 
 std::vector<std::string>
 split(const std::string &source, const std::string &delimiters = " ") {
-    size_t                   prev       = 0;
-    size_t                   currentPos = 0;
-    std::vector<std::string> results;
+    size_t prev = 0;
+    size_t curr = 0;
 
-    while ((currentPos = source.find_first_of(delimiters, prev)) != std::string::npos) {
-        if (currentPos > prev) {
-            results.push_back(source.substr(prev, currentPos - prev));
+    std::vector<std::string> results;
+    while ((curr = source.find_first_of(delimiters, prev)) != std::string::npos) {
+        if (curr > prev) {
+            results.push_back(source.substr(prev, curr - prev));
         }
-        prev = currentPos + 1;
+        prev = curr + 1;
     }
 
     if (prev < source.length()) {

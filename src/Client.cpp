@@ -1,5 +1,5 @@
 #include "Client.hpp"
-
+#include "Server.hpp"
 namespace HTTP {
 
 Client::Client()
@@ -153,17 +153,15 @@ Client::reply(void) {
     }
 
     Log.debug("Client::reply -> fd: " + to_string(_fd));
-
     // Log.debug("\n" + std::string(_res.getResponse()) + "\n");
 
     size_t sentBytes = 0;
     do {
-        
         long n = send(_fd, _res.getResponse() + sentBytes, _res.getResLength() - sentBytes, 0);
         if (n > 0) {
             sentBytes += n;
-            Log.debug("Client:: " + to_string(sentBytes) + "/" + to_string(_res.getResLength()) + " bytes sent");
         }
+        Log.debug("Client:: " + to_string(sentBytes) + "/" + to_string(_res.getResLength()) + " bytes sent");
     } while (sentBytes < _res.getResLength());
 
     if (shouldBeClosed()) {
@@ -247,6 +245,23 @@ Client::receive(void) {
             }
         }
     }
+}
+
+HTTP::ServerBlock *
+Client::matchServerBlock(const std::string &host) const {
+
+    std::list<HTTP::ServerBlock> &blocks = g_server->getServerBlocks(_serverPort);
+    std::list<HTTP::ServerBlock>::iterator block = blocks.begin();
+    std::list<HTTP::ServerBlock>::iterator found = blocks.begin();
+    std::list<HTTP::ServerBlock>::iterator end = blocks.end();
+    for (; block != end; ++block) {
+        std::vector<std::string> &names = block->getServerNamesRef();
+        if (std::find(names.begin(), names.end(), host) != names.end()) {
+            found = block;
+        }
+    }
+    Log.debug("Server::matchServerBlock -> " + found->getBlockName() + " for " + host + ":" + to_string(_serverPort));
+    return &(*blocks.begin());
 }
 
 

@@ -5,12 +5,13 @@
 #include <sys/socket.h>
 #include <string>
 #include <unistd.h>
+#include <queue>
 
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Logger.hpp"
 #include "Status.hpp"
-
+#include "Globals.hpp"
 
 namespace HTTP {
 
@@ -21,14 +22,12 @@ private:
     int         _clientPort;
     int         _serverPort;
     std::string _ipAddr;
-    // bool        _requestFormed;
-    // bool        _responseFormed;
+
+    std::queue<HTTP::Request> _requests;
+    std::queue<HTTP::Response> _responses;
 
     HTTP::Request  _req;
     HTTP::Response _res;
-
-    // ServerBlock    *_servBlock;
-    // static ReadSock _reader;
 
     bool        _shouldBeClosed;
 
@@ -81,6 +80,8 @@ public:
 
     bool            shouldBeClosed(void) const;
     void            shouldBeClosed(bool);
+
+    HTTP::ServerBlock *matchServerBlock(const std::string &host) const;
 };
 
 }
