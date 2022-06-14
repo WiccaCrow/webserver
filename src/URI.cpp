@@ -59,7 +59,7 @@ void URI::parse(std::string uri) {
             std::advance(hostEnd, 1);
             _port_s = std::string(hostEnd, authEnd);
             char *end = NULL;
-            _port = strtol(_port_s.c_str(), &end, 10);
+            _port = strtoul(_port_s.c_str(), &end, 10);
             if (!end || *end != '\0') {
                 _port = -1;
             }

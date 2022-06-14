@@ -58,13 +58,13 @@ public:
     void setFd(int fd);
     int  getFd(void) const;
 
-    void setPort(int port);
-    int  getPort(void) const;
+    void setPort(size_t port);
+    size_t  getPort(void) const;
 
-    void setServerPort(int port);
-    int  getServerPort(void) const;
+    void setServerPort(size_t port);
+    size_t getServerPort(void) const;
 
-    void               setIpAddr(const std::string);
+    void               setIpAddr(const std::string &);
     const std::string &getIpAddr(void) const;
 
     void              linkRequest(void);

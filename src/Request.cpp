@@ -232,7 +232,7 @@ Request::parseLine(std::string &line) {
 
     if (getStatus() != CONTINUE) {
         if (!_servBlock) {
-            setServerBlock(g_server->matchServerBlock(getClient()->getServerPort(), "", _host._host));
+            setServerBlock(getClient()->matchServerBlock(_host._host));
         }
         if (!_location) {
             setLocation(getServerBlock()->matchLocation(_uri._path));

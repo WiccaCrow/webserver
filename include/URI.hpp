@@ -15,7 +15,7 @@ struct URI {
     std::string _path;
     std::string _query;
     std::string _fragment;
-    int _port;
+    size_t _port;
 
     void parse(std::string uri);
     std::string getAuthority(void) const;

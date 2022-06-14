@@ -388,7 +388,6 @@ Response::passToCGI(CGI &cgi) {
     _cgi = &cgi;
     cgi.clear();
     cgi.linkRequest(_req);
-    cgi.linkResponse(this);
     cgi.setEnv();
     if (!cgi.exec()) {
         setStatus(BAD_GATEWAY);
