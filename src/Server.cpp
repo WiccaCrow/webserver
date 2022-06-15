@@ -2,7 +2,8 @@
 
 const size_t reservedClients = 64;
 
-Server::Server() {
+Server::Server() 
+    : _socketsCount(0) {
     _pollfds.reserve(reservedClients);
 }
 
@@ -26,10 +27,11 @@ Server::Server(const Server &obj) {
 Server &
 Server::operator=(const Server &obj) {
     if (this != &obj) {
-        _servBlocks = obj._servBlocks;
+        _serverBlocks = obj._serverBlocks;
         _pollResult = obj._pollResult;
         _pollfds    = obj._pollfds;
         _clients    = obj._clients;
+        _socketsCount = obj._socketsCount;
     }
     return (*this);
 }
@@ -37,59 +39,60 @@ Server::operator=(const Server &obj) {
 // Private functions
 
 int
-Server::createListenSocket(const std::string addr, const int port) {
-    int fd = socket(PF_INET, SOCK_STREAM, 0);
-    if (fd < 0) {
-        Log.error("Server::socket -> " + addr + ":" + to_string(port));
-        exit(5);
-    }
-
+Server::addListenSocket(const std::string &addr, size_t port) {
+    
     int i = 1;
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) < 0) {
-        Log.error("Server::setsockopt -> " + addr + ":" + to_string(port));
-        exit(6);
-    }
-
     struct sockaddr_in data;
     data.sin_family = AF_INET;
     data.sin_port   = htons(port);
-    // Request for socket to be bound to all network interfaces on the host
-    data.sin_addr.s_addr = INADDR_ANY; // inet_addr(addr.c_str());
-    if (bind(fd, (struct sockaddr *)&data, sizeof(data)) < 0) {
-        Log.error("Server::bind -> addr: " + addr + ":" + to_string(port));
-        exit(7);
-    }
-    // Log.debug("Server::bind -> addr: " + addr + ":" + to_string(port));
+    data.sin_addr.s_addr = inet_addr(addr.c_str());
 
-    if (listen(fd, SOMAXCONN) < 0) {
-        Log.error("Server::listen -> addr: " + addr + ":" + to_string(port));
-        exit(8);
+    int fd;
+    if ((fd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
+        Log.syserr("Server::socket ->" + addr + ":" + to_string(port));
+        exit(1);
     }
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) < 0) {
+        Log.syserr("Server::setsockopt ->" + addr + ":" + to_string(port));
+        exit(1);
+    }
+    if (bind(fd, (struct sockaddr *)&data, sizeof(data)) < 0) {
+        Log.syserr("Server::bind ->" + addr + ":" + to_string(port));
+        exit(1);
+    }
+    if (listen(fd, SOMAXCONN) < 0) {
+        Log.syserr("Server::listen ->" + addr + ":" + to_string(port));
+        exit(1);
+    }
+    
     return fd;
 }
 
+
 void
 Server::fillServBlocksFds(void) {
-    std::map<int, int> sockets;
+    typedef std::map<size_t, std::set<std::string> >::iterator iter_m;
+    typedef std::list<HTTP::ServerBlock>::iterator iter_l;
+    typedef std::set<std::string>::iterator iter_s;
 
-    for (size_t i = 0; i < _servBlocks.size(); ++i) {
-        const int                    port = _servBlocks[i].getPort();
-        const std::string           &addr = _servBlocks[i].getAddrRef();
-        std::map<int, int>::iterator it   = sockets.find(port);
-        if (it == sockets.end()) {
-            int fd = createListenSocket(addr, port); // what addr should i use here?
-            sockets.insert(std::make_pair(port, fd));
-            _servBlocks[i].setFd(fd);
-        } else {
-            _servBlocks[i].setFd(it->second);
+    std::map<size_t, std::set<std::string> >uniqueAddr;
+    for (iter lst = _serverBlocks.begin(); lst != _serverBlocks.end(); ++lst) {
+        std::list<HTTP::ServerBlock> &l = lst->second;
+        for (iter_l sb = l.begin() ; sb != l.end(); sb++) {
+            uniqueAddr[lst->first].insert(sb->getAddrRef());
         }
+    }
 
-        struct pollfd tmp = {
-            _servBlocks[i].getFd(),
-            POLLIN,
-            0
-        };
-        _pollfds.push_back(tmp);
+    for (iter_m ua = uniqueAddr.begin(); ua != uniqueAddr.end(); ++ua) {
+        std::set<std::string> &addrs = ua->second;
+
+        const size_t port = ua->first;
+        for (iter_s addr = addrs.begin(); addr != addrs.end(); addr++) {
+            int fd = addListenSocket(*addr, port);
+            _pollfds.push_back((struct pollfd) {fd, POLLIN, 0});
+            _socketsCount++;
+            Log.info("Server::Listen [" + to_string(fd) + "] -> " + *addr + ":" + to_string(port));
+        }
     }
 }
 
@@ -103,37 +106,43 @@ Server::fillServBlocksFds(void) {
 
 void
 Server::addServerBlock(HTTP::ServerBlock &servBlock) {
-    _servBlocks.push_back(servBlock);
+    _serverBlocks[servBlock.getPort()].push_back(servBlock);
+}
+
+std::list<HTTP::ServerBlock> &
+Server::getServerBlocks(size_t port) {
+    return _serverBlocks[port];
 }
 
 int
 Server::pollInHandler(size_t id) {
     _pollfds[id].revents = 0;
-    if (id < _servBlocks.size()) {
+    if (id < _socketsCount) {
         connectClient(id);
         return 1;
-    } else if (!_clients[id].isResponseFormed()) {
-
+    }
+    
+    if (!_clients[id].getResponse().isFormed()) {
         _clients[id].receive();
+    }
 
-        if (_clients[id].getFd() == -1) {
-            disconnectClient(id);
-        }
+    if (_clients[id].getFd() == -1) {
+        disconnectClient(id);
     }
     return 0;
 }
 
 void
 Server::pollHupHandler(size_t id) {
-    Log.error("POLLHUP occured on the " + to_string(_pollfds[id].fd) + "socket");
-    if (id >= _servBlocks.size()) {
+    Log.syserr("Server::POLLHUP occured on the " + to_string(_pollfds[id].fd) + "socket");
+    if (id >= _socketsCount) {
         disconnectClient(id);
     }
 }
 
 void
 Server::pollOutHandler(size_t id) {
-    if (_clients[id].isRequestFormed()) {
+    if (_clients[id].getRequest().isFormed()) {
         _clients[id].process();           
         _clients[id].reply();
         _clients[id].checkIfFailed();
@@ -147,7 +156,7 @@ Server::pollOutHandler(size_t id) {
 
 void
 Server::pollErrHandler(size_t id) {
-    Log.error("POLLERR occured on the " + to_string(_pollfds[id].fd) + "socket");
+    Log.syserr("Server::POLLERR occured on the " + to_string(_pollfds[id].fd) + "socket");
     exit(1);
 }
 
@@ -177,14 +186,14 @@ Server::start(void) {
 
 void
 Server::handlePollError() {
-    Log.error(std::string("Poll:: ") + strerror(errno));
+    Log.syserr("Server::poll");
     switch (errno) {
         case EINVAL: {
             struct rlimit rlim;
             getrlimit(RLIMIT_NOFILE, &rlim);
-            Log.error("ndfs: " + to_string(_pollfds.size()));
-            Log.error("limit(soft): " + to_string(rlim.rlim_cur));
-            Log.error("limit(hard): " + to_string(rlim.rlim_max));
+            Log.debug("ndfs: " + to_string(_pollfds.size()));
+            Log.debug("limit(soft): " + to_string(rlim.rlim_cur));
+            Log.debug("limit(hard): " + to_string(rlim.rlim_max));
             break;
         }
         default:
@@ -205,20 +214,6 @@ Server::pollServ(void) {
     }
 }
 
-void
-Server::handleAcceptError() {
-    switch (errno) {
-        case EWOULDBLOCK: {
-            // OK, as we use non-blocking sockets
-            break;
-        }
-        default: {
-            Log.error("Accept::" + std::string(strerror(errno)));
-            break;
-        }
-    }
-}
-
 static int
 fdFree(struct pollfd pfd) {
     return (pfd.fd == -1);
@@ -226,49 +221,53 @@ fdFree(struct pollfd pfd) {
 
 void
 Server::connectClient(size_t id) {
+
+    struct sockaddr_in servData;
+    socklen_t servLen = sizeof(servData);
+    if (getsockname(_pollfds[id].fd, (struct sockaddr *)&servData, &servLen) < 0) {
+        Log.syserr("Server::getsockname failed for fd = " + to_string(_pollfds[id].fd));
+        return ;
+    }
+
     struct sockaddr_in clientData;
-
-    socklen_t len = sizeof(clientData);
-
-    int fd = accept(_pollfds[id].fd, (struct sockaddr *)&clientData, &len);
+    socklen_t clientLen = sizeof(clientData);
+    int fd = accept(_pollfds[id].fd, (struct sockaddr *)&clientData, &clientLen);
 
     if (fd < 0) {
-        handleAcceptError();
+        Log.syserr("Server::accept");
         return;
     }
 
-    if (fd > -1) {
-        fcntl(fd, F_SETFL, O_NONBLOCK);
+    fcntl(fd, F_SETFL, O_NONBLOCK);
 
-        std::vector<struct pollfd>::iterator it;
-        it = std::find_if(_pollfds.begin(), _pollfds.end(), fdFree);
+    std::vector<struct pollfd>::iterator it;
+    it = std::find_if(_pollfds.begin(), _pollfds.end(), fdFree);
 
-        size_t clientId;
-        if (it != _pollfds.end()) {
-            it->fd     = fd;
-            it->events = POLLIN | POLLOUT;
-            clientId   = it - _pollfds.begin();
-        } else {
-            struct pollfd tmp = { fd, POLLIN | POLLOUT, 0 };
-            _pollfds.push_back(tmp);
-            clientId = _pollfds.size() - 1;
-        }
-
-        _clients.insert(std::make_pair(clientId, HTTP::Client()));
-        _clients[clientId].initResponseMethodsHeaders();
-        _clients[clientId].linkRequest();
-        _clients[clientId].setFd(fd);
-        _clients[clientId].setPort(ntohs(clientData.sin_port));
-        _clients[clientId].setServerPort(_servBlocks[id].getPort());
-        _clients[clientId].setIpAddr(inet_ntoa(clientData.sin_addr));
-
-        Log.debug("Server::connectClient [" + to_string(fd) + "] -> " + _clients[clientId].getHostname());
+    size_t clientId;
+    if (it != _pollfds.end()) {
+        it->fd     = fd;
+        it->events = POLLIN | POLLOUT;
+        clientId   = std::distance(_pollfds.begin(), it);
+    } else {
+        _pollfds.push_back((struct pollfd) { fd, POLLIN | POLLOUT, 0 });
+        clientId = _pollfds.size() - 1;
     }
+
+    _clients.insert(std::make_pair(clientId, HTTP::Client()));
+    _clients[clientId].initResponseMethodsHeaders();
+    _clients[clientId].linkRequest();
+    _clients[clientId].setFd(fd);
+    _clients[clientId].setPort(ntohs(clientData.sin_port));
+    _clients[clientId].setIpAddr(inet_ntoa(clientData.sin_addr));
+    _clients[clientId].setServerPort(ntohs(servData.sin_port));
+    _clients[clientId].setServerIpAddr(inet_ntoa(servData.sin_addr));
+
+    Log.debug("Server::connect [" + to_string(fd) + "] -> " + _clients[clientId].getHostname());
 }
 
 void
 Server::disconnectClient(size_t id) {
-    Log.debug("Server::disconnectClient -> [" + to_string(_pollfds[id].fd) + "]");
+    Log.debug("Server::disconnect [" + to_string(_pollfds[id].fd) + "]");
     _clients.erase(id);
     close(_pollfds[id].fd);
     _pollfds[id].fd      = -1;
@@ -276,22 +275,19 @@ Server::disconnectClient(size_t id) {
     _pollfds[id].revents = 0;
 }
 
-HTTP::ServerBlock *
-Server::matchServerBlock(int port, const std::string &ipaddr, const std::string &host) {
-    (void)ipaddr;
-
-    int defaultServerIndex = 0;
-    for (int i = _servBlocks.size() - 1; i >= 0; --i) {
-        if (_servBlocks[i].getPort() == port) {
-            defaultServerIndex = i;
-
-            std::vector<std::string> &sNames = _servBlocks[i].getServerNamesRef();
-            if (std::find(sNames.begin(), sNames.end(), host) != sNames.end()) {
-                Log.debug("Server::matchServerBlock -> " + _servBlocks[i].getBlockName() + " for " + host + ":" + to_string(port));
-                return &_servBlocks[i];
-            }
-        }
-    }
-    Log.debug("Server::matchServerBlock [default] -> " + _servBlocks[defaultServerIndex].getBlockName() + " for " + host + ":" + to_string(port));
-    return &_servBlocks[defaultServerIndex];
-}
+// HTTP::ServerBlock *
+// Server::matchServerBlock(size_t port, const std::string &ipaddr, const std::string &host) {
+//     (void)ipaddr;
+//     std::list<HTTP::ServerBlock> &blocks = _serverBlocks[port];
+//     std::list<HTTP::ServerBlock>::iterator block = blocks.begin();
+//     std::list<HTTP::ServerBlock>::iterator found = blocks.begin();
+//     std::list<HTTP::ServerBlock>::iterator end = blocks.end();
+//     for (; block != end; ++block) {
+//         std::vector<std::string> &names = block->getServerNamesRef();
+//         if (std::find(names.begin(), names.end(), host) != names.end()) {
+//             found = block;
+//         }
+//     }
+//     Log.debug("Server::matchServerBlock -> " + found->getBlockName() + " for " + host + ":" + to_string(port));
+//     return &(*blocks.begin());
+// }

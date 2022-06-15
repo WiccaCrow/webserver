@@ -3,15 +3,40 @@
 
 namespace HTTP {
 
+std::string
+readFile(const std::string &filename) {
+    std::string res;
+
+    std::ifstream in(filename.c_str());
+    if (!in.is_open()) {
+        return "";
+    }
+    return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+}
+
 int
 HTTP::Response::setErrorResponse(HTTP::StatusCode status) {
-    const std::string &response = errorResponses[status];
 
-    // if serverblock has error-pages, but response doesn't have a reference to serverblock
-    // std::map<int, std::string>::iterator it = getRequest()->getServerBlock()->getErrPathsRef();
+    std::string response;
+    if (getRequest()->getServerBlock() != NULL) {
+
+        std::map<int, std::string> &pages = getRequest()->getServerBlock()->getErrPathsRef();
+        std::map<int, std::string>::iterator it = pages.find(status);
+
+        if (it != pages.end()) {
+            response = readFile(it->second);
+        
+            if (!response.empty()) {
+                setStatus(status);
+                setBody(response);
+                return 0;
+            }
+        }
+    }
+
+    response = errorResponses[status];
     if (response.empty()) {
-        Log.error("Unknown response error code: " + to_string(static_cast<int>(status)));
-        // Should be removed after development
+        Log.error("Unknown response code: " + to_string(static_cast<int>(status)));
         setStatus(INTERNAL_SERVER_ERROR);
         setBody(errorResponses[66]);
     } else {
@@ -23,88 +48,50 @@ HTTP::Response::setErrorResponse(HTTP::StatusCode status) {
 
 ErrorResponses::ErrorResponses() {
     _errorResponses.insert(std::make_pair(HTTP::BAD_REQUEST,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 400 (Bad Request)</title>\n"
-        "<p><b>400.</b> That's an error.\n"
-        "<p><err_text>Invalid or illegal request.</err_text>"));
+        "<!DOCTYPE html><html><head><title>400 Bad Request</title></head>"
+        "<body><center><h1><b>400</b> Bad Request</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(HTTP::FORBIDDEN,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 403 (Forbidden)</title>\n"
-        "<p><b>403.</b> Forbidden.\n"
-        "<p><err_text>You may not have sufficient rights to perform the action...</err_text>"));
+        "<!DOCTYPE html><html><head><title>403 Forbidden</title></head>"
+        "<body><center><h1><b>403</b> Forbidden</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(HTTP::NOT_FOUND,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 404 (Not Found)</title>\n"
-        "<p><b>404.</b> Page not found.\n"
-        "<p><err_text>Not found anything matching the Request-URI.</err_text>"));
+        "<!DOCTYPE html><html><head><title>404 Page not found</title></head>"
+        "<body><center><h1><b>404</b> Page not found</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(HTTP::METHOD_NOT_ALLOWED,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 405 (Method Not Allowed)</title>\n"
-        "<p><b>405.</b> The method not supported by the target resource."
-        "<p><err_text> The method received in the request-line is known by the "
-        "<p>origin server but not supported by the target resource.</err_text>"));
+        "<!DOCTYPE html><html><head><title>405 Method Not Allowed</title></head>"
+        "<body><center><h1><b>405</b> Method Not Allowed</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(HTTP::REQUEST_TIMEOUT,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 408 (Request Timeout)</title>\n"
-        "<p><b>408.</b> Request Timeout.\n"
-        "<p><err_text>The server did not receive a complete request message within "
-        "the time that it was prepared to wait.</err_text>"));
+        "<!DOCTYPE html><html><head><title>408 Request Timeout</title></head>"
+        "<body><center><h1><b>408</b> Request Timeout</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(HTTP::LENGTH_REQUIRED,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 411 (Length Required)</title>\n"
-        "<p><b>411.</b> Length Required.\n"
-        "<p><err_text>For the specified resource, the client must "
-        "specify the Content-Length in the request header.</err_text>"));
+        "<!DOCTYPE html><html><head><title>411 Length Required</title></head>"
+        "<body><center><h1><b>411</b> Length Required</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(HTTP::PAYLOAD_TOO_LARGE,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 413 (Payload Too Large)</title>\n"
-        "<p><b>413.</b> Payload Too Large.\n"
-        "<p><err_text>The request body is too large.</err_text>"));
+        "<!DOCTYPE html><html><head><title>413 Payload Too Large</title></head>"
+        "<body><center><h1><b>413</b> Payload Too Large</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(HTTP::URI_TOO_LONG,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 414 (URI Too Long)</title>\n"
-        "<p><b>414.</b> URI Too Long.\n"
-        "<p><err_text>The URI in the request is too long "
-        "for this server.</err_text>"));
+        "<!DOCTYPE html><html><head><title>414 URI Too Long</title></head>"
+        "<body><center><h1><b>414</b> URI Too Long</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(HTTP::UNSUPPORTED_MEDIA_TYPE,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 415 (Unsupported Media Type)</title>\n"
-        "<p><b>415.</b> Unsupported Media Type.\n"
-        "<p><err_text>Content format not supported by the server."
-        "</err_text>"));
+        "<!DOCTYPE html><html><head><title>415 Unsupported Media Type</title></head>"
+        "<body><center><h1><b>415</b> Unsupported Media Type</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(HTTP::INTERNAL_SERVER_ERROR,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 500 (Internal Server Error)</title>\n"
-        "<p><b>500.</b> Internal Server Error.\n"
-        "<p><err_text>An unexpected error prevented the "
-        "request from being completed.</err_text>"));
+        "<!DOCTYPE html><html><head><title>500 Internal Server Error</title></head>"
+        "<body><center><h1><b>500</b> Internal Server Error</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(HTTP::NOT_IMPLEMENTED,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 501 (Not Implemented)</title>\n"
-        "<p><b>501.</b> Not Implemented."
-        "<p><err_text> Unknown method in request.</err_text>"));
+        "<!DOCTYPE html><html><head><title>501 Not Implemented</title></head>"
+        "<body><center><h1><b>501</b> Not Implemented</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(HTTP::BAD_GATEWAY,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 502 (Bad Gateway)</title>\n"
-        "<p><b>502.</b> Bad Gateway."
-        "<p><err_text>It happens...</err_text>"));
+        "<!DOCTYPE html><html><head><title>502 Bad Gateway</title></head>"
+        "<body><center><h1><b>502</b> Bad Gateway</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(HTTP::GATEWAY_TIMEOUT,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 504 (Gateway Timeout)</title>\n"
-        "<p><b>504.</b> Gateway Timeout."
-        "<p><err_text>The server did not wait for a "
-        "response from the upstream server to complete "
-        "the current request.</err_text>"));
+        "<!DOCTYPE html><html><head><title>504 Gateway Timeout</title></head>"
+        "<body><center><h1><b>504</b> Gateway Timeout</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(HTTP::HTTP_VERSION_NOT_SUPPORTED,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error 505 (HTTP Version Not Supported)</title>\n"
-        "<p><b>505.</b> HTTP Version Not Supported."
-        "<p><err_text>HTTP version not supported.</err_text>"));
+        "<!DOCTYPE html><html><head><title>505 HTTP Version Not Supported</title></head>"
+        "<body><center><h1>505 HTTP Version Not Supported</h1></center><hr></body></html>"));
     _errorResponses.insert(std::make_pair(66,
-        ERROR_RESPONSE_BODY_BASIS
-        "<title>Error ??? (Unknown response error code)</title>\n"
-        "<p><b>???.</b> Unknown response error code."
-        "<p><err_text>HTTP version not supported.</err_text>"));
+        "<!DOCTYPE html><html><head><title>XXX Unknown response status code</title></head>"
+        "<body><center><h1><b>XXX</b> Unknown response status code</h1></center><hr></body></html>"));
 }
 
 ErrorResponses::~ErrorResponses() {}

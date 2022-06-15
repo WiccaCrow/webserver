@@ -5,9 +5,9 @@ namespace HTTP {
 
 StatusCode
 RequestHeader::handle(Request &req) {
-    std::map<uint32_t, RequestHeader::Handler>::const_iterator it = validHeaders.find(hash);
+    std::map<uint32_t, RequestHeader::Handler>::const_iterator it = validReqHeaders.find(hash);
 
-    if (it == validHeaders.end()) {
+    if (it == validReqHeaders.end()) {
         Log.debug("RequestHeader:: Unknown header: " + key);
         Log.debug("RequestHeader:: Value: " + value);
         Log.debug("RequestHeader:: Hash: " + to_string(hash));
@@ -15,6 +15,11 @@ RequestHeader::handle(Request &req) {
     }
     method = it->second;
     return (this->*method)(req);
+}
+
+bool
+RequestHeader::isValid(void) {
+    return (validReqHeaders.find(hash) != validReqHeaders.end());
 }
 
 StatusCode
@@ -191,19 +196,20 @@ RequestHeader::From(Request &req) {
 
 StatusCode
 RequestHeader::Host(Request &req) {
-    URI uri;
-    uri.parse(value);
+    
+    URI &host = req.getHostRef();
+    host.parse(value);
 
-    if (!isValidHost(uri._host)) {
-        Log.error("Host: Invalid Host " + uri._host);
+    if (!isValidHost(host._host)) {
+        Log.error("Host: Invalid Host " + host._host);
         return BAD_REQUEST;
     }
-
-    // Dangerous because of segfault if there's some header
-    // that needs serverblock or location data before Host is arrived
-    req.setServerBlock(g_server->matchServerBlock(req.getClient()->getServerPort(), "", uri._host));
-    req.setLocation(req.getServerBlock()->matchLocation(req.getUriRef()._path));
-    req.resolvePath();
+    
+    if (req.getClient()->getServerPort() != host._port) {
+        Log.error("Host: Port mismatch " + host._port_s);
+        return BAD_REQUEST;
+    }
+    
     return CONTINUE;
 }
 
@@ -391,7 +397,9 @@ RequestHeader::TransferEncoding(Request &req) {
 
 StatusCode
 RequestHeader::TE(Request &req) {
-    (void)req;
+    if (value == "trailers") {
+        req.chuckedRequested(true);
+    }
     return CONTINUE;
 }
 
@@ -556,6 +564,6 @@ initHeadersMap(void) {
     return tmp;
 }
 
-const std::map<uint32_t, RequestHeader::Handler> validHeaders = initHeadersMap();
+const std::map<uint32_t, RequestHeader::Handler> validReqHeaders = initHeadersMap();
 
 }

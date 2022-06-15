@@ -3,8 +3,8 @@
 namespace HTTP {
 
 std::string URI::getAuthority(void) const {
-    if (_port != "") {
-        return _host + ":" + _port;
+    if (_port != 0) {
+        return _host + ":" + _port_s;
     }
     return _host;
 }
@@ -12,7 +12,8 @@ std::string URI::getAuthority(void) const {
 void URI::clear(void) {
     _scheme = "";
     _host = "";
-    _port = "";
+    _port_s = "";
+    _port = 0;
     _path = "";
     _query = "";
     _fragment = "";
@@ -56,7 +57,12 @@ void URI::parse(std::string uri) {
         // port
         if (hostEnd != authEnd) {
             std::advance(hostEnd, 1);
-            _port = std::string(hostEnd, authEnd);
+            _port_s = std::string(hostEnd, authEnd);
+            char *end = NULL;
+            _port = strtoul(_port_s.c_str(), &end, 10);
+            if (!end || *end != '\0') {
+                _port = -1;
+            }
         }
     }
 

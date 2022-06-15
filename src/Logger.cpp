@@ -5,6 +5,7 @@ Logger Log;
 const int LOG_DEBUG = 1;
 const int LOG_INFO  = 2;
 const int LOG_ERROR = 4;
+const int LOG_SYSERR = 8;
 
 Logger::Logger()
     : _logfile("")
@@ -64,11 +65,11 @@ Logger::makeTimeString(char dateSep, char sep, char timeSep) {
 
 void
 Logger::print(uint8_t flag, const std::string &msg) {
-    static const std::string _titles[5] = { "", "DEBUG", "INFO", "", "ERROR" };
+    static const char *_titles[9] = { "", "DEBUG", "INFO", "", "ERROR", "", "", "", "SYSERR" };
 
     if (_flags & flag) {
         if (_logToFile && _out.good()) {
-                _out << makeTimeString() << " " << _titles[flag] << ": " << msg << std::endl;
+            _out << makeTimeString() << " " << _titles[flag] << ": " << msg << std::endl;
         }
 
         if (_flags & LOG_ERROR) {
@@ -87,6 +88,14 @@ Logger::debug(const std::string &s) {
 void
 Logger::error(const std::string &s) {
     print(LOG_ERROR, s);
+}
+
+void
+Logger::syserr(const std::string &s) {
+    std::ostringstream errnoinfo;
+    errnoinfo << "errno: " << errno << ": " << strerror(errno);
+    print(LOG_SYSERR, s);
+    print(LOG_SYSERR, errnoinfo.str());
 }
 
 void

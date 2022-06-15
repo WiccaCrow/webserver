@@ -34,6 +34,7 @@ private:
     std::string                       _rawURI;
     std::string                       _protocol;
     std::string                       _resolvedPath;
+    URI                               _host;
     std::map<uint32_t, RequestHeader> _headers;
     HTTP::StatusCode                  _status;
     int                               _major : 4;
@@ -43,7 +44,7 @@ private:
     Location    *_location;
     Client      *_client;
 
-    bool           _isChuckSize;
+    bool          _isChuckSize;
     size_t        _chunkSize;
     size_t        _bodySize;
     std::string   _body;
@@ -51,6 +52,9 @@ private:
 
     bool     _isAuthorized;
     uint32_t _storedHash;
+
+    bool _isFormed;
+    bool _chuckedRequested;
 
     std::map<std::string, std::string> _cookie;
 
@@ -78,7 +82,11 @@ public:
     const uint8_t                           &getFlags() const;
     const HTTP::StatusCode                  &getStatus() const;
     URI                                     &getUriRef();
+    URI                                     &getHostRef();
     const std::string                       &getRawUri() const;
+
+    bool    isFormed(void) const;
+    void    isFormed(bool formed);
 
     // Needed to be improved
     const std::string &getQueryString() const;
@@ -130,6 +138,9 @@ public:
 
     const std::map<std::string, std::string> &getCookie(void);
     void                                      setCookie(std::map<std::string, std::string> cookie);
+
+    void chuckedRequested(bool);
+    bool chuckedRequested(void);
 };
 
 } // namespace HTTP

@@ -1,5 +1,6 @@
 #include "Request.hpp"
 #include "Client.hpp"
+#include "Server.hpp"
 
 namespace HTTP {
 
@@ -12,7 +13,8 @@ Request::Request()
     , _bodySize(0)
     , _parseFlags(PARSED_NONE)
     , _isAuthorized(false)
-    , _storedHash(0) {
+    , _storedHash(0)
+    , _isFormed(false) {
 }
 
 Request::~Request() { }
@@ -113,9 +115,24 @@ Request::getUriRef() {
     return _uri;
 }
 
+URI &
+Request::getHostRef() {
+    return _host;
+}
+
 const std::string &
 Request::getRawUri() const {
     return _rawURI;
+}
+
+bool
+Request::isFormed(void) const {
+    return _isFormed;
+}
+
+void
+Request::isFormed(bool formed) {
+    _isFormed = formed;
 }
 
 void
@@ -139,6 +156,16 @@ Request::setStoredHash(uint32_t hash) {
 }
 
 void
+Request::chuckedRequested(bool flag) {
+    _chuckedRequested = flag;
+}
+
+bool
+Request::chuckedRequested(void) {
+    return _chuckedRequested;
+}
+
+void
 Request::clear() {
     _method   = "";
     _rawURI   = "";
@@ -151,11 +178,14 @@ Request::clear() {
     _parseFlags   = 0;
     _chunkSize    = 0;
     _isChuckSize  = false;
+    _isFormed = false;
 
     _headers.clear();
     _status = OK;
     _minor  = 0;
     _major  = 0;
+    _servBlock = NULL;
+    _location = NULL;
 }
 
 const std::string &
@@ -185,6 +215,7 @@ Request::setAuthFlag(bool flag) {
 
 const std::string
 Request::getHeaderValue(uint32_t key) const {
+    // return _headers[key];
     std::map<uint32_t, RequestHeader>::const_iterator it = _headers.find(key);
     if (it == _headers.end()) {
         return "";
@@ -210,6 +241,20 @@ Request::parseLine(std::string &line) {
     } else {
         setStatus(PROCESSING);
     }
+
+    if (getStatus() != CONTINUE) {
+        if (!_servBlock) {
+            Log.debug("Serverblock is not set after parsing. Default matching");
+            setServerBlock(getClient()->matchServerBlock(_host._host));
+        }
+        if (!_location) {
+            Log.debug("Location is not set after parsing. Default matching");
+            setLocation(getServerBlock()->matchLocation(_uri._path));
+            resolvePath();
+        }
+        isFormed(true);
+    }
+
 }
 
 StatusCode
@@ -223,7 +268,7 @@ Request::parseSL(const std::string &line) {
 
     skipSpaces(line, pos);
     _rawURI = getWord(line, " ", pos);
-    Log.debug("PATH: " + _rawURI);
+    _uri.parse(_rawURI);
 
     skipSpaces(line, pos);
     _protocol = getWord(line, " ", pos);
@@ -241,15 +286,13 @@ StatusCode
 Request::checkSL(void) {
     if (!isValidMethod(_method)) {
         Log.debug("Request::parseSL: Method " + _method + " is not implemented");
-        return NOT_IMPLEMENTED; // ? Not sure, bad request should be sent maybe
+        return BAD_REQUEST;
     }
 
     // if (isValidPath(_rawURI)) {
     //     Log.debug("Invalid URI");
     //     return BAD_REQUEST;
     // }
-
-    _uri.parse(_rawURI);
 
     if (!isValidProtocol(_protocol)) {
         Log.debug("Request::checkSL: protocol " + _protocol + " is not valid");
@@ -261,8 +304,8 @@ Request::checkSL(void) {
         Log.debug("Request::checkSL: protocol " + _method + " is not implemented");
         return BAD_REQUEST;
     }
-    setFlag(PARSED_SL);
 
+    setFlag(PARSED_SL);
     return CONTINUE;
 }
 
@@ -318,22 +361,46 @@ StatusCode
 Request::checkHeaders(void) {
 
     setFlag(PARSED_HEADERS);
-    if (!isHeaderExist(HOST)) {
-        Log.error("Request:: Host not found");
-        return BAD_REQUEST;
+    // if (!isHeaderExist(HOST)) {
+    //     Log.error("Request:: Host not found");
+    //     return BAD_REQUEST;
+    // }
+
+    if (!_servBlock) {
+        setServerBlock(getClient()->matchServerBlock(_uri._host));
+    }
+    if (!_location) {
+        setLocation(getServerBlock()->matchLocation(_uri._path));
+        resolvePath();
     }
 
-    // PUT or POST or PATCH
-    if (_method[0] == 'P') {
-        if (!isHeaderExist(TRANSFER_ENCODING) && !isHeaderExist(CONTENT_LENGTH)) {
-            Log.error("Request:: Transfer-Encoding/Content-Length is missing in request");
-            return LENGTH_REQUIRED;
+    // Call each header handler
+    std::map<uint32_t, RequestHeader>::iterator it;
+    for (it = _headers.begin(); it != _headers.end(); it++) {
+        StatusCode status = it->second.handle(*this);
+        if (status != CONTINUE) {
+            return status;
         }
-        Log.debug("Request::ParsedHeaders::Continue");
-        return CONTINUE;
     }
-    Log.debug("Request::ParsedHeaders::Processing");
-    return PROCESSING;
+
+    std::vector<std::string> &allowed = getLocation()->getAllowedMethodsRef();
+    if (std::find(allowed.begin(), allowed.end(), _method) == allowed.end()) {
+        Log.debug("Request:: Method " + _method + " is not allowed");
+        return METHOD_NOT_ALLOWED;
+    }
+
+    if (!isHeaderExist(TRANSFER_ENCODING) && !isHeaderExist(CONTENT_LENGTH)) {
+        // PUT or POST or PATCH
+        if (_method[0] == 'P') {
+            Log.error("Request::Transfer-Encoding/Content-Length is missing in request");
+            return LENGTH_REQUIRED;
+        } else {
+            Log.debug("Request::ParsedHeaders::Processing");
+            return PROCESSING;
+        }
+    }
+    Log.debug("Request::ParsedHeaders::Continue");
+    return CONTINUE;
 }
 
 StatusCode
@@ -341,17 +408,17 @@ Request::parseHeader(const std::string &line) {
     RequestHeader header;
 
     if (!header.parse(line)) {
-        Log.error("ParseHeader:: Invalid header " + line);
+        Log.debug("ParseHeader:: Invalid header " + line);
         return BAD_REQUEST;
     }
 
     // dublicate header
     if (isHeaderExist(header.hash)) {
-        Log.error("ParseHeader:: Dublicate header");
+        Log.debug("ParseHeader:: Dublicated header");
         return BAD_REQUEST;
     }
 
-    header.handle(*this);
+    // header.handle(*this);
     _headers.insert(std::make_pair(header.hash, header));
     return CONTINUE;
 }
@@ -423,6 +490,7 @@ Request::writeBody(const std::string &body) {
         return BAD_REQUEST;
     }
     _body = body;
+    setFlag(PARSED_BODY);
     return PROCESSING;
 }
 
@@ -438,12 +506,12 @@ Request::isHeaderExist(const uint32_t code) {
 
 StatusCode
 Request::parseBody(const std::string &line) {
+    Log.debug("Request::parseBody " + line);
     if (isHeaderExist(TRANSFER_ENCODING)) {
         Log.debug("Request::parseChunk");
         return parseChunk(line);
     } else if (isHeaderExist(CONTENT_LENGTH)) {
-        Log.debug("Request::writeFullBody");
-        setFlag(PARSED_BODY);
+        Log.debug("Request::writeBody");
         return writeBody(line);
     }
     return PROCESSING;

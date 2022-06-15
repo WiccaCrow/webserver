@@ -5,27 +5,41 @@
 namespace HTTP {
 
 CGI::CGI(void)
-    : _isCompiled(false) {
+    : _isCompiled(false), _bodyPos(0) {
     for (size_t i = 0; i < 3; i++)
         _args[i] = NULL;
 }
 
 CGI::~CGI() { }
 
-static void
-log_error(const std::string &location) {
-    Log.error(location);
-    Log.error("Errno: " + to_string(errno));
-    Log.error("Description: " + std::string(strerror(errno)));
+CGI::CGI(const CGI &other) {
+    *this = other;
+}
+
+CGI &CGI::operator=(const CGI &other) {
+    if (this != &other) {
+        _execpath = other._execpath;
+        _filepath = other._filepath;
+        _args[0] = other._args[0];
+        _args[1] = other._args[1];
+        _args[2] = other._args[2];
+        _isCompiled = other._isCompiled;
+        _req = other._req;
+        _res = other._res;
+        // _ss.swap(other._ss);
+        _headers = other._headers;
+        _extraHeaders = other._extraHeaders;
+    }
+    return *this;
 }
 
 static void
 restore_std(int in, int out) {
     if (in != -1 && dup2(in, fileno(stdin)) == -1) {
-        log_error("CGI::restore::in: ");
+        Log.syserr("CGI::restore::in: ");
     }
     if (out != -1 && dup2(out, fileno(stdout)) == -1) {
-        log_error("CGI::restore::out: ");
+        Log.syserr("CGI::restore::out: ");
     }
 }
 
@@ -168,14 +182,40 @@ CGI::setScriptPath(const std::string path) {
     return true;
 }
 
-const std::string
-CGI::getResult(void) const {
-    return _res;
+std::stringstream &
+CGI::getResult(void) {
+    return _ss;
 }
 
 void
-CGI::reset(void) {
-    _res = "";
+CGI::clear(void) {
+    _headers.clear();
+    _extraHeaders.clear();
+    _ss.str("");
+    resetStream();
+}
+
+const std::list<ResponseHeader> &
+CGI::getExtraHeaders(void) const {
+    return _extraHeaders;
+}
+
+const std::list<ResponseHeader> &
+CGI::getHeaders(void) const {
+    return _headers;
+}
+
+const std::string 
+CGI::getBody(void) const {
+    return _ss.str().erase(0, _bodyPos);
+}
+
+size_t 
+CGI::getBodyLength(void) {
+    _ss.seekg(0, std::ios::end);
+    size_t end = _ss.tellg();
+    _ss.seekg(_bodyPos);
+    return end - _bodyPos;
 }
 
 int
@@ -197,12 +237,12 @@ CGI::exec() {
     int out[2] = { -1 };
 
     if (pipe(in) != 0) {
-        log_error("CGI::pipe::in: ");
+        Log.syserr("CGI::pipe::in: ");
         return 0;
     }
 
     if (pipe(out) != 0) {
-        log_error("CGI::pipe::out: ");
+        Log.syserr("CGI::pipe::out: ");
         close_pipe(in[0], in[1]);
         return 0;
     }
@@ -211,7 +251,7 @@ CGI::exec() {
 
     tmp[0] = dup(fileno(stdin));
     if (tmp[0] == -1) {
-        log_error("CGI::backup::in: ");
+        Log.syserr("CGI::backup::in: ");
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
         close_pipe(out[0], out[1]);
@@ -220,7 +260,7 @@ CGI::exec() {
 
     tmp[1] = dup(fileno(stdout));
     if (tmp[1] == -1) {
-        log_error("CGI::backup::out: ");
+        Log.syserr("CGI::backup::out: ");
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
         close_pipe(out[0], out[1]);
@@ -229,7 +269,7 @@ CGI::exec() {
 
     // Redirect for child process
     if (dup2(in[0], fileno(stdin)) == -1) {
-        log_error("CGI::redirect::in: ");
+        Log.syserr("CGI::redirect::in: ");
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
         close_pipe(out[0], out[1]);
@@ -237,7 +277,7 @@ CGI::exec() {
     }
 
     if (dup2(out[1], fileno(stdout)) == -1) {
-        log_error("CGI::redirect::out: ");
+        Log.syserr("CGI::redirect::out: ");
         restore_std(tmp[0], -1);
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
@@ -247,7 +287,7 @@ CGI::exec() {
 
     int childPID = fork();
     if (childPID < 0) {
-        log_error("CGI::fork: ");
+        Log.syserr("CGI::fork: ");
         restore_std(tmp[0], tmp[1]);
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
@@ -262,7 +302,7 @@ CGI::exec() {
 
     if (!_req->getBody().empty()) {
         if (write(in[1], _req->getBody().c_str(), _req->getBody().length()) == -1) {
-            log_error("CGI::write: ");
+            Log.syserr("CGI::write: ");
             restore_std(tmp[0], tmp[1]);
             close_pipe(tmp[0], tmp[1]);
             close_pipe(in[0], in[1]);
@@ -283,35 +323,96 @@ CGI::exec() {
     close_pipe(-1, out[1]);
 
     if (WIFSIGNALED(status)) {
-        log_error("CGI::signaled:" + to_string(WTERMSIG(status)));
+        Log.syserr("CGI::signaled:" + to_string(WTERMSIG(status)));
         return 0;
-    } else if (WIFSTOPPED(status)) {
-        log_error("CGI::stopped:" + to_string(WSTOPSIG(status)));
-        return 0;
-    } else if (WIFEXITED(status)) {
 
+    } else if (WIFSTOPPED(status)) {
+        Log.syserr("CGI::stopped:" + to_string(WSTOPSIG(status)));
+        return 0;
+
+    } else if (WIFEXITED(status)) {
         if (WEXITSTATUS(status)) {
-            log_error("CGI::exited:" + to_string(WEXITSTATUS(status)));
+            Log.syserr("CGI::exited:" + to_string(WEXITSTATUS(status)));
             return 0;
         }
 
-        int       readBytes = 1;
-        const int size      = 300;
+        int readBytes = 1;
+
+        const int size = 300;
 
         char buf[size];
         while (readBytes > 0) {
             readBytes = read(out[0], buf, size - 1);
             if (readBytes < 0) {
-                log_error("CGI::read");
+                Log.syserr("CGI::read");
                 return 1;
             }
             buf[readBytes] = 0;
-            _res += buf;
-        }
-        // Send response to the client in body
+            _ss << buf;
+        } 
     }
     close_pipe(out[0], -1);
     return 1;
+}
+
+void
+CGI::resetStream(void) {
+    _ss.clear();
+    _ss.seekg(0, std::ios::beg);
+}
+
+void
+CGI::parseHeaders(void) {
+
+    for (std::string line; std::getline(_ss, line); ) {
+        
+        ResponseHeader header;
+        
+        rtrim(line, "\r\n");  
+        if (header.parse(line)) {
+            if (header.isValid()) {
+                _headers.push_back(header);
+            } else if (CGI::extraHeaderEnabled && 
+                header.key.find(CGI::extraHeaderPrefix) == 0) {
+                _extraHeaders.push_back(header);
+            } else {
+                _extraHeaders.clear();
+                _headers.clear();
+                return ;
+            }
+        } else {
+            if (line.empty()) {
+                if (_headers.size() != 0 || !_extraHeaders.empty()) {
+                    _bodyPos = _ss.tellg();
+                    return ;
+                }
+            }
+            _extraHeaders.clear();
+            _headers.clear();
+            return ;
+        }
+    }
+}
+
+bool
+CGI::isValidContentLength(void) {
+
+    iter it = std::find(_headers.begin(), _headers.end(), ResponseHeader(CONTENT_LENGTH));
+
+    if (it != _headers.end()) {
+        long long length = strtoll(it->value.c_str(), NULL, 10);
+        if (length < 0 || length > LONG_MAX) {
+            Log.debug("Response::CGI:: ContentLength is invalid: " + to_string(length));
+            return false;
+        }
+        if (static_cast<size_t>(length) != getBodyLength()) {
+            Log.debug("Response::CGI:: ContentLength mismatch");
+            Log.debug("Response::CGI:: expected " + to_string(length));
+            Log.debug("Response::CGI:: got " + to_string(getBodyLength()));
+            return false;
+        }
+    }
+    return true;
 }
 
 static char **
@@ -347,6 +448,8 @@ initEnv() {
 
 char ** const CGI::env = initEnv();
 
+const bool CGI::extraHeaderEnabled = true;
 const std::string CGI::compiledExt = ".cgi";
+const std::string CGI::extraHeaderPrefix = "X-CGI-";
 
 }

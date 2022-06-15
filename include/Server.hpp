@@ -18,7 +18,6 @@
 #include "Client.hpp"
 #include "Logger.hpp"
 #include "Request.hpp"
-#include "ReadSock.hpp"
 #include "Response.hpp"
 #include "ServerBlock.hpp"
 
@@ -29,14 +28,16 @@
 class Server {
 
 private:
-    std::vector<HTTP::ServerBlock> _servBlocks;
+    typedef std::map<size_t, std::list<HTTP::ServerBlock> >::iterator iter;
+
+    std::map<size_t, std::list<HTTP::ServerBlock> > _serverBlocks;
     std::vector<struct pollfd>     _pollfds;
     std::map<size_t, HTTP::Client> _clients;
     int                            _pollResult;
-
+    size_t              _socketsCount;
     void fillServBlocksFds(void);
 
-    int createListenSocket(const std::string addr, const int port);
+    int addListenSocket(const std::string &addr, size_t port);
 
 public:
     Server();
@@ -47,17 +48,17 @@ public:
     Server &operator=(const Server &obj);
 
     void   addServerBlock(HTTP::ServerBlock &servBlock);
-
+    std::list<HTTP::ServerBlock> &getServerBlocks(size_t port);
+    
     void start(void);
     void pollServ(void);
     void connectClient(size_t id);
     void disconnectClient(size_t id);
-    void handleAcceptError();
     void handlePollError();
     int  pollInHandler(size_t id);
     void pollHupHandler(size_t id);
     void pollOutHandler(size_t id);
     void pollErrHandler(size_t id);
 
-    HTTP::ServerBlock *matchServerBlock(int port, const std::string &ipaddr, const std::string &host);
+    // HTTP::ServerBlock *matchServerBlock(size_t port, const std::string &ipaddr, const std::string &host);
 };

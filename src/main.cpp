@@ -5,7 +5,7 @@ Server *g_server;
 
 int
 main(int ac, char **av) {
-    Log.setFlags(LOG_INFO | LOG_ERROR | LOG_DEBUG);
+    Log.setFlags(LOG_INFO | LOG_ERROR | LOG_DEBUG | LOG_SYSERR);
     Log.enableLogFile();
 
     if (ac > 2) {

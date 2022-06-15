@@ -27,6 +27,9 @@ std::string to_string(unsigned long val);
 
 #endif
 
+bool isValidIpv4(const std::string &s);
+bool isValidIpv6(const std::string &s);
+
 bool isValidIp(const std::string &ip);
 bool isValidHost(const std::string &hostname);
 bool isValidPath(const std::string &path);

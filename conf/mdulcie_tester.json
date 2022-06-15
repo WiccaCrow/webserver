@@ -1,0 +1,33 @@
+{
+    "servers": {
+        "http": {
+            "port": 8080,
+            "server_names": [ "localhost" ],
+            "CGI": {
+                ".bla": "./tests/ubuntu_cgi_tester"
+            },
+            "methods_allowed": [ "GET" ],
+            "post_max_body": 200,
+            "root": "./pages/site",
+            "autoindex": true,
+            "index": [ "index.html" ],
+            "locations": {
+                "/put_test": {
+                    "alias": "./tests",
+                    "methods_allowed": [ "PUT" ]
+                },
+                "/post_body": {
+                    "alias": "./tests",
+                    "post_max_body": 100,
+                    "methods_allowed": [ "POST" ]                 
+                },
+                "/directory": {
+                    "root": "./YoupiBanane",
+                    "autoindex": false,
+                    "index": [ "youpi.bad_extension" ],
+                    "methods_allowed": [ "GET" ]
+                }
+            }
+        }
+    }
+}

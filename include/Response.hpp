@@ -27,14 +27,18 @@ class Response {
     std::string _resLeftToSend;
     Request    *_req;
     Client     *_client;
+    CGI        *_cgi;
     std::string _body;
-    std::string _additionalHeaders;
+    std::string _extraHeaders;
     size_t      _bodyLength;
+    bool        _isFormed;
 
 public:
     typedef void (Response::*Handler)(void);
     std::map<std::string, Handler> methods;
 
+    typedef std::list<ResponseHeader>::iterator iter;
+    typedef std::list<ResponseHeader>::const_iterator const_iter;
     std::list<ResponseHeader> headers;
 
     Response(void);
@@ -70,27 +74,38 @@ public:
     std::string getContentType(std::string resourcePath);
     void        writeFile(const std::string &resourcePath);
 
-    ResponseHeader *getHeader(HeaderCode code);
+    ResponseHeader *getHeader(uint32_t hash);
     std::string makeHeaders(void);
-    void        addHeader(HeaderCode code, const std::string &value);
-    void        addHeader(HeaderCode code);
+    void        addHeader(uint32_t hash, const std::string &value);
+    void        addHeader(uint32_t hash);
 
+    std::map<std::string, CGI>::iterator
+        isCGI(const std::string &filepath, std::map<std::string, CGI> &cgis);
+    
     int passToCGI(CGI &cgi);
+    int recognizeHeaders(CGI &cgi);
 
-    // to send response
-    size_t             getResLength(void);
-    const char        *getResponse(void);
+    // setters, getters
+    //     to send response
+    size_t             getResponseLength(void);
+    const std::string &getResponse(void);
     const std::string &getBody(void) const;
     void               setBody(const std::string &);
     size_t             getBodyLength(void) const;
     void               setBodyLength(size_t);
     void               setRequest(Request *req);
     Request           *getRequest(void) const;
+    const std::string &getStatusLine(void);
     StatusCode         getStatus();
     void               setStatus(HTTP::StatusCode status);
 
     void            setClient(Client *client);
     Client *        getClient(void);
+
+    bool    isFormed(void) const;
+    void    isFormed(bool formed);
+
+    int             checkCGIBodyLength(void);
 
     // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);
 };

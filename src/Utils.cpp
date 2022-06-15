@@ -3,19 +3,20 @@
 
 #include <dirent.h>
 #include <sys/stat.h>
+#include <arpa/inet.h>
 #include <vector>
 
 std::vector<std::string>
 split(const std::string &source, const std::string &delimiters = " ") {
-    size_t                   prev       = 0;
-    size_t                   currentPos = 0;
-    std::vector<std::string> results;
+    size_t prev = 0;
+    size_t curr = 0;
 
-    while ((currentPos = source.find_first_of(delimiters, prev)) != std::string::npos) {
-        if (currentPos > prev) {
-            results.push_back(source.substr(prev, currentPos - prev));
+    std::vector<std::string> results;
+    while ((curr = source.find_first_of(delimiters, prev)) != std::string::npos) {
+        if (curr > prev) {
+            results.push_back(source.substr(prev, curr - prev));
         }
-        prev = currentPos + 1;
+        prev = curr + 1;
     }
 
     if (prev < source.length()) {
@@ -93,6 +94,31 @@ to_string(unsigned long val) {
 #endif
 
 bool
+isUnreserved(int c) {
+    return (std::isalnum(c) || std::strchr("-._~", c) != NULL);
+}
+
+bool
+isSubDelims(int c) {
+    return (std::strchr("!$&'()*+,;=", c) != NULL);
+}
+
+bool
+isGenDelims(int c) {
+    return (std::strchr(":/?#[]@", c) != NULL);
+}
+
+bool
+isPctEncoded(const char *s) {
+    return (s[0] == '%' && std::isxdigit(s[1]) && std::isxdigit(s[2]));
+}
+
+bool
+isPchar(const char *s) {
+    return isUnreserved(*s) || isPctEncoded(s) || isSubDelims(*s) || !strchr("@:", *s);
+}
+
+bool
 isValidOctet(char *octet) {
     if (octet[0] == '0' && octet[1] != '\0')
         return false;
@@ -124,18 +150,129 @@ isValidIp(const std::string &ip) {
 }
 
 bool
-isUnreserved(int c) {
-    return (std::isalnum(c) || std::strchr("-._~", c) != NULL);
+isValidScheme(const std::string &s) {
+    for (size_t i = 0; i < s.size(); i++) {
+        if (!isalnum(s[i]) && !strchr("+-.", s[i])) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool
-isSubDelims(int c) {
-    return (std::strchr("!$&'()*+,;=", c) != NULL);
+isValidPort(const std::string &s) {
+    for (size_t i = 0; i < s.size(); i++) {
+        if (!isdigit(s[i])) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool
-isPctEncoded(const char *s) {
-    return (s[0] == '%' && std::isxdigit(s[1]) && std::isxdigit(s[2]));
+isValidUserInfo(const std::string &s) {
+    for (size_t i = 0; i < s.length(); ++i) {
+        if (isPctEncoded(s.c_str() + i)) {
+            i += 2;
+        } else if (!isUnreserved(s[i]) && !isSubDelims(s[i]) && s[i] != ':') {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool
+isValidAuthority(const std::string &s) {
+    size_t posA = s.find("@");
+    if (posA != std::string::npos) {
+        if (!isValidUserInfo(s.substr(0, posA))) {
+            return false;
+        }
+    } else {
+        posA = 0;
+    }
+    size_t posC = s.find(":", posA + 1);
+    if (posC != std::string::npos) {
+        if (!isValidPort(s.substr(posC + 1))) {
+            return false;
+        }
+    }
+    if (!isValidHost(s.substr(posA + 1, posC - posA))) {
+        return false;
+    }
+    return true;
+}
+
+bool isValidIpv6(const std::string &s) {
+    struct in6_addr addr;
+    return inet_pton(PF_INET6, s.c_str(), &addr);
+}
+
+bool isValidIpv4(const std::string &s) {
+    struct in_addr addr;
+    return inet_pton(PF_INET, s.c_str(), &addr);
+}
+
+bool
+isValidIpvFuture(const std::string &s) {
+    return s[0] == 'v' && isxdigit(s[1]) && s[2] != '.' && 
+        (s[3] != ':' || isUnreserved(s[3]) || !isSubDelims(s[3]));
+}
+
+bool
+isValidIpLiteral(const std::string &s) {
+    return isValidIpvFuture(s) || isValidIpv6(s);
+}
+
+bool
+isSegmentNz(const std::string &s) {
+
+    for (size_t i = 0; i < s.length(); ++i) {
+        if (isPctEncoded(s.c_str() + i)) {
+            i += 2;
+        } else if (!isUnreserved(s[i]) && !isSubDelims(s[i]) && s[i] != '@') {
+            return false;
+        }
+    }
+    return true;
+}
+
+// bool
+// isSegmentNzNc() {
+// }
+
+size_t
+isValidSegment(const std::string &s) {
+
+    if (s[0] != '/') {
+        return 0;
+    }
+
+    for (size_t i = 1; i < s.length(); ++i) {
+        if (isPctEncoded(s.c_str() + i)) {
+            i += 2;
+        } else if (!isUnreserved(s[i]) && !isSubDelims(s[i]) && !strchr("@:", s[i])) {
+            return i;
+        }
+    }
+    return s.length();
+}
+
+
+bool
+isValidPathAbempty(const std::string &s) {
+
+    for (size_t i = 0; i < s.size(); i++) {
+        size_t pos = isValidSegment(s.substr(i));
+        if (pos == 0) {
+            return false;
+        }
+        else if (pos == s.length()) {
+            return true;
+        }
+    }
+    return true;
 }
 
 bool
@@ -154,33 +291,13 @@ isValidRegName(const std::string &regname) {
 }
 
 bool
-isValidHost(const std::string &hostname) {
-    return (isValidIp(hostname) || isValidRegName(hostname));
+isValidHost(const std::string &s) {
+    return (isValidIpLiteral(s) || isValidIpv4(s) || isValidRegName(s));
 }
 
 bool
 isValidPath(const std::string &path) {
-
-    if (path[0] != '/') {
-        return false;
-    } else if (path.find("//") != std::string::npos) {
-        return false;
-    }
-
-    char dst[512];
-    strcpy(dst, path.c_str());
-
-    char *token = strtok(dst, "/");
-    while (token != NULL) {
-        size_t len = strlen(token);
-        for (size_t i = 1; i < len; i++) {
-            if (!isalnum(token[i])) {
-                return false;
-            }
-        }
-        token = strtok(NULL, "/");
-    }
-    return true;
+    return isValidPathAbempty(path);
 }
 
 bool

@@ -608,7 +608,7 @@ parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
         return NONE_OR_INV;
     }
 
-    if (!getString(src, "addr", dst.getAddrRef(), "127.0.0.1")) {
+    if (!getString(src, "addr", dst.getAddrRef(), "0.0.0.0")) {
         Log.error("## Failed to parse \"addr\"");
         return NONE_OR_INV;
     } else if (!isValidIp(dst.getAddrRef())) {
