@@ -132,12 +132,8 @@ RequestHeader::ContentLength(Request &req) {
         return BAD_REQUEST;
     }
 
-    long long length = strtoll(value.c_str(), NULL, 10);
-    if (length > LONG_MAX) {
-        return PAYLOAD_TOO_LARGE;
-    }
-    if (length < 0) {
-        Log.debug("ContentLength:: " + to_string(length));
+    long long length;
+    if (!stoll(length, value.c_str())) {
         return BAD_REQUEST;
     }
     req.setBodySizeFlag(false);

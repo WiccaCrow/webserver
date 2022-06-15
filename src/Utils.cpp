@@ -6,6 +6,26 @@
 #include <arpa/inet.h>
 #include <vector>
 
+// Returns true if the conversion of a string to a number is true
+// and initialize num argument
+bool
+stoll(long long &num, char const *s) {
+    char              c;
+    std::stringstream ss(s);
+    ss >> num;
+    return !(ss.fail() || ss.get(c));
+}
+
+// Returns true if the conversion of a string to a number is true
+bool
+stoll(char const *s) {
+    long long         num;
+    char              c;
+    std::stringstream ss(s);
+    ss >> num;
+    return !(ss.fail() || ss.get(c));
+}
+
 std::vector<std::string>
 split(const std::string &source, const std::string &delimiters = " ") {
     size_t prev = 0;
