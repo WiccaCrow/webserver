@@ -92,7 +92,7 @@
             "autoindex": true,
             "index": [ "index.html" ],
             "locations": {
-                "/try.about": {
+                "/try_about": {
                     "alias": "/Users/mhufflep/Downloads/",
                     "autoindex": true,
                     "CGI": {

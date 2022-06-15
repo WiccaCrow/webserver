@@ -284,9 +284,14 @@ Response::listing(const std::string &resourcePath) {
                 setStatus(INTERNAL_SERVER_ERROR);
                 return 0;
             }
-            _body += "<a href=\"" + _req->getPath()
-                    + dirContent->d_name + "\"><br>"
-                    + dirContent->d_name + "</a>";
+            _body += "<a href=\"" + _req->getPath();
+            if (_body[_body.length() - 1] != '/') {
+                _body += "/";
+            }
+            _body += dirContent->d_name;
+            _body += "\"><br>";
+            _body += dirContent->d_name;
+            _body += "</a>";
         }
         _body += "</body></html>";
         setBody(_body);
