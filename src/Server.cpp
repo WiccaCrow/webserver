@@ -45,7 +45,7 @@ Server::addListenSocket(const std::string &addr, size_t port) {
     struct sockaddr_in data;
     data.sin_family = AF_INET;
     data.sin_port   = htons(port);
-    data.sin_addr.s_addr = inet_addr(addr.c_str()); 
+    data.sin_addr.s_addr = inet_addr(addr.c_str());
 
     int fd;
     if ((fd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
@@ -88,11 +88,10 @@ Server::fillServBlocksFds(void) {
 
         const size_t port = ua->first;
         for (iter_s addr = addrs.begin(); addr != addrs.end(); addr++) {
-            _pollfds.push_back((struct pollfd) {
-                addListenSocket(*addr, port), POLLIN, 0
-            });
+            int fd = addListenSocket(*addr, port);
+            _pollfds.push_back((struct pollfd) {fd, POLLIN, 0});
             _socketsCount++;
-            Log.info("Server::Socket added -> " + *addr + ":" + to_string(port));
+            Log.info("Server::Listen [" + to_string(fd) + "] -> " + *addr + ":" + to_string(port));
         }
     }
 }
@@ -259,9 +258,9 @@ Server::connectClient(size_t id) {
     _clients[clientId].linkRequest();
     _clients[clientId].setFd(fd);
     _clients[clientId].setPort(ntohs(clientData.sin_port));
-    Log.debug(inet_ntoa(servData.sin_addr));
     _clients[clientId].setIpAddr(inet_ntoa(clientData.sin_addr));
     _clients[clientId].setServerPort(ntohs(servData.sin_port));
+    _clients[clientId].setServerIpAddr(inet_ntoa(servData.sin_addr));
 
     Log.debug("Server::connect [" + to_string(fd) + "] -> " + _clients[clientId].getHostname());
 }

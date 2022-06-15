@@ -93,7 +93,7 @@
             "index": [ "index.html" ],
             "locations": {
                 "/try.about": {
-                    "alias": "/Users/mhufflep/Downloads",
+                    "alias": "/Users/mhufflep/Downloads/",
                     "autoindex": true,
                     "CGI": {
                         ".js": "/usr/local/bin/node",

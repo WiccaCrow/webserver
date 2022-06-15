@@ -64,6 +64,9 @@ public:
     void setServerPort(size_t port);
     size_t getServerPort(void) const;
 
+    void               setServerIpAddr(const std::string &);
+    const std::string &getServerIpAddr(void) const;
+
     void               setIpAddr(const std::string &);
     const std::string &getIpAddr(void) const;
 

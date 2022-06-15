@@ -90,6 +90,16 @@ ServerBlock::getLocationBaseRef(void) {
     return _locationBase;
 }
 
+bool
+ServerBlock::hasName(const std::string &name) const {
+   return std::find(_server_names.begin(), _server_names.end(), name) != _server_names.end();
+}
+
+bool
+ServerBlock::hasAddr(const std::string &addr) const {
+   return (_addr == addr || _addr == "0.0.0.0");
+}
+
 Location *
 ServerBlock::matchLocation(const std::string &path) {
     size_t matchMaxLen = 0;

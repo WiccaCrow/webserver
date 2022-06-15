@@ -59,6 +59,17 @@ Client::setIpAddr(const std::string &ipaddr) {
 }
 
 void
+Client::setServerIpAddr(const std::string &ipaddr) {
+    _serverIpAddr = ipaddr;
+}
+
+const std::string &
+Client::getServerIpAddr(void) const {
+    return _serverIpAddr;
+}
+
+
+void
 Client::setPort(size_t port) {
     _clientPort = port;
 }
@@ -168,7 +179,7 @@ Client::reply(void) {
         // if n == 0 ?
     } while (sent < total);
 
-    Log.debug("Client:: " + to_string(sent) + "/" + to_string(total) + " bytes sent");
+    Log.debug("Client::send (" + to_string(sent) + "/" + to_string(total) + " bytes)");
 
     if (shouldBeClosed()) {
         _fd = -1;
@@ -256,18 +267,36 @@ Client::receive(void) {
 HTTP::ServerBlock *
 Client::matchServerBlock(const std::string &host) const {
     typedef std::list<HTTP::ServerBlock>::iterator iter_l;
+    typedef std::list<HTTP::ServerBlock> bslist;
 
-    std::list<HTTP::ServerBlock> &blocks = g_server->getServerBlocks(_serverPort);
+    bool searchByName = !isValidIpv4(host) ? true : false;
 
-    iter_l found = blocks.begin();
+    bslist &blocks = g_server->getServerBlocks(_serverPort);
+    iter_l found = blocks.end();
     for (iter_l block = blocks.begin(); block != blocks.end(); ++block) {
-        std::vector<std::string> &names = block->getServerNamesRef();
-        if (std::find(names.begin(), names.end(), host) != names.end()) {
-            found = block;
+        if (block->hasAddr(getServerIpAddr())) {
+            if (found == blocks.end()) {
+                found = block;
+                if (!searchByName) {
+                    break ;
+                }
+            }
+            if (searchByName && block->hasName(host)) {
+                found = block;
+                break ;
+            }
         }
     }
-    Log.debug("Server::matchServerBlock -> " + found->getBlockName() + " for " + host + ":" + to_string(_serverPort));
+    Log.debug("Client::matchServerBlock -> " + found->getBlockName() + " for " + host + ":" + to_string(_serverPort));
     return &(*found);
 }
+
+// map< pair<ip, port>, std::list<ServerBlock> >
+
+// sock = ip:port -> default
+
+// uri = [(host|ip):port][/path]
+
+// host = (host|ip)[:port]
 
 }

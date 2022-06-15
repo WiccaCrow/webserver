@@ -174,6 +174,8 @@ Request::clear() {
     _status = OK;
     _minor  = 0;
     _major  = 0;
+    _servBlock = NULL;
+    _location = NULL;
 }
 
 const std::string &
@@ -232,10 +234,13 @@ Request::parseLine(std::string &line) {
 
     if (getStatus() != CONTINUE) {
         if (!_servBlock) {
+            Log.debug("Serverblock is not set after parsing. Default matching");
             setServerBlock(getClient()->matchServerBlock(_host._host));
         }
         if (!_location) {
+            Log.debug("Location is not set after parsing. Default matching");
             setLocation(getServerBlock()->matchLocation(_uri._path));
+            resolvePath();
         }
         isFormed(true);
     }
@@ -290,13 +295,13 @@ Request::checkSL(void) {
         return BAD_REQUEST;
     }
 
-    if (!_servBlock) {
-        setServerBlock(getClient()->matchServerBlock(_uri._host));
-    }
-    if (!_location) {
-        setLocation(getServerBlock()->matchLocation(_uri._path));
-    }
-    resolvePath();
+    // if (!_servBlock) {
+    //     setServerBlock(getClient()->matchServerBlock(_uri._host));
+    // }
+    // if (!_location) {
+    //     setLocation(getServerBlock()->matchLocation(_uri._path));
+    //     resolvePath();
+    // }
 
     setFlag(PARSED_SL);
     return CONTINUE;
@@ -358,6 +363,14 @@ Request::checkHeaders(void) {
     //     Log.error("Request:: Host not found");
     //     return BAD_REQUEST;
     // }
+
+    if (!_servBlock) {
+        setServerBlock(getClient()->matchServerBlock(_uri._host));
+    }
+    if (!_location) {
+        setLocation(getServerBlock()->matchLocation(_uri._path));
+        resolvePath();
+    }
 
     // Call each header handler
     std::map<uint32_t, RequestHeader>::iterator it;

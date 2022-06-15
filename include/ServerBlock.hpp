@@ -47,6 +47,9 @@ public:
     std::map<std::string, Location>       &getLocationsRef(void);
     const std::map<std::string, Location> &getLocationsRef(void) const;
     const std::string                     &getBlockName(void) const;
+    
+    bool hasName(const std::string &) const;
+    bool hasAddr(const std::string &) const;
 
     // other methods
     Location *matchLocation(const std::string &path);
