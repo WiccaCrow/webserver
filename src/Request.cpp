@@ -17,6 +17,19 @@ Request::Request()
     , _isFormed(false) {
 }
 
+Request::Request(Client &client)
+    : _servBlock(NULL)
+    , _location(NULL)
+    , _client(&client)
+    , _isChuckSize(false)
+    , _chunkSize(0)
+    , _bodySize(0)
+    , _parseFlags(PARSED_NONE)
+    , _isAuthorized(false)
+    , _storedHash(0)
+    , _isFormed(false) {
+}
+
 Request::~Request() { }
 
 Request::Request(const Request &other) {
@@ -41,6 +54,7 @@ Request::operator=(const Request &other) {
         _isAuthorized = other._isAuthorized;
         _cookie       = other._cookie;
         _chunkSize    = other._chunkSize;
+        _client       = other._client;
     }
     return *this;
 }
@@ -65,8 +79,8 @@ Request::setLocation(Location *location) {
     _location = location;
 }
 
-const Client *
-Request::getClient() const {
+Client *
+Request::getClient() {
     return _client;
 }
 
@@ -167,25 +181,25 @@ Request::chuckedRequested(void) {
 
 void
 Request::clear() {
-    _method   = "";
-    _rawURI   = "";
-    _protocol = "";
-    _uri.clear();
-    _headers.clear();
-    _body.clear();
-    _resolvedPath = "";
-    _bodySize     = 0;
-    _parseFlags   = 0;
-    _chunkSize    = 0;
-    _isChuckSize  = false;
-    _isFormed = false;
+    // _method   = "";
+    // _rawURI   = "";
+    // _protocol = "";
+    // _uri.clear();
+    // _headers.clear();
+    // _body.clear();
+    // _resolvedPath = "";
+    // _bodySize     = 0;
+    // _parseFlags   = 0;
+    // _chunkSize    = 0;
+    // _isChuckSize  = false;
+    // _isFormed = false;
 
-    _headers.clear();
-    _status = OK;
-    _minor  = 0;
-    _major  = 0;
-    _servBlock = NULL;
-    _location = NULL;
+    // _headers.clear();
+    // _status = OK;
+    // _minor  = 0;
+    // _major  = 0;
+    // _servBlock = NULL;
+    // _location = NULL;
 }
 
 const std::string &
@@ -228,7 +242,7 @@ Request::set(uint8_t flag) const {
     return _parseFlags & flag;
 }
 
-void
+bool
 Request::parseLine(std::string &line) {
     if (!set(PARSED_SL)) {
         rtrim(line, "\r\n");
@@ -253,8 +267,12 @@ Request::parseLine(std::string &line) {
             resolvePath();
         }
         isFormed(true);
-    }
 
+        if (getStatus() == PROCESSING) {
+            setStatus(OK);
+        }
+    }
+    return isFormed();
 }
 
 StatusCode
@@ -354,7 +372,7 @@ Request::resolvePath(void) {
             _resolvedPath += _uri._path.substr(_location->getPathRef().length());
         }
     }
-    Log.debug("Request::Resolved path: " + _resolvedPath);
+    Log.debug("Request::resolvePath: " + _resolvedPath);
 }
 
 StatusCode

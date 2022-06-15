@@ -24,13 +24,12 @@ private:
     size_t      _serverPort;
     std::string _serverIpAddr;
 
-    std::deque<HTTP::Request> _requests;
+    std::deque<HTTP::Request>  _requests;
     std::deque<HTTP::Response> _responses;
 
-    HTTP::Request  _req;
-    HTTP::Response _res;
-
     bool        _shouldBeClosed;
+    bool        _reqPoolReady;
+
 
     std::string _rem;
 
@@ -70,22 +69,35 @@ public:
     void               setIpAddr(const std::string &);
     const std::string &getIpAddr(void) const;
 
-    void              linkRequest(void);
     const std::string getHostname(void) const;
 
-    const Request &    getRequest() const;
-    const Response &   getResponse() const;
+    Request &    getRequest();
+    Response &   getResponse();
 
     void receive(void);
     void process(void);
     void reply(void);
     void checkIfFailed(void);
-    void clearData(void);
 
     bool            shouldBeClosed(void) const;
     void            shouldBeClosed(bool);
 
     HTTP::ServerBlock *matchServerBlock(const std::string &host) const;
+
+    void addRequest(void);
+    void addResponse(void);
+
+    bool reqPoolReady(void);
+    void reqPoolReady(bool);
+
+    void removeTopRequest(void);
+    void removeTopResponse(void);
+
+    Request &getTopRequest(void);
+    Response &getTopResponse(void);
+
+    bool couldProcess(void);
+    bool couldReply(void);
 };
 
 }

@@ -32,6 +32,8 @@ class Response {
     std::string _extraHeaders;
     size_t      _bodyLength;
     bool        _isFormed;
+    StatusCode  _status;
+
 
 public:
     typedef void (Response::*Handler)(void);
@@ -42,6 +44,7 @@ public:
     std::list<ResponseHeader> headers;
 
     Response(void);
+    Response(Request &req);
     ~Response(void);
 
     void initMethodsHeaders(void);
@@ -75,9 +78,9 @@ public:
     void        writeFile(const std::string &resourcePath);
 
     ResponseHeader *getHeader(uint32_t hash);
-    std::string makeHeaders(void);
-    void        addHeader(uint32_t hash, const std::string &value);
-    void        addHeader(uint32_t hash);
+    std::string     makeHeaders(void);
+    void            addHeader(uint32_t hash, const std::string &value);
+    void            addHeader(uint32_t hash);
 
     std::map<std::string, CGI>::iterator
         isCGI(const std::string &filepath, std::map<std::string, CGI> &cgis);
@@ -86,26 +89,22 @@ public:
     int recognizeHeaders(CGI &cgi);
 
     // setters, getters
-    //     to send response
+    // to send response
     size_t             getResponseLength(void);
     const std::string &getResponse(void);
     const std::string &getBody(void) const;
     void               setBody(const std::string &);
     size_t             getBodyLength(void) const;
     void               setBodyLength(size_t);
-    void               setRequest(Request *req);
-    Request           *getRequest(void) const;
+    Request           *getRequest(void);
     const std::string &getStatusLine(void);
     StatusCode         getStatus();
     void               setStatus(HTTP::StatusCode status);
 
-    void            setClient(Client *client);
     Client *        getClient(void);
 
-    bool    isFormed(void) const;
-    void    isFormed(bool formed);
-
-    int             checkCGIBodyLength(void);
+    bool            isFormed(void) const;
+    void            isFormed(bool formed);
 
     // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);
 };

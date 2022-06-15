@@ -36,7 +36,7 @@ private:
     std::string                       _resolvedPath;
     URI                               _host;
     std::map<uint32_t, RequestHeader> _headers;
-    HTTP::StatusCode                  _status;
+    StatusCode                        _status;
     int                               _major : 4;
     int                               _minor : 4;
 
@@ -60,6 +60,7 @@ private:
 
 public:
     Request();
+    Request(Client &);
     ~Request();
 
     Request(const Request &other);
@@ -71,7 +72,7 @@ public:
     Location *getLocation(void);
     void      setLocation(Location *);
 
-    const Client *getClient() const;
+    Client *getClient();
     void          setClient(Client *);
 
     const std::string                       &getPath() const;
@@ -100,7 +101,7 @@ public:
     void removeFlag(uint8_t flag);
     void clear(void);
 
-    void parseLine(std::string &line);
+    bool parseLine(std::string &line);
 
     StatusCode parseSL(const std::string &line);
     StatusCode parseHeader(const std::string &line);

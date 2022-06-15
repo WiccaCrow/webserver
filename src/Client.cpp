@@ -7,7 +7,9 @@ Client::Client()
     : _fd(-1)
     , _clientPort(0)
     , _serverPort(0)
-    , _shouldBeClosed(false) { }
+    , _shouldBeClosed(false)
+    , _reqPoolReady(true) { }
+    // , _resPoolReady(false) { }
 
 Client::~Client() {
 }
@@ -19,8 +21,9 @@ Client::Client(const Client &client) {
 Client &
 Client::operator=(const Client &client) {
     if (this != &client) {
-        _req            = client._req;
-        _res            = client._res;
+        _requests = client._requests;
+        _responses = client._responses;
+        _reqPoolReady = client._reqPoolReady;
         _fd             = client._fd;
         _clientIpAddr   = client._clientIpAddr;
         _serverIpAddr   = client._serverIpAddr;
@@ -33,14 +36,7 @@ Client::operator=(const Client &client) {
 
 void
 Client::initResponseMethodsHeaders(void) {
-    _res.initMethodsHeaders();
-}
-
-void
-Client::linkRequest(void) {
-    _req.setClient(this);
-    _res.setClient(this);
-    _res.setRequest(&_req);
+    // _res.initMethodsHeaders();
 }
 
 int
@@ -99,14 +95,14 @@ Client::getHostname() const {
     return (_clientPort != 0 ? _clientIpAddr + ":" + to_string(_clientPort) : _clientIpAddr);
 }
 
-const Request &
-Client::getRequest() const {
-    return _req;
+Request &
+Client::getRequest() {
+    return _requests.back();
 }
 
-const Response &
-Client::getResponse() const {
-    return _res;
+Response &
+Client::getResponse() {
+    return _responses.back();
 }
 
 void
@@ -120,6 +116,59 @@ Client::shouldBeClosed(void) const {
 }
 
 void
+Client::addRequest(void) {
+    _requests.push_back(Request(*this));
+    reqPoolReady(false);
+}
+
+void
+Client::addResponse(void) {
+    _responses.push_back(Response(getRequest()));
+    reqPoolReady(true);
+}
+
+void
+Client::removeTopRequest(void) {
+    _requests.pop_front();
+}
+
+void
+Client::removeTopResponse(void) {
+    _responses.pop_front();
+}
+
+bool
+Client::reqPoolReady(void) {
+    return _reqPoolReady;
+}
+
+void
+Client::reqPoolReady(bool flag) {
+    _reqPoolReady = flag;
+}
+
+Request &
+Client::getTopRequest(void) {
+    return _requests.front();
+}
+
+Response &
+Client::getTopResponse(void) {
+    return _responses.front();
+}
+
+bool
+Client::couldProcess(void) {
+    return _fd != -1 && _requests.size() && getTopRequest().isFormed();
+}
+
+bool
+Client::couldReply(void) {
+    return _fd != -1 && _responses.size() && getTopResponse().isFormed();
+}
+
+
+void
 Client::checkIfFailed(void) {
 
     static const size_t size = 4;
@@ -131,48 +180,29 @@ Client::checkIfFailed(void) {
     };
 
     for (size_t i = 0; i < size; i++) {
-        if (_req.getStatus() == failedStatuses[i]) {
+        if (getTopResponse().getStatus() == failedStatuses[i]) {
             setFd(-1);
-            return ;
-        } 
+            break ;
+        }
     }
-}
-
-void
-Client::clearData(void) {
-    _res.clear();
-    _req.clear();
 }
 
 void
 Client::process(void) {
-    if (_fd == -1) {
-        return;
-    }
 
     Log.debug("Client::process -> fd: " + to_string(_fd));
 
-    if (_req.getStatus() == HTTP::PROCESSING) {
-        _req.setStatus(HTTP::OK);
-    }
-
-    _res.handle();
+    getTopResponse().handle();
 }
 
 void
 Client::reply(void) {
-    if (_fd == -1) {
-        return;
-    }
 
-    Log.debug("Client::reply -> fd: " + to_string(_fd));
-    // Log.debug("\n" + std::string(_res.getResponse()) + "\n");
-
-    const char *rsp = _res.getResponse().c_str();
-    size_t total = _res.getResponseLength();
+    const char *rsp = getTopResponse().getResponse().c_str();
+    size_t total = getTopResponse().getResponseLength();
     size_t sent = 0;
     do {
-        long n = send(_fd, rsp + sent, 50000, 0);
+        long n = send(_fd, rsp + sent, total - sent, 0);
         if (n > 0) {
             sent += n;
         }
@@ -182,7 +212,7 @@ Client::reply(void) {
         }
     } while (sent < total);
 
-    Log.debug("Client::send (" + to_string(sent) + "/" + to_string(total) + " bytes)");
+    Log.debug("Client::reply -> fd: " + to_string(_fd) + " (" + to_string(sent) + "/" + to_string(total) + " bytes sent)");
 
     if (shouldBeClosed()) {
         _fd = -1;
@@ -216,17 +246,18 @@ Client::getline(std::string &line) {
     }
 
     size_t pos = 0;
-    if (!_req.getBodySize()) {
+    const size_t bodySize = getTopRequest().getBodySize();
+    if (!bodySize) {
         pos = _rem.find("\r\n");
         if (pos == std::string::npos) {
             return LINE_NOT_FOUND;
         }
         pos += 2;
     } else {
-        if (_rem.length() < _req.getBodySize()) {
+        if (_rem.length() < bodySize) {
             return LINE_NOT_FOUND;
         }
-        pos = _req.getBodySize();
+        pos = bodySize;
     }
 
     line = _rem.substr(0, pos);
@@ -245,16 +276,13 @@ Client::receive(void) {
 
     Log.debug("Client::receive [" + to_string(_fd) + "]");
 
-    while (true) {
+    while (!getRequest().isFormed()) {
         std::string line;
 
         switch (getline(line)) {
             case LINE_FOUND: {
-                _req.parseLine(line);
-                if (!_req.isFormed()) {
-                    break ;
-                }
-                return ;
+                getRequest().parseLine(line);
+                break ;
             }
             case SOCK_CLOSED: {
                 setFd(-1);

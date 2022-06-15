@@ -11,10 +11,14 @@ Response::Response()
             , _bodyLength(0)
             , _isFormed(false) {}
 
-Response::~Response() { }
-
-void
-Response::initMethodsHeaders(void) {
+Response::Response(Request &req) 
+    : _req(&req)
+    , _client(NULL)
+    , _cgi(NULL)
+    , _bodyLength(0)
+    , _isFormed(false)
+    , _status(req.getStatus())
+{
     methods.insert(std::make_pair("GET", &Response::GET));
     methods.insert(std::make_pair("PUT", &Response::PUT));
     methods.insert(std::make_pair("POST", &Response::POST));
@@ -30,21 +34,40 @@ Response::initMethodsHeaders(void) {
     headers.push_back(ResponseHeader(CONTENT_LENGTH));
 }
 
+Response::~Response() { }
+
+void
+Response::initMethodsHeaders(void) {
+    // methods.insert(std::make_pair("GET", &Response::GET));
+    // methods.insert(std::make_pair("PUT", &Response::PUT));
+    // methods.insert(std::make_pair("POST", &Response::POST));
+    // methods.insert(std::make_pair("HEAD", &Response::HEAD));
+    // methods.insert(std::make_pair("DELETE", &Response::DELETE));
+    // methods.insert(std::make_pair("OPTIONS", &Response::OPTIONS));
+
+    // headers.push_back(ResponseHeader(DATE));
+    // headers.push_back(ResponseHeader(SERVER));
+    // headers.push_back(ResponseHeader(KEEP_ALIVE));
+    // headers.push_back(ResponseHeader(CONNECTION));
+    // headers.push_back(ResponseHeader(CONTENT_TYPE));
+    // headers.push_back(ResponseHeader(CONTENT_LENGTH));
+}
+
 void
 Response::clear() {
 
-    _res = "";
-    _body = "";
-    _bodyLength = 0;
-    _isFormed = false;
-    _cgi = NULL;
+    // _res = "";
+    // _body = "";
+    // _bodyLength = 0;
+    // _isFormed = false;
+    // _cgi = NULL;
 
-    iter rm = headers.begin();
-    std::advance(rm, 6);
-    headers.erase(rm, headers.end());
-    for (iter it = headers.begin(); it != headers.end(); ++it) {
-        it->value = "";
-    }
+    // iter rm = headers.begin();
+    // std::advance(rm, 6);
+    // headers.erase(rm, headers.end());
+    // for (iter it = headers.begin(); it != headers.end(); ++it) {
+    //     it->value = "";
+    // }
 }
 
 void
@@ -61,6 +84,7 @@ Response::handle(void) {
     }
 
     _res = getStatusLine() + makeHeaders() + getBody();
+    isFormed(true);
 }
 
 void
@@ -225,7 +249,7 @@ Response::makeGetHeadResponseForFile(const std::string &resourcePath) {
 int
 Response::directoryListing(const std::string &resourcePath) {
     // autoindex on
-    if (_req->getLocation()->getAutoindexRef() == true && isDirectory(resourcePath)) {
+    if (_req->getLocation()->getAutoindexRef() && isDirectory(resourcePath)) {
         addHeader(CONTENT_TYPE, "text/html; charset=utf-8");
         return listing(resourcePath);
     } else {
@@ -327,7 +351,7 @@ Response::writeFile(const std::string &resourcePath) {
 
 const std::string &
 Response::getStatusLine(void) {
-    return statusLines[_req->getStatus()];
+    return statusLines[getStatus()];
 }
 
 std::string
@@ -335,7 +359,7 @@ Response::makeHeaders() {
 
     std::string allHeaders;
 
-    if ((_req->getStatus() >= BAD_REQUEST) ||
+    if ((getStatus() >= BAD_REQUEST) ||
         // (если не cgi и методы GET HEAD еще обдумать) ||
         (_req->getMethod() == "PUT" || _req->getMethod() == "DELETE")) {
         addHeader(CONTENT_TYPE, "text/html; charset=UTF-8");
@@ -446,34 +470,24 @@ Response::setBodyLength(size_t len) {
     _bodyLength = len;
 }
 
-void
-Response::setRequest(Request *req) {
-    _req = req;
-}
-
 Request *
-Response::getRequest(void) const {
+Response::getRequest(void) {
     return _req;
 }
 
 StatusCode
 Response::getStatus() {
-    return getRequest()->getStatus();
+    return _status;
 }
 
 void
 Response::setStatus(StatusCode status) {
-    getRequest()->setStatus(status);
-}
-
-void
-Response::setClient(Client *client) {
-    _client = client;
+    _status = status;
 }
 
 Client *
 Response::getClient(void) {
-    return _client;
+    return getRequest()->getClient();
 }
 
 bool
