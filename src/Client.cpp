@@ -172,11 +172,14 @@ Client::reply(void) {
     size_t total = _res.getResponseLength();
     size_t sent = 0;
     do {
-        long n = send(_fd, rsp + sent, total - sent, 0);
+        long n = send(_fd, rsp + sent, 50000, 0);
         if (n > 0) {
             sent += n;
         }
-        // if n == 0 ?
+        else if (n == 0) {
+            setFd(-1);
+            break ;
+        }
     } while (sent < total);
 
     Log.debug("Client::send (" + to_string(sent) + "/" + to_string(total) + " bytes)");
@@ -290,13 +293,5 @@ Client::matchServerBlock(const std::string &host) const {
     Log.debug("Client::matchServerBlock -> " + found->getBlockName() + " for " + host + ":" + to_string(_serverPort));
     return &(*found);
 }
-
-// map< pair<ip, port>, std::list<ServerBlock> >
-
-// sock = ip:port -> default
-
-// uri = [(host|ip):port][/path]
-
-// host = (host|ip)[:port]
 
 }

@@ -156,6 +156,16 @@ Request::setStoredHash(uint32_t hash) {
 }
 
 void
+Request::chuckedRequested(bool flag) {
+    _chuckedRequested = flag;
+}
+
+bool
+Request::chuckedRequested(void) {
+    return _chuckedRequested;
+}
+
+void
 Request::clear() {
     _method   = "";
     _rawURI   = "";
@@ -294,14 +304,6 @@ Request::checkSL(void) {
         Log.debug("Request::checkSL: protocol " + _method + " is not implemented");
         return BAD_REQUEST;
     }
-
-    // if (!_servBlock) {
-    //     setServerBlock(getClient()->matchServerBlock(_uri._host));
-    // }
-    // if (!_location) {
-    //     setLocation(getServerBlock()->matchLocation(_uri._path));
-    //     resolvePath();
-    // }
 
     setFlag(PARSED_SL);
     return CONTINUE;

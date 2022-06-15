@@ -397,7 +397,9 @@ RequestHeader::TransferEncoding(Request &req) {
 
 StatusCode
 RequestHeader::TE(Request &req) {
-    (void)req;
+    if (value == "trailers") {
+        req.chuckedRequested(true);
+    }
     return CONTINUE;
 }
 

@@ -24,8 +24,8 @@ private:
     size_t      _serverPort;
     std::string _serverIpAddr;
 
-    std::queue<HTTP::Request> _requests;
-    std::queue<HTTP::Response> _responses;
+    std::deque<HTTP::Request> _requests;
+    std::deque<HTTP::Response> _responses;
 
     HTTP::Request  _req;
     HTTP::Response _res;

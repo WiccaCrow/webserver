@@ -54,6 +54,7 @@ private:
     uint32_t _storedHash;
 
     bool _isFormed;
+    bool _chuckedRequested;
 
     std::map<std::string, std::string> _cookie;
 
@@ -137,6 +138,9 @@ public:
 
     const std::map<std::string, std::string> &getCookie(void);
     void                                      setCookie(std::map<std::string, std::string> cookie);
+
+    void chuckedRequested(bool);
+    bool chuckedRequested(void);
 };
 
 } // namespace HTTP
