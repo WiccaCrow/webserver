@@ -2,6 +2,7 @@
 
 #include "SHA1.hpp"
 #include <cstring>
+#include <sstream>
 #include <iostream>
 #include <stdlib.h>
 #include <unistd.h>
@@ -42,6 +43,8 @@ bool isWritableFile(const std::string &filename);
 bool isReadableFile(const std::string &filename);
 bool isExecutableFile(const std::string &filename);
 bool checkRegFilePerms(const std::string &filename, int perm);
+bool stoll(long long &num, char const *s);
+bool stoll(char const *s);
 int  rmdirNonEmpty(std::string &resourceDel);
 
 std::string getDateTimeGMT();
