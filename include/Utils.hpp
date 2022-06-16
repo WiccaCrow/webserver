@@ -50,4 +50,5 @@ bool stoll(char const *s);
 int  rmdirNonEmpty(std::string &resourceDel);
 
 std::string getDateTimeGMT();
-std::string getLastModifiedTimeGMT(const std::string &filename);
+std::string getLastModifiedTimeGMT(const std::string &file);
+time_t getModifiedTime(const std::string &file);

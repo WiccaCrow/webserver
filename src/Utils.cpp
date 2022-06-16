@@ -512,8 +512,8 @@ rmdirNonEmpty(std::string &resourceDel) {
 }
 
 static std::string
-getTimeStringGMT(time_t *time) {
-    struct tm *info = gmtime(time);
+getTimeStringGMT(time_t time) {
+    struct tm *info = gmtime(&time);
 
     char buff[50];
     strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
@@ -526,16 +526,25 @@ getDateTimeGMT() {
     time_t rawtime;
     time(&rawtime);
 
-    return getTimeStringGMT(&rawtime);
+    return getTimeStringGMT(rawtime);
+}
+
+time_t
+getModifiedTime(const std::string &file) {
+    struct stat state;
+
+    if (stat(file.c_str(), &state) < 0) {
+        return -1;
+    }
+    return state.st_mtime;
 }
 
 std::string
-getLastModifiedTimeGMT(const std::string &filename) {
-    struct stat state;
+getLastModifiedTimeGMT(const std::string &file) {
 
-    if (stat(filename.c_str(), &state) < 0) {
-        return "";
-    }
+    time_t time = getModifiedTime(file);
 
-    return getTimeStringGMT(&state.st_mtime);
+    return (time != -1 ? getTimeStringGMT(time) : "");
 }
+
+

@@ -19,17 +19,17 @@ Client::Client(const Client &client) {
 }
 
 Client &
-Client::operator=(const Client &client) {
-    if (this != &client) {
-        _requests = client._requests;
-        _responses = client._responses;
-        _reqPoolReady = client._reqPoolReady;
-        _fd             = client._fd;
-        _clientIpAddr   = client._clientIpAddr;
-        _serverIpAddr   = client._serverIpAddr;
-        _clientPort     = client._clientPort;
-        _serverPort     = client._serverPort;
-        _shouldBeClosed = client._shouldBeClosed;
+Client::operator=(const Client &other) {
+    if (this != &other) {
+        _requests = other._requests;
+        _responses = other._responses;
+        _reqPoolReady = other._reqPoolReady;
+        _fd             = other._fd;
+        _clientIpAddr   = other._clientIpAddr;
+        _serverIpAddr   = other._serverIpAddr;
+        _clientPort     = other._clientPort;
+        _serverPort     = other._serverPort;
+        _shouldBeClosed = other._shouldBeClosed;
     }
     return *this;
 }
@@ -198,24 +198,30 @@ Client::process(void) {
 void
 Client::reply(void) {
 
-    const char *rsp = getTopResponse().getResponse().c_str();
-    size_t total = getTopResponse().getResponseLength();
-    size_t sent = 0;
-    do {
-        long n = send(_fd, rsp + sent, total - sent, 0);
-        if (n > 0) {
-            sent += n;
-        }
-        else if (n == 0) {
-            setFd(-1);
-            break ;
-        }
-    } while (sent < total);
+    for (size_t total = getTopResponse().getResponseLength(); total;
+                total = getTopResponse().getResponseLength()) { // пока есть что отправлять
+        const char *rsp = getTopResponse().getResponse().c_str();
 
-    Log.debug("Client::reply -> fd: " + to_string(_fd) + " (" + to_string(sent) + "/" + to_string(total) + " bytes sent)");
+        size_t sent = 0;
+        do {
+            long n = send(_fd, rsp + sent, total - sent, 0);
+            if (n > 0) {
+                sent += n;
+            }
+            else if (n == 0) {
+                setFd(-1);
+                break ;
+            }
+
+        } while (sent < total);
+
+        Log.debug("Client::reply -> fd: " + to_string(_fd) + " (" + to_string(sent) + "/" + to_string(total) + " bytes sent)");
+
+        getTopResponse().makeChunk();
+    }
 
     if (shouldBeClosed()) {
-        _fd = -1;
+        setFd(-1);
     }
 }
 

@@ -2,8 +2,8 @@
 
 #include <cstdio>
 #include <dirent.h>
-#include <fstream>
 #include <iostream>
+#include <fstream>
 #include <map>
 #include <list>
 #include <sstream>
@@ -17,7 +17,9 @@
 
 namespace HTTP {
 
-// # define SIZE_FOR_CHUNKED 4096
+# define CHUNK_SIZE 4096
+// # define CHUNK_SIZE 4096
+// # define CHUNK_SIZE 20
 
 class Client;
 
@@ -34,6 +36,7 @@ class Response {
     bool        _isFormed;
     StatusCode  _status;
 
+    std::ifstream _resourceFileStream;
 
 public:
     typedef void (Response::*Handler)(void);
@@ -46,6 +49,9 @@ public:
     Response(void);
     Response(Request &req);
     ~Response(void);
+
+    Response(const Response &other);
+    Response &operator=(const Response &other);
 
     void initMethodsHeaders(void);
     void clear(void);
@@ -72,7 +78,7 @@ public:
     bool        isSetIndexFile(std::string &resourcePath);
     int         makeGetHeadResponseForFile(const std::string &resourcePath);
     int         directoryListing(const std::string &resourcePath);
-    int         fileToResponse(std::string resourcePath);
+    int         openFileToResponse(std::string resourcePath);
     int         listing(const std::string &resourcePath);
     std::string getContentType(std::string resourcePath);
     void        writeFile(const std::string &resourcePath);
@@ -87,6 +93,8 @@ public:
     
     int passToCGI(CGI &cgi);
     int recognizeHeaders(CGI &cgi);
+
+    void  makeChunk();
 
     // setters, getters
     // to send response
@@ -107,7 +115,6 @@ public:
     void            isFormed(bool formed);
 
     std::string getEtagFile(const std::string &filename);
-    // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);
 };
 
 } // namespace HTTP

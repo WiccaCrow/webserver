@@ -5,11 +5,11 @@
 namespace HTTP {
 
 Response::Response() 
-            : _req(NULL)
-            , _client(NULL)
-            , _cgi(NULL)
-            , _bodyLength(0)
-            , _isFormed(false) {}
+    : _req(NULL)
+    , _client(NULL)
+    , _cgi(NULL)
+    , _bodyLength(0)
+    , _isFormed(false) {}
 
 Response::Response(Request &req) 
     : _req(&req)
@@ -34,41 +34,35 @@ Response::Response(Request &req)
     headers.push_back(ResponseHeader(CONTENT_LENGTH));
 }
 
+Response::Response(const Response &other) {
+    *this = other;
+}
+
+Response &Response::operator=(const Response &other) {
+    if (this != &other) {
+        _res = other._res;
+        _resLeftToSend = other._resLeftToSend;
+        _req = other._req;
+        _client = other._client;
+        _cgi = other._cgi;
+        _body = other._body;
+        _extraHeaders = other._extraHeaders;
+        _bodyLength = other._bodyLength;
+        _isFormed = other._isFormed;
+        _status = other._status;
+        headers = other.headers;
+        methods = other.methods;
+    }
+    return *this;
+}
+
 Response::~Response() { }
 
 void
-Response::initMethodsHeaders(void) {
-    // methods.insert(std::make_pair("GET", &Response::GET));
-    // methods.insert(std::make_pair("PUT", &Response::PUT));
-    // methods.insert(std::make_pair("POST", &Response::POST));
-    // methods.insert(std::make_pair("HEAD", &Response::HEAD));
-    // methods.insert(std::make_pair("DELETE", &Response::DELETE));
-    // methods.insert(std::make_pair("OPTIONS", &Response::OPTIONS));
-
-    // headers.push_back(ResponseHeader(DATE));
-    // headers.push_back(ResponseHeader(SERVER));
-    // headers.push_back(ResponseHeader(KEEP_ALIVE));
-    // headers.push_back(ResponseHeader(CONNECTION));
-    // headers.push_back(ResponseHeader(CONTENT_TYPE));
-    // headers.push_back(ResponseHeader(CONTENT_LENGTH));
-}
+Response::initMethodsHeaders(void) {}
 
 void
-Response::clear() {
-
-    // _res = "";
-    // _body = "";
-    // _bodyLength = 0;
-    // _isFormed = false;
-    // _cgi = NULL;
-
-    // iter rm = headers.begin();
-    // std::advance(rm, 6);
-    // headers.erase(rm, headers.end());
-    // for (iter it = headers.begin(); it != headers.end(); ++it) {
-    //     it->value = "";
-    // }
-}
+Response::clear() {}
 
 void
 Response::handle(void) {
@@ -235,12 +229,7 @@ Response::isSetIndexFile(std::string &resourcePath) {
 
 std::string
 Response::getEtagFile(const std::string &filename) {
-    struct stat state;
-
-    if (stat(filename.c_str(), &state) < 0) {
-        return "";
-    }
-    return SHA1(to_string(state.st_mtime));
+    return SHA1(to_string(getModifiedTime(filename)));
 }
 
 int
@@ -253,7 +242,8 @@ Response::makeGetHeadResponseForFile(const std::string &resourcePath) {
     addHeader(CONTENT_TYPE, getContentType(resourcePath));
     addHeader(ETAG, getEtagFile(resourcePath));
     addHeader(LAST_MODIFIED, getLastModifiedTimeGMT(resourcePath));
-    return fileToResponse(resourcePath);
+    addHeader(TRANSFER_ENCODING, "chunked");
+    return openFileToResponse(resourcePath);
 }
 
 int
@@ -270,27 +260,13 @@ Response::directoryListing(const std::string &resourcePath) {
 }
 
 int
-Response::fileToResponse(std::string resourcePath) {
-    std::ifstream resourceFile;
-    resourceFile.open(resourcePath.c_str(), std::ifstream::in);
-    if (!resourceFile.is_open()) {
+Response::openFileToResponse(std::string resourcePath) {
+    _resourceFileStream.open(resourcePath.c_str(), std::ifstream::in | std::ios_base::binary);
+    if (!_resourceFileStream.is_open()) {
         setStatus(FORBIDDEN);
         return 0;
     }
 
-    std::stringstream buffer;
-    buffer << resourceFile.rdbuf();
-    if (buffer.tellp() == -1) {
-        setStatus(INTERNAL_SERVER_ERROR);
-        return 0;
-    }
-
-    // if (bufSize > SIZE_FOR_CHUNKED) {
-    //     _res += "Transfer-Encoding: chunked\r\n\r\n";
-    //     return (TransferEncodingChunked(buffer.str(), bufSize));
-    // }
-
-    setBody(buffer.str());
     return 1;
 }
 
@@ -449,6 +425,36 @@ Response::passToCGI(CGI &cgi) {
     return 1;
 }
 
+void
+Response::makeChunk() {
+    _res = "";
+
+    if (!getHeader(TRANSFER_ENCODING) ) {
+
+        return ;
+    }
+
+    if (_resourceFileStream.eof()) {
+        _resourceFileStream.close();
+        _resourceFileStream.clear();
+        return ;
+    }
+    char buffer[CHUNK_SIZE] = {0};
+    _resourceFileStream.read(buffer, sizeof(buffer) - 1);
+    if (_resourceFileStream.fail() && !_resourceFileStream.eof()) {
+        setStatus(INTERNAL_SERVER_ERROR);
+        _client->shouldBeClosed(true);
+        return ;
+    } else {
+        _res.assign(buffer, _resourceFileStream.gcount());
+        // _res = itoh(_resourceFileStream.gcount()) + "\r\n" + _res + "\r\n";
+        _res = itoh(_res.length()) + "\r\n" + _res + "\r\n";
+    }
+    if (_resourceFileStream.eof()) {
+        _res += "0\r\n\r\n";
+    }
+}
+
 size_t
 Response::getResponseLength() {
     return (_res.length());
@@ -509,20 +515,6 @@ void
 Response::isFormed(bool formed) {
     _isFormed = formed;
 }
-
-// std::string Response::TransferEncodingChunked(std::string buffer, size_t bufSize) {
-//     size_t i = 0;
-//     std::string sizeChunck = itoh(SIZE_FOR_CHUNKED) + "\r\n";
-//     while (bufSize > i + SIZE_FOR_CHUNKED) {
-//         _res += sizeChunck;
-//         _res += buffer.substr(i, (size_t)SIZE_FOR_CHUNKED) + "\r\n";
-//         i += SIZE_FOR_CHUNKED;
-//     }
-//     _res += itoh(bufSize - i) + "\r\n";
-//     _res += buffer.substr(i, bufSize - i) + "\r\n"
-//             "0\r\n\r\n";
-//     return ("");
-// }
 
 std::map<std::string, CGI>::iterator
 Response::isCGI(const std::string &filepath, std::map<std::string, CGI> &cgis) {
