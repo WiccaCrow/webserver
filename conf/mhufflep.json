@@ -115,7 +115,7 @@
                     },
                     "autoindex": false,
                     "index": [ "index.html", "index.php" ],
-                    "methods_allowed": [ "DELETE" ],
+                    "methods_allowed": [ "GET", "DELETE" ],
                     "post_max_body": 300
                 }
             }

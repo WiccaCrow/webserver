@@ -18,8 +18,6 @@
 namespace HTTP {
 
 # define CHUNK_SIZE 4096
-// # define CHUNK_SIZE 4096
-// # define CHUNK_SIZE 20
 
 class Client;
 

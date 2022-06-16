@@ -87,7 +87,7 @@ Response::unauthorized(void) {
     setStatus(UNAUTHORIZED);
     addHeader(DATE, getDateTimeGMT());
     addHeader(WWW_AUTHENTICATE);
-    _client->shouldBeClosed(true);
+    getClient()->shouldBeClosed(true);
 }
 
 void
