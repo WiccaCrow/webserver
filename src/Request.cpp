@@ -41,6 +41,7 @@ Request::operator=(const Request &other) {
     if (this != &other) {
         _method       = other._method;
         _uri          = other._uri;
+        _rawURI       = other._rawURI;
         _protocol     = other._protocol;
         _resolvedPath = other._resolvedPath;
         _headers      = other._headers;
@@ -56,6 +57,11 @@ Request::operator=(const Request &other) {
         _chunkSize    = other._chunkSize;
         _client       = other._client;
         _isFormed     = other._isFormed;
+        _host         = other._host;
+        _minor        = other._minor;
+        _major        = other._major;
+        _storedHash   = other._storedHash;
+        _chuckedRequested = other._chuckedRequested;
     }
     return *this;
 }
