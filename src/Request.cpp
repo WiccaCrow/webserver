@@ -55,6 +55,7 @@ Request::operator=(const Request &other) {
         _cookie       = other._cookie;
         _chunkSize    = other._chunkSize;
         _client       = other._client;
+        _isFormed     = other._isFormed;
     }
     return *this;
 }

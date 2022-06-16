@@ -155,7 +155,7 @@ Server::pollOutHandler(size_t id) {
         _clients[id].removeTopResponse();
     }
 
-    if (_clients[id].getFd() == -1) {
+    if (!_clients[id].validSocket()) {
         disconnectClient(id);
     }
 }

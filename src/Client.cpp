@@ -8,7 +8,8 @@ Client::Client()
     , _clientPort(0)
     , _serverPort(0)
     , _shouldBeClosed(false)
-    , _reqPoolReady(true) {
+    , _reqPoolReady(false) {
+    addRequest();
 }
 
 Client::~Client() {
