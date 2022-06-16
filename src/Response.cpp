@@ -447,8 +447,7 @@ Response::makeChunk() {
         return ;
     } else {
         _res.assign(buffer, _resourceFileStream.gcount());
-        // _res = itoh(_resourceFileStream.gcount()) + "\r\n" + _res + "\r\n";
-        _res = itoh(_res.length()) + "\r\n" + _res + "\r\n";
+        _res = itoh(_resourceFileStream.gcount()) + "\r\n" + _res + "\r\n";
     }
     if (_resourceFileStream.eof()) {
         _res += "0\r\n\r\n";
