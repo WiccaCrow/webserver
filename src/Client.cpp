@@ -168,21 +168,28 @@ Client::reply(void) {
     Log.debug("Client::reply -> fd: " + to_string(_fd));
     // Log.debug("\n" + std::string(_res.getResponse()) + "\n");
 
-    const char *rsp = _res.getResponse().c_str();
-    size_t total = _res.getResponseLength();
-    size_t sent = 0;
-    do {
-        long n = send(_fd, rsp + sent, 50000, 0);
-        if (n > 0) {
-            sent += n;
-        }
-        else if (n == 0) {
-            setFd(-1);
-            break ;
-        }
-    } while (sent < total);
+    for (size_t total = _res.getResponseLength(); total;
+                total = _res.getResponseLength()) { // пока есть что отправлять
+        const char *rsp = _res.getResponse().c_str();
 
-    Log.debug("Client::send (" + to_string(sent) + "/" + to_string(total) + " bytes)");
+        size_t sent = 0;
+        do {
+            long n = send(_fd, rsp + sent, total - sent, 0);
+            if (n > 0) {
+                sent += n;
+            }
+            else if (n == 0) {
+                setFd(-1);
+                break ;
+            }
+
+        } while (sent < total);
+
+        Log.debug("Client::send (" + to_string(sent) + "/" + to_string(total) + " bytes)");
+
+        _res.makeChunk();
+    }
+
 
     if (shouldBeClosed()) {
         _fd = -1;

@@ -39,6 +39,7 @@ Response::clear() {
     _isFormed = false;
     _cgi = NULL;
 
+    _resourceFileStream.clear();
     iter rm = headers.begin();
     std::advance(rm, 6);
     headers.erase(rm, headers.end());
@@ -219,7 +220,8 @@ Response::makeGetHeadResponseForFile(const std::string &resourcePath) {
     addHeader(CONTENT_TYPE, getContentType(resourcePath));
     addHeader(ETAG, getEtagFile(resourcePath));
     addHeader(LAST_MODIFIED, getLastModifiedTimeGMT(resourcePath));
-    return fileToResponse(resourcePath);
+    addHeader(TRANSFER_ENCODING, "chunked");
+    return openFileToResponse(resourcePath);
 }
 
 int
@@ -236,27 +238,13 @@ Response::directoryListing(const std::string &resourcePath) {
 }
 
 int
-Response::fileToResponse(std::string resourcePath) {
-    std::ifstream resourceFile;
-    resourceFile.open(resourcePath.c_str(), std::ifstream::in);
-    if (!resourceFile.is_open()) {
+Response::openFileToResponse(std::string resourcePath) {
+    _resourceFileStream.open(resourcePath.c_str(), std::ifstream::in | std::ios_base::binary);
+    if (!_resourceFileStream.is_open()) {
         setStatus(FORBIDDEN);
         return 0;
     }
 
-    std::stringstream buffer;
-    buffer << resourceFile.rdbuf();
-    if (buffer.tellp() == -1) {
-        setStatus(INTERNAL_SERVER_ERROR);
-        return 0;
-    }
-
-    // if (bufSize > SIZE_FOR_CHUNKED) {
-    //     _res += "Transfer-Encoding: chunked\r\n\r\n";
-    //     return (TransferEncodingChunked(buffer.str(), bufSize));
-    // }
-
-    setBody(buffer.str());
     return 1;
 }
 
@@ -413,6 +401,36 @@ Response::passToCGI(CGI &cgi) {
     }
 
     return 1;
+}
+
+void
+Response::makeChunk() {
+    _res = "";
+
+    if (!getHeader(TRANSFER_ENCODING) ) {
+
+        return ;
+    }
+
+    if (_resourceFileStream.eof()) {
+        _resourceFileStream.close();
+        _resourceFileStream.clear();
+        return ;
+    }
+    char buffer[CHUNK_SIZE] = {0};
+    _resourceFileStream.read(buffer, sizeof(buffer));
+    if (_resourceFileStream.fail() && !_resourceFileStream.eof()) {
+        setStatus(INTERNAL_SERVER_ERROR);
+        _client->shouldBeClosed(true);
+        return ;
+    } else {
+        _res.assign(buffer, CHUNK_SIZE);
+        // _res = itoh(_resourceFileStream.gcount()) + "\r\n" + _res + "\r\n";
+        _res = itoh(_res.length()) + "\r\n" + _res + "\r\n";
+    }
+    if (_resourceFileStream.eof()) {
+        _res += "0\r\n\r\n";
+    }
 }
 
 size_t

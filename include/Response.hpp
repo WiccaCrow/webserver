@@ -2,8 +2,8 @@
 
 #include <cstdio>
 #include <dirent.h>
-#include <fstream>
 #include <iostream>
+#include <fstream>
 #include <map>
 #include <list>
 #include <sstream>
@@ -17,7 +17,9 @@
 
 namespace HTTP {
 
-// # define SIZE_FOR_CHUNKED 4096
+# define CHUNK_SIZE 40960
+// # define CHUNK_SIZE 4096
+// # define CHUNK_SIZE 20
 
 class Client;
 
@@ -32,6 +34,7 @@ class Response {
     std::string _extraHeaders;
     size_t      _bodyLength;
     bool        _isFormed;
+    std::ifstream _resourceFileStream;
 
 public:
     typedef void (Response::*Handler)(void);
@@ -43,6 +46,23 @@ public:
 
     Response(void);
     ~Response(void);
+
+    Response& operator=(const Response &response) {
+        if (this != &response) {
+            _res = response._res;
+            _resLeftToSend = response._resLeftToSend;
+            _req = response._req;
+            _client = response._client;
+            _cgi = response._cgi;
+            _body = response._body;
+            _extraHeaders = response._extraHeaders;
+            _bodyLength = response._bodyLength;
+            _isFormed = response._isFormed;
+            // _resourceFileStream = response._resourceFileStream;
+            // _resourceFileStream.rdbuf(response._resourceFileStream.rdbuf());
+        }
+        return *this;
+    }
 
     void initMethodsHeaders(void);
     void clear(void);
@@ -69,7 +89,7 @@ public:
     bool        isSetIndexFile(std::string &resourcePath);
     int         makeGetHeadResponseForFile(const std::string &resourcePath);
     int         directoryListing(const std::string &resourcePath);
-    int         fileToResponse(std::string resourcePath);
+    int         openFileToResponse(std::string resourcePath);
     int         listing(const std::string &resourcePath);
     std::string getContentType(std::string resourcePath);
     void        writeFile(const std::string &resourcePath);
@@ -85,6 +105,8 @@ public:
     int passToCGI(CGI &cgi);
     int recognizeHeaders(CGI &cgi);
 
+    void  makeChunk();
+
     // setters, getters
     //     to send response
     size_t             getResponseLength(void);
@@ -98,6 +120,7 @@ public:
     const std::string &getStatusLine(void);
     StatusCode         getStatus();
     void               setStatus(HTTP::StatusCode status);
+
 
     void            setClient(Client *client);
     Client *        getClient(void);
