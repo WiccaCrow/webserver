@@ -87,8 +87,8 @@ public:
     void addRequest(void);
     void addResponse(void);
 
-    bool reqPoolReady(void);
-    void reqPoolReady(bool);
+    bool requestPoolReady(void);
+    void requestPoolReady(bool);
 
     void removeTopRequest(void);
     void removeTopResponse(void);
@@ -96,8 +96,9 @@ public:
     Request &getTopRequest(void);
     Response &getTopResponse(void);
 
-    bool couldProcess(void);
-    bool couldReply(void);
+    bool validSocket(void);
+    bool requestReady(void);
+    bool replyReady(void);
 };
 
 }

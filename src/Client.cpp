@@ -8,8 +8,8 @@ Client::Client()
     , _clientPort(0)
     , _serverPort(0)
     , _shouldBeClosed(false)
-    , _reqPoolReady(true) { }
-    // , _resPoolReady(false) { }
+    , _reqPoolReady(true) {
+}
 
 Client::~Client() {
 }
@@ -35,9 +35,7 @@ Client::operator=(const Client &other) {
 }
 
 void
-Client::initResponseMethodsHeaders(void) {
-    // _res.initMethodsHeaders();
-}
+Client::initResponseMethodsHeaders(void) {}
 
 int
 Client::getFd(void) const {
@@ -118,13 +116,13 @@ Client::shouldBeClosed(void) const {
 void
 Client::addRequest(void) {
     _requests.push_back(Request(*this));
-    reqPoolReady(false);
+    requestPoolReady(false);
 }
 
 void
 Client::addResponse(void) {
     _responses.push_back(Response(getRequest()));
-    reqPoolReady(true);
+    requestPoolReady(true);
 }
 
 void
@@ -138,12 +136,12 @@ Client::removeTopResponse(void) {
 }
 
 bool
-Client::reqPoolReady(void) {
+Client::requestPoolReady(void) {
     return _reqPoolReady;
 }
 
 void
-Client::reqPoolReady(bool flag) {
+Client::requestPoolReady(bool flag) {
     _reqPoolReady = flag;
 }
 
@@ -158,13 +156,18 @@ Client::getTopResponse(void) {
 }
 
 bool
-Client::couldProcess(void) {
-    return _fd != -1 && _requests.size() && getTopRequest().isFormed();
+Client::validSocket(void) {
+    return _fd != -1;
 }
 
 bool
-Client::couldReply(void) {
-    return _fd != -1 && _responses.size() && getTopResponse().isFormed();
+Client::requestReady(void) {
+    return validSocket() && _requests.size() && getTopRequest().isFormed();
+}
+
+bool
+Client::replyReady(void) {
+    return validSocket() && _responses.size() && getTopResponse().isFormed();
 }
 
 
@@ -199,7 +202,7 @@ void
 Client::reply(void) {
 
     for (size_t total = getTopResponse().getResponseLength(); total;
-                total = getTopResponse().getResponseLength()) { // пока есть что отправлять
+                total = getTopResponse().getResponseLength()) {
         const char *rsp = getTopResponse().getResponse().c_str();
 
         size_t sent = 0;

@@ -117,19 +117,19 @@ Server::getServerBlocks(size_t port) {
 void
 Server::pollInHandler(size_t id) {
     
-    if (_clients[id].reqPoolReady()) {
+    if (_clients[id].requestPoolReady()) {
         _clients[id].addRequest();
     }
 
-    if (!_clients[id].getTopRequest().isFormed()) {
+    if (!_clients[id].requestReady()) {
         _clients[id].receive();
     }
 
-    if (_clients[id].getTopRequest().isFormed()) {
+    if (_clients[id].requestReady()) {
         _clients[id].addResponse();
     }
 
-    if (_clients[id].getFd() == -1) {
+    if (!_clients[id].validSocket()) {
         disconnectClient(id);
     }
 }
@@ -144,11 +144,11 @@ Server::pollHupHandler(size_t id) {
 
 void
 Server::pollOutHandler(size_t id) {
-    if (_clients[id].couldProcess()) {
+    if (_clients[id].requestReady()) {
         _clients[id].process();
     }
 
-    if (_clients[id].couldReply()) {
+    if (_clients[id].replyReady()) {
         _clients[id].reply();
         _clients[id].checkIfFailed();
         _clients[id].removeTopRequest();
