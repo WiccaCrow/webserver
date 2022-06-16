@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <arpa/inet.h>
 #include <vector>
+#include <sstream>
 
 // Returns true if the conversion of a string to a number is true
 // and initialize num argument
@@ -82,7 +83,7 @@ void
 toLowerCase(std::string &s) {
     size_t length = s.length();
     for (size_t i = 0; i < length; ++i) {
-        s[i] = tolower(s[i]);
+        s[i] = std::tolower(s[i]);
     }
 }
 
@@ -245,22 +246,31 @@ isValidIpLiteral(const std::string &s) {
     return isValidIpvFuture(s) || isValidIpv6(s);
 }
 
-bool
+size_t
 isSegmentNz(const std::string &s) {
 
     for (size_t i = 0; i < s.length(); ++i) {
         if (isPctEncoded(s.c_str() + i)) {
             i += 2;
-        } else if (!isUnreserved(s[i]) && !isSubDelims(s[i]) && s[i] != '@') {
-            return false;
+        } else if (!isUnreserved(s[i]) && !isSubDelims(s[i]) && !strchr("@:", s[i]) ) {
+            return i;
         }
     }
-    return true;
+    return s.length();
 }
 
-// bool
-// isSegmentNzNc() {
-// }
+size_t
+isSegmentNzNc(const std::string &s) {
+
+    for (size_t i = 0; i < s.length(); ++i) {
+        if (isPctEncoded(s.c_str() + i)) {
+            i += 2;
+        } else if (!isUnreserved(s[i]) && !isSubDelims(s[i]) && s[i] != '@') {
+            return i;
+        }
+    }
+    return s.length();
+}
 
 size_t
 isValidSegment(const std::string &s) {
@@ -280,8 +290,18 @@ isValidSegment(const std::string &s) {
 }
 
 
+// segment       = *pchar
+// segment-nz    = 1*pchar
+// segment-nz-nc = 1*( unreserved / pct-encoded / sub-delims / "@" )
+//                   non-zero-length segment without any colon ":"
+
+// pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
+
+
 bool
 isValidPathAbempty(const std::string &s) {
+
+    // *( "/" segment )
 
     for (size_t i = 0; i < s.size(); i++) {
         size_t pos = isValidSegment(s.substr(i));
@@ -293,6 +313,63 @@ isValidPathAbempty(const std::string &s) {
         }
     }
     return true;
+}
+
+bool
+isValidPathAbsolute(const std::string &s) {
+    // "/" [ segment-nz *( "/" segment ) ]
+
+    if (s[0] != '/') {
+        return false;
+    }
+    if (s.length() == 1) {
+        return true;
+    } else {
+        size_t pos = isSegmentNz(s.substr(1));
+        if (pos == 0) {
+            return false;
+        } else if (pos == s.length()) {
+            return true;
+        } else {
+            return isValidPathAbempty(s.substr(pos + 1));
+        }
+    }
+}
+
+
+bool
+isValidPathNoScheme(const std::string &s) {
+    // segment-nz-nc *( "/" segment )  
+
+    size_t pos = isSegmentNzNc(s);
+    if (pos == 0) {
+        return false;
+    } else if (pos == s.length()) {
+        return false;
+    } else {
+        return isValidPathAbempty(s.substr(pos));
+    }
+}
+
+bool
+isValidPathRootless(const std::string &s) {
+    // segment-nz *( "/" segment )
+
+    size_t pos = isSegmentNz(s);
+    if (pos == 0) {
+        return false;
+    } else if (pos == s.length()) {
+        return false;
+    } else {
+        return isValidPathAbempty(s.substr(pos));
+    }
+}
+
+bool
+isValidPathEmpty(const std::string &s) {
+    // 0<pchar>
+
+    return s.empty();
 }
 
 bool
@@ -317,7 +394,11 @@ isValidHost(const std::string &s) {
 
 bool
 isValidPath(const std::string &path) {
-    return isValidPathAbempty(path);
+    return isValidPathAbempty(path) || 
+           isValidPathAbsolute(path) || 
+           isValidPathRootless(path) ||
+           isValidPathNoScheme(path) || 
+           isValidPathEmpty(path);
 }
 
 bool
@@ -340,7 +421,7 @@ bool
 endsWith(const std::string &str, const std::string &end) {
     if (end.length() >= str.length())
         return false;
-    return str.find(end, str.length() - end.length()) != std::string::npos;
+    return (str.find(end, str.length() - end.length()) != std::string::npos);
 }
 
 bool
@@ -446,16 +527,6 @@ getDateTimeGMT() {
     time(&rawtime);
 
     return getTimeStringGMT(&rawtime);
-}
-
-std::string
-getEtagFile(const std::string &filename) {
-    struct stat state;
-
-    if (stat(filename.c_str(), &state) < 0) {
-        return "";
-    }
-    return SHA1(to_string(state.st_mtime));
 }
 
 std::string

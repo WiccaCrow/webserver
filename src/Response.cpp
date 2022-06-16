@@ -233,6 +233,16 @@ Response::isSetIndexFile(std::string &resourcePath) {
     return false;
 }
 
+std::string
+Response::getEtagFile(const std::string &filename) {
+    struct stat state;
+
+    if (stat(filename.c_str(), &state) < 0) {
+        return "";
+    }
+    return SHA1(to_string(state.st_mtime));
+}
+
 int
 Response::makeGetHeadResponseForFile(const std::string &resourcePath) {
     std::map<std::string, CGI>::iterator it;

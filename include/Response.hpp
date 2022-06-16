@@ -106,6 +106,7 @@ public:
     bool            isFormed(void) const;
     void            isFormed(bool formed);
 
+    std::string getEtagFile(const std::string &filename);
     // std::string        TransferEncodingChunked(std::string buffer, size_t bufSize);
 };
 

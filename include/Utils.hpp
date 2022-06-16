@@ -28,6 +28,8 @@ std::string to_string(unsigned long val);
 
 #endif
 
+bool isValidPath(const std::string &s);
+
 bool isValidIpv4(const std::string &s);
 bool isValidIpv6(const std::string &s);
 
@@ -48,5 +50,4 @@ bool stoll(char const *s);
 int  rmdirNonEmpty(std::string &resourceDel);
 
 std::string getDateTimeGMT();
-std::string getEtagFile(const std::string &filename);
 std::string getLastModifiedTimeGMT(const std::string &filename);
