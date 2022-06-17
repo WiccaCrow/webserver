@@ -18,6 +18,8 @@ struct URI {
     size_t _port;
 
     void parse(std::string uri);
+    std::string encode(const std::string & sSrc);
+    std::string decode(const std::string & sSrc);
     std::string getAuthority(void) const;
     void clear(void);
 

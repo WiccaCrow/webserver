@@ -8,6 +8,7 @@
 html, body {
     width: 100vw;
     height: 100vh;
+    overflow: hidden;
 }
 
 body::before, body::after {
@@ -50,8 +51,9 @@ li {
 }
 
 h1 {
-    font-size: 7rem;
+    font-size: 6rem;
     font-family: 'Roboto Flex', sans-serif;
+    overflow: hidden;
 }
 
 a {
@@ -64,9 +66,9 @@ a {
 a:after {
     content: '🔗';
     position: absolute;
-    bottom: 1.5rem;
-    right: -5.5rem;
-    font-size: 4.5rem;
+    bottom: 2rem;
+    right: -4.5rem;
+    font-size: 3.5rem;
 }
 
 a:visited {
