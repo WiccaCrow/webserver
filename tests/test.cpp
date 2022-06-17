@@ -1,16 +1,17 @@
-#include "string"
-#include "iostream"
+#include <string>
+#include <iostream>
 
-bool endsWith(const std::string &str, const std::string &end) {
-    if (end.length() >= str.length()) 
-        return false;
-    return str.find(end, str.length() - end.length()) != std::string::npos;
-    // return str.substr(str.length() - end.length()) == end;
-}
+#include "URI.hpp"
 
 int main(int ac, char **av) {
-    std::string s = ".php";
-    std::string ext = ".php";
-    std::cout << endsWith(s, ext) << std::endl;
+    if (ac < 2) {
+        std::cout << "Err: nb argv" << std::endl;
+        return 1;
+    }
+
+    std::cout << av[1] << std::endl;
+    const std::string &s = HTTP::URI::encode(av[1]);
+    std::cout << s << std::endl;
+    std::cout << HTTP::URI::decode(s) << std::endl;
     return 0;
 }

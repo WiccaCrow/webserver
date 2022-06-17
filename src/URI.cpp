@@ -72,9 +72,9 @@ void URI::parse(std::string uri) {
     }
 }
 
-std::string URI::encode(const std::string & sSrc) {
-    // Only alphanum is safe.
-    static const char SAFE[256] = {
+std::string URI::URLencode(const std::string &s) {
+
+    static const char shouldBeEncoded[256] = {
     /*      0 1 2 3  4 5 6 7  8 9 A B  C D E F */
     /* 0 */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
     /* 1 */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
@@ -97,34 +97,25 @@ std::string URI::encode(const std::string & sSrc) {
     /* F */ 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0
     };
 
-    const char DEC2HEX[16 + 1] = "0123456789ABCDEF";
-    const unsigned char * pSrc = (const unsigned char *)sSrc.c_str();
-    const int SRC_LEN = sSrc.length();
-    unsigned char * const pStart = new unsigned char[SRC_LEN * 3];
-    unsigned char * pEnd = pStart;
-    const unsigned char * const SRC_END = pSrc + SRC_LEN;
+    const char dec2hex[] = "0123456789ABCDEF";
 
-    for (; pSrc < SRC_END; ++pSrc) {
-        if (SAFE[*pSrc]) {
-            *pEnd++ = *pSrc;
+    std::string result;
+    result.reserve(s.length() * 3);
+    for (size_t i = 0; i < s.length(); i++) {
+        if (shouldBeEncoded[static_cast<unsigned char>(s[i])]) {
+            result += s[i];
         } else {
-            // escape this char
-            *pEnd++ = '%';
-            *pEnd++ = DEC2HEX[*pSrc >> 4];
-            *pEnd++ = DEC2HEX[*pSrc & 0x0F];
+            result += '%';
+            result += dec2hex[static_cast<unsigned char>(s[i]) >> 4];
+            result += dec2hex[static_cast<unsigned char>(s[i]) & 0x0F];
         }
     }
 
-    std::string sResult((char *)pStart, (char *)pEnd);
-    delete [] pStart;
-    return sResult;
+    return result;
 }
 
-// Note from RFC1630: "Sequences which start with a percent
-// sign but are not followed by two hexadecimal characters
-// (0-9, A-F) are reserved for future extension"
-std::string URI::decode(const std::string & sSrc) {
-    static const char HEX2DEC[256] = {
+std::string URI::URLdecode(const std::string &s) {
+    static const char hex2dec[256] = {
     /*       0  1  2  3   4  5  6  7   8  9  A  B   C  D  E  F */
     /* 0 */ -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     /* 1 */ -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
@@ -147,35 +138,31 @@ std::string URI::decode(const std::string & sSrc) {
     /* F */ -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1
     };
 
-    const unsigned char * pSrc = (const unsigned char *)sSrc.c_str();
-    const int SRC_LEN = sSrc.length();
-    const unsigned char * const SRC_END = pSrc + SRC_LEN;
-    // last decodable '%' 
-    const unsigned char * const SRC_LAST_DEC = SRC_END - 2;
+    if (s.length() < 3) {
+        return s;
+    }
 
-    char * const pStart = new char[SRC_LEN];
-    char * pEnd = pStart;
-
-    while (pSrc < SRC_LAST_DEC) {
-        if (*pSrc == '%') {
-            char dec1, dec2;
-            if (-1 != (dec1 = HEX2DEC[*(pSrc + 1)]) && -1 != (dec2 = HEX2DEC[*(pSrc + 2)])) {
-                *pEnd++ = (dec1 << 4) + dec2;
-                pSrc += 3;
+    std::string result;
+    // abcedf 6
+    result.reserve(s.length());
+    size_t i;
+    for (i = 0; i < s.length() - 2; i++) {
+        if (static_cast<unsigned char>(s[i]) == '%') {
+            char d1 = hex2dec[static_cast<unsigned char>(s[i + 1])];
+            char d2 = hex2dec[static_cast<unsigned char>(s[i + 2])];
+            if (d1 != -1 && d2 != -1) {
+                result += (d1 << 4) + d2;
+                i += 2;
                 continue;
             }
         }
-        *pEnd++ = *pSrc++;
+        result += s[i];
     }
-
-    // the last 2- chars
-    while (pSrc < SRC_END) {
-        *pEnd++ = *pSrc++;
+    if (i != s.length()) {
+        result += s[s.length() - 2];
+        result += s[s.length() - 1];
     }
-
-    std::string sResult(pStart, pEnd);
-    delete [] pStart;
-    return sResult;
+    return result;
 }
 
 }
