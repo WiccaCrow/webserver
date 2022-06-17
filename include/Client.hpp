@@ -29,6 +29,7 @@ private:
 
     bool        _shouldBeClosed;
     bool        _reqPoolReady;
+    bool        _replyDone;
 
 
     std::string _rem;
@@ -99,6 +100,8 @@ public:
     bool validSocket(void);
     bool requestReady(void);
     bool replyReady(void);
+    bool replyDone(void);
+    void replyDone(bool);
 };
 
 }

@@ -144,15 +144,19 @@ Server::pollHupHandler(size_t id) {
 
 void
 Server::pollOutHandler(size_t id) {
-    if (_clients[id].requestReady()) {
+    if (_clients[id].requestReady() && !_clients[id].replyReady()) {
         _clients[id].process();
     }
 
-    if (_clients[id].replyReady()) {
+    if (_clients[id].replyReady() && !_clients[id].replyDone()) {
         _clients[id].reply();
+    }
+    
+    if (_clients[id].replyDone()) {
         _clients[id].checkIfFailed();
         _clients[id].removeTopRequest();
         _clients[id].removeTopResponse();
+        _clients[id].replyDone(false);
     }
 
     if (!_clients[id].validSocket()) {

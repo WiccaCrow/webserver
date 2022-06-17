@@ -8,7 +8,8 @@ Client::Client()
     , _clientPort(0)
     , _serverPort(0)
     , _shouldBeClosed(false)
-    , _reqPoolReady(true) {
+    , _reqPoolReady(true)
+    , _replyDone(false) {
 }
 
 Client::~Client() {
@@ -30,6 +31,7 @@ Client::operator=(const Client &other) {
         _clientPort     = other._clientPort;
         _serverPort     = other._serverPort;
         _shouldBeClosed = other._shouldBeClosed;
+        _replyDone = other._replyDone;
     }
     return *this;
 }
@@ -170,6 +172,16 @@ Client::replyReady(void) {
     return validSocket() && _responses.size() && getTopResponse().isFormed();
 }
 
+bool
+Client::replyDone(void) {
+    return _replyDone;
+}
+
+void
+Client::replyDone(bool flag) {
+    _replyDone = flag;
+}
+
 
 void
 Client::checkIfFailed(void) {
@@ -215,6 +227,7 @@ Client::reply(void) {
                 sent += n;
             }
             else if (n == 0) {
+                Log.debug() << "Client::send 0 returned (disc)" << std::endl;
                 setFd(-1);
                 break ;
             }
@@ -231,6 +244,8 @@ Client::reply(void) {
     }
 
     Log.debug() << "Client::Total sent: " << all << std::endl;
+    
+    _replyDone = true;
 
     if (shouldBeClosed()) {
         setFd(-1);
