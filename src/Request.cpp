@@ -379,6 +379,7 @@ Request::resolvePath(void) {
             _resolvedPath += _uri._path.substr(_location->getPathRef().length());
         }
     }
+    _resolvedPath = URI::URLdecode(_resolvedPath);
     Log.debug() << "Request::resolvePath: " << _resolvedPath << std::endl;
 }
 
