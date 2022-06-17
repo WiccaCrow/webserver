@@ -36,7 +36,7 @@ HTTP::Response::setErrorResponse(HTTP::StatusCode status) {
 
     response = errorResponses[status];
     if (response.empty()) {
-        Log.error("Unknown response code: " + to_string(static_cast<int>(status)));
+        Log.error() << "Unknown response code: " << static_cast<int>(status) << std::endl;
         setStatus(INTERNAL_SERVER_ERROR);
         setBody(errorResponses[66]);
     } else {

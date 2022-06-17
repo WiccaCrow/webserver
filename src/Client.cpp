@@ -193,7 +193,7 @@ Client::checkIfFailed(void) {
 void
 Client::process(void) {
 
-    Log.debug("Client::process [" + to_string(_fd) + "]");
+    Log.debug() << "Client::process [" << _fd << "]" << std::endl;
 
     getTopResponse().handle();
 }
@@ -219,7 +219,7 @@ Client::reply(void) {
                 break ;
             }
             else {
-                Log.debug("Client::send -1 returned");
+                Log.debug() << "Client::send -1 returned" << std::endl;
                 return ;
             }
         } while (sent < total);
@@ -227,12 +227,11 @@ Client::reply(void) {
         all += sent;
         Log.debug() << "Client::reply [" << _fd << "] (" << sent << "/" << total << " bytes sent)" << std::endl;
 
-        // Log.debug("Client::reply [%d] (%d/%d bytes sent)\n", fd, sent, total);
-
         getTopResponse().makeChunk();
     }
 
-    Log.debug("All sent: " + to_string(all));
+    Log.debug() << "Client::Total sent: " << all << std::endl;
+
     if (shouldBeClosed()) {
         setFd(-1);
     }
@@ -293,7 +292,7 @@ Client::receive(void) {
         return;
     }
 
-    Log.debug("Client::receive [" + to_string(_fd) + "]");
+    Log.debug() << "Client::receive [" << _fd << "]" << std::endl;
 
     while (!getRequest().isFormed()) {
         std::string line;
@@ -337,7 +336,7 @@ Client::matchServerBlock(const std::string &host) const {
             }
         }
     }
-    Log.debug("Client::matchServerBlock -> " + found->getBlockName() + " for " + host + ":" + to_string(_serverPort));
+    Log.debug() << "Client:: servBlock " << found->getBlockName() << " for " << host << ":" << _serverPort << std::endl;
     return &(*found);
 }
 

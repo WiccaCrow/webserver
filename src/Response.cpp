@@ -83,7 +83,7 @@ Response::handle(void) {
 
 void
 Response::unauthorized(void) {
-    Log.debug("Response:: Unauthorized");
+    Log.debug() << "Response:: Unauthorized" << std::endl;
     setStatus(UNAUTHORIZED);
     addHeader(DATE, getDateTimeGMT());
     addHeader(WWW_AUTHENTICATE);

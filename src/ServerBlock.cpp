@@ -117,10 +117,10 @@ ServerBlock::matchLocation(const std::string &path) {
         }
     }
     if (match == end) {
-        Log.debug("ServerBlock::matchLocation: / for " + path);
+        Log.debug() << "ServerBlock:: location: / for " << path << std::endl;
         return &_locationBase;
     }
-    Log.debug("ServerBlock::matchLocation: " + match->first + " for " + path);
+    Log.debug() << "ServerBlock:: location: " << match->first << " for " << path << std::endl;
     return &(match->second);
 }
 

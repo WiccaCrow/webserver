@@ -20,7 +20,8 @@ enum Levels {
 };
 
 class Logger : private std::streambuf, public std::ostream {
-    private:
+    
+private:
     std::string _logfile;
     bool        _logToFile;
     uint8_t     _flags;
@@ -31,25 +32,21 @@ class Logger : private std::streambuf, public std::ostream {
 
     int overflow(int c);
 
-    public:
-    Logger();
-    ~Logger();
+public:
+    Logger(void);
+    ~Logger(void);
 
-    void        setFlags(uint8_t flags);
+    void       setFlags(uint8_t flags);
     Logger     &info(void);
     Logger     &debug(void);
     Logger     &error(void);
     Logger     &syserr(void);
+    Logger     &print(uint8_t);
     void        enableLogFile(void);
-    std::string makeTimeString(const char *f = "%d/%m/%Y %H:%M:%S");
+    std::string timeString(const char *f = "%d/%m/%Y %H:%M:%S");
 
-    Logger &print(uint8_t);
-
-    Logger &operator<<(std::ostream& (*func)(std::ostream &));
-    
     template<typename T>
-    Logger&
-    operator<<(const T &val) {
+    Logger& operator<<(const T &val) {
         if (_flags & _flag) {
             if (_logToFile && _out.good()) {
                 _out << val;
@@ -64,6 +61,7 @@ class Logger : private std::streambuf, public std::ostream {
         return *this;
     }
 
+    Logger &operator<<(std::ostream& (*func)(std::ostream &));
 };
 
 extern Logger Log;

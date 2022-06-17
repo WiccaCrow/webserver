@@ -8,9 +8,9 @@ RequestHeader::handle(Request &req) {
     std::map<uint32_t, RequestHeader::Handler>::const_iterator it = validReqHeaders.find(hash);
 
     if (it == validReqHeaders.end()) {
-        Log.debug("RequestHeader:: Unknown header: " + key);
-        Log.debug("RequestHeader:: Value: " + value);
-        Log.debug("RequestHeader:: Hash: " + to_string(hash));
+        Log.debug() << "RequestHeader:: Unknown header: " << key << std::endl;
+        Log.debug() << "RequestHeader:: Value: " << value << std::endl;
+        Log.debug() << "RequestHeader:: Hash: " << to_string(hash) << std::endl;
         return CONTINUE;
     }
     method = it->second;
@@ -75,33 +75,33 @@ RequestHeader::Authorization(Request &req) {
     (void)req;
     const Auth &auth = req.getLocation()->getAuthRef();
     if (auth.isSet()) {
-        Log.debug("Authorization::" + value);
+        Log.debug() << "Authorization::" << value << std::endl;
         std::vector<std::string> splitted = split(value, " ");
 
         if (splitted[0] != "Basic") {
-            Log.debug("Authorization::Only Basic supported for now " + splitted[0]);
+            Log.debug() << "Authorization::Only Basic supported for now " <<  splitted[0] << std::endl;
             return NOT_IMPLEMENTED;
         }
 
         uint32_t receivedHash = crc(splitted[1].c_str(), splitted[1].length());
         if (!splitted[1].empty() && receivedHash == req.getStoredHash()) {
-            Log.debug("Authorization::Identical hash detected");
+            Log.debug() << "Authorization::Identical hash detected" << std::endl;
             return CONTINUE;
         }
 
         std::string decoded = Base64::decode(splitted[1]);
-        Log.debug("Authorization::Decoded Base64:" + decoded);
+        Log.debug() << "Authorization::Decoded Base64:" << decoded << std::endl;
         if (decoded.empty()) {
-            Log.debug("Authorization::Invalid Base64 string");
+            Log.debug() << "Authorization::Invalid Base64 string" << std::endl;
             return UNAUTHORIZED;
         }
 
         req.setAuthFlag(auth.isAuthorized(decoded));
         if (req.isAuthorized()) {
             req.setStoredHash(receivedHash);
-            Log.debug("Authorization::Succeed");
+            Log.debug() << "Authorization::Succeed" << std::endl;
         } else {
-            Log.debug("Authorization::Failed");
+            Log.debug() << "Authorization::Failed" << std::endl;
         }
     }
     return CONTINUE;
@@ -128,7 +128,7 @@ RequestHeader::Connection(Request &req) {
 StatusCode
 RequestHeader::ContentLength(Request &req) {
     if (req.isHeaderExist(TRANSFER_ENCODING)) {
-        Log.debug("ContentLength::ContentLength: TransferEncoding header exist");
+        Log.debug() << "ContentLength::ContentLength: TransferEncoding header exist" << std::endl;
         return BAD_REQUEST;
     }
 
@@ -197,12 +197,12 @@ RequestHeader::Host(Request &req) {
     host.parse(value);
 
     if (!isValidHost(host._host)) {
-        Log.error("Host: Invalid Host " + host._host);
+        Log.error() << "Host: Invalid Host " << host._host << std::endl;
         return BAD_REQUEST;
     }
     
     if (req.getClient()->getServerPort() != host._port) {
-        Log.error("Host: Port mismatch " + host._port_s);
+        Log.error() << "Host: Port mismatch " << host._port_s << std::endl;
         return BAD_REQUEST;
     }
     
@@ -220,10 +220,10 @@ RequestHeader::IfMatch(Request &req) {
 
     if (tags[0] == "*") {
         if (tags.size() == 1) {
-            Log.debug("IfMatch:: Any allowed ");
+            Log.debug() << "IfMatch:: Any allowed " << std::endl;
             return CONTINUE;
         } else {
-            Log.debug("IfMatch:: Invalid format: " + value);
+            Log.debug() << "IfMatch:: Invalid format: " << value << std::endl;
             // Maybe not bad request
             return BAD_REQUEST;
         }
@@ -232,14 +232,14 @@ RequestHeader::IfMatch(Request &req) {
     std::map<std::string, std::string>::const_iterator itStored;
     itStored = g_etags.find(req.getResolvedPath());
     if (itStored == g_etags.end()) {
-        Log.debug("IfMatch:: No etag value found for " + req.getResolvedPath());
+        Log.debug() << "IfMatch:: No etag value found for " << req.getResolvedPath() << std::endl;
         return PRECONDITION_FAILED;
     }
 
     std::vector<std::string>::iterator itMatched;
     itMatched = std::find(tags.begin(), tags.end(), itStored->second);
     if (itMatched == tags.end()) {
-        Log.debug("IfMatch:: None of etag values matched " + *itMatched);
+        Log.debug() << "IfMatch:: None of etag values matched " << *itMatched << std::endl;
         return PRECONDITION_FAILED;
     }
     return CONTINUE;
@@ -254,7 +254,7 @@ RequestHeader::IfModifiedSince(Request &req) {
 
     struct tm tm;
     if (!strptime(value.c_str(), "%a, %-e %b %Y %H:%M:%S GMT", &tm)) {
-        Log.debug("IfModifiedSince:: Cannot read datetime " + value);
+        Log.debug() << "IfModifiedSince:: Cannot read datetime " << value << std::endl;
         return BAD_REQUEST;
     }
 
@@ -262,7 +262,7 @@ RequestHeader::IfModifiedSince(Request &req) {
     if (req.getResolvedPath() != "") {
 
         // if (stat(req.getResolvedPath().c_str(), &state) < 0) {
-        // Log.debug("IfModifiedSince:: ");
+        // Log.debug() << "IfModifiedSince:: " << std::endl;
         return CONTINUE;
         // }
         // if equal
@@ -284,10 +284,10 @@ RequestHeader::IfNoneMatch(Request &req) {
     if (tags[0] == "*") {
         // Another handler
         if (tags.size() == 1) {
-            Log.debug("IfNoneMatch:: Any allowed ");
+            Log.debug() << "IfNoneMatch:: Any allowed " << std::endl;
             return CONTINUE;
         } else {
-            Log.debug("IfNoneMatch:: Invalid format: " + value);
+            Log.debug() << "IfNoneMatch:: Invalid format: " << value << std::endl;
             // Maybe not bad request
             return BAD_REQUEST;
         }
@@ -296,14 +296,14 @@ RequestHeader::IfNoneMatch(Request &req) {
     std::map<std::string, std::string>::const_iterator itStored;
     itStored = g_etags.find(req.getResolvedPath());
     if (itStored == g_etags.end()) {
-        Log.debug("IfNoneMatch:: [OK] No etag value found for " + req.getResolvedPath());
+        Log.debug() << "IfNoneMatch:: [OK] No etag value found for " << req.getResolvedPath() << std::endl;
         return CONTINUE;
     }
 
     std::vector<std::string>::iterator itMatched;
     itMatched = std::find(tags.begin(), tags.end(), itStored->second);
     if (itMatched == tags.end()) {
-        Log.debug("IfNoneMatch:: None of etag values matched " + *itMatched);
+        Log.debug() << "IfNoneMatch:: None of etag values matched " << *itMatched << std::endl;
         return CONTINUE;
     }
 
@@ -358,7 +358,7 @@ RequestHeader::ProxyAuthorization(Request &req) {
 StatusCode
 RequestHeader::Range(Request &req) {
     (void)req;
-    Log.debug("RequestHeader:: Range header detected");
+    Log.debug() << "RequestHeader:: Range header detected" << std::endl;
     return CONTINUE;
 }
 
@@ -377,14 +377,14 @@ RequestHeader::TransferEncoding(Request &req) {
     acceptedValues.insert("chunked");
 
     if (req.isHeaderExist(CONTENT_LENGTH)) {
-        Log.debug("ContentLength::TransferEncoding: ContentLength header exist");
+        Log.debug() << "ContentLength::TransferEncoding: ContentLength header exist" << std::endl;
         return BAD_REQUEST;
     }
 
     std::vector<std::string> currentValues = split(this->value, " ,");
     for (size_t i = 0; i < currentValues.size(); ++i) {
         if (acceptedValues.find(currentValues[i]) == acceptedValues.end()) {
-            Log.error("Transfer coding parameter \"" + currentValues[i] + "\" is not supported");
+            Log.error() << "Transfer coding parameter \"" << currentValues[i] << "\" is not supported" << std::endl;
             return NOT_IMPLEMENTED;
         }
     }

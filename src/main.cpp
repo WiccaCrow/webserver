@@ -9,7 +9,7 @@ main(int ac, char **av) {
     Log.enableLogFile();
 
     if (ac > 2) {
-        Log.error("Usage: " + std::string(av[0]) + " [config.json]");
+        Log.error() << "Usage: " << std::string(av[0]) << " [config.json]" << std::endl;
         return 1;
     }
 
@@ -17,7 +17,7 @@ main(int ac, char **av) {
     if (!g_server) {
         return 1;
     }
-    Log.info("Config is loaded");
+    Log.info() << "Config is loaded" << std::endl;
 
     g_server->start();
 

@@ -9,9 +9,9 @@ ResponseHeader::handle(Response &res) {
     it = validResHeaders.find(hash);
 
     if (it == validResHeaders.end()) {
-        Log.debug("RequestHeader:: Unknown header: " + headerNames[hash]);
-        Log.debug("RequestHeader:: Value: " + value);
-        Log.debug("RequestHeader:: Hash: " + to_string(hash));
+        Log.debug() << "RequestHeader:: Unknown header: " << headerNames[hash] << std::endl;
+        Log.debug() << "RequestHeader:: Value: " << value << std::endl;
+        Log.debug() << "RequestHeader:: Hash: " << hash << std::endl;
         return ;
     }
     method = it->second;

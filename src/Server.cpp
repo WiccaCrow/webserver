@@ -49,19 +49,19 @@ Server::addListenSocket(const std::string &addr, size_t port) {
 
     int fd;
     if ((fd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
-        Log.syserr("Server::socket ->" + addr + ":" + to_string(port));
+        Log.syserr() << "Server::socket ->" << addr << ":" << port << std::endl;
         exit(1);
     }
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) < 0) {
-        Log.syserr("Server::setsockopt ->" + addr + ":" + to_string(port));
+        Log.syserr() << "Server::setsockopt ->" << addr << ":" << port << std::endl;
         exit(1);
     }
     if (bind(fd, (struct sockaddr *)&data, sizeof(data)) < 0) {
-        Log.syserr("Server::bind ->" + addr + ":" + to_string(port));
+        Log.syserr() << "Server::bind ->" << addr << ":" << port << std::endl;
         exit(1);
     }
     if (listen(fd, SOMAXCONN) < 0) {
-        Log.syserr("Server::listen ->" + addr + ":" + to_string(port));
+        Log.syserr() << "Server::listen ->" << addr << ":" << port << std::endl;
         exit(1);
     }
     
@@ -91,7 +91,7 @@ Server::fillServBlocksFds(void) {
             int fd = addListenSocket(*addr, port);
             _pollfds.push_back((struct pollfd) {fd, POLLIN, 0});
             _socketsCount++;
-            Log.info("Server::Listen [" + to_string(fd) + "] -> " + *addr + ":" + to_string(port));
+            Log.info() << "Server::Listen [" << fd << "] -> " << *addr << ":" << port << std::endl;
         }
     }
 }
@@ -136,7 +136,7 @@ Server::pollInHandler(size_t id) {
 
 void
 Server::pollHupHandler(size_t id) {
-    Log.syserr("Server::POLLHUP occured on the " + to_string(_pollfds[id].fd) + "socket");
+    Log.syserr() << "Server::POLLHUP occured on the " << _pollfds[id].fd << "socket" << std::endl;
     if (id >= _socketsCount) {
         disconnectClient(id);
     }
@@ -162,7 +162,7 @@ Server::pollOutHandler(size_t id) {
 
 void
 Server::pollErrHandler(size_t id) {
-    Log.syserr("Server::POLLERR occured on the " + to_string(_pollfds[id].fd) + "socket");
+    Log.syserr() << "Server::POLLERR occured on the " << _pollfds[id].fd << "socket" << std::endl;
     exit(1);
 }
 
@@ -192,14 +192,14 @@ Server::start(void) {
 
 void
 Server::handlePollError() {
-    Log.syserr("Server::poll");
+    Log.syserr() << "Server::poll" << std::endl;
     switch (errno) {
         case EINVAL: {
             struct rlimit rlim;
             getrlimit(RLIMIT_NOFILE, &rlim);
-            Log.debug("ndfs: " + to_string(_pollfds.size()));
-            Log.debug("limit(soft): " + to_string(rlim.rlim_cur));
-            Log.debug("limit(hard): " + to_string(rlim.rlim_max));
+            Log.debug() << "ndfs: " << _pollfds.size() << std::endl;
+            Log.debug() << "limit(soft): " << rlim.rlim_cur << std::endl;
+            Log.debug() << "limit(hard): " << rlim.rlim_max << std::endl;
             break;
         }
         default:
@@ -231,7 +231,7 @@ Server::connectClient(size_t servid) {
     struct sockaddr_in servData;
     socklen_t servLen = sizeof(servData);
     if (getsockname(_pollfds[servid].fd, (struct sockaddr *)&servData, &servLen) < 0) {
-        Log.syserr("Server::getsockname failed for fd = " + to_string(_pollfds[servid].fd));
+        Log.syserr() << "Server::getsockname failed for fd = " << _pollfds[servid].fd << std::endl;
         return ;
     }
 
@@ -240,7 +240,7 @@ Server::connectClient(size_t servid) {
     int fd = accept(_pollfds[servid].fd, (struct sockaddr *)&clientData, &clientLen);
 
     if (fd < 0) {
-        Log.syserr("Server::accept");
+        Log.syserr() << "Server::accept" << std::endl;
         return;
     }
 
@@ -265,7 +265,7 @@ Server::connectClient(size_t servid) {
     _clients[id].setServerPort(ntohs(servData.sin_port));
     _clients[id].setServerIpAddr(inet_ntoa(servData.sin_addr));
 
-    Log.debug("Server::connect [" + to_string(fd) + "] -> " + _clients[id].getHostname());
+    Log.debug() << "Server::connect [" << fd << "] -> " << _clients[id].getHostname() << std::endl;
 }
 
 void
@@ -278,5 +278,5 @@ Server::disconnectClient(size_t id) {
     _pollfds[id].events  = 0;
     _pollfds[id].revents = 0;
     
-    Log.debug("Server::disconnect [" + to_string(fd) + "]");
+    Log.debug() << "Server::disconnect [" << fd << "]" << std::endl;
 }
