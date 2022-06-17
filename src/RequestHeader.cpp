@@ -358,6 +358,7 @@ RequestHeader::ProxyAuthorization(Request &req) {
 StatusCode
 RequestHeader::Range(Request &req) {
     (void)req;
+    Log.debug("RequestHeader:: Range header detected");
     return CONTINUE;
 }
 

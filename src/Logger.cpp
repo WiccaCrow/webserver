@@ -2,103 +2,99 @@
 
 Logger Log;
 
-const int LOG_DEBUG = 1;
-const int LOG_INFO  = 2;
-const int LOG_ERROR = 4;
-const int LOG_SYSERR = 8;
-
-Logger::Logger()
-    : _logfile("")
+Logger::Logger() : std::ostream(this)
+    , _logfile("")
     , _logToFile(false)
     , _flags(0) {
+}
+
+Logger::~Logger() { }
+
+int
+Logger::overflow(int c) {
+    std::cout.put(c);
+    _out.put(c);
+    return 0;
+}
+
+Logger &
+Logger::operator<<(std::ostream& (*func)(std::ostream &)) {
+    if (_flags & _flag) {
+        if (_logToFile && _out.good()) {
+            func(_out);
+        }
+
+        if ((_flag & LOG_ERROR) || (_flag & LOG_SYSERR)) {
+            func(std::cerr);
+        } else {
+            func(std::cout);
+        }
+    }
+    return *this;
 }
 
 void
 Logger::enableLogFile(void) {
 
+    const std::string logDir = LOGS_DIR"/";
+    const std::string logFile = makeTimeString("%d-%m-%Y_%H-%M-%S") + ".log";
+
     _logToFile = true;
-    _logfile   = std::string(LOGS_DIR) + "/" + Log.makeTimeString('-','_','-') + ".log";
+    _logfile   = logDir + logFile;
 
     _out.open(_logfile.c_str(), std::ios_base::out | std::ios_base::trunc);
 
     if (!_out.good()) {
         std::cerr << "Logger: cannot open/create file " << _logfile << std::endl;
     } else {
-        std::cout << "Logger: log into " << _logfile.c_str() << std::endl;
+        std::cout << "Logger: logging into " << _logfile.c_str() << std::endl;
     }
 }
 
-Logger::~Logger() { }
 
 void
 Logger::setFlags(uint8_t flags) {
     _flags = flags;
 }
 
-static void
-addNumber(std::stringstream &ss, int num) {
-    if (num < 10) {
-        ss << std::string("0");
-    }
-    ss << num;
-}
-
 std::string 
-Logger::makeTimeString(char dateSep, char sep, char timeSep) {
+Logger::makeTimeString(const char *format) {
     time_t cur = time(NULL);
     tm *ct = localtime(&cur);
 
-    std::stringstream ss;
-    addNumber(ss, ct->tm_mday);
-    ss << dateSep;
-    addNumber(ss, ct->tm_mon + 1);
-    ss << dateSep;
-    addNumber(ss, ct->tm_year + 1900);
-    ss << sep;
-    addNumber(ss, ct->tm_hour);
-    ss << timeSep;
-    addNumber(ss, ct->tm_min);
-    ss << timeSep;
-    addNumber(ss, ct->tm_sec);
-    return ss.str();
+    char buff[25];
+    strftime(buff, sizeof(buff), format, ct);
+   
+    return buff;
 }
 
-void
-Logger::print(uint8_t flag, const std::string &msg) {
-    static const char *_titles[9] = { "", "DEBUG", "INFO", "", "ERROR", "", "", "", "SYSERR" };
+Logger &
+Logger::print(uint8_t lvl) {
+    _flag = lvl;
+    static const char *_titles[9] = { "", "  INFO", " DEBUG", "", " ERROR", "", "", "", "SYSERR" };
 
-    if (_flags & flag) {
-        if (_logToFile && _out.good()) {
-            _out << makeTimeString() << " " << _titles[flag] << ": " << msg << std::endl;
-        }
+    std::string statusLine = makeTimeString() + " " + _titles[_flag] + ": ";
 
-        if (_flags & LOG_ERROR) {
-            std::cerr << makeTimeString() << " " << _titles[flag] << ": " << msg << std::endl;
-        } else {
-            std::cout << makeTimeString() << " " << _titles[flag] << ": " << msg << std::endl;
-        }
-    }
+    return this->operator<<(statusLine);
 }
 
-void
-Logger::debug(const std::string &s) {
-    print(LOG_DEBUG, s);
+Logger &
+Logger::debug(void) {
+    return print(LOG_DEBUG);
 }
 
-void
-Logger::error(const std::string &s) {
-    print(LOG_ERROR, s);
+Logger &
+Logger::error(void) {
+    return print(LOG_ERROR);
 }
 
-void
-Logger::syserr(const std::string &s) {
-    std::ostringstream errnoinfo;
-    errnoinfo << "errno: " << errno << ": " << strerror(errno);
-    print(LOG_SYSERR, s);
-    print(LOG_SYSERR, errnoinfo.str());
+Logger &
+Logger::syserr(void) {
+    print(LOG_SYSERR) << "errno [" << errno << "]: " << strerror(errno) << std::endl;
+    return print(LOG_SYSERR);
 }
 
-void
-Logger::info(const std::string &s) {
-    print(LOG_INFO, s);
+Logger &
+Logger::info(void) {
+    return print(LOG_INFO);
 }

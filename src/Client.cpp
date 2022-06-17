@@ -193,7 +193,7 @@ Client::checkIfFailed(void) {
 void
 Client::process(void) {
 
-    Log.debug("Client::process -> fd: " + to_string(_fd));
+    Log.debug("Client::process [" + to_string(_fd) + "]");
 
     getTopResponse().handle();
 }
@@ -201,6 +201,9 @@ Client::process(void) {
 void
 Client::reply(void) {
 
+    signal(SIGPIPE, SIG_IGN);
+
+    size_t all = 0;
     for (size_t total = getTopResponse().getResponseLength(); total;
                 total = getTopResponse().getResponseLength()) {
         const char *rsp = getTopResponse().getResponse().c_str();
@@ -215,14 +218,21 @@ Client::reply(void) {
                 setFd(-1);
                 break ;
             }
-
+            else {
+                Log.debug("Client::send -1 returned");
+                return ;
+            }
         } while (sent < total);
 
-        Log.debug("Client::reply -> fd: " + to_string(_fd) + " (" + to_string(sent) + "/" + to_string(total) + " bytes sent)");
+        all += sent;
+        Log.debug() << "Client::reply [" << _fd << "] (" << sent << "/" << total << " bytes sent)" << std::endl;
+
+        // Log.debug("Client::reply [%d] (%d/%d bytes sent)\n", fd, sent, total);
 
         getTopResponse().makeChunk();
     }
 
+    Log.debug("All sent: " + to_string(all));
     if (shouldBeClosed()) {
         setFd(-1);
     }

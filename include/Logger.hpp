@@ -11,32 +11,59 @@
 #ifndef LOGS_DIR
 #define LOGS_DIR "logs"
 #endif
-class Logger {
+
+enum Levels {
+    LOG_INFO   = 0b00000001,
+    LOG_DEBUG  = 0b00000010,
+    LOG_ERROR  = 0b00000100,
+    LOG_SYSERR = 0b00001000
+};
+
+class Logger : private std::streambuf, public std::ostream {
     private:
     std::string _logfile;
     bool        _logToFile;
     uint8_t     _flags;
+    uint8_t     _flag;
 
     // For file logging
     std::ofstream _out;
+
+    int overflow(int c);
 
     public:
     Logger();
     ~Logger();
 
     void        setFlags(uint8_t flags);
-    void        info(const std::string &s);
-    void        debug(const std::string &s);
-    void        error(const std::string &s);
-    void        syserr(const std::string &s);
+    Logger     &info(void);
+    Logger     &debug(void);
+    Logger     &error(void);
+    Logger     &syserr(void);
     void        enableLogFile(void);
-    void        print(uint8_t flag, const std::string &msg);
-    std::string makeTimeString(char dateSep = '/', char sep = ' ', char timeSep = ':');
-};
+    std::string makeTimeString(const char *f = "%d/%m/%Y %H:%M:%S");
 
-extern const int LOG_DEBUG;
-extern const int LOG_INFO;
-extern const int LOG_ERROR;
-extern const int LOG_SYSERR;
+    Logger &print(uint8_t);
+
+    Logger &operator<<(std::ostream& (*func)(std::ostream &));
+    
+    template<typename T>
+    Logger&
+    operator<<(const T &val) {
+        if (_flags & _flag) {
+            if (_logToFile && _out.good()) {
+                _out << val;
+            }
+
+            if ((_flag & LOG_ERROR) || (_flag & LOG_SYSERR)) {
+                std::cerr << val;
+            } else {
+                std::cout << val;
+            }
+        }
+        return *this;
+    }
+
+};
 
 extern Logger Log;

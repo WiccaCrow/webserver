@@ -27,7 +27,7 @@ Auth::loadData(void) {
     in.open(_file.c_str());
 
     if (!in.is_open() || !in.good()) {
-        Log.error("Auth::Cannot open file " + _file);
+        Log.error() << "Auth::Cannot open file " << _file << std::endl;
         return false;
     }
 
