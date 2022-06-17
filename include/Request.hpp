@@ -60,7 +60,7 @@ private:
 
 public:
     Request();
-    Request(Client &);
+    Request(Client *);
     ~Request();
 
     Request(const Request &other);

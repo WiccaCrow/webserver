@@ -17,10 +17,10 @@ Request::Request()
     , _isFormed(false) {
 }
 
-Request::Request(Client &client)
+Request::Request(Client *client)
     : _servBlock(NULL)
     , _location(NULL)
-    , _client(&client)
+    , _client(client)
     , _isChuckSize(false)
     , _chunkSize(0)
     , _bodySize(0)

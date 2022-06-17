@@ -9,7 +9,7 @@
 #include <string>
 
 #ifndef LOGS_DIR
-#define LOGS_DIR "logs"
+    # define LOGS_DIR "logs"
 #endif
 
 enum Levels {

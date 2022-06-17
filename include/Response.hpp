@@ -45,7 +45,7 @@ public:
     std::list<ResponseHeader> headers;
 
     Response(void);
-    Response(Request &req);
+    Response(Request *req);
     ~Response(void);
 
     Response(const Response &other);

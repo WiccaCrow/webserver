@@ -11,13 +11,13 @@ Response::Response()
     , _bodyLength(0)
     , _isFormed(false) {}
 
-Response::Response(Request &req) 
-    : _req(&req)
+Response::Response(Request *req) 
+    : _req(req)
     , _client(NULL)
     , _cgi(NULL)
     , _bodyLength(0)
     , _isFormed(false)
-    , _status(req.getStatus())
+    , _status(req->getStatus())
 {
     methods.insert(std::make_pair("GET", &Response::GET));
     methods.insert(std::make_pair("PUT", &Response::PUT));

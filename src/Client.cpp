@@ -13,6 +13,17 @@ Client::Client()
 }
 
 Client::~Client() {
+    for (size_t i = 0; i < _requests.size(); i++) {
+        if (_requests[i] != NULL) {
+            delete _requests[i];
+        }
+    }
+    
+    for (size_t i = 0; i < _responses.size(); i++) {
+        if (_responses[i] != NULL) {
+            delete _responses[i];
+        }
+    }
 }
 
 Client::Client(const Client &client) {
@@ -95,12 +106,12 @@ Client::getHostname() const {
     return (_clientPort != 0 ? _clientIpAddr + ":" + to_string(_clientPort) : _clientIpAddr);
 }
 
-Request &
+Request *
 Client::getRequest() {
     return _requests.back();
 }
 
-Response &
+Response *
 Client::getResponse() {
     return _responses.back();
 }
@@ -117,23 +128,35 @@ Client::shouldBeClosed(void) const {
 
 void
 Client::addRequest(void) {
-    _requests.push_back(Request(*this));
+    Request *req = new Request(this);
+    if (req == NULL) {
+        Log.syserr() << "Cannot allocate request" << std::endl;
+        setFd(-1);
+    }
+    _requests.push_back(req);
     requestPoolReady(false);
 }
 
 void
 Client::addResponse(void) {
-    _responses.push_back(Response(getRequest()));
+    Response *res = new Response(getRequest());
+    if (res == NULL) {
+        Log.syserr() << "Cannot allocate response" << std::endl;
+        setFd(-1);
+    }
+    _responses.push_back(res);
     requestPoolReady(true);
 }
 
 void
 Client::removeTopRequest(void) {
+    delete _requests.front();
     _requests.pop_front();
 }
 
 void
 Client::removeTopResponse(void) {
+    delete _responses.front();
     _responses.pop_front();
 }
 
@@ -147,12 +170,12 @@ Client::requestPoolReady(bool flag) {
     _reqPoolReady = flag;
 }
 
-Request &
+Request *
 Client::getTopRequest(void) {
     return _requests.front();
 }
 
-Response &
+Response *
 Client::getTopResponse(void) {
     return _responses.front();
 }
@@ -164,12 +187,12 @@ Client::validSocket(void) {
 
 bool
 Client::requestReady(void) {
-    return validSocket() && _requests.size() && getTopRequest().isFormed();
+    return validSocket() && _requests.size() && getTopRequest()->isFormed();
 }
 
 bool
 Client::replyReady(void) {
-    return validSocket() && _responses.size() && getTopResponse().isFormed();
+    return validSocket() && _responses.size() && getTopResponse()->isFormed();
 }
 
 bool
@@ -195,7 +218,7 @@ Client::checkIfFailed(void) {
     };
 
     for (size_t i = 0; i < size; i++) {
-        if (getTopResponse().getStatus() == failedStatuses[i]) {
+        if (getTopResponse()->getStatus() == failedStatuses[i]) {
             setFd(-1);
             break ;
         }
@@ -207,7 +230,7 @@ Client::process(void) {
 
     Log.debug() << "Client::process [" << _fd << "]" << std::endl;
 
-    getTopResponse().handle();
+    getTopResponse()->handle();
 }
 
 void
@@ -216,9 +239,9 @@ Client::reply(void) {
     signal(SIGPIPE, SIG_IGN);
 
     size_t all = 0;
-    for (size_t total = getTopResponse().getResponseLength(); total;
-                total = getTopResponse().getResponseLength()) {
-        const char *rsp = getTopResponse().getResponse().c_str();
+    for (size_t total = getTopResponse()->getResponseLength(); total;
+                total = getTopResponse()->getResponseLength()) {
+        const char *rsp = getTopResponse()->getResponse().c_str();
 
         size_t sent = 0;
         do {
@@ -240,7 +263,7 @@ Client::reply(void) {
         all += sent;
         Log.debug() << "Client::reply [" << _fd << "] (" << sent << "/" << total << " bytes sent)" << std::endl;
 
-        getTopResponse().makeChunk();
+        getTopResponse()->makeChunk();
     }
 
     Log.debug() << "Client::Total sent: " << all << std::endl;
@@ -279,7 +302,7 @@ Client::getline(std::string &line) {
     }
 
     size_t pos = 0;
-    const size_t bodySize = getTopRequest().getBodySize();
+    const size_t bodySize = getTopRequest()->getBodySize();
     if (!bodySize) {
         pos = _rem.find("\r\n");
         if (pos == std::string::npos) {
@@ -309,12 +332,12 @@ Client::receive(void) {
 
     Log.debug() << "Client::receive [" << _fd << "]" << std::endl;
 
-    while (!getRequest().isFormed()) {
+    while (!getRequest()->isFormed()) {
         std::string line;
 
         switch (getline(line)) {
             case LINE_FOUND: {
-                getRequest().parseLine(line);
+                getRequest()->parseLine(line);
                 break ;
             }
             case SOCK_CLOSED: {

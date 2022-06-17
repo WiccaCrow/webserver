@@ -24,8 +24,8 @@ private:
     size_t      _serverPort;
     std::string _serverIpAddr;
 
-    std::deque<HTTP::Request>  _requests;
-    std::deque<HTTP::Response> _responses;
+    std::deque<HTTP::Request *> _requests;
+    std::deque<HTTP::Response *> _responses;
 
     bool        _shouldBeClosed;
     bool        _reqPoolReady;
@@ -72,8 +72,8 @@ public:
 
     const std::string getHostname(void) const;
 
-    Request &    getRequest();
-    Response &   getResponse();
+    Request *    getRequest();
+    Response *   getResponse();
 
     void receive(void);
     void process(void);
@@ -94,8 +94,8 @@ public:
     void removeTopRequest(void);
     void removeTopResponse(void);
 
-    Request &getTopRequest(void);
-    Response &getTopResponse(void);
+    Request *getTopRequest(void);
+    Response *getTopResponse(void);
 
     bool validSocket(void);
     bool requestReady(void);
