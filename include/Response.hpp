@@ -16,6 +16,7 @@
 #include "SHA1.hpp"
 #include "Request.hpp"
 #include "ResponseHeader.hpp"
+#include "HTML.hpp"
 
 namespace HTTP {
 

@@ -331,11 +331,11 @@ Response::createTableLine(const std::string &filename) {
         return "";
     }
 
-    line += "<tr>";
-    line += "<td>" + createLinkLine(filename) + "</td>";
-    line += "<td>" + Time::gmt("%d/%m/%Y %H:%m", st.st_mtime) + "</td>";
-    line += "<td>" + ulltos(st.st_size) + "</td>";
-    line += "</tr>";
+    line += TR_BEG;
+    line += TD_BEG + createLinkLine(filename) + TD_END;
+    line += TD_BEG + Time::gmt("%d/%m/%Y %H:%m", st.st_mtime) + TD_END;
+    line += TD_BEG + ulltos(st.st_size) + TD_END;
+    line += TR_END;
 
     return line;
 }
@@ -344,24 +344,20 @@ int
 Response::listing(const std::string &resourcePath) {
 
     _body = 
-        "<!DOCTYPE html>"
-        "<html>"
-        "<head>"
-        "<meta charset=\"UTF-8\">"
-        "<title>" + _req->getPath() + "</title>"
-        "<style>"
-            "a { text-decoration:none; color: #303030; }"
-            "* { color: #60A060; font-family: monospace; }"
-            "body { padding: 20px; }"
-            "tr td:nth-child(3) { text-align: right; }"
-        "</style>"
-        "</head>"
-        "<body>"
-        "<h1>Index on " + _req->getPath() + "</h1>"
-        "<hr>"
-        "<table cellpadding=\"5px\">"
-        "<tr><th>Filename</th><th>Last modified</th><th>Size</th></tr>"
-        "<tr><td><a href=\"..\"></a></td><td></td><td></td></tr>";
+        HTML_BEG HEAD_BEG TITLE_BEG + _req->getPath() + TITLE_END
+        META_UTF8 DEFAULT_CSS HEAD_END BODY_BEG
+        H1_BEG "Index on " + _req->getPath() + H1_END HR
+        TABLE_BEG 
+            TR_BEG 
+                TH_BEG "Filename" TH_END 
+                TH_BEG "Last modified" TH_END
+                TH_BEG "Size" TH_END
+            TR_END
+            TR_BEG 
+                TD_BEG "<a href=\"..\">../</a>" TD_END
+                TD_BEG TD_END
+                TD_BEG TD_END
+            TR_END;
 
     std::deque<std::string> filenames;
     if (!fillDirContent(filenames, resourcePath)) {
@@ -377,7 +373,7 @@ Response::listing(const std::string &resourcePath) {
         }
         _body += createTableLine(*it); 
     }
-    _body += "</table><hr></body></html>";
+    _body += TABLE_END HR BODY_END HTML_END;
     setBodyLength(_body.length());
 
     return 1;
