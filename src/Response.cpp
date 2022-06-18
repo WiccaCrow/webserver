@@ -277,11 +277,37 @@ Response::openFileToResponse(std::string resourcePath) {
 }
 
 std::string
-getFileInfo(const std::string &dir, const std::string &file) {
+cutFileName(const std::string &file) {
 
     int maxFilenameLen = 30;
-    const std::string &fullname = dir + "/" + file;
+    int u8BytesCount = 2;
     
+    std::string line;
+    line.reserve(maxFilenameLen * u8BytesCount);
+
+    int curFilenameLen = file.length();
+    int curFilenameLenU8 = strlen_u8(file);
+
+    if (curFilenameLen != curFilenameLenU8) {
+        // Need to improve, because utf could contain more than 2 bytes
+        maxFilenameLen *= u8BytesCount;
+    }
+    line = file.substr(0, maxFilenameLen);
+    
+    if (curFilenameLenU8 > maxFilenameLen) {
+        line[line.length() - 1] = '.';
+        line[line.length() - 2] = '.';
+        line[line.length() - 3] = '.';
+    }
+
+    return line;
+}
+
+std::string
+createTableLine(const std::string &dir, const std::string &file) {
+
+    const std::string &fullname = dir + '/' + file;
+
     std::string line;
     line.reserve(512);
 
@@ -291,31 +317,17 @@ getFileInfo(const std::string &dir, const std::string &file) {
         return "";
     }
 
-    int curFilenameLen = file.length();
-    int curFilenameLenU8 = strlen_u8(file);
+    line += "<tr>";
+    line += "<td><a href=\"" + file + "\">" + cutFileName(file) + "</a></td>";
+    line += "<td>" + Time::gmt("%d/%m/%Y %H:%m", st.st_mtime) + "</td>";
+    line += "<td>" + ulltos(st.st_size) + "</td>";
+    line += "</tr>";
 
-    if (curFilenameLen == curFilenameLenU8) {
-        line += file.substr(0, maxFilenameLen);
-    } else {
-        // Need to improve, because utf could contain more than 2 bytes
-        line += file.substr(0, maxFilenameLen * 2);
-    }
-    
-    if (curFilenameLenU8 < maxFilenameLen) {
-        line += std::string(maxFilenameLen - curFilenameLenU8, ' ');
-    } else {
-        line[line.length() - 1] = '.';
-        line[line.length() - 2] = '.';
-        line[line.length() - 3] = '.';
-    }
-
-    line += Time::gmt("%c   ", st.st_mtime) + ulltos(st.st_size);
     return line;
 }
 
 int
 Response::listing(const std::string &resourcePath) {
-    std::string pathToDir;
     _body = "<!DOCTYPE html>"
             "<html>"
             "<head>"
@@ -325,16 +337,19 @@ Response::listing(const std::string &resourcePath) {
                 "a { text-decoration:none; color: #303030; }"
                 "* { color: #60A060; font-family: monospace; }"
                 "body { padding: 20px; }"
+                "tr td:nth-child(3) { text-align: right; }"
             "</style>"
             "</head>"
             "<body>"
             "<h1>Index on " + _req->getPath() + "</h1>"
-            "<hr><pre>"
-            "<a href=\"../\">..</a>\n";
+            "<hr>"
+            "<table cellpadding=\"5px\">"
+            "<tr><th>Filename</th><th>Last modified</th><th>Size</th></tr>"
+            "<tr><td><a href=\"../\">..</a></td><td></td><td></td></tr>";
 
     DIR *dir = opendir(resourcePath.c_str());
     if (dir == NULL) {
-        Log.syserr() << "readdir failed for " << resourcePath.c_str() << std::endl;
+        Log.syserr() << "opendir failed for " << resourcePath.c_str() << std::endl;
         setStatus(INTERNAL_SERVER_ERROR);
         return 0;
     }
@@ -348,18 +363,16 @@ Response::listing(const std::string &resourcePath) {
         }
 
         const std::string &file = entry->d_name;
-        
         if (file == "." || file == "..") {
             continue;
         }
- 
-        const std::string &info = getFileInfo(getRequest()->getResolvedPath(), file);
-        _body += "<a href=\"" + file + "\">" + info + "</a>\n"; 
-    }
-    closedir(dir);
 
-    _body += "</pre><hr></body></html>";
-    setBody(_body);
+        _body += createTableLine(getRequest()->getResolvedPath(), file);
+    }
+    _body += "</table><hr></body></html>";
+
+    closedir(dir);
+    setBodyLength(_body.length());
 
     return 1;
 }
