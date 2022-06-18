@@ -309,7 +309,7 @@ getFileInfo(const std::string &dir, const std::string &file) {
         line[line.length() - 3] = '.';
     }
 
-    line += Time::gmt("%c   ", st.st_mtime) + ulltos(st.st_size) + "\n";
+    line += Time::gmt("%c   ", st.st_mtime) + ulltos(st.st_size);
     return line;
 }
 
@@ -323,24 +323,24 @@ Response::listing(const std::string &resourcePath) {
             "<title>" + _req->getPath() + "</title>"
             "<style>"
                 "a { text-decoration:none; color: #303030; }"
-                "* { color: #60A060; }"
+                "* { color: #60A060; font-family: monospace; }"
                 "body { padding: 20px; }"
             "</style>"
             "</head>"
             "<body>"
             "<h1>Index on " + _req->getPath() + "</h1>"
-            "<hr><pre>";
+            "<hr><pre>"
+            "<a href=\"../\">..</a>\n";
 
-    DIR *r_opndir = opendir(resourcePath.c_str());
-    if (r_opndir == NULL) {
+    DIR *dir = opendir(resourcePath.c_str());
+    if (dir == NULL) {
         Log.syserr() << "readdir failed for " << resourcePath.c_str() << std::endl;
         setStatus(INTERNAL_SERVER_ERROR);
         return 0;
     }
 
     struct dirent *entry;
-    while ((entry = readdir(r_opndir))) {
-
+    while ((entry = readdir(dir))) {
         if (entry == NULL) {
             Log.syserr() << "readdir failed for " << resourcePath.c_str() << std::endl;
             setStatus(INTERNAL_SERVER_ERROR);
@@ -348,14 +348,19 @@ Response::listing(const std::string &resourcePath) {
         }
 
         const std::string &file = entry->d_name;
+        
+        if (file == "." || file == "..") {
+            continue;
+        }
+ 
         const std::string &info = getFileInfo(getRequest()->getResolvedPath(), file);
-
-        _body += "<a href=\"" + file + "\">" + info + "</a>"; 
+        _body += "<a href=\"" + file + "\">" + info + "</a>\n"; 
     }
+    closedir(dir);
+
     _body += "</pre><hr></body></html>";
     setBody(_body);
 
-    closedir(r_opndir);
     return 1;
 }
 
