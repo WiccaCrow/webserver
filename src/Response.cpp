@@ -304,9 +304,9 @@ cutFileName(const std::string &file) {
 }
 
 int
-Response::fillFileStat(const std::string &file, struct stat *st) {
+Response::fillFileStat(const std::string &filename, struct stat *st) {
 
-    const std::string &fullname = getRequest()->getResolvedPath() + '/' + file;
+    const std::string &fullname = getRequest()->getResolvedPath() + '/' + filename;
 
     if (stat(fullname.c_str(), st) < 0) {
         Log.debug() << "cannot get stat of " << fullname << std::endl;
@@ -321,18 +321,18 @@ createLinkLine(const std::string &file) {
 }
 
 std::string
-Response::createTableLine(const std::string &file) {
+Response::createTableLine(const std::string &filename) {
     
     std::string line;
     line.reserve(512);
 
     struct stat st;
-    if (!fillFileStat(file, &st)) {
+    if (!fillFileStat(filename, &st)) {
         return "";
     }
 
     line += "<tr>";
-    line += "<td>" + createLinkLine(file) + "</td>";
+    line += "<td>" + createLinkLine(filename) + "</td>";
     line += "<td>" + Time::gmt("%d/%m/%Y %H:%m", st.st_mtime) + "</td>";
     line += "<td>" + ulltos(st.st_size) + "</td>";
     line += "</tr>";
@@ -363,15 +363,15 @@ Response::listing(const std::string &resourcePath) {
         "<tr><th>Filename</th><th>Last modified</th><th>Size</th></tr>"
         "<tr><td><a href=\"..\"></a></td><td></td><td></td></tr>";
 
-    std::deque<std::string> files;
-    if (!fillDirContent(files, resourcePath)) {
+    std::deque<std::string> filenames;
+    if (!fillDirContent(filenames, resourcePath)) {
         return 0;
     }
 
-    std::sort(files.begin(), files.end());
+    std::sort(filenames.begin(), filenames.end());
     std::deque<std::string>::iterator it;
-    for (it = files.begin(); it != files.end(); ++it) {
-        
+    for (it = filenames.begin(); it != filenames.end(); ++it) {
+
         if (*it == "." || *it == "..") {
             continue ;
         }
@@ -384,7 +384,7 @@ Response::listing(const std::string &resourcePath) {
 }
 
 int
-Response::fillDirContent(std::deque<std::string> &files, const std::string &dirName) {
+Response::fillDirContent(std::deque<std::string> &filenames, const std::string &dirName) {
 
     DIR *dir = opendir(dirName.c_str());
     if (!dir) {
@@ -394,7 +394,7 @@ Response::fillDirContent(std::deque<std::string> &files, const std::string &dirN
 
     struct dirent *entry;
     while ((entry = readdir(dir))) {
-        files.push_back(entry->d_name);
+        filenames.push_back(entry->d_name);
     }
 
     closedir(dir);
