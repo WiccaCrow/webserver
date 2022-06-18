@@ -304,24 +304,26 @@ cutFileName(const std::string &file) {
 }
 
 std::string
-createTableLine(const std::string &dir, const std::string &file) {
-
-    const std::string &fullname = dir + '/' + file;
-
+Response::createTableLine(dir_cms &dirMap) {
     std::string line;
     line.reserve(512);
 
-    struct stat st;
-    if (stat(fullname.c_str(), &st) < 0) {
-        Log.debug() << "stat failed for " << fullname << std::endl;
-        return "";
+    for (dir_cms::iterator it = dirMap.begin(), itEnd = dirMap.end();
+        it != itEnd; ++it) {
+        if (it->first == ".") {
+            continue ;
+        } else if (it->first == "..") {
+            line += "<tr>";
+            line += "<td><a href=\"" + it->first + "\">" + it->first + "</a></td>"
+                    "<td></td><td></td></tr>";
+        } else {
+            line += "<tr>";
+            line += "<td><a href=\"" + it->first + "\">" + it->first + "</a></td>";
+            line += "<td>" + it->second.modifiers + "</td>";
+            line += "<td>" + it->second.fileSize + "</td>";
+            line += "</tr>";
+        }
     }
-
-    line += "<tr>";
-    line += "<td><a href=\"" + file + "\">" + cutFileName(file) + "</a></td>";
-    line += "<td>" + Time::gmt("%d/%m/%Y %H:%m", st.st_mtime) + "</td>";
-    line += "<td>" + ulltos(st.st_size) + "</td>";
-    line += "</tr>";
 
     return line;
 }
@@ -344,36 +346,46 @@ Response::listing(const std::string &resourcePath) {
             "<h1>Index on " + _req->getPath() + "</h1>"
             "<hr>"
             "<table cellpadding=\"5px\">"
-            "<tr><th>Filename</th><th>Last modified</th><th>Size</th></tr>"
-            "<tr><td><a href=\"../\">..</a></td><td></td><td></td></tr>";
+            "<tr><th>Filename</th><th>Last modified</th><th>Size</th></tr>";
 
-    DIR *dir = opendir(resourcePath.c_str());
-    if (dir == NULL) {
-        Log.syserr() << "opendir failed for " << resourcePath.c_str() << std::endl;
+    dir_cms dirContentAndModifiers;
+    if (!fillDirContent(dirContentAndModifiers, resourcePath)) {
+        return 0;
+    }
+
+    _body += createTableLine(dirContentAndModifiers);
+    _body += "</table><hr></body></html>";
+
+    setBodyLength(_body.length());
+
+    return 1;
+}
+
+int
+Response::fillDirContent(dir_cms &dirContModifSize, 
+                         const std::string &directory) {
+    DIR *r_opndir = opendir(directory.c_str());
+    if (!r_opndir) {
         setStatus(INTERNAL_SERVER_ERROR);
         return 0;
     }
 
-    struct dirent *entry;
-    while ((entry = readdir(dir))) {
-        if (entry == NULL) {
-            Log.syserr() << "readdir failed for " << resourcePath.c_str() << std::endl;
+    dir_nms oneFile;
+    for (struct dirent *dirContent; (dirContent = readdir(r_opndir)); ) {
+        const std::string &fullname = getRequest()->getResolvedPath() + '/' + dirContent->d_name;
+        struct stat st;
+        if (stat(fullname.c_str(), &st) < 0) {
+            Log.debug() << "stat failed for " << fullname << std::endl;
             setStatus(INTERNAL_SERVER_ERROR);
+            closedir(r_opndir);
             return 0;
         }
+        oneFile.fileSize = ulltos(st.st_size);
+        oneFile.modifiers = Time::gmt("%d/%m/%Y %H:%m", st.st_mtime);
 
-        const std::string &file = entry->d_name;
-        if (file == "." || file == "..") {
-            continue;
-        }
-
-        _body += createTableLine(getRequest()->getResolvedPath(), file);
+        dirContModifSize.insert(std::make_pair(dirContent->d_name, oneFile));
     }
-    _body += "</table><hr></body></html>";
-
-    closedir(dir);
-    setBodyLength(_body.length());
-
+    closedir(r_opndir);
     return 1;
 }
 
