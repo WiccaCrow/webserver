@@ -46,12 +46,6 @@ public:
     typedef std::list<ResponseHeader>::const_iterator const_iter;
     std::list<ResponseHeader> headers;
 
-    typedef struct s_dir_nms{
-        std::string fileSize;
-        std::string modifiers;
-    }                dir_nms;
-    typedef std::map<std::string, dir_nms > dir_cms;
-
     Response(void);
     Response(Request *req);
     ~Response(void);
@@ -86,8 +80,9 @@ public:
     int         directoryListing(const std::string &resourcePath);
     int         openFileToResponse(std::string resourcePath);
     int         listing(const std::string &resourcePath);
-    int         fillDirContent(dir_cms &dirContModifSize, const std::string &directory);
-    std::string createTableLine(dir_cms &dirMap);
+    int         fillDirContent(std::deque<std::string> &, const std::string &directory);
+    std::string createTableLine(const std::string &file);
+    int         fillFileStat(const std::string &file, struct stat *st);
     std::string getContentType(std::string resourcePath);
     void        writeFile(const std::string &resourcePath);
 

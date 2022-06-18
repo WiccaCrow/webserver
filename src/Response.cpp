@@ -303,89 +303,101 @@ cutFileName(const std::string &file) {
     return line;
 }
 
+int
+Response::fillFileStat(const std::string &file, struct stat *st) {
+
+    const std::string &fullname = getRequest()->getResolvedPath() + '/' + file;
+
+    if (stat(fullname.c_str(), st) < 0) {
+        Log.debug() << "cannot get stat of " << fullname << std::endl;
+        return 0;
+    }
+    return 1;
+}
+
+static inline std::string 
+createLinkLine(const std::string &file) {
+    return "<a href=\"" + file + "\">" + cutFileName(file) + "</a>";
+}
+
 std::string
-Response::createTableLine(dir_cms &dirMap) {
+Response::createTableLine(const std::string &file) {
+    
     std::string line;
     line.reserve(512);
 
-    for (dir_cms::iterator it = dirMap.begin(), itEnd = dirMap.end();
-        it != itEnd; ++it) {
-        if (it->first == ".") {
-            continue ;
-        } else if (it->first == "..") {
-            line += "<tr>";
-            line += "<td><a href=\"" + it->first + "\">" + it->first + "</a></td>"
-                    "<td></td><td></td></tr>";
-        } else {
-            line += "<tr>";
-            line += "<td><a href=\"" + it->first + "\">" + it->first + "</a></td>";
-            line += "<td>" + it->second.modifiers + "</td>";
-            line += "<td>" + it->second.fileSize + "</td>";
-            line += "</tr>";
-        }
+    struct stat st;
+    if (!fillFileStat(file, &st)) {
+        return "";
     }
+
+    line += "<tr>";
+    line += "<td>" + createLinkLine(file) + "</td>";
+    line += "<td>" + Time::gmt("%d/%m/%Y %H:%m", st.st_mtime) + "</td>";
+    line += "<td>" + ulltos(st.st_size) + "</td>";
+    line += "</tr>";
 
     return line;
 }
 
 int
 Response::listing(const std::string &resourcePath) {
-    _body = "<!DOCTYPE html>"
-            "<html>"
-            "<head>"
-            "<meta charset=\"UTF-8\">"
-            "<title>" + _req->getPath() + "</title>"
-            "<style>"
-                "a { text-decoration:none; color: #303030; }"
-                "* { color: #60A060; font-family: monospace; }"
-                "body { padding: 20px; }"
-                "tr td:nth-child(3) { text-align: right; }"
-            "</style>"
-            "</head>"
-            "<body>"
-            "<h1>Index on " + _req->getPath() + "</h1>"
-            "<hr>"
-            "<table cellpadding=\"5px\">"
-            "<tr><th>Filename</th><th>Last modified</th><th>Size</th></tr>";
 
-    dir_cms dirContentAndModifiers;
-    if (!fillDirContent(dirContentAndModifiers, resourcePath)) {
+    _body = 
+        "<!DOCTYPE html>"
+        "<html>"
+        "<head>"
+        "<meta charset=\"UTF-8\">"
+        "<title>" + _req->getPath() + "</title>"
+        "<style>"
+            "a { text-decoration:none; color: #303030; }"
+            "* { color: #60A060; font-family: monospace; }"
+            "body { padding: 20px; }"
+            "tr td:nth-child(3) { text-align: right; }"
+        "</style>"
+        "</head>"
+        "<body>"
+        "<h1>Index on " + _req->getPath() + "</h1>"
+        "<hr>"
+        "<table cellpadding=\"5px\">"
+        "<tr><th>Filename</th><th>Last modified</th><th>Size</th></tr>"
+        "<tr><td><a href=\"..\"></a></td><td></td><td></td></tr>";
+
+    std::deque<std::string> files;
+    if (!fillDirContent(files, resourcePath)) {
         return 0;
     }
 
-    _body += createTableLine(dirContentAndModifiers);
+    std::sort(files.begin(), files.end());
+    std::deque<std::string>::iterator it;
+    for (it = files.begin(); it != files.end(); ++it) {
+        
+        if (*it == "." || *it == "..") {
+            continue ;
+        }
+        _body += createTableLine(*it); 
+    }
     _body += "</table><hr></body></html>";
-
     setBodyLength(_body.length());
 
     return 1;
 }
 
 int
-Response::fillDirContent(dir_cms &dirContModifSize, 
-                         const std::string &directory) {
-    DIR *r_opndir = opendir(directory.c_str());
-    if (!r_opndir) {
+Response::fillDirContent(std::deque<std::string> &files, const std::string &dirName) {
+
+    DIR *dir = opendir(dirName.c_str());
+    if (!dir) {
         setStatus(INTERNAL_SERVER_ERROR);
         return 0;
     }
 
-    dir_nms oneFile;
-    for (struct dirent *dirContent; (dirContent = readdir(r_opndir)); ) {
-        const std::string &fullname = getRequest()->getResolvedPath() + '/' + dirContent->d_name;
-        struct stat st;
-        if (stat(fullname.c_str(), &st) < 0) {
-            Log.debug() << "stat failed for " << fullname << std::endl;
-            setStatus(INTERNAL_SERVER_ERROR);
-            closedir(r_opndir);
-            return 0;
-        }
-        oneFile.fileSize = ulltos(st.st_size);
-        oneFile.modifiers = Time::gmt("%d/%m/%Y %H:%m", st.st_mtime);
-
-        dirContModifSize.insert(std::make_pair(dirContent->d_name, oneFile));
+    struct dirent *entry;
+    while ((entry = readdir(dir))) {
+        files.push_back(entry->d_name);
     }
-    closedir(r_opndir);
+
+    closedir(dir);
     return 1;
 }
 
