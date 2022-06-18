@@ -355,13 +355,11 @@ isValidSegment(const std::string &s) {
 
 // pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
 
-
 bool
 isValidPathAbempty(const std::string &s) {
-
     // *( "/" segment )
 
-    for (size_t i = 0; i < s.size(); i++) {
+    for (size_t i = 0; i < s.size(); ) {
         size_t pos = isValidSegment(s.substr(i));
         if (pos == 0) {
             return false;
@@ -369,6 +367,7 @@ isValidPathAbempty(const std::string &s) {
         else if (pos == s.length()) {
             return true;
         }
+        i += pos;
     }
     return true;
 }
@@ -379,8 +378,7 @@ isValidPathAbsolute(const std::string &s) {
 
     if (s[0] != '/') {
         return false;
-    }
-    if (s.length() == 1) {
+    } else if (s.length() == 1) {
         return true;
     } else {
         size_t pos = isSegmentNz(s.substr(1));
@@ -452,7 +450,7 @@ isValidHost(const std::string &s) {
 
 bool
 isValidPath(const std::string &path) {
-    return isValidPathAbempty(path) || 
+    return isValidPathAbempty(path) ||
            isValidPathAbsolute(path) || 
            isValidPathRootless(path) ||
            isValidPathNoScheme(path) || 
