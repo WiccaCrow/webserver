@@ -92,8 +92,19 @@
             "autoindex": true,
             "index": [ "index.html" ],
             "locations": {
-                "/try_about": {
-                    "alias": "/Users/mhufflep/Downloads/",
+                "/Downloads": {
+                    "root"  : "/Users/mhufflep/",
+                    "autoindex": true,
+                    "CGI": {
+                        ".js": "/usr/local/bin/node",
+                        ".py": "/usr/bin/python"
+                    },
+                    "index": [ "index.html" ],
+                    "post_max_body": 200,
+                    "methods_allowed": [ "GET", "POST" ]                 
+                },
+                "/test": {
+                    "root"  : "/Users/mhufflep/",
                     "autoindex": true,
                     "CGI": {
                         ".js": "/usr/local/bin/node",

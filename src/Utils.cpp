@@ -1,5 +1,4 @@
 #include "Utils.hpp"
-#include "SHA1.hpp"
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -106,13 +105,72 @@ skipSpaces(const std::string &line, size_t &pos) {
 #if __cplusplus < 201103L
 
 std::string
-to_string(unsigned long val) {
+ultos(unsigned long val) {
     char buf[25];
     snprintf(buf, 25, "%lu", val);
     return std::string(buf);
 }
 
+std::string
+ulltos(unsigned long long val) {
+    char buf[25];
+    snprintf(buf, 25, "%llu", val);
+    return std::string(buf);
+}
+
+std::string
+lltos(long long val) {
+    char buf[25];
+    snprintf(buf, 25, "%lld", val);
+    return std::string(buf);
+}
+
+std::string
+ltos(long val) {
+    char buf[25];
+    snprintf(buf, 25, "%ld", val);
+    return std::string(buf);
+}
+
+std::string
+itos(int val) {
+    char buf[25];
+    snprintf(buf, 25, "%d", val);
+    return std::string(buf);
+}
+
+std::string
+sztos(size_t val) {
+    char buf[25];
+    snprintf(buf, 25, "%zu", val);
+    return std::string(buf);
+}
+
 #endif
+
+
+size_t strlen_u8(const std::string &s) {
+
+    size_t ic = 0; //char index
+
+    for (size_t i = 0; i < s.length(); i++, ic++) {
+        int c = static_cast<unsigned char>(s[i]);
+        if (!isascii(c)) {
+            if ((c & 0xE0) == 0xC0) {
+                i += 1;
+            } else if ((c & 0xF0) == 0xE0) {
+                i += 2;
+            } else if ((c & 0xF8) == 0xF0) {
+                i += 3;
+            } else {
+                return 0;
+            }
+        }
+    }
+    return ic;
+}
+
+// RFC validation part, should be moved to another file, maybe URI.cpp
 
 bool
 isUnreserved(int c) {
@@ -511,40 +569,15 @@ rmdirNonEmpty(std::string &resourceDel) {
     return 0;
 }
 
-static std::string
-getTimeStringGMT(time_t time) {
-    struct tm *info = gmtime(&time);
-
-    char buff[50];
-    strftime(buff, sizeof(buff), "%a, %-e %b %Y %H:%M:%S GMT", info);
-    return buff;
-}
-
-std::string
-getDateTimeGMT() {
-
-    time_t rawtime;
-    time(&rawtime);
-
-    return getTimeStringGMT(rawtime);
-}
-
 time_t
 getModifiedTime(const std::string &file) {
-    struct stat state;
-
-    if (stat(file.c_str(), &state) < 0) {
-        return -1;
+    
+    struct stat st;
+    if (stat(file.c_str(), &st) < 0) {
+        return 0;
     }
-    return state.st_mtime;
-}
 
-std::string
-getLastModifiedTimeGMT(const std::string &file) {
-
-    time_t time = getModifiedTime(file);
-
-    return (time != -1 ? getTimeStringGMT(time) : "");
+    return st.st_mtime;
 }
 
 

@@ -85,7 +85,7 @@ void
 Response::unauthorized(void) {
     Log.debug() << "Response:: Unauthorized" << std::endl;
     setStatus(UNAUTHORIZED);
-    addHeader(DATE, getDateTimeGMT());
+    addHeader(DATE, Time::gmt());
     addHeader(WWW_AUTHENTICATE);
     getClient()->shouldBeClosed(true);
 }
@@ -229,7 +229,13 @@ Response::isSetIndexFile(std::string &resourcePath) {
 
 std::string
 Response::getEtagFile(const std::string &filename) {
-    return SHA1(to_string(getModifiedTime(filename)));
+
+    struct stat st;
+    if (stat(filename.c_str(), &st) < 0) {
+        return "";
+    }
+
+    return SHA1(Time::gmt(st.st_mtime));
 }
 
 int
@@ -241,7 +247,7 @@ Response::makeGetHeadResponseForFile(const std::string &resourcePath) {
     }
     addHeader(CONTENT_TYPE, getContentType(resourcePath));
     addHeader(ETAG, getEtagFile(resourcePath));
-    addHeader(LAST_MODIFIED, getLastModifiedTimeGMT(resourcePath));
+    addHeader(LAST_MODIFIED, Time::gmt(getModifiedTime(resourcePath)));
     addHeader(TRANSFER_ENCODING, "chunked");
     return openFileToResponse(resourcePath);
 }
@@ -270,6 +276,43 @@ Response::openFileToResponse(std::string resourcePath) {
     return 1;
 }
 
+std::string
+getFileInfo(const std::string &dir, const std::string &file) {
+
+    int maxFilenameLen = 30;
+    const std::string &fullname = dir + "/" + file;
+    
+    std::string line;
+    line.reserve(512);
+
+    struct stat st;
+    if (stat(fullname.c_str(), &st) < 0) {
+        Log.debug() << "stat failed for " << fullname << std::endl;
+        return "";
+    }
+
+    int curFilenameLen = file.length();
+    int curFilenameLenU8 = strlen_u8(file);
+
+    if (curFilenameLen == curFilenameLenU8) {
+        line += file.substr(0, maxFilenameLen);
+    } else {
+        // Need to improve, because utf could contain more than 2 bytes
+        line += file.substr(0, maxFilenameLen * 2);
+    }
+    
+    if (curFilenameLenU8 < maxFilenameLen) {
+        line += std::string(maxFilenameLen - curFilenameLenU8, ' ');
+    } else {
+        line[line.length() - 1] = '.';
+        line[line.length() - 2] = '.';
+        line[line.length() - 3] = '.';
+    }
+
+    line += Time::gmt("%c   ", st.st_mtime) + ulltos(st.st_size) + "\n";
+    return line;
+}
+
 int
 Response::listing(const std::string &resourcePath) {
     std::string pathToDir;
@@ -278,34 +321,40 @@ Response::listing(const std::string &resourcePath) {
             "<head>"
             "<meta charset=\"UTF-8\">"
             "<title>" + _req->getPath() + "</title>"
+            "<style>"
+                "a { text-decoration:none; color: #303030; }"
+                "* { color: #60A060; }"
+                "body { padding: 20px; }"
+            "</style>"
             "</head>"
             "<body>"
             "<h1>Index on " + _req->getPath() + "</h1>"
-            "<p>"
-            "<hr>";
+            "<hr><pre>";
+
     DIR *r_opndir = opendir(resourcePath.c_str());
-    if (NULL == r_opndir) {
+    if (r_opndir == NULL) {
+        Log.syserr() << "readdir failed for " << resourcePath.c_str() << std::endl;
         setStatus(INTERNAL_SERVER_ERROR);
         return 0;
-    } else {
-        struct dirent *dirContent;
-        while ((dirContent = readdir(r_opndir))) {
-            if (NULL == dirContent) {
-                setStatus(INTERNAL_SERVER_ERROR);
-                return 0;
-            }
-            _body += "<a href=\"" + _req->getPath();
-            if (_body[_body.length() - 1] != '/') {
-                _body += "/";
-            }
-            _body += dirContent->d_name;
-            _body += "\"><br>";
-            _body += dirContent->d_name;
-            _body += "</a>";
-        }
-        _body += "</body></html>";
-        setBody(_body);
     }
+
+    struct dirent *entry;
+    while ((entry = readdir(r_opndir))) {
+
+        if (entry == NULL) {
+            Log.syserr() << "readdir failed for " << resourcePath.c_str() << std::endl;
+            setStatus(INTERNAL_SERVER_ERROR);
+            return 0;
+        }
+
+        const std::string &file = entry->d_name;
+        const std::string &info = getFileInfo(getRequest()->getResolvedPath(), file);
+
+        _body += "<a href=\"" + file + "\">" + info + "</a>"; 
+    }
+    _body += "</pre><hr></body></html>";
+    setBody(_body);
+
     closedir(r_opndir);
     return 1;
 }

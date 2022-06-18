@@ -11,7 +11,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <utility>
+#include <sys/stat.h>
 
+#include "SHA1.hpp"
 #include "Request.hpp"
 #include "ResponseHeader.hpp"
 

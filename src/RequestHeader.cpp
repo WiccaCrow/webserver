@@ -10,7 +10,7 @@ RequestHeader::handle(Request &req) {
     if (it == validReqHeaders.end()) {
         Log.debug() << "RequestHeader:: Unknown header: " << key << std::endl;
         Log.debug() << "RequestHeader:: Value: " << value << std::endl;
-        Log.debug() << "RequestHeader:: Hash: " << to_string(hash) << std::endl;
+        Log.debug() << "RequestHeader:: Hash: " << ultos(hash) << std::endl;
         return CONTINUE;
     }
     method = it->second;

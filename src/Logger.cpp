@@ -37,7 +37,7 @@ void
 Logger::enableLogFile(void) {
 
     const std::string logDir = LOGS_DIR"/";
-    const std::string logFile = timeString("%d-%m-%Y_%H-%M-%S") + ".log";
+    const std::string logFile = Time::local("%d-%m-%Y_%H-%M-%S") + ".log";
 
     _logToFile = true;
     _logfile   = logDir + logFile;
@@ -56,22 +56,11 @@ Logger::setFlags(uint8_t flags) {
     _flags = flags;
 }
 
-std::string 
-Logger::timeString(const char *format) {
-    time_t cur = time(NULL);
-    tm *ct = localtime(&cur);
-
-    char buff[25];
-    strftime(buff, sizeof(buff), format, ct);
-   
-    return buff;
-}
-
 Logger &
 Logger::print(uint8_t flag) {
     _flag = flag;
 
-    return *this << timeString() << " " << titles[_flag] << " ";
+    return *this << Time::local() << " " << titles[_flag] << " ";
 }
 
 Logger &

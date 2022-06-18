@@ -26,7 +26,7 @@ LOGS_DIR     = logs
 
 SRCS     =  Auth.cpp                Location.cpp            SHA1.cpp         \
             Base64.cpp              Logger.cpp              Server.cpp       \
-            CGI.cpp                                         ServerBlock.cpp  \
+            CGI.cpp                 Time.cpp                ServerBlock.cpp  \
             CRC.cpp                 Redirect.cpp            StatusLines.cpp  \
             Client.cpp              Request.cpp             URI.cpp          \
             Config.cpp              RequestHeader.cpp       Utils.cpp        \

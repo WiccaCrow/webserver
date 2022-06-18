@@ -16,6 +16,7 @@
 #include "Status.hpp"
 #include "URI.hpp"
 #include "Utils.hpp"
+#include "Time.hpp"
 
 #define PARSED_NONE    0x0
 #define PARSED_SL      0x1

@@ -103,7 +103,7 @@ Client::getIpAddr(void) const {
 
 const std::string
 Client::getHostname() const {
-    return (_clientPort != 0 ? _clientIpAddr + ":" + to_string(_clientPort) : _clientIpAddr);
+    return (_clientPort != 0 ? _clientIpAddr + ":" + sztos(_clientPort) : _clientIpAddr);
 }
 
 Request *

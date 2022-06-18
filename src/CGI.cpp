@@ -85,7 +85,7 @@ CGI::setFullEnv(void) {
     setenv("QUERY_STRING", _req->getQueryString().c_str(), 1);
     setenv("REQUEST_METHOD", _req->getMethod().c_str(), 1);
     setenv("SCRIPT_NAME", _req->getResolvedPath().c_str(), 1);
-    setenv("CONTENT_LENGTH", to_string(_req->getBody().length()).c_str(), 1);
+    setenv("CONTENT_LENGTH", sztos(_req->getBody().length()).c_str(), 1);
     setenv("CONTENT_TYPE", _req->getHeaderValue(CONTENT_TYPE).c_str(), 1);
 
     setenv("GATEWAY_INTERFACE", GATEWAY_INTERFACE, 1);
@@ -94,7 +94,7 @@ CGI::setFullEnv(void) {
     setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
 
     // Current server block
-    setenv("SERVER_PORT", to_string(_req->getServerBlock()->getPort()).c_str(), 1); // 80
+    setenv("SERVER_PORT", sztos(_req->getServerBlock()->getPort()).c_str(), 1); // 80
     setenv("REDIRECT_STATUS", "200", 1);
 }
 
@@ -132,7 +132,7 @@ CGI::setEnv(void) {
     setValue(env[9], _req->getResolvedPath());
     
     // CONTENT_LENGTH
-    setValue(env[10], to_string(_req->getBody().length()));
+    setValue(env[10], sztos(_req->getBody().length()));
     
     // CONTENT_TYPE
     setValue(env[11], _req->getHeaderValue(CONTENT_TYPE));
@@ -150,7 +150,7 @@ CGI::setEnv(void) {
     setValue(env[15], "HTTP/1.1");
     
     // SERVER_PORT
-    setValue(env[16], to_string(_req->getServerBlock()->getPort()));
+    setValue(env[16], sztos(_req->getServerBlock()->getPort()));
 
     // REDIRECT_STATUS
     setValue(env[17], "200");

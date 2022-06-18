@@ -108,7 +108,7 @@ ResponseHeader::ContentLength(Response &res) {
         return ;
     }
     if (res.getBodyLength() != 0) {
-        value = to_string(res.getBodyLength());
+        value = sztos(res.getBodyLength());
     }
 }
 
@@ -130,7 +130,7 @@ ResponseHeader::ContentType(Response &res) {
 void
 ResponseHeader::Date(Response &res) {
     (void)res;
-    value = getDateTimeGMT();
+    value = Time::gmt();
 }
 
 void

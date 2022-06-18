@@ -8,6 +8,8 @@
 #include <sstream>
 #include <string>
 
+#include "Time.hpp"
+
 #ifndef LOGS_DIR
     # define LOGS_DIR "logs"
 #endif
@@ -43,7 +45,6 @@ public:
     Logger     &syserr(void);
     Logger     &print(uint8_t);
     void        enableLogFile(void);
-    std::string timeString(const char *f = "%d/%m/%Y %H:%M:%S");
 
     template<typename T>
     Logger& operator<<(const T &val) {
