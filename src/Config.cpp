@@ -221,12 +221,12 @@ std::vector<std::string>
 getDefaultAllowedMethods() {
     std::vector<std::string> allowed(9);
 
+    allowed.push_back("CONNECT");
     allowed.push_back("GET");
     allowed.push_back("DELETE");
     allowed.push_back("POST");
     allowed.push_back("PUT");
     allowed.push_back("HEAD");
-    allowed.push_back("CONNECT");
     allowed.push_back("OPTIONS");
     allowed.push_back("TRACE");
     allowed.push_back("PATCH");

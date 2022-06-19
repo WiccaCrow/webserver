@@ -71,9 +71,10 @@ public:
 
     // methods
 
+    void CONNECT(void);
     void DELETE(void);
-    void HEAD(void);
     void GET(void);
+    void HEAD(void);
     void OPTIONS(void);
     void POST(void);
     void PUT(void);

@@ -337,6 +337,7 @@ Client::receive(void) {
 
         switch (getline(line)) {
             case LINE_FOUND: {
+                std::cout << "         test line: "<< line << std::endl;
                 getRequest()->parseLine(line);
                 break ;
             }

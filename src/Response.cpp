@@ -25,6 +25,7 @@ Response::Response(Request *req)
     methods.insert(std::make_pair("HEAD", &Response::HEAD));
     methods.insert(std::make_pair("DELETE", &Response::DELETE));
     methods.insert(std::make_pair("OPTIONS", &Response::OPTIONS));
+    methods.insert(std::make_pair("CONNECT", &Response::CONNECT));
 
     headers.push_back(ResponseHeader(DATE));
     headers.push_back(ResponseHeader(SERVER));
@@ -88,6 +89,11 @@ Response::unauthorized(void) {
     addHeader(DATE, Time::gmt());
     addHeader(WWW_AUTHENTICATE);
     getClient()->shouldBeClosed(true);
+}
+
+void
+Response::CONNECT(void) {
+
 }
 
 void
