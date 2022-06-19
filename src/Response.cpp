@@ -315,6 +315,24 @@ Response::fillFileStat(const std::string &filename, struct stat *st) {
     return 1;
 }
 
+static std::string
+getHumanSize(long long bytes, bool si = true) {
+    static const char *suffixes = " kMGTPE";
+
+    const char *end = (!si && bytes > 1024) ? "iB" : "B";
+    int base = si ? 1000 : 1024;
+
+    if (bytes < base) {
+        return lltos(bytes) + suffixes[0] + end;
+    }
+
+    int index = static_cast<int>(log(bytes) / log(base));
+    double humanSize = static_cast<double>(bytes / pow(base, index));
+    char buf[10] = {0};
+    snprintf(buf, 10, "%.1f%c%s", humanSize, suffixes[index], end);
+    return buf;
+}
+
 static inline std::string 
 createLinkLine(const std::string &file) {
     return "<a href=\"" + file + "\">" + cutFileName(file) + "</a>";
@@ -334,7 +352,7 @@ Response::createTableLine(const std::string &filename) {
     line += TR_BEG;
     line += TD_BEG + createLinkLine(filename) + TD_END;
     line += TD_BEG + Time::gmt("%d/%m/%Y %H:%m", st.st_mtime) + TD_END;
-    line += TD_BEG + ulltos(st.st_size) + TD_END;
+    line += TD_BEG + getHumanSize(st.st_size) + TD_END;
     line += TR_END;
 
     return line;

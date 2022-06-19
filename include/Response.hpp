@@ -9,6 +9,7 @@
 #include <list>
 #include <sstream>
 #include <stdio.h>
+#include <cmath>
 #include <stdlib.h>
 #include <unistd.h>
 #include <utility>
@@ -18,6 +19,7 @@
 #include "Request.hpp"
 #include "ResponseHeader.hpp"
 #include "HTML.hpp"
+
 
 namespace HTTP {
 
