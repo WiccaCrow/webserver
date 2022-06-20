@@ -56,7 +56,11 @@ Response &Response::operator=(const Response &other) {
     return *this;
 }
 
-Response::~Response() { }
+Response::~Response() { 
+    if (getRequest() != NULL) {
+        delete getRequest();
+    } 
+}
 
 void
 Response::initMethodsHeaders(void) {}

@@ -30,7 +30,7 @@ Request::Request(Client *client)
     , _isFormed(false) {
 }
 
-Request::~Request() { }
+Request::~Request() {}
 
 Request::Request(const Request &other) {
     *this = other;
@@ -285,7 +285,6 @@ Request::parseLine(std::string &line) {
 StatusCode
 Request::parseSL(const std::string &line) {
 
-    Log.debug() << "----------------------" << std::endl;
     Log.debug() << line << std::endl;
 
     size_t pos = 0;

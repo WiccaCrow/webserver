@@ -2,9 +2,17 @@
 
 const size_t reservedClients = 64;
 
+// Declared in Globals.hpp
+bool finished;
+
 Server::Server() 
     : _socketsCount(0) {
     _pollfds.reserve(reservedClients);
+
+    for (size_t i = 0; i < WORKERS; i++) {
+        wPoolCtls[i].id = i;
+    }
+    
 }
 
 Server::~Server() {
@@ -14,6 +22,9 @@ Server::~Server() {
             _pollfds[i].fd = -1;
         }
     }
+    // Not the best solution, but fine for current purposes
+    // Good choice is to handle SIG_INT
+    PoolController::mutexDestroy(); 
 }
 
 // Could be used for re-reading config:
@@ -68,6 +79,77 @@ Server::addListenSocket(const std::string &addr, size_t port) {
     return fd;
 }
 
+void *worker_cycle(void *ptr) {
+    PoolController *poolCtl = reinterpret_cast<PoolController *>(ptr);
+
+    if (poolCtl == NULL) {
+        Log.error() << "Invalid poolController" << std::endl;
+        return NULL; // or exit ?
+    }
+
+    while (!finished) {
+
+        HTTP::Request *req = poolCtl->getRequest();
+
+        if (req == NULL) {
+            usleep(WORKER_TIMEOUT);
+            continue ;
+        } else {
+            HTTP::Response *res = new HTTP::Response(req);
+            if (res != NULL) {
+                Log.debug() << "Worker " << poolCtl->id << ": processing request" << std::endl; 
+                res->handle();
+                poolCtl->putResponse(res);
+            } else {
+                Log.syserr() << "Cannot allocate memory for Response" << std::endl;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+void
+Server::createWorkers(void) {
+    PoolController::mutexInit();
+
+    finished = false;
+    for (size_t i = 0; i < WORKERS; i++) {
+        if (pthread_create(&_threads[i], NULL, worker_cycle, &wPoolCtls[i])) {
+            Log.syserr() << "Server::pthread create failed for worker" << i << std::endl;
+        } else {
+            Log.debug() << "Server:: Worker " << i << " created" << std::endl;
+        }
+    }
+}
+
+void
+Server::destroyWorkers(void) {
+    
+    finished = true;
+    for (size_t i = 0; i < WORKERS; i++) {
+        if (pthread_join(_threads[i], NULL)) {
+            Log.syserr() << "Server::pthread join failed for worker" << i << std::endl;
+        } else {
+            Log.debug() << "Server:: Worker " << i << " destroyed" << std::endl;
+        }
+    }
+}
+
+void
+Server::freePool(void) {
+    
+    HTTP::Response *res = NULL;
+
+    do {
+        res = poolCtl.getResponse();
+        if (res != NULL) {
+            res->getClient()->addResponse(res);
+        }
+
+    } while (res != NULL);
+
+}
 
 void
 Server::fillServBlocksFds(void) {
@@ -91,7 +173,7 @@ Server::fillServBlocksFds(void) {
             int fd = addListenSocket(*addr, port);
             _pollfds.push_back((struct pollfd) {fd, POLLIN, 0});
             _socketsCount++;
-            Log.info() << "Server::Listen [" << fd << "] -> " << *addr << ":" << port << std::endl;
+            Log.info() << "Server::listen [" << fd << "] -> " << *addr << ":" << port << std::endl;
         }
     }
 }
@@ -126,7 +208,12 @@ Server::pollInHandler(size_t id) {
     }
 
     if (_clients[id].requestReady()) {
-        _clients[id].addResponse();
+        HTTP::Request *req = NULL;
+        
+        req = _clients[id].getTopRequest();
+        _clients[id].removeTopRequest();
+        poolCtl.putRequest(req);
+        _clients[id].requestPoolReady(true);
     }
 
     if (!_clients[id].validSocket()) {
@@ -142,11 +229,9 @@ Server::pollHupHandler(size_t id) {
     }
 }
 
+// Do not remove client until all responses performed (returned from workers) !
 void
 Server::pollOutHandler(size_t id) {
-    if (_clients[id].requestReady() && !_clients[id].replyReady()) {
-        _clients[id].process();
-    }
 
     if (_clients[id].replyReady() && !_clients[id].replyDone()) {
         _clients[id].reply();
@@ -154,7 +239,6 @@ Server::pollOutHandler(size_t id) {
     
     if (_clients[id].replyDone()) {
         _clients[id].checkIfFailed();
-        _clients[id].removeTopRequest();
         _clients[id].removeTopResponse();
         _clients[id].replyDone(false);
     }
@@ -173,7 +257,9 @@ Server::pollErrHandler(size_t id) {
 void
 Server::start(void) {
     fillServBlocksFds();
+    createWorkers();
     while (1) {
+        freePool();
         _pollResult = 0;
 
         pollServ();
@@ -192,6 +278,7 @@ Server::start(void) {
             }
         }
     }
+    destroyWorkers();
 }
 
 void

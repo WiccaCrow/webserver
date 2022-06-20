@@ -291,13 +291,19 @@ RequestHeader::IfNoneMatch(Request &req) {
 StatusCode
 RequestHeader::IfModifiedSince(Request &req) {
 
+    // A recipient MUST ignore If-Modified-Since if the request contains an
+    // If-None-Match header field;
+
     if (req.getMethod() == "GET" || req.getMethod() == "HEAD") {
 
         struct tm tm;
         if (!Time::gmt(value, &tm)) {
             Log.debug() << "IfModifiedSince:: Cannot read datetime " << value << std::endl;
-            return BAD_REQUEST;
+            // Server should ignore in case of invalid date - RFC 7232 (was BAD_REQUEST)
+            return CONTINUE;
         }
+
+        // A date which is later than the server's current time is invalid. Add
         
         if (Time::gmt(getModifiedTime(req.getResolvedPath())) == value) {
             Log.debug() << "IfModifiedSince:: 304 returned for " << req.getResolvedPath() << std::endl;
@@ -310,6 +316,9 @@ RequestHeader::IfModifiedSince(Request &req) {
 
 StatusCode
 RequestHeader::IfUnmodifiedSince(Request &req) {
+
+    // A recipient MUST ignore If-Modified-Since if the request contains an
+    // If-None-Match header field;
 
     struct tm tm;
     if (!Time::gmt(value, &tm)) {

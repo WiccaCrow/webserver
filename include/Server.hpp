@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <arpa/inet.h>
 #include <sys/resource.h>
+#include <list>
 
 #include "Utils.hpp"
 #include "Client.hpp"
@@ -20,6 +21,8 @@
 #include "Request.hpp"
 #include "Response.hpp"
 #include "ServerBlock.hpp"
+
+#include "PoolController.hpp"
 
 #ifndef SOMAXCONN
     # define SOMAXCONN 128
@@ -39,7 +42,12 @@ private:
 
     int addListenSocket(const std::string &addr, size_t port);
 
+    pthread_t _threads[WORKERS];
+
 public:
+    PoolController poolCtl;
+    PoolController wPoolCtls[WORKERS];
+
     Server();
     Server(const std::string &_addr, const uint16_t _port);
     Server(const Server &obj);
@@ -49,6 +57,10 @@ public:
 
     void   addServerBlock(HTTP::ServerBlock &servBlock);
     std::list<HTTP::ServerBlock> &getServerBlocks(size_t port);
+    
+    void freePool(void);
+    void createWorkers(void);
+    void destroyWorkers(void);
     
     void start(void);
     void pollServ(void);
