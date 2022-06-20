@@ -215,7 +215,7 @@ CGI::getBodyLength(void) {
     _ss.seekg(0, std::ios::end);
     size_t end = _ss.tellg();
     _ss.seekg(_bodyPos);
-    return end - _bodyPos;
+    return end - _bodyPos - 1;
 }
 
 int
@@ -293,6 +293,7 @@ CGI::exec() {
         close_pipe(in[0], in[1]);
         close_pipe(out[0], out[1]);
         return 0;
+
     } else if (childPID == 0) {
         close_pipe(in[1], out[0]);
         if (execve(_args[0], const_cast<char *const *>(_args), env) == -1) {
@@ -337,19 +338,18 @@ CGI::exec() {
         }
 
         int readBytes = 1;
-
-        const int size = 300;
-
+        const int size = 4096;
         char buf[size];
+
         while (readBytes > 0) {
             readBytes = read(out[0], buf, size - 1);
             if (readBytes < 0) {
                 Log.syserr() << "CGI::read" << std::endl;
-                return 1;
+                break ;
             }
             buf[readBytes] = 0;
             _ss << buf;
-        } 
+        }
     }
     close_pipe(out[0], -1);
     return 1;
@@ -382,7 +382,7 @@ CGI::parseHeaders(void) {
             }
         } else {
             if (line.empty()) {
-                if (_headers.size() != 0 || !_extraHeaders.empty()) {
+                if (!_headers.empty() || !_extraHeaders.empty()) {
                     _bodyPos = _ss.tellg();
                     return ;
                 }
