@@ -48,50 +48,50 @@ HTTP::Response::setErrorResponse(HTTP::StatusCode status) {
 
 ErrorResponses::ErrorResponses() {
     _errorResponses.insert(std::make_pair(HTTP::BAD_REQUEST,
-        "<!DOCTYPE html><html><head><title>400 Bad Request</title></head>"
-        "<body><center><h1><b>400</b> Bad Request</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "400 Bad Request" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>400</b> Bad Request" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::FORBIDDEN,
-        "<!DOCTYPE html><html><head><title>403 Forbidden</title></head>"
-        "<body><center><h1><b>403</b> Forbidden</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "403 Forbidden" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>403</b> Forbidden" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::NOT_FOUND,
-        "<!DOCTYPE html><html><head><title>404 Page not found</title></head>"
-        "<body><center><h1><b>404</b> Page not found</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "404 Page not found" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>404</b> Page not found" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::METHOD_NOT_ALLOWED,
-        "<!DOCTYPE html><html><head><title>405 Method Not Allowed</title></head>"
-        "<body><center><h1><b>405</b> Method Not Allowed</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "405 Method Not Allowed" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>405</b> Method Not Allowed" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::REQUEST_TIMEOUT,
-        "<!DOCTYPE html><html><head><title>408 Request Timeout</title></head>"
-        "<body><center><h1><b>408</b> Request Timeout</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "408 Request Timeout" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>408</b> Request Timeout" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::LENGTH_REQUIRED,
-        "<!DOCTYPE html><html><head><title>411 Length Required</title></head>"
-        "<body><center><h1><b>411</b> Length Required</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "411 Length Required" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>411</b> Length Required" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::PAYLOAD_TOO_LARGE,
-        "<!DOCTYPE html><html><head><title>413 Payload Too Large</title></head>"
-        "<body><center><h1><b>413</b> Payload Too Large</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "413 Payload Too Large" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>413</b> Payload Too Large" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::URI_TOO_LONG,
-        "<!DOCTYPE html><html><head><title>414 URI Too Long</title></head>"
-        "<body><center><h1><b>414</b> URI Too Long</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "414 URI Too Long" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>414</b> URI Too Long" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::UNSUPPORTED_MEDIA_TYPE,
-        "<!DOCTYPE html><html><head><title>415 Unsupported Media Type</title></head>"
-        "<body><center><h1><b>415</b> Unsupported Media Type</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "415 Unsupported Media Type" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>415</b> Unsupported Media Type" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::INTERNAL_SERVER_ERROR,
-        "<!DOCTYPE html><html><head><title>500 Internal Server Error</title></head>"
-        "<body><center><h1><b>500</b> Internal Server Error</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "500 Internal Server Error" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>500</b> Internal Server Error" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::NOT_IMPLEMENTED,
-        "<!DOCTYPE html><html><head><title>501 Not Implemented</title></head>"
-        "<body><center><h1><b>501</b> Not Implemented</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "501 Not Implemented" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>501</b> Not Implemented" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::BAD_GATEWAY,
-        "<!DOCTYPE html><html><head><title>502 Bad Gateway</title></head>"
-        "<body><center><h1><b>502</b> Bad Gateway</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "502 Bad Gateway" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>502</b> Bad Gateway" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::GATEWAY_TIMEOUT,
-        "<!DOCTYPE html><html><head><title>504 Gateway Timeout</title></head>"
-        "<body><center><h1><b>504</b> Gateway Timeout</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "504 Gateway Timeout" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>504</b> Gateway Timeout" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::HTTP_VERSION_NOT_SUPPORTED,
-        "<!DOCTYPE html><html><head><title>505 HTTP Version Not Supported</title></head>"
-        "<body><center><h1>505 HTTP Version Not Supported</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "505 HTTP Version Not Supported" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "505 HTTP Version Not Supported" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(66,
-        "<!DOCTYPE html><html><head><title>XXX Unknown response status code</title></head>"
-        "<body><center><h1><b>XXX</b> Unknown response status code</h1></center><hr></body></html>"));
+        HTML_BEG HEAD_BEG TITLE_BEG "XXX Unknown response status code" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>XXX</b> Unknown response status code" H1_CENTER_END HR BODY_END HTML_END));
 }
 
 ErrorResponses::~ErrorResponses() {}

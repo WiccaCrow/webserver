@@ -118,7 +118,7 @@ RequestHeader::CacheControl(Request &req) {
 StatusCode
 RequestHeader::Connection(Request &req) {
     toLowerCase(value);
-    if (value != "close" && value.find("close") != std::string::npos) {
+    if (value.find("close") != std::string::npos) {
         value = "close";
     }
     (void)req;
@@ -169,6 +169,7 @@ RequestHeader::Cookie(Request &req) {
 StatusCode
 RequestHeader::Date(Request &req) {
     (void)req;
+    // This header is mostly for web-servers, and client send it very rarely.
     return CONTINUE;
 }
 
@@ -246,32 +247,6 @@ RequestHeader::IfMatch(Request &req) {
 }
 
 StatusCode
-RequestHeader::IfModifiedSince(Request &req) {
-    (void)req;
-
-    if (true)
-        return CONTINUE;
-
-    struct tm tm;
-    if (!strptime(value.c_str(), "%a, %-e %b %Y %H:%M:%S GMT", &tm)) {
-        Log.debug() << "IfModifiedSince:: Cannot read datetime " << value << std::endl;
-        return BAD_REQUEST;
-    }
-
-    // struct stat state;
-    if (req.getResolvedPath() != "") {
-
-        // if (stat(req.getResolvedPath().c_str(), &state) < 0) {
-        // Log.debug() << "IfModifiedSince:: " << std::endl;
-        return CONTINUE;
-        // }
-        // if equal
-        // return NOT_MODIFIED;
-    }
-    return CONTINUE;
-}
-
-StatusCode
 RequestHeader::IfNoneMatch(Request &req) {
     (void)req;
 
@@ -314,13 +289,44 @@ RequestHeader::IfNoneMatch(Request &req) {
 }
 
 StatusCode
-RequestHeader::IfRange(Request &req) {
-    (void)req;
+RequestHeader::IfModifiedSince(Request &req) {
+
+    if (req.getMethod() == "GET" || req.getMethod() == "HEAD") {
+
+        struct tm tm;
+        if (!Time::gmt(value, &tm)) {
+            Log.debug() << "IfModifiedSince:: Cannot read datetime " << value << std::endl;
+            return BAD_REQUEST;
+        }
+        
+        if (Time::gmt(getModifiedTime(req.getResolvedPath())) == value) {
+            Log.debug() << "IfModifiedSince:: 304 returned for " << req.getResolvedPath() << std::endl;
+            return NOT_MODIFIED;
+        }
+    }
+
     return CONTINUE;
 }
 
 StatusCode
 RequestHeader::IfUnmodifiedSince(Request &req) {
+
+    struct tm tm;
+    if (!Time::gmt(value, &tm)) {
+        Log.debug() << "IfUnmodifiedSince:: Cannot read datetime " << value << std::endl;
+        return BAD_REQUEST;
+    }
+
+    if (Time::gmt(getModifiedTime(req.getResolvedPath())) != value) {
+        Log.debug() << "IfUnmodifiedSince:: 412 returned for " << req.getResolvedPath() << std::endl;
+        return PRECONDITION_FAILED;
+    }
+
+    return CONTINUE;
+}
+
+StatusCode
+RequestHeader::IfRange(Request &req) {
     (void)req;
     return CONTINUE;
 }
@@ -328,6 +334,7 @@ RequestHeader::IfUnmodifiedSince(Request &req) {
 StatusCode
 RequestHeader::KeepAlive(Request &req) {
     (void)req;
+    // Not sure, but should be used by servers mostly
     return CONTINUE;
 }
 

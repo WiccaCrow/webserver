@@ -10,7 +10,12 @@ namespace Time {
         return buff;
     }
 
-    std::string 
+    bool
+    str2time(const std::string &s, struct tm *t, const char *format) {
+        return (strptime(s.c_str(), format, t) != NULL);
+    }
+
+    std::string
     local(time_t t, const char *format) {
         return time2str(localtime(&t), format);
     }
@@ -28,6 +33,11 @@ namespace Time {
     std::string
     gmt(const char *format, time_t t) {
         return gmt(t, format);
+    }
+
+    bool
+    gmt(const std::string &s, struct tm *t, const char *format) {
+        return str2time(s, t, format);
     }
 
     // struct tm *

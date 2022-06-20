@@ -309,89 +309,115 @@ cutFileName(const std::string &file) {
     return line;
 }
 
+int
+Response::fillFileStat(const std::string &filename, struct stat *st) {
+
+    const std::string &fullname = getRequest()->getResolvedPath() + '/' + filename;
+
+    if (stat(fullname.c_str(), st) < 0) {
+        Log.debug() << "cannot get stat of " << fullname << std::endl;
+        return 0;
+    }
+    return 1;
+}
+
+static std::string
+getHumanSize(long long bytes, bool si = true) {
+    static const char *suffixes = " kMGTPE";
+
+    const char *end = (!si && bytes > 1024) ? "iB" : "B";
+    int base = si ? 1000 : 1024;
+
+    if (bytes < base) {
+        return lltos(bytes) + suffixes[0] + end;
+    }
+
+    int index = static_cast<int>(log(bytes) / log(base));
+    double humanSize = static_cast<double>(bytes / pow(base, index));
+    char buf[10] = {0};
+    snprintf(buf, 10, "%.1f%c%s", humanSize, suffixes[index], end);
+    return buf;
+}
+
+static inline std::string 
+createLinkLine(const std::string &file) {
+    return "<a href=\"" + file + "\">" + cutFileName(file) + "</a>";
+}
+
 std::string
-Response::createTableLine(dir_cms &dirMap) {
+Response::createTableLine(const std::string &filename) {
+    
     std::string line;
     line.reserve(512);
 
-    for (dir_cms::iterator it = dirMap.begin(), itEnd = dirMap.end();
-        it != itEnd; ++it) {
-        if (it->first == ".") {
-            continue ;
-        } else if (it->first == "..") {
-            line += "<tr>";
-            line += "<td><a href=\"" + it->first + "\">" + it->first + "</a></td>"
-                    "<td></td><td></td></tr>";
-        } else {
-            line += "<tr>";
-            line += "<td><a href=\"" + it->first + "\">" + it->first + "</a></td>";
-            line += "<td>" + it->second.modifiers + "</td>";
-            line += "<td>" + it->second.fileSize + "</td>";
-            line += "</tr>";
-        }
+    struct stat st;
+    if (!fillFileStat(filename, &st)) {
+        return "";
     }
+
+    line += TR_BEG;
+    line += TD_BEG + createLinkLine(filename) + TD_END;
+    line += TD_BEG + Time::gmt("%d/%m/%Y %H:%m", st.st_mtime) + TD_END;
+    line += TD_BEG + getHumanSize(st.st_size) + TD_END;
+    line += TR_END;
 
     return line;
 }
 
 int
 Response::listing(const std::string &resourcePath) {
-    _body = "<!DOCTYPE html>"
-            "<html>"
-            "<head>"
-            "<meta charset=\"UTF-8\">"
-            "<title>" + _req->getPath() + "</title>"
-            "<style>"
-                "a { text-decoration:none; color: #303030; }"
-                "* { color: #60A060; font-family: monospace; }"
-                "body { padding: 20px; }"
-                "tr td:nth-child(3) { text-align: right; }"
-            "</style>"
-            "</head>"
-            "<body>"
-            "<h1>Index on " + _req->getPath() + "</h1>"
-            "<hr>"
-            "<table cellpadding=\"5px\">"
-            "<tr><th>Filename</th><th>Last modified</th><th>Size</th></tr>";
 
-    dir_cms dirContentAndModifiers;
-    if (!fillDirContent(dirContentAndModifiers, resourcePath)) {
+    _body = 
+        HTML_BEG HEAD_BEG TITLE_BEG + _req->getPath() + TITLE_END
+        META_UTF8 DEFAULT_CSS HEAD_END BODY_BEG
+        H1_BEG "Index on " + _req->getPath() + H1_END HR
+        TABLE_BEG 
+            TR_BEG 
+                TH_BEG "Filename" TH_END 
+                TH_BEG "Last modified" TH_END
+                TH_BEG "Size" TH_END
+            TR_END
+            TR_BEG 
+                TD_BEG "<a href=\"..\">../</a>" TD_END
+                TD_BEG TD_END
+                TD_BEG TD_END
+            TR_END;
+
+    std::deque<std::string> filenames;
+    if (!fillDirContent(filenames, resourcePath)) {
         return 0;
     }
 
-    _body += createTableLine(dirContentAndModifiers);
-    _body += "</table><hr></body></html>";
+    std::sort(filenames.begin(), filenames.end());
+    std::deque<std::string>::iterator it;
+    for (it = filenames.begin(); it != filenames.end(); ++it) {
 
+        if (*it == "." || *it == "..") {
+            continue ;
+        }
+        _body += createTableLine(*it); 
+    }
+    _body += TABLE_END HR BODY_END HTML_END;
     setBodyLength(_body.length());
 
     return 1;
 }
 
 int
-Response::fillDirContent(dir_cms &dirContModifSize, 
-                         const std::string &directory) {
-    DIR *r_opndir = opendir(directory.c_str());
-    if (!r_opndir) {
+Response::fillDirContent(std::deque<std::string> &filenames, const std::string &dirName) {
+
+    DIR *dir = opendir(dirName.c_str());
+    if (!dir) {
         setStatus(INTERNAL_SERVER_ERROR);
         return 0;
     }
 
-    dir_nms oneFile;
-    for (struct dirent *dirContent; (dirContent = readdir(r_opndir)); ) {
-        const std::string &fullname = getRequest()->getResolvedPath() + '/' + dirContent->d_name;
-        struct stat st;
-        if (stat(fullname.c_str(), &st) < 0) {
-            Log.debug() << "stat failed for " << fullname << std::endl;
-            setStatus(INTERNAL_SERVER_ERROR);
-            closedir(r_opndir);
-            return 0;
-        }
-        oneFile.fileSize = ulltos(st.st_size);
-        oneFile.modifiers = Time::gmt("%d/%m/%Y %H:%m", st.st_mtime);
-
-        dirContModifSize.insert(std::make_pair(dirContent->d_name, oneFile));
+    struct dirent *entry;
+    while ((entry = readdir(dir))) {
+        filenames.push_back(entry->d_name);
     }
-    closedir(r_opndir);
+
+    closedir(dir);
     return 1;
 }
 
