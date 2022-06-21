@@ -43,6 +43,30 @@ RequestHeader::AcceptCharset(Request &req) {
 StatusCode
 RequestHeader::AcceptEncoding(Request &req) {
     (void)req;
+
+    std::vector<std::string> encodings = split(value, ",");
+
+    // gzip compress deflate br identity *
+    for (size_t i = 0; i < encodings.size(); i++) {
+        
+        trim(encodings[i], " \r\n");
+        std::string encoding = encodings[i];
+        
+        size_t pos = encodings[i].find(';');
+        if (pos == std::string::npos) {
+            encoding = encodings[i].substr(0, pos);
+        }
+
+        if (encoding != "gzip" &&
+            encoding != "compress" &&
+            encoding != "deflate" &&
+            encoding != "br" &&
+            encoding != "identity" &&
+            encoding != "*") {
+            return NOT_ACCEPTABLE;
+        }
+
+    }
     return CONTINUE;
 }
 

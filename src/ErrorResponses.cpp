@@ -59,6 +59,9 @@ ErrorResponses::ErrorResponses() {
     _errorResponses.insert(std::make_pair(HTTP::METHOD_NOT_ALLOWED,
         HTML_BEG HEAD_BEG TITLE_BEG "405 Method Not Allowed" TITLE_END HEAD_END
         BODY_BEG H1_CENTER_BEG "<b>405</b> Method Not Allowed" H1_CENTER_END HR BODY_END HTML_END));
+    _errorResponses.insert(std::make_pair(HTTP::NOT_ACCEPTABLE,
+        HTML_BEG HEAD_BEG TITLE_BEG "406 Not acceptable" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>406</b> Not acceptable" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::REQUEST_TIMEOUT,
         HTML_BEG HEAD_BEG TITLE_BEG "408 Request Timeout" TITLE_END HEAD_END
         BODY_BEG H1_CENTER_BEG "<b>408</b> Request Timeout" H1_CENTER_END HR BODY_END HTML_END));
