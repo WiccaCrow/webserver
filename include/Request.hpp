@@ -37,6 +37,7 @@ private:
     std::string                       _protocol;
     std::string                       _resolvedPath;
     URI                               _host;
+    URI                               _referrer;
     std::map<uint32_t, RequestHeader> _headers;
     StatusCode                        _status;
     int                               _major : 4;
@@ -87,7 +88,10 @@ public:
     const HTTP::StatusCode                  &getStatus() const;
     URI                                     &getUriRef();
     URI                                     &getHostRef();
+    URI                                     &getReferrerRef();
     const std::string                       &getRawUri() const;
+
+    RangeList                               &getRangeList();
 
     bool    isFormed(void) const;
     void    isFormed(bool formed);

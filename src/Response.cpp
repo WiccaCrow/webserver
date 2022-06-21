@@ -132,6 +132,7 @@ Response::GET(void) {
     if (!contentForGetHead()) {
         setErrorResponse(getStatus());
     }
+    addHeader(ACCEPT_RANGES, "none");
 }
 
 void
@@ -478,7 +479,7 @@ Response::makeHeaders() {
 
     allHeaders += "\r\n";
 
-    Log.debug() << std::endl << allHeaders << std::endl;
+    // Log.debug() << std::endl << allHeaders << std::endl;
     return allHeaders;
 }
 

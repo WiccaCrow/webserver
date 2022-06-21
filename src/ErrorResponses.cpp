@@ -37,8 +37,8 @@ HTTP::Response::setErrorResponse(HTTP::StatusCode status) {
     response = errorResponses[status];
     if (response.empty()) {
         Log.error() << "Unknown response code: " << static_cast<int>(status) << std::endl;
-        setStatus(INTERNAL_SERVER_ERROR);
-        setBody(errorResponses[66]);
+        setStatus(UNKNOWN_ERROR);
+        setBody(errorResponses[UNKNOWN_ERROR]);
     } else {
         setStatus(status);
         setBody(response);
@@ -89,9 +89,9 @@ ErrorResponses::ErrorResponses() {
     _errorResponses.insert(std::make_pair(HTTP::HTTP_VERSION_NOT_SUPPORTED,
         HTML_BEG HEAD_BEG TITLE_BEG "505 HTTP Version Not Supported" TITLE_END HEAD_END
         BODY_BEG H1_CENTER_BEG "505 HTTP Version Not Supported" H1_CENTER_END HR BODY_END HTML_END));
-    _errorResponses.insert(std::make_pair(66,
-        HTML_BEG HEAD_BEG TITLE_BEG "XXX Unknown response status code" TITLE_END HEAD_END
-        BODY_BEG H1_CENTER_BEG "<b>XXX</b> Unknown response status code" H1_CENTER_END HR BODY_END HTML_END));
+    _errorResponses.insert(std::make_pair(HTTP::UNKNOWN_ERROR,
+        HTML_BEG HEAD_BEG TITLE_BEG "520 Unknown response status code" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>520</b> Unknown response status code" H1_CENTER_END HR BODY_END HTML_END));
 }
 
 ErrorResponses::~ErrorResponses() {}
