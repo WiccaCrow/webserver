@@ -1,16 +1,16 @@
 #pragma once
 
-#include <algorithm>
 #include <map>
 #include <set>
-#include <stdint.h>
 #include <string>
+#include <stdint.h>
+#include <algorithm>
 
+#include "Utils.hpp"
+#include "Header.hpp"
+#include "Status.hpp"
 #include "Globals.hpp"
 #include "HeadersCodes.hpp"
-#include "Status.hpp"
-#include "Header.hpp"
-#include "Utils.hpp"
 
 
 namespace HTTP {

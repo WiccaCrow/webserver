@@ -17,6 +17,7 @@
 #include "URI.hpp"
 #include "Utils.hpp"
 #include "Time.hpp"
+#include "Range.hpp"
 
 #define PARSED_NONE    0x0
 #define PARSED_SL      0x1
@@ -50,6 +51,7 @@ private:
     size_t        _bodySize;
     std::string   _body;
     uint8_t       _parseFlags;
+    RangeList     _ranges;
 
     bool     _isAuthorized;
     uint32_t _storedHash;

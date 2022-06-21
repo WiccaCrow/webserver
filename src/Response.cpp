@@ -477,6 +477,8 @@ Response::makeHeaders() {
     }
 
     allHeaders += "\r\n";
+
+    Log.debug() << std::endl << allHeaders << std::endl;
     return allHeaders;
 }
 
@@ -539,7 +541,6 @@ Response::makeChunk() {
     _res = "";
 
     if (!getHeader(TRANSFER_ENCODING) ) {
-
         return ;
     }
 
