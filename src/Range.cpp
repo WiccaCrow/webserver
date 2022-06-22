@@ -150,7 +150,7 @@ RangeList::iter_at(size_t index) {
 
 RangeList::const_iterator
 RangeList::iter_at(size_t index) const {
-    const_iterator it = _ranges.cbegin();
+    const_iterator it = _ranges.begin();
     std::advance(it, index);
     return it;
 }

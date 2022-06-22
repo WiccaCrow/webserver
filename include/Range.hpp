@@ -5,6 +5,8 @@
 #include <deque>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
+#include <limits.h>
 
 #include "Utils.hpp"
 
