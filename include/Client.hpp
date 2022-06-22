@@ -23,6 +23,7 @@ private:
     std::string _clientIpAddr;
     size_t      _serverPort;
     std::string _serverIpAddr;
+    ::Server      *_serv;
 
     std::deque<HTTP::Request *> _requests;
     std::deque<HTTP::Response *> _responses;
@@ -30,6 +31,7 @@ private:
     bool        _shouldBeClosed;
     bool        _reqPoolReady;
     bool        _replyDone;
+    bool        _proxy;
 
 
     std::string _rem;
@@ -69,6 +71,12 @@ public:
 
     void               setIpAddr(const std::string &);
     const std::string &getIpAddr(void) const;
+
+    void                setProxyFlag(bool isProxy);
+    const bool         &getProxyFlag(void) const;
+
+    void            setServ(Server *serv);
+    ::Server         *getServ(void);
 
     const std::string getHostname(void) const;
 

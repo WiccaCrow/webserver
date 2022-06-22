@@ -50,14 +50,17 @@ public:
     void   addServerBlock(HTTP::ServerBlock &servBlock);
     std::list<HTTP::ServerBlock> &getServerBlocks(size_t port);
     
-    void start(void);
-    void pollServ(void);
-    void connectClient(size_t id);
-    void disconnectClient(size_t id);
-    void handlePollError();
-    void pollInHandler(size_t id);
-    void pollHupHandler(size_t id);
-    void pollOutHandler(size_t id);
-    void pollErrHandler(size_t id);
+    void   start(void);
+    void   pollServ(void);
+    void   connectClient(size_t id);
+    size_t addSockToPollfdAndCli(int fd, struct sockaddr_in *cli4, struct sockaddr_in *servData);
+    size_t addClient(size_t id, int fd, struct sockaddr_in *cli4, struct sockaddr_in *servData);
+    size_t addSockToPollfd(int fd);
+    void   disconnectClient(size_t id);
+    void   handlePollError();
+    void   pollInHandler(size_t id);
+    void   pollHupHandler(size_t id);
+    void   pollOutHandler(size_t id);
+    void   pollErrHandler(size_t id);
 
 };

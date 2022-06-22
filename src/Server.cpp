@@ -248,6 +248,40 @@ Server::connectClient(size_t servid) {
         return;
     }
 
+    size_t id = addSockToPollfdAndCli(fd, &clientData, &servData);
+    
+    Log.debug() << "Server::connect [" << fd << "] -> " << _clients[id].getHostname() << std::endl;
+}
+
+size_t
+Server::addSockToPollfdAndCli(int fd, 
+                              struct sockaddr_in *clientDataIp4, 
+                              struct sockaddr_in *servData) {
+
+    size_t id = addSockToPollfd(fd);
+    return addClient(id, fd, clientDataIp4 , servData);
+}
+
+size_t
+Server::addClient(size_t id, int fd,
+                  struct sockaddr_in *clientDataIp4,
+                  struct sockaddr_in *servData) {
+    _clients.insert(std::make_pair(id, HTTP::Client()));
+    _clients[id].setFd(fd);
+    _clients[id].setPort(ntohs(clientDataIp4->sin_port));
+    _clients[id].setIpAddr(inet_ntoa(clientDataIp4->sin_addr));
+    _clients[id].setServ(this);
+    if (servData) {
+        _clients[id].setServerPort(ntohs(servData->sin_port));
+        _clients[id].setServerIpAddr(inet_ntoa(servData->sin_addr));
+    } else {
+        _clients[id].setProxyFlag(true);
+    }
+    return id;
+}
+
+size_t
+Server::addSockToPollfd(int fd) {
     fcntl(fd, F_SETFL, O_NONBLOCK);
 
     size_t id;
@@ -256,20 +290,13 @@ Server::connectClient(size_t servid) {
     if (it != _pollfds.end()) {
         it->fd     = fd;
         it->events = POLLIN | POLLOUT;
-        id   = std::distance(_pollfds.begin(), it);
+        id = std::distance(_pollfds.begin(), it);
     } else {
         _pollfds.push_back((struct pollfd) { fd, POLLIN | POLLOUT, 0 });
         id = _pollfds.size() - 1;
     }
 
-    _clients.insert(std::make_pair(id, HTTP::Client()));
-    _clients[id].setFd(fd);
-    _clients[id].setPort(ntohs(clientData.sin_port));
-    _clients[id].setIpAddr(inet_ntoa(clientData.sin_addr));
-    _clients[id].setServerPort(ntohs(servData.sin_port));
-    _clients[id].setServerIpAddr(inet_ntoa(servData.sin_addr));
-
-    Log.debug() << "Server::connect [" << fd << "] -> " << _clients[id].getHostname() << std::endl;
+    return id;
 }
 
 void

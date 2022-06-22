@@ -1,6 +1,7 @@
 #include "Response.hpp"
 #include "CGI.hpp"
 #include "Client.hpp"
+#include "Server.hpp"
 
 namespace HTTP {
 
@@ -91,9 +92,67 @@ Response::unauthorized(void) {
     getClient()->shouldBeClosed(true);
 }
 
+#include <sys/types.h> // getaddrinfo
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+
+void
+Response::setConnect() {
+    std::string & host = _req->getHostRef()._scheme;
+    std::string & port = _req->getHostRef()._port_s;
+
+    // fill struct addrinfo
+    struct addrinfo *ipListAddrinfo;
+    struct addrinfo *p;
+    if (getaddrinfo(host.c_str(), port.c_str(), NULL, &ipListAddrinfo)) {
+        setStatus(INTERNAL_SERVER_ERROR);
+        Log.error() << "CONNECT: error in getaddrinfo (host: " << host << ")" << std::endl;
+        return ;
+    }
+
+    // set connect
+    int sockfd;
+    for (p = ipListAddrinfo; p; p = p->ai_next) {
+        sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        if (sockfd == -1 || connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            Log.info() << "CONNECT: connection not possible: "
+                        << (sockfd == -1 ? "sockfd ": "connect") << " == -1" << std::endl;
+            continue;
+        }
+        break ;
+    }
+
+    if (!p) {
+        Log.debug() << "CONNECT: for this host:port (" << host << ":" << port << ") connection not possible: ";
+        setStatus(BAD_GATEWAY);
+        return ;
+    } else if (p->ai_family == AF_INET) {
+        struct sockaddr_in *addr = (struct sockaddr_in *) p->ai_addr;
+        getClient()->getServ()->addSockToPollfdAndCli(sockfd, addr, NULL);
+        getClient()->setProxyFlag(true);
+    //     char ip[INET_ADDRSTRLEN];
+    //     inet_ntop(AF_INET, &addr->sin_addr, ip, INET6_ADDRSTRLEN);
+    }
+    freeaddrinfo(ipListAddrinfo);
+
+    setStatus(OK);
+    setBody("Connection Established.");
+    
+    // if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+    //     perror("recv");
+    //     exit(1);
+    // }
+
+    // buf[numbytes] = "'"[0];
+}
+
 void
 Response::CONNECT(void) {
-
+// 1. получить хост для соединения
+// 2. распарсить хост. Преобразовать доменное имя в лист ip
+// 3. установить соединение
+    setConnect();
 }
 
 void

@@ -7,9 +7,11 @@ Client::Client()
     : _fd(-1)
     , _clientPort(0)
     , _serverPort(0)
+    , _serv(NULL)
     , _shouldBeClosed(false)
     , _reqPoolReady(true)
-    , _replyDone(false) {
+    , _replyDone(false)
+    , _proxy(false) {
 }
 
 Client::~Client() {
@@ -33,16 +35,18 @@ Client::Client(const Client &client) {
 Client &
 Client::operator=(const Client &other) {
     if (this != &other) {
-        _requests = other._requests;
-        _responses = other._responses;
-        _reqPoolReady = other._reqPoolReady;
+        _requests       = other._requests;
+        _responses      = other._responses;
+        _reqPoolReady   = other._reqPoolReady;
         _fd             = other._fd;
         _clientIpAddr   = other._clientIpAddr;
         _serverIpAddr   = other._serverIpAddr;
         _clientPort     = other._clientPort;
         _serverPort     = other._serverPort;
         _shouldBeClosed = other._shouldBeClosed;
-        _replyDone = other._replyDone;
+        _replyDone      = other._replyDone;
+        _proxy          = other._proxy;
+        _serv           = other._serv;
     }
     return *this;
 }
@@ -99,6 +103,26 @@ Client::getServerPort(void) const {
 const std::string &
 Client::getIpAddr(void) const {
     return _clientIpAddr;
+}
+
+void
+Client::setProxyFlag(bool isProxy) {
+    _proxy = isProxy;
+}
+
+const bool &
+Client::getProxyFlag(void) const {
+    return _proxy;
+}
+
+void
+Client::setServ(Server *serv) {
+    _serv = serv;
+}
+
+::Server *
+Client::getServ(void){
+    return _serv;
 }
 
 const std::string
@@ -337,7 +361,7 @@ Client::receive(void) {
 
         switch (getline(line)) {
             case LINE_FOUND: {
-                std::cout << "         test line: "<< line << std::endl;
+                // std::cout << "         test line: "<< line << std::endl;
                 getRequest()->parseLine(line);
                 break ;
             }
