@@ -94,7 +94,7 @@ public:
     HTTP::ServerBlock *matchServerBlock(const std::string &host) const;
 
     void addRequest(void);
-    void addResponse(void);
+    void addResponse(Response *);
 
     bool requestPoolReady(void);
     void requestPoolReady(bool);

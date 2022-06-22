@@ -1,4 +1,5 @@
-let headers, body;
+let headers = [];
+let body;
 
 body = "<html>\n";
 body += "<title>Server-provided Environment variables</title>";
@@ -10,8 +11,11 @@ for (let key in process.env) {
 }
 body += "</table></body></html>\n";
 
-headers = "Content-type: text/html\n";
-headers += `Content-length: ${body.length}\n\n`;
+headers.push("Content-type: text/html");
+headers.push(`Content-length: ${body.length}`);
 
-console.log(headers);
+headers.forEach(header => {
+    console.log(header);
+});
+console.log();
 console.log(body);

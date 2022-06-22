@@ -43,6 +43,30 @@ RequestHeader::AcceptCharset(Request &req) {
 StatusCode
 RequestHeader::AcceptEncoding(Request &req) {
     (void)req;
+
+    std::vector<std::string> encodings = split(value, ",");
+
+    // gzip compress deflate br identity *
+    for (size_t i = 0; i < encodings.size(); i++) {
+        
+        trim(encodings[i], " \r\n");
+        std::string encoding = encodings[i];
+        
+        size_t pos = encodings[i].find(';');
+        if (pos == std::string::npos) {
+            encoding = encodings[i].substr(0, pos);
+        }
+
+        if (encoding != "gzip" &&
+            encoding != "compress" &&
+            encoding != "deflate" &&
+            encoding != "br" &&
+            encoding != "identity" &&
+            encoding != "*") {
+            return NOT_ACCEPTABLE;
+        }
+
+    }
     return CONTINUE;
 }
 
@@ -291,11 +315,26 @@ RequestHeader::IfNoneMatch(Request &req) {
 StatusCode
 RequestHeader::IfModifiedSince(Request &req) {
 
+    // A recipient MUST ignore If-Modified-Since if the request contains an
+    // If-None-Match header field;
+    if (req.isHeaderExist(IF_NONE_MATCH)) {
+        // Maybe value should be cleared
+        return CONTINUE;
+    }
+
     if (req.getMethod() == "GET" || req.getMethod() == "HEAD") {
 
         struct tm tm;
         if (!Time::gmt(value, &tm)) {
             Log.debug() << "IfModifiedSince:: Cannot read datetime " << value << std::endl;
+            // Server should ignore in case of invalid date - RFC 7232 (was BAD_REQUEST)
+            // Maybe value should be cleared
+            return CONTINUE;
+        }
+
+        // A date which is later than the server's current time is invalid. Add
+        struct tm *cur = Time::gmtime();        
+        if (Time::operator>(tm, *cur)) {
             return BAD_REQUEST;
         }
         
@@ -310,6 +349,13 @@ RequestHeader::IfModifiedSince(Request &req) {
 
 StatusCode
 RequestHeader::IfUnmodifiedSince(Request &req) {
+
+    // A recipient MUST ignore If-Modified-Since if the request contains an
+    // If-None-Match header field;
+    if (req.isHeaderExist(IF_MATCH)) {
+        // Maybe value should be cleared
+        return CONTINUE;
+    }
 
     struct tm tm;
     if (!Time::gmt(value, &tm)) {
@@ -337,7 +383,7 @@ RequestHeader::KeepAlive(Request &req) {
     // Not sure, but should be used by servers mostly
     return CONTINUE;
 }
-
+    
 StatusCode
 RequestHeader::MaxForwards(Request &req) {
     (void)req;
@@ -366,15 +412,21 @@ StatusCode
 RequestHeader::Range(Request &req) {
     (void)req;
     Log.debug() << "RequestHeader:: Range header detected" << std::endl;
+    
+    if (!req.getRangeList().parse(value)) {
+        // Not exactly like that, but fine for now
+        return RANGE_NOT_SATISFIABLE;
+    }
+
     return CONTINUE;
 }
 
 StatusCode
 RequestHeader::Referer(Request &req) {
-    URI ref;
-    ref.parse(value);
-    (void)req;
-    // req.getUriRef()._path = ref._path + req.getUriRef()._path;
+
+    // OK, but what the hell should I do with it?
+    req.getReferrerRef().parse(value);
+
     return CONTINUE;
 }
 

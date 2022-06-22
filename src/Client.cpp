@@ -152,29 +152,32 @@ Client::shouldBeClosed(void) const {
 
 void
 Client::addRequest(void) {
+
     Request *req = new Request(this);
     if (req == NULL) {
         Log.syserr() << "Cannot allocate request" << std::endl;
         setFd(-1);
     }
+
+    Log.debug() << "----------------------" << std::endl;
+    
     _requests.push_back(req);
     requestPoolReady(false);
 }
 
 void
-Client::addResponse(void) {
-    Response *res = new Response(getRequest());
-    if (res == NULL) {
-        Log.syserr() << "Cannot allocate response" << std::endl;
-        setFd(-1);
-    }
+Client::addResponse(Response *res) {
+    // Response *res = new Response(getRequest());
+    // if (res == NULL) {
+    //     Log.syserr() << "Cannot allocate response" << std::endl;
+    //     setFd(-1);
+    // }
     _responses.push_back(res);
-    requestPoolReady(true);
+    // requestPoolReady(true);
 }
 
 void
 Client::removeTopRequest(void) {
-    delete _requests.front();
     _requests.pop_front();
 }
 

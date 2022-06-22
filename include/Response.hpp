@@ -19,7 +19,7 @@
 #include "Request.hpp"
 #include "ResponseHeader.hpp"
 #include "HTML.hpp"
-
+#include "PoolController.hpp"
 
 namespace HTTP {
 

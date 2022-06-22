@@ -17,6 +17,7 @@
 #include "URI.hpp"
 #include "Utils.hpp"
 #include "Time.hpp"
+#include "Range.hpp"
 
 #define PARSED_NONE    0x0
 #define PARSED_SL      0x1
@@ -36,6 +37,7 @@ private:
     std::string                       _protocol;
     std::string                       _resolvedPath;
     URI                               _host;
+    URI                               _referrer;
     std::map<uint32_t, RequestHeader> _headers;
     StatusCode                        _status;
     int                               _major : 4;
@@ -50,6 +52,7 @@ private:
     size_t        _bodySize;
     std::string   _body;
     uint8_t       _parseFlags;
+    RangeList     _ranges;
 
     bool     _isAuthorized;
     uint32_t _storedHash;
@@ -85,7 +88,10 @@ public:
     const HTTP::StatusCode                  &getStatus() const;
     URI                                     &getUriRef();
     URI                                     &getHostRef();
+    URI                                     &getReferrerRef();
     const std::string                       &getRawUri() const;
+
+    RangeList                               &getRangeList();
 
     bool    isFormed(void) const;
     void    isFormed(bool formed);

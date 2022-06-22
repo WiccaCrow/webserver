@@ -30,7 +30,7 @@ Request::Request(Client *client)
     , _isFormed(false) {
 }
 
-Request::~Request() { }
+Request::~Request() {}
 
 Request::Request(const Request &other) {
     *this = other;
@@ -141,6 +141,12 @@ Request::getHostRef() {
     return _host;
 }
 
+URI &
+Request::getReferrerRef() {
+    return _host;
+}
+
+
 const std::string &
 Request::getRawUri() const {
     return _rawURI;
@@ -171,6 +177,11 @@ Request::getStoredHash() const {
     return _storedHash;
 }
 
+RangeList &
+Request::getRangeList(void) {
+    return _ranges;
+}
+
 void
 Request::setStoredHash(uint32_t hash) {
     _storedHash = hash;
@@ -186,28 +197,9 @@ Request::chuckedRequested(void) {
     return _chuckedRequested;
 }
 
+// Remove
 void
-Request::clear() {
-    // _method   = "";
-    // _rawURI   = "";
-    // _protocol = "";
-    // _uri.clear();
-    // _headers.clear();
-    // _body.clear();
-    // _resolvedPath = "";
-    // _bodySize     = 0;
-    // _parseFlags   = 0;
-    // _chunkSize    = 0;
-    // _isChuckSize  = false;
-    // _isFormed = false;
-
-    // _headers.clear();
-    // _status = OK;
-    // _minor  = 0;
-    // _major  = 0;
-    // _servBlock = NULL;
-    // _location = NULL;
-}
+Request::clear() {}
 
 const std::string &
 Request::getQueryString() const {
@@ -285,7 +277,6 @@ Request::parseLine(std::string &line) {
 StatusCode
 Request::parseSL(const std::string &line) {
 
-    Log.debug() << "----------------------" << std::endl;
     Log.debug() << line << std::endl;
 
     size_t pos = 0;

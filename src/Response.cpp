@@ -58,7 +58,11 @@ Response &Response::operator=(const Response &other) {
     return *this;
 }
 
-Response::~Response() { }
+Response::~Response() { 
+    if (getRequest() != NULL) {
+        delete getRequest();
+    } 
+}
 
 void
 Response::initMethodsHeaders(void) {}
@@ -193,6 +197,7 @@ Response::GET(void) {
     if (!contentForGetHead()) {
         setErrorResponse(getStatus());
     }
+    addHeader(ACCEPT_RANGES, "none");
 }
 
 void
@@ -538,6 +543,8 @@ Response::makeHeaders() {
     }
 
     allHeaders += "\r\n";
+
+    // Log.debug() << std::endl << allHeaders << std::endl;
     return allHeaders;
 }
 
@@ -600,7 +607,6 @@ Response::makeChunk() {
     _res = "";
 
     if (!getHeader(TRANSFER_ENCODING) ) {
-
         return ;
     }
 

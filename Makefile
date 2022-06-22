@@ -8,9 +8,10 @@ NAME = webserv
 
 CXX       =   clang++
 CPPFLAGS  =   -Wall -Wextra -Werror -std=c++98 -g
+LDFLAGS   =   -lpthread
 
 ifeq ($(shell uname), Linux)
-	LIBCRYPT   = -lcrypt
+	LDFLAGS    += -lcrypt
 	CPPFLAGS   += -fstandalone-debug
 endif
 
@@ -24,15 +25,15 @@ DEPS_DIR     = .deps
 INCLUDE_DIR  = include
 LOGS_DIR     = logs
 
-SRCS     =  Auth.cpp                Location.cpp            SHA1.cpp         \
-            Base64.cpp              Logger.cpp              Server.cpp       \
-            CGI.cpp                 Time.cpp                ServerBlock.cpp  \
-            CRC.cpp                 Redirect.cpp            StatusLines.cpp  \
-            Client.cpp              Request.cpp             URI.cpp          \
-            Config.cpp              RequestHeader.cpp       Utils.cpp        \
-            ErrorResponses.cpp      Response.cpp            main.cpp         \
-            Header.cpp              ResponseContType.cpp                     \
-            HeaderNames.cpp         ResponseHeader.cpp                       \
+SRCS     =  Auth.cpp                Location.cpp            SHA1.cpp           \
+            Base64.cpp              Logger.cpp              Server.cpp         \
+            CGI.cpp                 Time.cpp                ServerBlock.cpp    \
+            CRC.cpp                 Redirect.cpp            StatusLines.cpp    \
+            Client.cpp              Request.cpp             URI.cpp            \
+            Config.cpp              RequestHeader.cpp       Utils.cpp          \
+            ErrorResponses.cpp      Response.cpp            main.cpp           \
+            Header.cpp              ResponseContType.cpp    PoolController.cpp \
+            HeaderNames.cpp         ResponseHeader.cpp      Range.cpp          \
 
 OBJS = $(addprefix $(OBJS_DIR)/, $(SRCS:.cpp=.o))
 DEPS = $(addprefix $(DEPS_DIR)/, $(SRCS:.cpp=.d))
@@ -62,7 +63,7 @@ makedir:
 
 
 $(NAME): $(OBJS)
-	$(CXX) $(CPPFLAGS) $^ -o $(NAME) $(LIBJSONFLAGS) $(LIBCRYPT)
+	$(CXX) $(CPPFLAGS) $^ -o $(NAME) $(LIBJSONFLAGS) $(LDFLAGS)
 
 -include $(DEPS)
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
