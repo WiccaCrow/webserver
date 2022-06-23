@@ -66,14 +66,17 @@ public:
     void    start(void);
     void    pollServ(void);
     void    connectClient(size_t id);
-    size_t  addSockToPollfdAndCli(int fd, struct sockaddr_in *cli4, struct sockaddr_in *servData);
+    size_t  proxySetFdAndClient(int fd, struct sockaddr_in *cli4);
     size_t  addClient(size_t id, int fd, struct sockaddr_in *cli4, struct sockaddr_in *servData);
     size_t  addSockToPollfd(int fd);
     void    disconnectClient(size_t id);
+    void    disconnectClientOneSide(size_t id);
     void    handlePollError();
     void    pollInHandler(size_t id);
     void    pollHupHandler(size_t id);
     void    pollOutHandler(size_t id);
     void    pollErrHandler(size_t id);
+
+    HTTP::Client *getClient(size_t id);
 
 };

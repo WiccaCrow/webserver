@@ -254,6 +254,11 @@ Server::pollErrHandler(size_t id) {
     exit(1);
 }
 
+HTTP::Client *
+Server::getClient(size_t id) {
+    return &_clients[id];
+}
+
 void
 Server::start(void) {
     fillServBlocksFds();
@@ -335,18 +340,18 @@ Server::connectClient(size_t servid) {
         return;
     }
 
-    size_t id = addSockToPollfdAndCli(fd, &clientData, &servData);
-    
+    size_t id = addSockToPollfd(fd);
+    addClient(id, fd, &clientData, &servData);
     Log.debug() << "Server::connect [" << fd << "] -> " << _clients[id].getHostname() << std::endl;
 }
 
 size_t
-Server::addSockToPollfdAndCli(int fd, 
-                              struct sockaddr_in *clientDataIp4, 
-                              struct sockaddr_in *servData) {
-
+Server::proxySetFdAndClient(int fd, 
+                              struct sockaddr_in *clientDataIp4) {
     size_t id = addSockToPollfd(fd);
-    return addClient(id, fd, clientDataIp4 , servData);
+    addClient(id, fd, clientDataIp4 , NULL);
+    _clients[id].getProxy()->on(true);
+    return id;
 }
 
 size_t
@@ -354,15 +359,13 @@ Server::addClient(size_t id, int fd,
                   struct sockaddr_in *clientDataIp4,
                   struct sockaddr_in *servData) {
     _clients.insert(std::make_pair(id, HTTP::Client()));
+    _clients[id].setId(id);
     _clients[id].setFd(fd);
     _clients[id].setPort(ntohs(clientDataIp4->sin_port));
     _clients[id].setIpAddr(inet_ntoa(clientDataIp4->sin_addr));
-    _clients[id].setServ(this);
     if (servData) {
         _clients[id].setServerPort(ntohs(servData->sin_port));
         _clients[id].setServerIpAddr(inet_ntoa(servData->sin_addr));
-    } else {
-        _clients[id].setProxyFlag(true);
     }
     return id;
 }
@@ -388,6 +391,15 @@ Server::addSockToPollfd(int fd) {
 
 void
 Server::disconnectClient(size_t id) {
+    if (_clients[id].isProxy()) {
+        size_t idOtherSide = _clients[id].getProxy()->idOtherSide();
+        disconnectClientOneSide(idOtherSide);
+    }
+    disconnectClientOneSide(id);
+}
+
+void
+Server::disconnectClientOneSide(size_t id) {
     const int fd = _pollfds[id].fd;
 
     close(fd);

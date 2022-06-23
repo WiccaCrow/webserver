@@ -25,7 +25,8 @@ DEPS_DIR     = .deps
 INCLUDE_DIR  = include
 LOGS_DIR     = logs
 
-SRCS     =  Auth.cpp                Location.cpp            SHA1.cpp           \
+SRCS     =  Proxy.cpp \
+			Auth.cpp                Location.cpp            SHA1.cpp           \
             Base64.cpp              Logger.cpp              Server.cpp         \
             CGI.cpp                 Time.cpp                ServerBlock.cpp    \
             CRC.cpp                 Redirect.cpp            StatusLines.cpp    \
@@ -34,6 +35,7 @@ SRCS     =  Auth.cpp                Location.cpp            SHA1.cpp           \
             ErrorResponses.cpp      Response.cpp            main.cpp           \
             Header.cpp              ResponseContType.cpp    PoolController.cpp \
             HeaderNames.cpp         ResponseHeader.cpp      Range.cpp          \
+			
 
 OBJS = $(addprefix $(OBJS_DIR)/, $(SRCS:.cpp=.o))
 DEPS = $(addprefix $(DEPS_DIR)/, $(SRCS:.cpp=.d))

@@ -559,6 +559,11 @@ Request::setStatus(const HTTP::StatusCode &status) {
     _status = status;
 }
 
+void
+Request::setBody(std::string body) {
+    _body = body;
+}
+
 const std::map<std::string, std::string> &
 Request::getCookie(void) {
     return _cookie;

@@ -129,11 +129,14 @@ private:
 
 public:
     // for chunked
-    bool          getBodySizeFlag();
-    void          setBodySizeFlag(bool isSize);
-    size_t        getBodySize();
-    void          setBodySize(size_t size);
-    void          setStatus(const HTTP::StatusCode &status);
+    bool   getBodySizeFlag();
+    void   setBodySizeFlag(bool isSize);
+    size_t getBodySize();
+    void   setBodySize(size_t size);
+    void   setStatus(const HTTP::StatusCode &status);
+
+    // for proxy
+    void setBody(std::string body);
 
     bool authNeeded(void);
     bool isAuthorized(void) const;

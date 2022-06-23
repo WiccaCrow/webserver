@@ -1,0 +1,53 @@
+{
+    "servers": {
+        "http": {
+            "port": 8080,
+            "addr": "127.0.0.1",
+            "server_names": [ "localhost" ],
+            "error_pages": {
+                "404": "./pages/error_pages/404.html",
+                "400": "./pages/error_pages/400.html"
+            },
+            "CGI": {
+                ".py": "/usr/bin/python3.9"
+            },
+            "auth_basic": {
+                "realm": "eternity",
+                "user_file": ".htpasswd"
+            },
+            "methods_allowed": [ "GET", "POST", "CONNECT" ],
+            "post_max_body": 100,
+            "autoindex": true,
+            "index": [ "index.html" ],
+            "locations": {
+                "/ss": {
+                    "alias": "/home/user/Desktop/github/",
+                    "autoindex": true,
+                    "index": [ "index.html" ],
+                    "post_max_body": 200,
+                    "methods_allowed": [ "GET", "POST" ]
+                },
+                "/about": {
+                    "alias": "/home/user/Desktop/github/webserver/pages/site",
+                    "autoindex": true,
+                    "index": [ "index.html" ],
+                    "post_max_body": 200,
+                    "methods_allowed": [ "GET", "POST" ]                 
+                },
+                "/feedback": {
+                    "CGI": {
+                        ".py": "/usr/bin/python3.9"
+                    },
+                    "autoindex": false,
+                    "index": [ "index.html", "index.php" ],
+                    "methods_allowed": [ "GET" ],
+                    "post_max_body": 300
+                },
+                "/put": {
+                    "alias": "/home/user/Desktop/github/webserver/put",
+                    "methods_allowed": [ "PUT" ]
+                }
+            }
+        }
+    }
+}

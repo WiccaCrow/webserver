@@ -7,32 +7,32 @@
 #include <unistd.h>
 #include <queue>
 
+#include "Proxy.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Logger.hpp"
 #include "Status.hpp"
-#include "Globals.hpp"
 
 namespace HTTP {
 
 class Client {
 
 private:
-    int         _fd;
+    int         _fdIn;
+    int        *_fdOut;
     size_t      _clientPort;
     std::string _clientIpAddr;
     size_t      _serverPort;
     std::string _serverIpAddr;
-    ::Server      *_serv;
 
-    std::deque<HTTP::Request *> _requests;
+    std::deque<HTTP::Request *>  _requests;
     std::deque<HTTP::Response *> _responses;
 
     bool        _shouldBeClosed;
     bool        _reqPoolReady;
     bool        _replyDone;
-    bool        _proxy;
-
+    Proxy       _proxy;
+    size_t      _id;
 
     std::string _rem;
 
@@ -60,10 +60,13 @@ public:
     void setFd(int fd);
     int  getFd(void) const;
 
-    void setPort(size_t port);
+    void   setId(size_t fd);
+    size_t getId(void) const; 
+
+    void    setPort(size_t port);
     size_t  getPort(void) const;
 
-    void setServerPort(size_t port);
+    void   setServerPort(size_t port);
     size_t getServerPort(void) const;
 
     void               setServerIpAddr(const std::string &);
@@ -71,12 +74,6 @@ public:
 
     void               setIpAddr(const std::string &);
     const std::string &getIpAddr(void) const;
-
-    void                setProxyFlag(bool isProxy);
-    const bool         &getProxyFlag(void) const;
-
-    void            setServ(Server *serv);
-    ::Server         *getServ(void);
 
     const std::string getHostname(void) const;
 
@@ -88,8 +85,10 @@ public:
     void reply(void);
     void checkIfFailed(void);
 
-    bool            shouldBeClosed(void) const;
-    void            shouldBeClosed(bool);
+    bool shouldBeClosed(void) const;
+    void shouldBeClosed(bool);
+
+    bool isProxy(void);
 
     HTTP::ServerBlock *matchServerBlock(const std::string &host) const;
 
@@ -102,8 +101,15 @@ public:
     void removeTopRequest(void);
     void removeTopResponse(void);
 
-    Request *getTopRequest(void);
+    Request  *getTopRequest(void);
     Response *getTopResponse(void);
+
+    Proxy     *getProxy(void);
+    StatusCode getProxyStatus(void);
+    void       setProxyUri(URI *uri);
+    void       setProxyFdOut(int fd);
+    void       setProxyidOtherSide(size_t id);
+    size_t     proxyRun(void);
 
     bool validSocket(void);
     bool requestReady(void);

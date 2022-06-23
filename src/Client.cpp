@@ -4,14 +4,14 @@
 namespace HTTP {
 
 Client::Client()
-    : _fd(-1)
+    : _fdIn(-1)
+    , _fdOut(&_fdIn)
     , _clientPort(0)
     , _serverPort(0)
-    , _serv(NULL)
     , _shouldBeClosed(false)
     , _reqPoolReady(true)
     , _replyDone(false)
-    , _proxy(false) {
+    , _id(0) {
 }
 
 Client::~Client() {
@@ -38,7 +38,8 @@ Client::operator=(const Client &other) {
         _requests       = other._requests;
         _responses      = other._responses;
         _reqPoolReady   = other._reqPoolReady;
-        _fd             = other._fd;
+        _fdIn           = other._fdIn;
+        _fdOut          = &_fdIn;
         _clientIpAddr   = other._clientIpAddr;
         _serverIpAddr   = other._serverIpAddr;
         _clientPort     = other._clientPort;
@@ -46,7 +47,7 @@ Client::operator=(const Client &other) {
         _shouldBeClosed = other._shouldBeClosed;
         _replyDone      = other._replyDone;
         _proxy          = other._proxy;
-        _serv           = other._serv;
+        _id             = other._id;
     }
     return *this;
 }
@@ -56,12 +57,22 @@ Client::initResponseMethodsHeaders(void) {}
 
 int
 Client::getFd(void) const {
-    return _fd;
+    return _fdIn;
 }
 
 void
 Client::setFd(int fd) {
-    _fd = fd;
+    _fdIn = fd;
+}
+
+void
+Client::setId(size_t id) {
+    _id = id;
+}
+
+size_t
+Client::getId(void) const {
+    return _id;
 }
 
 void
@@ -105,26 +116,6 @@ Client::getIpAddr(void) const {
     return _clientIpAddr;
 }
 
-void
-Client::setProxyFlag(bool isProxy) {
-    _proxy = isProxy;
-}
-
-const bool &
-Client::getProxyFlag(void) const {
-    return _proxy;
-}
-
-void
-Client::setServ(Server *serv) {
-    _serv = serv;
-}
-
-::Server *
-Client::getServ(void){
-    return _serv;
-}
-
 const std::string
 Client::getHostname() const {
     return (_clientPort != 0 ? _clientIpAddr + ":" + sztos(_clientPort) : _clientIpAddr);
@@ -148,6 +139,11 @@ Client::shouldBeClosed(bool flag) {
 bool
 Client::shouldBeClosed(void) const {
     return _shouldBeClosed;
+}
+
+bool
+Client::isProxy(void) {
+    return (_proxy.on());
 }
 
 void
@@ -207,9 +203,39 @@ Client::getTopResponse(void) {
     return _responses.front();
 }
 
+Proxy *
+Client::getProxy(void) {
+    return &_proxy;
+}
+
+StatusCode
+Client::getProxyStatus(void) {
+    return _proxy.getStatus();
+}
+
+void
+Client::setProxyUri(URI *uri) {
+    _proxy.setUri(uri);
+}
+
+void
+Client::setProxyFdOut(int fd) {
+    _proxy.setFdOut(fd);
+}
+
+void
+Client::setProxyidOtherSide(size_t id) {
+    _proxy.idOtherSide(id);
+}
+
+size_t
+Client::proxyRun() {
+    return _proxy.run();
+}
+
 bool
 Client::validSocket(void) {
-    return _fd != -1;
+    return _fdIn != -1;
 }
 
 bool
@@ -255,9 +281,12 @@ Client::checkIfFailed(void) {
 void
 Client::process(void) {
 
-    Log.debug() << "Client::process [" << _fd << "]" << std::endl;
-
-    getTopResponse()->handle();
+    Log.debug() << "Client::process [" << _fdIn << "]" << std::endl;
+    if (isProxy()) {
+        getTopResponse()->makeProxyResponse(getTopRequest()->getBody());
+    } else {
+        getTopResponse()->handle();
+    }
 }
 
 void
@@ -272,7 +301,7 @@ Client::reply(void) {
 
         size_t sent = 0;
         do {
-            long n = send(_fd, rsp + sent, total - sent, 0);
+            long n = send(*_fdOut, rsp + sent, total - sent, 0);
             if (n > 0) {
                 sent += n;
             }
@@ -288,7 +317,11 @@ Client::reply(void) {
         } while (sent < total);
 
         all += sent;
-        Log.debug() << "Client::reply [" << _fd << "] (" << sent << "/" << total << " bytes sent)" << std::endl;
+        Log.debug() << "Client::reply [" << _fdIn << "] (" << sent << "/" << total << " bytes sent)" << std::endl;
+
+        if (isProxy()) {
+            break ;
+        }
 
         getTopResponse()->makeChunk();
     }
@@ -296,6 +329,10 @@ Client::reply(void) {
     Log.debug() << "Client::Total sent: " << all << std::endl;
     
     _replyDone = true;
+    
+    if (isProxy()) {
+        _fdOut = _proxy.getFdOut();
+    }
 
     if (shouldBeClosed()) {
         setFd(-1);
@@ -309,7 +346,7 @@ int
 Client::readSocket(void) {
     char buf[MAX_PACKET_SIZE + 1] = { 0 };
 
-    int recvBytes = recv(_fd, buf, MAX_PACKET_SIZE, 0);
+    int recvBytes = recv(_fdIn, buf, MAX_PACKET_SIZE, 0);
 
     if (recvBytes == 0) {
         _rem.erase();
@@ -353,11 +390,21 @@ Client::getline(std::string &line) {
 void
 Client::receive(void) {
 
-    if (_fd < 0) {
+    if (_fdIn < 0) {
         return;
     }
 
-    Log.debug() << "Client::receive [" << _fd << "]" << std::endl;
+    Log.debug() << "Client::receive [" << _fdIn << "]" << std::endl;
+
+    if (isProxy()) {
+        if (!readSocket()) {
+            setFd(-1);
+        } else {
+            getRequest()->setBody(_rem);
+            getRequest()->isFormed(true);
+        }
+        return ;
+    }
 
     while (!getRequest()->isFormed()) {
         std::string line;

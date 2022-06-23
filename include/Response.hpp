@@ -90,7 +90,8 @@ public:
     int         fillFileStat(const std::string &file, struct stat *st);
     std::string getContentType(std::string resourcePath);
     void        writeFile(const std::string &resourcePath);
-    void        setConnect(void);
+    void        runProxy(void);
+    void        makeProxyResponse(std::string response);
     ResponseHeader *getHeader(uint32_t hash);
     std::string     makeHeaders(void);
     void            addHeader(uint32_t hash, const std::string &value);
