@@ -14,36 +14,33 @@ readFile(const std::string &filename) {
     return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
 }
 
-int
-HTTP::Response::setErrorResponse(HTTP::StatusCode status) {
+void
+HTTP::Response::makeResponseForError(void) {
 
     std::string response;
     if (getRequest()->getServerBlock() != NULL) {
 
         std::map<int, std::string> &pages = getRequest()->getServerBlock()->getErrPathsRef();
-        std::map<int, std::string>::iterator it = pages.find(status);
+        std::map<int, std::string>::iterator it = pages.find(getStatus());
 
         if (it != pages.end()) {
             response = readFile(it->second);
         
             if (!response.empty()) {
-                setStatus(status);
                 setBody(response);
-                return 0;
+                return ;
             }
         }
     }
 
-    response = errorResponses[status];
+    response = errorResponses[getStatus()];
     if (response.empty()) {
-        Log.error() << "Unknown response code: " << static_cast<int>(status) << std::endl;
+        Log.error() << "Unknown response code: " << static_cast<int>(getStatus()) << Log.endl;
         setStatus(UNKNOWN_ERROR);
         setBody(errorResponses[UNKNOWN_ERROR]);
     } else {
-        setStatus(status);
         setBody(response);
     }
-    return 0;
 }
 
 ErrorResponses::ErrorResponses() {
