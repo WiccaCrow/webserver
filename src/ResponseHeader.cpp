@@ -9,9 +9,9 @@ ResponseHeader::handle(Response &res) {
     it = validResHeaders.find(hash);
 
     if (it == validResHeaders.end()) {
-        Log.debug() << "RequestHeader:: Unknown header: " << headerNames[hash] << std::endl;
-        Log.debug() << "RequestHeader:: Value: " << value << std::endl;
-        Log.debug() << "RequestHeader:: Hash: " << hash << std::endl;
+        Log.debug() << "RequestHeader:: Unknown header: " << headerNames[hash] << Log.endl;
+        Log.debug() << "RequestHeader:: Value: " << value << Log.endl;
+        Log.debug() << "RequestHeader:: Hash: " << hash << Log.endl;
         return ;
     }
     method = it->second;
@@ -38,6 +38,7 @@ ResponseHeader::AcceptPatch(Response &res) {
 void
 ResponseHeader::AcceptRanges(Response &res) {
     (void)res;
+    value = "bytes";
 }
 
 void
@@ -120,11 +121,21 @@ ResponseHeader::ContentLocation(Response &res) {
 void
 ResponseHeader::ContentRange(Response &res) {
     (void)res;
+
+    if (value.empty()) {
+        RangeSet &range = res.getRange();
+        value = "bytes " + range.to_string() + "/" + sztos(res.getFileSize());
+        Log.debug() << "Content-Range: " << value << Log.endl;
+    }
 }
 
 void
 ResponseHeader::ContentType(Response &res) {
     (void)res;
+
+    if (startsWith(value, "text")) {
+        value += "; charset=utf-8";
+    }
 }
 
 void
