@@ -51,13 +51,13 @@ basicCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res,
     JSON::AType *ptr = src->get(key);
     if (ptr->isNull()) {
         res = def;
-        Log.info() << "Used default parameter for " << key << std::endl;
+        Log.info() << "Used default parameter for " << key << Log.endl;
         return DEFAULT;
     }
 
     if (!typeExpected(ptr, type)) {
-        Log.error() << key << ": expected " << getDataTypeName(type) << std::endl;
-        Log.error() << key << ": got " << ptr->getType() << std::endl;
+        Log.error() << key << ": expected " << getDataTypeName(type) << Log.endl;
+        Log.error() << key << ": got " << ptr->getType() << Log.endl;
         return NONE_OR_INV;
     }
     return SET;
@@ -67,13 +67,13 @@ ConfStatus
 basicCheck(JSON::Object *src, const std::string &key, ExpectedType type) {
     JSON::AType *ptr = src->get(key);
     if (ptr->isNull()) {
-        Log.error() << key << "does not exist." << std::endl;
+        Log.error() << key << "does not exist." << Log.endl;
         return NONE_OR_INV;
     }
 
     if (!typeExpected(ptr, type)) {
-        Log.error() << key << ": expected " << getDataTypeName(type) << std::endl;
-        Log.error() << key << ": got " << ptr->getType() << std::endl;
+        Log.error() << key << ": expected " << getDataTypeName(type) << Log.endl;
+        Log.error() << key << ": got " << ptr->getType() << Log.endl;
         return NONE_OR_INV;
     }
     return SET;
@@ -91,7 +91,7 @@ getUInteger(JSON::Object *src, const std::string &key, int &res, int def) {
         res = static_cast<unsigned int>(num);
         return SET;
     } else {
-        Log.error() << key << ": should be an unsigned integer." << std::endl;
+        Log.error() << key << ": should be an unsigned integer." << Log.endl;
         return NONE_OR_INV;
     }
 }
@@ -108,7 +108,7 @@ getUInteger(JSON::Object *src, const std::string &key, int &res) {
         res = static_cast<unsigned int>(num);
         return SET;
     } else {
-        Log.error() << key << ": should be an unsigned integer." << std::endl;
+        Log.error() << key << ": should be an unsigned integer." << Log.endl;
         return NONE_OR_INV;
     }
 }
@@ -186,7 +186,7 @@ getArray(JSON::Object *src, const std::string &key, std::vector<std::string> &re
     JSON::Array::iterator end = arr->end();
     for (; it != end; it++) {
         if ((*it)->isNull() || !(*it)->isStr()) {
-            Log.error() << key << " has mixed value(s)" << std::endl;
+            Log.error() << key << " has mixed value(s)" << Log.endl;
             return NONE_OR_INV;
         }
         res.push_back((*it)->toStr());
@@ -208,7 +208,7 @@ getArray(JSON::Object *src, const std::string &key, std::vector<std::string> &re
     res.clear();
     for (; it != end; it++) {
         if ((*it)->isNull() || !(*it)->isStr()) {
-            Log.error() << key << " has mixed value(s)" << std::endl;
+            Log.error() << key << " has mixed value(s)" << Log.endl;
             return NONE_OR_INV;
         }
         res.push_back((*it)->toStr());
@@ -249,7 +249,7 @@ isValidKeywordLocation(const std::string &key) {
     allowed.push_back("redirect");
 
     if (std::find(allowed.begin(), allowed.end(), key) == allowed.end()) {
-        Log.error() << "Keyword " << key << " is unrecognized or can't be used in location context" << std::endl;
+        Log.error() << "Keyword " << key << " is unrecognized or can't be used in location context" << Log.endl;
         return false;
     }
     return true;
@@ -274,7 +274,7 @@ isValidKeywordServerBlock(const std::string &key) {
     allowed.push_back("auth_basic");
 
     if (std::find(allowed.begin(), allowed.end(), key) == allowed.end()) {
-        Log.error() << "Keyword " << key << " is unrecognized or can't be used in serverblock context" << std::endl;
+        Log.error() << "Keyword " << key << " is unrecognized or can't be used in serverblock context" << Log.endl;
         return false;
     }
     return true;
@@ -312,7 +312,7 @@ parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
 
         std::string value = "";
         if (!getString(obj, it->first, value)) {
-            Log.error() << it->first << " must be a string" << std::endl;
+            Log.error() << it->first << " must be a string" << Log.endl;
             return NONE_OR_INV;
         }
         cgi.setExecPath(value);
@@ -332,10 +332,10 @@ isValidCGI(std::map<std::string, HTTP::CGI> &res) {
 
     for (; it != end; it++) {
         if (!isExtension(it->first)) {
-            Log.error() << it->first << ": incorrect extension" << std::endl;
+            Log.error() << it->first << ": incorrect extension" << Log.endl;
             return false;
         } else if (!it->second.isCompiled() && !isExecutableFile(it->second.getExecPath())) {
-            Log.error() << it->second.getExecPath() << " is not an executable file" << std::endl;
+            Log.error() << it->second.getExecPath() << " is not an executable file" << Log.endl;
             return false;
         }
     }
@@ -358,16 +358,16 @@ parseErrorPages(JSON::Object *src, std::map<int, std::string> &res) {
     for (; it != end; it++) {
         double value = strtod(it->first.c_str(), NULL);
         if (!isUInteger(value)) {
-            Log.error() << key << " code is not an interger" << std::endl;
+            Log.error() << key << " code is not an interger" << Log.endl;
             return NONE_OR_INV;
         }
         else if (value < 100 || value > 599) {
-            Log.error() << key << " code " << value << " is beyong boundaries" << std::endl;
+            Log.error() << key << " code " << value << " is beyong boundaries" << Log.endl;
             return NONE_OR_INV;
         }
         int code = static_cast<int>(value);
         if (it->second->isNull() || !it->second->isStr()) {
-            Log.error() << key << " value " << value <<  " is not a string" << std::endl;
+            Log.error() << key << " value " << value <<  " is not a string" << Log.endl;
             return NONE_OR_INV;
         }
         res.insert(std::make_pair(code, it->second->toStr()));
@@ -382,11 +382,11 @@ isValidErrorPages(std::map<int, std::string> &res) {
 
     for (; it != end; it++) {
         if (!resourceExists(it->second)) {
-            Log.error() << it->second << ": file does not exist" << std::endl;
+            Log.error() << it->second << ": file does not exist" << Log.endl;
             return false;
         }
         if (!isReadableFile(it->second)) {
-            Log.error() << it->second + ": is not readable file" << std::endl;
+            Log.error() << it->second + ": is not readable file" << Log.endl;
             return false;
         }
     }
@@ -417,10 +417,10 @@ isValidRedirect(Redirect &res) {
 
     if (res.isSet()) {
         if (res.getCodeRef() < 300 && res.getCodeRef() > 308) {
-            Log.error() << "Redirect code " << res.getCodeRef() << " is invalid" << std::endl;
+            Log.error() << "Redirect code " << res.getCodeRef() << " is invalid" << Log.endl;
             return 0;
         } else if (res.getURIRef().empty()) {
-            Log.error() << "Redirect uri is empty" << std::endl;
+            Log.error() << "Redirect uri is empty" << Log.endl;
             return 0;
         }
     }
@@ -451,16 +451,16 @@ isValidAuth(HTTP::Auth &res) {
 
     if (res.isSet()) {
         if (res.getRealmRef().empty()) {
-            Log.error() << "Auth realm cannot be empty" << std::endl;
+            Log.error() << "Auth realm cannot be empty" << Log.endl;
             return 0;
         } else if (!resourceExists(res.getFileRef())) {
-            Log.error() << "Auth::user_file " << res.getFileRef() << " does not exist" << std::endl;
+            Log.error() << "Auth::user_file " << res.getFileRef() << " does not exist" << Log.endl;
             return 0;
         } else if (!isReadableFile(res.getFileRef())) {
-            Log.error() << "Auth::user_file " << res.getFileRef() << " is not readable" << std::endl;
+            Log.error() << "Auth::user_file " << res.getFileRef() << " is not readable" << Log.endl;
             return 0;
         } else if (!res.loadData()) {
-            Log.error() << "Auth::cannot load data from " << res.getFileRef() << std::endl;
+            Log.error() << "Auth::cannot load data from " << res.getFileRef() << Log.endl;
             return 0;
         }
     }
@@ -482,83 +482,83 @@ parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
             return 0;
         }
         if (!checkMutualExclusions(src, "alias", "root")) {
-            Log.error() << "#### root and alias are mutually exclusive" << std::endl;
+            Log.error() << "#### root and alias are mutually exclusive" << Log.endl;
             return 0;
         }
 
         ConfStatus aliasStatus = (ConfStatus)getString(src, "alias", dst.getAliasRef(), "");
         
         if (aliasStatus == NONE_OR_INV) {
-            Log.error() << "#### Failed to parse alias" << std::endl;
+            Log.error() << "#### Failed to parse alias" << Log.endl;
             return 0;
         }
 
         if (aliasStatus != DEFAULT) {
             if (!resourceExists(dst.getAliasRef())) {
-                Log.error() << "#### alias: " << dst.getAliasRef() + " does not exist" << std::endl;
+                Log.error() << "#### alias: " << dst.getAliasRef() + " does not exist" << Log.endl;
                 return NONE_OR_INV;
             } else if (!isDirectory(dst.getAliasRef())) {
-                Log.error() << "#### alias should be a directory" << std::endl;
+                Log.error() << "#### alias should be a directory" << Log.endl;
                 return NONE_OR_INV;
             }
         } 
     }
 
     if (!getString(src, "root", dst.getRootRef(), def.getRootRef())) {
-        Log.error() << "#### Failed to parse \"root\"" << std::endl;
+        Log.error() << "#### Failed to parse \"root\"" << Log.endl;
         return NONE_OR_INV;
     } else if (!resourceExists(dst.getRootRef())) {
-        Log.error() << "#### \"root\": " << dst.getRootRef() << " does not exist" << std::endl;
+        Log.error() << "#### \"root\": " << dst.getRootRef() << " does not exist" << Log.endl;
         return NONE_OR_INV;
     } else if (!isDirectory(dst.getRootRef())) {
-        Log.error() << "#### \"root\" should be a directory" << std::endl;
+        Log.error() << "#### \"root\" should be a directory" << Log.endl;
         return NONE_OR_INV;
     } else if (dst.getRootRef()[dst.getRootRef().length() - 1] != '/') { // ?
         dst.getRootRef() += "/";
     }
 
     if (!getUInteger(src, "post_max_body", dst.getPostMaxBodyRef(), 200)) {
-        Log.error() << "#### Failed to parse \"post_max_body\"" << std::endl;
+        Log.error() << "#### Failed to parse \"post_max_body\"" << Log.endl;
         return NONE_OR_INV;
     }
 
     if (!getBoolean(src, "autoindex", dst.getAutoindexRef(), false)) {
-        Log.error() << "#### Failed to parse \"autoindex\"" << std::endl;
+        Log.error() << "#### Failed to parse \"autoindex\"" << Log.endl;
         return NONE_OR_INV;
     }
 
     if (!parseRedirect(src, dst.getRedirectRef())) {
-        Log.error() << "#### Failed to parse \"redirect\"" << std::endl;
+        Log.error() << "#### Failed to parse \"redirect\"" << Log.endl;
         return NONE_OR_INV;
     } else if (!isValidRedirect(dst.getRedirectRef())) {
         return NONE_OR_INV;
     }
 
     if (!parseAuth(src, dst.getAuthRef())) {
-        Log.error() << "#### Failed to parse \"auth_basic\"" << std::endl;
+        Log.error() << "#### Failed to parse \"auth_basic\"" << Log.endl;
         return NONE_OR_INV;
     } else if (!isValidAuth(dst.getAuthRef())) {
         return NONE_OR_INV;
     }
 
     if (!parseCGI(src, dst.getCGIsRef())) {
-        Log.error() << "#### Failed to parse \"CGI\"" << std::endl;
+        Log.error() << "#### Failed to parse \"CGI\"" << Log.endl;
         return NONE_OR_INV;
     } else if (!isValidCGI(dst.getCGIsRef())) {
-        Log.error() << "#### Invalid \"CGI\". Prototype: \"extension\": \"path-to-executable\"" << std::endl;
+        Log.error() << "#### Invalid \"CGI\". Prototype: \"extension\": \"path-to-executable\"" << Log.endl;
         return NONE_OR_INV;
     }
 
     if (!getArray(src, "methods_allowed", dst.getAllowedMethodsRef(), getDefaultAllowedMethods())) {
-        Log.error() << "#### Failed to parse \"methods_allowed\"" << std::endl;
+        Log.error() << "#### Failed to parse \"methods_allowed\"" << Log.endl;
         return NONE_OR_INV;
     } else if (!isSubset(getDefaultAllowedMethods(), dst.getAllowedMethodsRef())) {
-        Log.error() << "#### Unrecognized value in \"methods_allowed\"" << std::endl;
+        Log.error() << "#### Unrecognized value in \"methods_allowed\"" << Log.endl;
         return NONE_OR_INV;
     }
 
     if (!getArray(src, "index", dst.getIndexRef(), def.getIndexRef())) {
-        Log.error() << "#### Failed to parse \"index\"" << std::endl;
+        Log.error() << "#### Failed to parse \"index\"" << Log.endl;
         return NONE_OR_INV;
     }
 
@@ -585,13 +585,13 @@ parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res, HT
         }
 
         if (!isValidPath(it->first)) {
-            Log.error() << "### location path \"" << it->first << "\" is incorrect" << std::endl;
+            Log.error() << "### location path \"" << it->first << "\" is incorrect" << Log.endl;
             return NONE_OR_INV;
         }
         dst.getPathRef() = it->first;
         JSON::Object *location = it->second->toObj();
         if (!parseLocation(location, dst, base)) {
-            Log.error() << "### Failed to parse location \"" << it->first << "\"" << std::endl;
+            Log.error() << "### Failed to parse location \"" << it->first << "\"" << Log.endl;
             return NONE_OR_INV;
         }
         
@@ -608,32 +608,32 @@ parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
     }
 
     if (!getArray(src, "server_names", dst.getServerNamesRef(), dst.getServerNamesRef())) {
-        Log.error() << "## Failed to parse \"server_names\"" << std::endl;
+        Log.error() << "## Failed to parse \"server_names\"" << Log.endl;
         return NONE_OR_INV;
     }
 
     if (!getString(src, "addr", dst.getAddrRef(), "0.0.0.0")) {
-        Log.error() << "## Failed to parse \"addr\"" << std::endl;
+        Log.error() << "## Failed to parse \"addr\"" << Log.endl;
         return NONE_OR_INV;
     } else if (!isValidIp(dst.getAddrRef())) {
-        Log.error() << "## \"addr\" is invalid or not in ipv4 format" << std::endl;
+        Log.error() << "## \"addr\" is invalid or not in ipv4 format" << Log.endl;
         return NONE_OR_INV;
     }
 
     if (!getUInteger(src, "port", dst.getPortRef())) {
-        Log.error() << "## Failed to parse \"port\"" << std::endl;
+        Log.error() << "## Failed to parse \"port\"" << Log.endl;
         return NONE_OR_INV;
     } else if (dst.getPortRef() < 1024) {
-        Log.info() << "## WARNING: Ports lower than 1024 reserved for OS" << std::endl;
+        Log.info() << "## WARNING: Ports lower than 1024 reserved for OS" << Log.endl;
     } else if ( dst.getPortRef() > 49151) {
-        Log.info() << "## WARNING: Ports higher than 49151 reserved for client apps" << std::endl;
+        Log.info() << "## WARNING: Ports higher than 49151 reserved for client apps" << Log.endl;
     }
 
     if (!parseErrorPages(src, dst.getErrPathsRef())) {
-        Log.error() << "## Failed to parse \"error_pages\"" << std::endl;
+        Log.error() << "## Failed to parse \"error_pages\"" << Log.endl;
         return NONE_OR_INV;
     } else if (!isValidErrorPages(dst.getErrPathsRef())) {
-        Log.error() << "## Failed to parse \"error_pages\"" << std::endl;
+        Log.error() << "## Failed to parse \"error_pages\"" << Log.endl;
         return NONE_OR_INV;
     }
 
@@ -641,12 +641,12 @@ parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
     // realpath("./", resolvedPath);
     dst.getLocationBaseRef().getRootRef() = "./";
     if (!parseLocation(src, dst.getLocationBaseRef(), dst.getLocationBaseRef())) {
-        Log.error() << "## Failed to parse \"location base\"" << std::endl;
+        Log.error() << "## Failed to parse \"location base\"" << Log.endl;
         return NONE_OR_INV;
     }
 
     if (!parseLocations(src, dst.getLocationsRef(), dst.getLocationBaseRef())) {
-        Log.error() << "## Failed to parse \"locations\"" << std::endl;
+        Log.error() << "## Failed to parse \"locations\"" << Log.endl;
         return NONE_OR_INV;
     }
 
@@ -665,7 +665,7 @@ parseServerBlocks(JSON::Object *src, Server *serv) {
     JSON::Object::iterator it  = servers->begin();
     JSON::Object::iterator end = servers->end();
     if (it == end) {
-        Log.error() << "At least one server block is needed." << std::endl;
+        Log.error() << "At least one server block is needed." << Log.endl;
         return NONE_OR_INV;
     }
     for (; it != end; it++) {
@@ -678,7 +678,7 @@ parseServerBlocks(JSON::Object *src, Server *serv) {
 
         JSON::Object *block_src = it->second->toObj();
         if (!parseServerBlock(block_src, block_dst)) {
-            Log.error() << "# Failed to parse server block \"" << it->first << "\"" << std::endl;
+            Log.error() << "# Failed to parse server block \"" << it->first << "\"" << Log.endl;
             return NONE_OR_INV;
         }
         serv->addServerBlock(block_dst);
@@ -693,11 +693,11 @@ loadConfig(const string filename) {
         JSON::JSON json(filename);
         ptr = json.parse();
         if (ptr == NULL) {
-            Log.error() << "Failed to parse config file" << std::endl;
+            Log.error() << "Failed to parse config file" << Log.endl;
             return NULL;
         }
     } catch (std::exception &e) {
-        Log.error() << e.what() << std::endl;
+        Log.error() << e.what() << Log.endl;
         return NULL;
     }
 

@@ -15,7 +15,7 @@ Header::Header(uint32_t hash, const std::string &value) : hash(hash), value(valu
 bool
 Header::parse(const std::string &line) {
     
-    // Log.debug << line << std::endl;
+    // Log.debug << line << Log.endl;
     size_t colonPos = line.find(':');
     if (colonPos == std::string::npos) {
         return false;

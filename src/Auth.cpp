@@ -27,7 +27,7 @@ Auth::loadData(void) {
     in.open(_file.c_str());
 
     if (!in.is_open() || !in.good()) {
-        Log.error() << "Auth::Cannot open file " << _file << std::endl;
+        Log.error() << "Auth::Cannot open file " << _file << Log.endl;
         return false;
     }
 
@@ -35,7 +35,7 @@ Auth::loadData(void) {
     for ( ;std::getline(in, line); ) {
         std::pair<std::string, std::string> crds;
         if (!splitCredentials(line, crds)) {
-            Log.error() << "Auth::Data file corrupted: " << line << std::endl;
+            Log.error() << "Auth::Data file corrupted: " << line << Log.endl;
             return false;
         }
         _data.insert(crds);
@@ -78,13 +78,13 @@ Auth::isAuthorized(const std::string line) const {
     char salt[2] = { 0 };
     std::vector<std::string> crds = split(line, ":");
     if (crds.size() < 2) {
-        Log.error() << "Auth::invalid credentials of the user: " << line << std::endl;
+        Log.error() << "Auth::invalid credentials of the user: " << line << Log.endl;
         return false;
     }
 
     std::map<std::string, std::string>::const_iterator it = _data.find(crds[0]);
     if (it == _data.end()) {
-        Log.debug() << "Auth::user not found: " << crds[0] << std::endl;
+        Log.debug() << "Auth::user not found: " << crds[0] << Log.endl;
         return false;
     }
 
@@ -92,9 +92,9 @@ Auth::isAuthorized(const std::string line) const {
     salt[1] = it->second[1];
     std::string encrypted = crypt(crds[1].c_str(), salt);
     if (it->second != encrypted) {
-        Log.debug() << "Auth::passwords do not match" << std::endl;
-        Log.debug() << "stored: " + it->second << std::endl;
-        Log.debug() << "encrypted: " + encrypted << std::endl;
+        Log.debug() << "Auth::passwords do not match" << Log.endl;
+        Log.debug() << "stored: " + it->second << Log.endl;
+        Log.debug() << "encrypted: " + encrypted << Log.endl;
         return false;
     }
     return true;

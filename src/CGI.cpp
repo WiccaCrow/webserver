@@ -36,10 +36,10 @@ CGI &CGI::operator=(const CGI &other) {
 static void
 restore_std(int in, int out) {
     if (in != -1 && dup2(in, fileno(stdin)) == -1) {
-        Log.syserr() << "CGI::restore::in: " << std::endl;
+        Log.syserr() << "CGI::restore::in: " << Log.endl;
     }
     if (out != -1 && dup2(out, fileno(stdout)) == -1) {
-        Log.syserr() << "CGI::restore::out: " << std::endl;
+        Log.syserr() << "CGI::restore::out: " << Log.endl;
     }
 }
 
@@ -221,7 +221,7 @@ CGI::getBodyLength(void) {
 int
 CGI::exec() {
     if (_isCompiled && !isExecutableFile(_filepath)) {
-        Log.error() << _filepath << " is not executable" << std::endl;
+        Log.error() << _filepath << " is not executable" << Log.endl;
         return 0;
     }
 
@@ -237,12 +237,12 @@ CGI::exec() {
     int out[2] = { -1 };
 
     if (pipe(in) != 0) {
-        Log.syserr() << "CGI::pipe::in: " << std::endl;
+        Log.syserr() << "CGI::pipe::in: " << Log.endl;
         return 0;
     }
 
     if (pipe(out) != 0) {
-        Log.syserr() << "CGI::pipe::out: " << std::endl;
+        Log.syserr() << "CGI::pipe::out: " << Log.endl;
         close_pipe(in[0], in[1]);
         return 0;
     }
@@ -251,7 +251,7 @@ CGI::exec() {
 
     tmp[0] = dup(fileno(stdin));
     if (tmp[0] == -1) {
-        Log.syserr() << "CGI::backup::in: " << std::endl;
+        Log.syserr() << "CGI::backup::in: " << Log.endl;
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
         close_pipe(out[0], out[1]);
@@ -260,7 +260,7 @@ CGI::exec() {
 
     tmp[1] = dup(fileno(stdout));
     if (tmp[1] == -1) {
-        Log.syserr() << "CGI::backup::out: " << std::endl;
+        Log.syserr() << "CGI::backup::out: " << Log.endl;
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
         close_pipe(out[0], out[1]);
@@ -269,7 +269,7 @@ CGI::exec() {
 
     // Redirect for child process
     if (dup2(in[0], fileno(stdin)) == -1) {
-        Log.syserr() << "CGI::redirect::in: " << std::endl;
+        Log.syserr() << "CGI::redirect::in: " << Log.endl;
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
         close_pipe(out[0], out[1]);
@@ -277,7 +277,7 @@ CGI::exec() {
     }
 
     if (dup2(out[1], fileno(stdout)) == -1) {
-        Log.syserr() << "CGI::redirect::out: " << std::endl;
+        Log.syserr() << "CGI::redirect::out: " << Log.endl;
         restore_std(tmp[0], -1);
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
@@ -287,7 +287,7 @@ CGI::exec() {
 
     int childPID = fork();
     if (childPID < 0) {
-        Log.syserr() << "CGI::fork: " << std::endl;
+        Log.syserr() << "CGI::fork: " << Log.endl;
         restore_std(tmp[0], tmp[1]);
         close_pipe(tmp[0], tmp[1]);
         close_pipe(in[0], in[1]);
@@ -303,7 +303,7 @@ CGI::exec() {
 
     if (!_req->getBody().empty()) {
         if (write(in[1], _req->getBody().c_str(), _req->getBody().length()) == -1) {
-            Log.syserr() << "CGI::write: " << std::endl;
+            Log.syserr() << "CGI::write: " << Log.endl;
             restore_std(tmp[0], tmp[1]);
             close_pipe(tmp[0], tmp[1]);
             close_pipe(in[0], in[1]);
@@ -324,16 +324,16 @@ CGI::exec() {
     close_pipe(-1, out[1]);
 
     if (WIFSIGNALED(status)) {
-        Log.syserr() << "CGI::signaled:" << WTERMSIG(status) << std::endl;
+        Log.syserr() << "CGI::signaled:" << WTERMSIG(status) << Log.endl;
         return 0;
 
     } else if (WIFSTOPPED(status)) {
-        Log.syserr() << "CGI::stopped:" << WSTOPSIG(status) << std::endl;
+        Log.syserr() << "CGI::stopped:" << WSTOPSIG(status) << Log.endl;
         return 0;
 
     } else if (WIFEXITED(status)) {
         if (WEXITSTATUS(status)) {
-            Log.syserr() << "CGI::exited:" << WEXITSTATUS(status) << std::endl;
+            Log.syserr() << "CGI::exited:" << WEXITSTATUS(status) << Log.endl;
             return 0;
         }
 
@@ -344,7 +344,7 @@ CGI::exec() {
         while (readBytes > 0) {
             readBytes = read(out[0], buf, size - 1);
             if (readBytes < 0) {
-                Log.syserr() << "CGI::read" << std::endl;
+                Log.syserr() << "CGI::read" << Log.endl;
                 break ;
             }
             buf[readBytes] = 0;
@@ -402,13 +402,13 @@ CGI::isValidContentLength(void) {
     if (it != _headers.end()) {
         long long length = strtoll(it->value.c_str(), NULL, 10);
         if (length < 0 || length > LONG_MAX) {
-            Log.debug() << "Response::CGI:: ContentLength is invalid: " << length << std::endl;
+            Log.debug() << "Response::CGI:: ContentLength is invalid: " << length << Log.endl;
             return false;
         }
         if (static_cast<size_t>(length) != getBodyLength()) {
-            Log.debug() << "Response::CGI:: ContentLength mismatch" << std::endl;
-            Log.debug() << "Response::CGI:: expected " << length << std::endl;
-            Log.debug() << "Response::CGI:: got " << getBodyLength() << std::endl;
+            Log.debug() << "Response::CGI:: ContentLength mismatch" << Log.endl;
+            Log.debug() << "Response::CGI:: expected " << length << Log.endl;
+            Log.debug() << "Response::CGI:: got " << getBodyLength() << Log.endl;
             return false;
         }
     }

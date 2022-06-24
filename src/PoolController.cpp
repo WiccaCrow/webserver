@@ -7,7 +7,7 @@ pthread_mutex_t PoolController::_lock_req;
 pthread_mutex_t PoolController::_lock_res;
 
 PoolController::PoolController(void) {
-    Log.debug() << "PoolController created" << std::endl;
+    Log.debug() << "PoolController created" << Log.endl;
 }
 
 PoolController::~PoolController(void) {}

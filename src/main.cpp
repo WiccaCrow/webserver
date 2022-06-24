@@ -10,7 +10,7 @@ main(int ac, char **av) {
     Log.enableLogFile();
 
     if (ac > 2) {
-        Log.error() << "Usage: " << av[0] << " [config.json]" << std::endl;
+        Log.error() << "Usage: " << av[0] << " [config.json]" << Log.endl;
         return 1;
     }
 
@@ -20,7 +20,7 @@ main(int ac, char **av) {
     if (!g_server) {
         return 1;
     }
-    Log.info() << "Config " << config << " is loaded" << std::endl;
+    Log.info() << "Config " << config << " is loaded" << Log.endl;
 
     g_server->start();
 

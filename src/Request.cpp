@@ -257,11 +257,11 @@ Request::parseLine(std::string &line) {
 
     if (getStatus() != CONTINUE) {
         if (!_servBlock) {
-            Log.debug() << "Serverblock is not set after parsing. Default matching" << std::endl;
+            Log.debug() << "Serverblock is not set after parsing. Default matching" << Log.endl;
             setServerBlock(getClient()->matchServerBlock(_host._host));
         }
         if (!_location) {
-            Log.debug() << "Location is not set after parsing. Default matching" << std::endl;
+            Log.debug() << "Location is not set after parsing. Default matching" << Log.endl;
             setLocation(getServerBlock()->matchLocation(_uri._path));
             resolvePath();
         }
@@ -277,7 +277,7 @@ Request::parseLine(std::string &line) {
 StatusCode
 Request::parseSL(const std::string &line) {
 
-    Log.debug() << line << std::endl;
+    Log.debug() << line << Log.endl;
 
     size_t pos = 0;
     _method    = getWord(line, " ", pos);
@@ -291,7 +291,7 @@ Request::parseSL(const std::string &line) {
 
     skipSpaces(line, pos);
     if (line[pos]) {
-        Log.debug() << "Forbidden symbols at the end of the SL: " << std::endl;
+        Log.debug() << "Forbidden symbols at the end of the SL: " << Log.endl;
         return BAD_REQUEST;
     }
 
@@ -301,23 +301,23 @@ Request::parseSL(const std::string &line) {
 StatusCode
 Request::checkSL(void) {
     if (!isValidMethod(_method)) {
-        Log.debug() << "Request::parseSL: Method " << _method << " is not implemented" << std::endl;
+        Log.debug() << "Request::parseSL: Method " << _method << " is not implemented" << Log.endl;
         return BAD_REQUEST;
     }
 
     // if (isValidPath(_rawURI)) {
-    //     Log.debug() << "Invalid URI" << std::endl;
+    //     Log.debug() << "Invalid URI" << Log.endl;
     //     return BAD_REQUEST;
     // }
 
     if (!isValidProtocol(_protocol)) {
-        Log.debug() << "Request::checkSL: protocol " << _protocol << " is not valid" << std::endl;
+        Log.debug() << "Request::checkSL: protocol " << _protocol << " is not valid" << Log.endl;
         return BAD_REQUEST;
     } else if (_major > 1) {
-        Log.debug() << "Request::checkSL: protocol " << _protocol << " is not supported" << std::endl;
+        Log.debug() << "Request::checkSL: protocol " << _protocol << " is not supported" << Log.endl;
         return HTTP_VERSION_NOT_SUPPORTED;
     } else if (_major != 1 || _minor != 1) {
-        Log.debug() << "Request::checkSL: protocol " << _method << " is not implemented" << std::endl;
+        Log.debug() << "Request::checkSL: protocol " << _method << " is not implemented" << Log.endl;
         return BAD_REQUEST;
     }
 
@@ -371,7 +371,7 @@ Request::resolvePath(void) {
         }
     }
     _resolvedPath = URI::URLdecode(_resolvedPath);
-    Log.debug() << "Request::resolvePath: " << _resolvedPath << std::endl;
+    Log.debug() << "Request::resolvePath: " << _resolvedPath << Log.endl;
 }
 
 StatusCode
@@ -379,7 +379,7 @@ Request::checkHeaders(void) {
 
     setFlag(PARSED_HEADERS);
     // if (!isHeaderExist(HOST)) {
-    //     Log.error() << "Request:: Host not found" << std::endl;
+    //     Log.error() << "Request:: Host not found" << Log.endl;
     //     return BAD_REQUEST;
     // }
 
@@ -402,21 +402,21 @@ Request::checkHeaders(void) {
 
     std::vector<std::string> &allowed = getLocation()->getAllowedMethodsRef();
     if (std::find(allowed.begin(), allowed.end(), _method) == allowed.end()) {
-        Log.debug() << "Request:: Method " << _method << " is not allowed" << std::endl;
+        Log.debug() << "Request:: Method " << _method << " is not allowed" << Log.endl;
         return METHOD_NOT_ALLOWED;
     }
 
     if (!isHeaderExist(TRANSFER_ENCODING) && !isHeaderExist(CONTENT_LENGTH)) {
         // PUT or POST or PATCH
         if (_method[0] == 'P') {
-            Log.error() << "Request::Transfer-Encoding/Content-Length is missing in request" << std::endl;
+            Log.error() << "Request::Transfer-Encoding/Content-Length is missing in request" << Log.endl;
             return LENGTH_REQUIRED;
         } else {
-            Log.debug() << "Request::ParsedHeaders::Processing" << std::endl;
+            Log.debug() << "Request::ParsedHeaders::Processing" << Log.endl;
             return PROCESSING;
         }
     }
-    Log.debug() << "Request::ParsedHeaders::Continue" << std::endl;
+    Log.debug() << "Request::ParsedHeaders::Continue" << Log.endl;
     return CONTINUE;
 }
 
@@ -425,13 +425,13 @@ Request::parseHeader(const std::string &line) {
     RequestHeader header;
 
     if (!header.parse(line)) {
-        Log.debug() << "ParseHeader:: Invalid header " << line << std::endl;
+        Log.debug() << "ParseHeader:: Invalid header " << line << Log.endl;
         return BAD_REQUEST;
     }
 
     // dublicate header
     if (isHeaderExist(header.hash)) {
-        Log.debug() << "ParseHeader:: Dublicated header" << std::endl;
+        Log.debug() << "ParseHeader:: Dublicated header" << Log.endl;
         return BAD_REQUEST;
     }
 
@@ -450,7 +450,7 @@ Request::writeChuck(const std::string &chunk) {
     } else {
         if (chunk[_chunkSize] != '\r' || 
             chunk[_chunkSize + 1] != '\n') {
-            Log.error() << "Request:: Invalid chuck length" << std::endl;
+            Log.error() << "Request:: Invalid chuck length" << Log.endl;
             return BAD_REQUEST;
         }
         _body += chunk.substr(0, chunk.length() - 2);
@@ -470,7 +470,7 @@ StatusCode
 Request::writeChunkSize(const std::string &line) {
 
     if (line.empty()) {
-        Log.error() << "Request:: Chunk size is empty" << std::endl;
+        Log.error() << "Request:: Chunk size is empty" << Log.endl;
         return BAD_REQUEST;
     }
 
@@ -478,15 +478,15 @@ Request::writeChunkSize(const std::string &line) {
     _chunkSize = strtoul(line.c_str(), &end, 16);
 
     if (!end || end[0] != '\r' || end[1] != '\n') {
-        Log.error() << "Request:: Chunks size is invalid: " << line << std::endl;
+        Log.error() << "Request:: Chunks size is invalid: " << line << Log.endl;
         return BAD_REQUEST;
 
     } else if (_chunkSize == ULONG_MAX) {
-        Log.error() << "Request:: Chunk size is ULONG_MAX: " << line << std::endl;
+        Log.error() << "Request:: Chunk size is ULONG_MAX: " << line << Log.endl;
         return BAD_REQUEST;
 
     } else if (_chunkSize == 0 && line[0] != '0') {
-        Log.error() << "Request:: Chunk size parsing failed: " << line << std::endl;
+        Log.error() << "Request:: Chunk size parsing failed: " << line << Log.endl;
         return BAD_REQUEST;
 
     } else if (_chunkSize == 0) {
@@ -500,10 +500,10 @@ Request::writeChunkSize(const std::string &line) {
 
 StatusCode
 Request::writeBody(const std::string &body) {
-    Log.debug() << "Request::writeBody " << body << std::endl;
+    Log.debug() << "Request::writeBody " << body << Log.endl;
 
     if (body.length() > _bodySize) {
-        Log.error() << "Request: the body length is too long" << std::endl;
+        Log.error() << "Request: the body length is too long" << Log.endl;
         return BAD_REQUEST;
     }
     _body = body;
@@ -523,12 +523,12 @@ Request::isHeaderExist(const uint32_t code) {
 
 StatusCode
 Request::parseBody(const std::string &line) {
-    Log.debug() << "Request::parseBody " << line << std::endl;
+    Log.debug() << "Request::parseBody " << line << Log.endl;
     if (isHeaderExist(TRANSFER_ENCODING)) {
-        Log.debug() << "Request::parseChunk" << std::endl;
+        Log.debug() << "Request::parseChunk" << Log.endl;
         return parseChunk(line);
     } else if (isHeaderExist(CONTENT_LENGTH)) {
-        Log.debug() << "Request::writeBody" << std::endl;
+        Log.debug() << "Request::writeBody" << Log.endl;
         return writeBody(line);
     }
     return PROCESSING;
