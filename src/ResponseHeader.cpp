@@ -123,8 +123,8 @@ ResponseHeader::ContentRange(Response &res) {
     (void)res;
 
     if (value.empty()) {
-        RangeSet &range = res.getRange();
-        value = "bytes " + range.to_string() + "/" + sztos(res.getFileSize());
+        RangeSet &range = res.getRequest()->getRangeList()[0];
+        value = res.getContentRangeValue(range);
         Log.debug() << "Content-Range: " << value << Log.endl;
     }
 }
