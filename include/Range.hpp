@@ -14,15 +14,22 @@ namespace HTTP {
 
 struct RangeSet {
 
-    long long beg;
-    long long end;
-    long long suffix;
+    int64_t beg;
+    int64_t end;
+    int64_t suffix;
 
     RangeSet(void);
+    RangeSet(int64_t suffix);
+    RangeSet(int64_t beg, int64_t end);
     ~RangeSet(void);
+
+    int64_t size(void);
 
     bool parse(const std::string &);
     bool combine(const RangeSet &);
+
+    void narrow(int64_t size);
+    void rlimit(int64_t limit);
 
     const std::string to_string(void);
 
@@ -68,7 +75,9 @@ public:
     const_reverse_iterator rbegin() const;
     const_reverse_iterator rend() const;
 
-    // operator[];
+    RangeSet &operator[](size_t index);
+    bool empty(void);
+    size_t size(void);
     
     iterator iter_at(size_t);
     const_iterator iter_at(size_t) const;

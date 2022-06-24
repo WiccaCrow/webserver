@@ -45,17 +45,44 @@ bool operator!=(const RangeSet &r1, const RangeSet &r2) {
 }
 
 RangeSet::RangeSet(void) : beg(-1), end(-1), suffix(-1) {}
+RangeSet::RangeSet(long long s) : beg(-1), end(-1), suffix(s) {}
+RangeSet::RangeSet(long long b, long long e) : beg(b), end(e), suffix(-1) {}
 RangeSet::~RangeSet(void) {}
 
 const std::string
-HTTP::RangeSet::to_string(void) {
-    std::stringstream ss; 
-    ss << "[" << this->beg << ";" << this->end << ";" << this->suffix << "]";
+RangeSet::to_string(void) {
+    std::stringstream ss;
+    if (this->suffix != -1) {
+        ss << "-" << this->end;
+    }
+    ss << this->beg << "-" << this->end;
     return ss.str();
 }
 
+int64_t
+RangeSet::size(void) {
+    return (suffix == -1 ? end - beg + 1 : suffix);
+}
+
+void
+RangeSet::narrow(int64_t size) {
+    if (this->size() > size) {
+        // Overflow handling
+        if (beg + size > beg) {
+            this->end = this->beg + size - 1;
+        }
+    }
+}
+
+void
+RangeSet::rlimit(int64_t limit) {
+    if (end > limit) {
+        end = limit;
+    }
+}
+
 bool
-HTTP::RangeSet::combine(const RangeSet &r2) {
+RangeSet::combine(const RangeSet &r2) {
     if (this->suffix != -1 || r2.suffix != -1) {
         return false;
     }
@@ -70,7 +97,7 @@ HTTP::RangeSet::combine(const RangeSet &r2) {
 }
 
 bool
-HTTP::RangeSet::parse(const std::string &s) {
+RangeSet::parse(const std::string &s) {
 
     size_t pos = s.find('-');
     if (pos == std::string::npos) {
@@ -90,7 +117,7 @@ HTTP::RangeSet::parse(const std::string &s) {
         }
 
         if (s.length() == pos + 1) {
-            this->end = LLONG_MAX;
+            this->end = LLONG_MAX - 1;
             return true;
         }
 
@@ -139,6 +166,19 @@ RangeList::const_reverse_iterator RangeList::rbegin() const {
 
 RangeList::const_reverse_iterator RangeList::rend() const {
     return _ranges.rend();
+}
+
+bool RangeList::empty(void) {
+    return (_ranges.begin() == _ranges.end());
+}
+
+size_t
+RangeList::size(void) {
+    return _ranges.size();
+}
+
+RangeSet &RangeList::operator[](size_t index) {
+    return _ranges[index];
 }
 
 RangeList::iterator
@@ -203,15 +243,12 @@ RangeList::compress(void) {
     std::sort(_ranges.begin(), _ranges.end());
 
     for (size_t i = 0; i < _ranges.size() - 1; ) {        
-        // std::cout << _ranges[i].to_string() << " + "
-        //           << _ranges[i + 1].to_string() << " = ";
         if (_ranges[i].combine(_ranges[i + 1])) {
             _ranges.erase(iter_at(i + 1));
             i = 0;
         } else {
             i++;
         }
-        // std::cout << _ranges[i].to_string() << std::endl;
     }
 }
 
