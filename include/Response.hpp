@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <utility>
 #include <sys/stat.h>
+#include <sys/mman.h>
 
 #include "SHA1.hpp"
 #include "Request.hpp"
@@ -35,10 +36,16 @@ class Response {
     Client     *_client;
     CGI        *_cgi;
     std::string _body;
+    std::string _head;
     std::string _extraHeaders;
     size_t      _bodyLength;
     bool        _isFormed;
     StatusCode  _status;
+
+    char        *_fileaddr;
+    int         _filefd;
+    struct stat _filestat;
+    RangeSet    _range;
 
     std::ifstream _resourceFileStream;
 
@@ -57,18 +64,12 @@ public:
     Response(const Response &other);
     Response &operator=(const Response &other);
 
-    void initMethodsHeaders(void);
-    void clear(void);
-
     void handle(void);
 
     //  for errors
     static const std::map<std::string, std::string> MIMEs;
 
-    int setErrorResponse(HTTP::StatusCode status);
-
     // methods
-
     void DELETE(void);
     void HEAD(void);
     void GET(void);
@@ -76,29 +77,32 @@ public:
     void POST(void);
     void PUT(void);
 
-    void        unauthorized(void);
+    void        makeResponseForError(void);
+    void        makeResponseForNonAuth(void);
+    int         makeResponseForDir(std::string &resourcePath);
+    int         makeResponseForFile(const std::string &resourcePath);
+    void        makeResponseForRange(void);
+    void        makeResponseForMultipartRange(void);
+    int         makeResponseForCGI(CGI &cgi);
+
     int         contentForGetHead(void);
-    int         redirectForDirectory(const std::string &resourcePath);
+    int         redirect301(const std::string &loc);
     bool        isSetIndexFile(std::string &resourcePath);
-    int         makeGetHeadResponseForFile(const std::string &resourcePath);
-    int         directoryListing(const std::string &resourcePath);
     int         openFileToResponse(std::string resourcePath);
     int         listing(const std::string &resourcePath);
     int         fillDirContent(std::deque<std::string> &, const std::string &directory);
     std::string createTableLine(const std::string &file);
     int         fillFileStat(const std::string &file, struct stat *st);
-    std::string getContentType(std::string resourcePath);
+    std::string getContentType(const std::string &resourcePath);
     void        writeFile(const std::string &resourcePath);
 
     ResponseHeader *getHeader(uint32_t hash);
-    std::string     makeHeaders(void);
+    void            makeHead(void);
     void            addHeader(uint32_t hash, const std::string &value);
     void            addHeader(uint32_t hash);
 
-    std::map<std::string, CGI>::iterator
-        isCGI(const std::string &filepath, std::map<std::string, CGI> &cgis);
+    std::map<std::string, CGI>::iterator isCGI(const std::string &filepath);
     
-    int passToCGI(CGI &cgi);
     int recognizeHeaders(CGI &cgi);
 
     void  makeChunk();
@@ -108,6 +112,7 @@ public:
     size_t             getResponseLength(void);
     const std::string &getResponse(void);
     const std::string &getBody(void) const;
+    const std::string &getHead(void) const;
     void               setBody(const std::string &);
     size_t             getBodyLength(void) const;
     void               setBodyLength(size_t);
@@ -122,6 +127,11 @@ public:
     void            isFormed(bool formed);
 
     std::string getEtagFile(const std::string &filename);
+
+    void *getFileAddr(void);
+    int64_t getFileSize(void);
+
+    const std::string getContentRangeValue(RangeSet &);
 };
 
 } // namespace HTTP
