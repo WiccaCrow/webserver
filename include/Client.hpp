@@ -20,22 +20,27 @@ class Client {
 private:
     int         _fd;
     size_t      _clientPort;
-    std::string _clientIpAddr;
     size_t      _serverPort;
+    std::string _clientIpAddr;
     std::string _serverIpAddr;
 
     std::deque<HTTP::Request *> _requests;
     std::deque<HTTP::Response *> _responses;
 
-    bool        _shouldBeClosed;
-    bool        _reqPoolReady;
-    bool        _replyDone;
-
-
     std::string _rem;
 
-    int readSocket(void);
+    bool        _shouldBeClosed;
+    bool        _reqPoolReady;
+
+    const char *_data;
+    size_t      _dataSize;
+    size_t      _dataPos;
+    bool        _headSent;
+    bool        _bodySent;
+    bool        _replyDone;
     
+    bool    sendData(void);
+    int     readSocket(void);
 
 public:
     enum Status {
@@ -80,8 +85,8 @@ public:
     void reply(void);
     void checkIfFailed(void);
 
-    bool            shouldBeClosed(void) const;
-    void            shouldBeClosed(bool);
+    bool shouldBeClosed(void) const;
+    void shouldBeClosed(bool);
 
     HTTP::ServerBlock *matchServerBlock(const std::string &host) const;
 

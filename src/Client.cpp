@@ -9,8 +9,12 @@ Client::Client()
     , _serverPort(0)
     , _shouldBeClosed(false)
     , _reqPoolReady(true)
-    , _replyDone(false) {
-}
+    , _replyDone(false)
+    , _data(NULL)
+    , _dataSize(0)
+    , _dataPos(0)
+    , _headSent(false)
+    , _bodySent(false) {}
 
 Client::~Client() {
     for (size_t i = 0; i < _requests.size(); i++) {
@@ -43,6 +47,11 @@ Client::operator=(const Client &other) {
         _serverPort     = other._serverPort;
         _shouldBeClosed = other._shouldBeClosed;
         _replyDone = other._replyDone;
+        _data = other._data;
+        _dataSize = other._dataSize;
+        _dataPos = other._dataPos;
+        _headSent = other._headSent;
+        _bodySent = other._bodySent;
     }
     return *this;
 }
@@ -131,11 +140,11 @@ Client::addRequest(void) {
 
     Request *req = new Request(this);
     if (req == NULL) {
-        Log.syserr() << "Cannot allocate request" << std::endl;
+        Log.syserr() << "Cannot allocate request" << Log.endl;
         setFd(-1);
     }
 
-    Log.debug() << "----------------------" << std::endl;
+    Log.debug() << "----------------------" << Log.endl;
     
     _requests.push_back(req);
     requestPoolReady(false);
@@ -143,13 +152,7 @@ Client::addRequest(void) {
 
 void
 Client::addResponse(Response *res) {
-    // Response *res = new Response(getRequest());
-    // if (res == NULL) {
-    //     Log.syserr() << "Cannot allocate response" << std::endl;
-    //     setFd(-1);
-    // }
     _responses.push_back(res);
-    // requestPoolReady(true);
 }
 
 void
@@ -231,9 +234,38 @@ Client::checkIfFailed(void) {
 void
 Client::process(void) {
 
-    Log.debug() << "Client::process [" << _fd << "]" << std::endl;
+    Log.debug() << "Client::process [" << _fd << "]" << Log.endl;
 
     getTopResponse()->handle();
+}
+
+bool
+Client::sendData(void) {
+    long sent = 0;
+
+    do {
+        sent = send(_fd, _data + _dataPos, _dataSize - _dataPos, 0);
+        if (sent <= 0) {
+            Log.debug() << "Client::reply [" << _fd << "]: " << sent << Log.endl;
+            break ;
+        }
+        _dataPos += sent;
+
+        Log.debug() << "Client::reply [" << _fd << "]: ";
+        Log << _dataPos << "/" << _dataSize << " bytes" << Log.endl;
+
+    } while (_dataPos < _dataSize);
+
+    if (sent == 0) {
+        shouldBeClosed(true);
+    }
+
+    if (_dataPos < _dataSize) {
+        return false;
+    }
+
+    _dataPos = 0;
+    return true;
 }
 
 void
@@ -241,43 +273,37 @@ Client::reply(void) {
 
     signal(SIGPIPE, SIG_IGN);
 
-    size_t all = 0;
-    for (size_t total = getTopResponse()->getResponseLength(); total;
-                total = getTopResponse()->getResponseLength()) {
-        const char *rsp = getTopResponse()->getResponse().c_str();
+    Response *rsp = getTopResponse();
 
-        size_t sent = 0;
-        do {
-            long n = send(_fd, rsp + sent, total - sent, 0);
-            if (n > 0) {
-                sent += n;
-            }
-            else if (n == 0) {
-                Log.debug() << "Client::send 0 returned (disc)" << std::endl;
-                setFd(-1);
-                break ;
-            }
-            else {
-                Log.debug() << "Client::send -1 returned" << std::endl;
-                return ;
-            }
-        } while (sent < total);
+    if (!_headSent) {
+        if (_dataPos == 0) {
+            _data = rsp->getHead().c_str();
+            _dataSize = rsp->getHead().length();
+        }
+        _headSent = sendData();
 
-        all += sent;
-        Log.debug() << "Client::reply [" << _fd << "] (" << sent << "/" << total << " bytes sent)" << std::endl;
-
-        getTopResponse()->makeChunk();
+    } else if (!_bodySent) {
+        if (_dataPos == 0) {
+            _data = rsp->getBody().c_str();
+            _dataSize = rsp->getBody().length();
+        }
+        _bodySent = sendData();
     }
 
-    Log.debug() << "Client::Total sent: " << all << std::endl;
+    if (_headSent && _bodySent) {
+        _replyDone = true;
+        _dataPos = 0;
+        _data = NULL;
+        _dataSize = 0;
+        _headSent = false;
+        _bodySent = false;
+    }
     
-    _replyDone = true;
-
     if (shouldBeClosed()) {
+        Log.debug() << "Client::shouldBeClosed" << Log.endl;
         setFd(-1);
     }
 }
-
 
 static const size_t MAX_PACKET_SIZE = 65536;
 
@@ -325,15 +351,13 @@ Client::getline(std::string &line) {
     return LINE_FOUND;
 }
 
-
 void
 Client::receive(void) {
 
     if (_fd < 0) {
         return;
     }
-
-    Log.debug() << "Client::receive [" << _fd << "]" << std::endl;
+    Log.debug() << "Client::receive [" << _fd << "]" << Log.endl;
 
     while (!getRequest()->isFormed()) {
         std::string line;
@@ -377,7 +401,7 @@ Client::matchServerBlock(const std::string &host) const {
             }
         }
     }
-    Log.debug() << "Client:: servBlock " << found->getBlockName() << " for " << host << ":" << _serverPort << std::endl;
+    Log.debug() << "Client:: servBlock " << found->getBlockName() << " for " << host << ":" << _serverPort << Log.endl;
     return &(*found);
 }
 
