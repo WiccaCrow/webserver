@@ -18,6 +18,9 @@ void trim(std::string &s, const char *t);
 void toLowerCase(std::string &s);
 void skipSpaces(const std::string &line, size_t &pos);
 
+bool startsWith(const std::string &str, const std::string &beg);
+bool endsWith(const std::string &str, const std::string &end);
+
 #if __cplusplus < 201103L
 
 #include <stdio.h>
@@ -49,7 +52,6 @@ bool isValidPath(const std::string &path);
 
 // File-related functions
 bool isExtension(const std::string &ext);
-bool endsWith(const std::string &str, const std::string &end);
 bool resourceExists(const std::string &filename);
 bool isFile(const std::string &filename);
 bool isDirectory(const std::string &dirname);

@@ -481,6 +481,11 @@ endsWith(const std::string &str, const std::string &end) {
 }
 
 bool
+startsWith(const std::string &str, const std::string &beg) {
+    return (str.find(beg) == 0);
+}
+
+bool
 resourceExists(const std::string &filename) {
     struct stat state;
 
