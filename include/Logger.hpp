@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <pthread.h>
 
 #include "Time.hpp"
 
@@ -28,6 +29,7 @@ private:
     bool        _logToFile;
     uint8_t     _flags;
     uint8_t     _flag;
+    static pthread_mutex_t _lock_print;
 
     // For file logging
     std::ofstream _out;
@@ -60,6 +62,35 @@ public:
             }
         }
         return *this;
+    }
+
+    static std::ostream&
+    cr(std::ostream& out) {
+        out << '\r';
+        out.flush();
+        pthread_mutex_unlock(&_lock_print);
+        return out;
+    }
+
+    static std::ostream&
+    flush(std::ostream& out) {
+        out << std::flush;
+        pthread_mutex_unlock(&_lock_print);
+        return out;
+    }
+
+    static std::ostream&
+    endl(std::ostream& out) {
+        out << std::endl;
+        pthread_mutex_unlock(&_lock_print);
+        return out;
+    }
+
+    static std::ostream&
+    ends(std::ostream& out) {
+        out << std::ends;
+        pthread_mutex_unlock(&_lock_print);
+        return out;
     }
 
     Logger &operator<<(std::ostream& (*func)(std::ostream &));

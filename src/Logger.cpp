@@ -21,17 +21,24 @@ static const std::vector<std::string> initTitles(void) {
             titles[i] += std::string(max - titles[i].length(), ' ');
         }
     }
+
     return titles;
 }
 
 static const std::vector<std::string> titles = initTitles();
 
+pthread_mutex_t Logger::_lock_print;
+
 Logger::Logger() : std::ostream(this)
     , _logfile("")
     , _logToFile(false)
-    , _flags(0) {}
+    , _flags(0) {
+    pthread_mutex_init(&_lock_print, NULL);
+}
 
-Logger::~Logger() { }
+Logger::~Logger() {
+    pthread_mutex_destroy(&_lock_print);
+}
 
 void
 Logger::enableLogFile(void) {
@@ -45,9 +52,9 @@ Logger::enableLogFile(void) {
     _out.open(_logfile.c_str(), std::ios_base::out | std::ios_base::trunc);
 
     if (!_out.good()) {
-        std::cerr << "Logger: cannot open/create file " << _logfile << std::endl;
+        this->error() << "Cannot open/create logfile " << _logfile << Log.endl;
     } else {
-        std::cout << "Logger: logging into " << _logfile.c_str() << std::endl;
+        this->info() << "Logging into " << _logfile.c_str() << Log.endl;
     }
 }
 
@@ -58,6 +65,7 @@ Logger::setFlags(uint8_t flags) {
 
 Logger &
 Logger::print(uint8_t flag) {
+    pthread_mutex_lock(&_lock_print);
     _flag = flag;
 
     return *this << Time::local() << " " << titles[_flag] << " ";
@@ -75,7 +83,7 @@ Logger::error(void) {
 
 Logger &
 Logger::syserr(void) {
-    print(LOG_SYSERR) << "errno [" << errno << "]: " << strerror(errno) << std::endl;
+    print(LOG_SYSERR) << "errno [" << errno << "]: " << strerror(errno) << Log.endl;
     return print(LOG_SYSERR);
 }
 
