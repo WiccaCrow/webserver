@@ -3,12 +3,8 @@
         "http": {
             "port": 8080,
             "server_names": [ "localhost" ],
-            "error_pages": {
-                "404": "./pages/error_pages/404.html",
-                "400": "./pages/error_pages/400.html"
-            },
             "autoindex": true,
-            "root": "./pages/default/",
+            "root": "./default/",
             "index": [ "index.html" ]
         }
     }

@@ -24,6 +24,7 @@ OBJS_DIR     = .obj
 DEPS_DIR     = .deps
 INCLUDE_DIR  = include
 LOGS_DIR     = logs
+DFLT_DIR	 = default
 
 SRCS     =  Auth.cpp                Location.cpp            SHA1.cpp           \
             Base64.cpp              Logger.cpp              Server.cpp         \
