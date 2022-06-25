@@ -185,7 +185,8 @@ Server::fillServBlocksFds(void) {
         const size_t port = ua->first;
         for (iter_s addr = addrs.begin(); addr != addrs.end(); addr++) {
             int fd = addListenSocket(*addr, port);
-            _pollfds.push_back((struct pollfd) {fd, POLLIN, 0});
+            _pollfds.push_back((struct pollfd) { fd, POLLIN, 0 });
+            _clients.push_back(NULL);
             _socketsCount++;
             Log.info() << "Server::listen [" << fd << "] -> " << *addr << ":" << port << Log.endl;
         }
@@ -206,6 +207,10 @@ void
 Server::pollInHandler(size_t id) {
     
     HTTP::Client *client = _clients[id];
+
+    if (client == NULL) {
+        return ;
+    }
 
     if (!client->getRequest()) {
         client->addRequest();
@@ -273,9 +278,8 @@ Server::start(void) {
         _pollResult = 0;
 
         pollServ();
-        const size_t size = _pollfds.size();
-        for (size_t id = 0; id < size; id++) {
-            if (id < _socketsCount && _pollfds[id].revents & POLLIN) {
+        for (size_t id = 0; id < _pollfds.size(); id++) {
+            if (id < _socketsCount &&_pollfds[id].revents & POLLIN) {
                 connectClient(id);
             } else if (_pollfds[id].revents & POLLIN) {
                 pollInHandler(id);
@@ -295,20 +299,14 @@ Server::start(void) {
 void
 Server::handlePollError() {
     Log.syserr() << "Server::poll" << Log.endl;
-    switch (errno) {
-        case EINVAL: {
-            struct rlimit rlim;
-            getrlimit(RLIMIT_NOFILE, &rlim);
-            Log.debug() << "ndfs: " << _pollfds.size() << Log.endl;
-            Log.debug() << "limit(soft): " << rlim.rlim_cur << Log.endl;
-            Log.debug() << "limit(hard): " << rlim.rlim_max << Log.endl;
-            break;
-        }
-        default:
-            break;
-    }
 
-    // close all fds
+    if (errno == EINVAL) {
+        struct rlimit rlim;
+        getrlimit(RLIMIT_NOFILE, &rlim);
+        Log.debug() << "ndfs: " << _pollfds.size() << Log.endl;
+        Log.debug() << "limit(soft): " << rlim.rlim_cur << Log.endl;
+        Log.debug() << "limit(hard): " << rlim.rlim_max << Log.endl;
+    }
     exit(1);
 }
 
@@ -377,9 +375,9 @@ Server::connectClient(size_t servid) {
     client->setServerPort(ntohs(servData.sin_port));
     client->setServerIpAddr(inet_ntoa(servData.sin_addr));
 
-    addClient(fd, client);
+    size_t id = addClient(fd, client);
 
-    Log.debug() << "Server::connect [" << fd << "] -> " << client->getHostname() << Log.endl;
+    Log.debug() << "Server::connect [" << fd << "] -> " << id << " " << client->getHostname() << Log.endl;
 }
 
 void

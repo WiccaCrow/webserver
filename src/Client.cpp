@@ -15,7 +15,7 @@ Client::Client()
     , _headSent(false)
     , _bodySent(false) {}
 
-Client::~Client() {   
+Client::~Client() {
     for (size_t i = 0; i < _responses.size(); i++) {
         if (_responses[i] != NULL) {
             delete _responses[i];
