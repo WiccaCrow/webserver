@@ -1,10 +1,13 @@
 #pragma once
 
 #include <string>
+#include "Status.hpp"
+
+namespace HTTP {
 
 class Redirect {
 
-    int         _code;
+    StatusCode  _code;
     std::string _uri;
 
     bool _set;
@@ -13,8 +16,11 @@ public:
     Redirect(void);
     ~Redirect(void);
 
-    bool         isSet(void);
-    bool         toggle(void);
-    int         &getCodeRef(void);
+    bool         set(void);
+    void         set(bool);
+    StatusCode  &getCodeRef(void);
     std::string &getURIRef(void);
 };
+
+}
+

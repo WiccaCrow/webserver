@@ -86,7 +86,7 @@ public:
     int         makeResponseForCGI(CGI &cgi);
 
     int         contentForGetHead(void);
-    int         redirect301(const std::string &loc);
+    int         redirect(StatusCode code, const std::string &url);
     bool        isSetIndexFile(std::string &resourcePath);
     int         openFileToResponse(std::string resourcePath);
     int         listing(const std::string &resourcePath);

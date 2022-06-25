@@ -84,8 +84,15 @@ Response::handle(void) {
         if (_req->authNeeded() && !_req->isAuthorized()) {
             makeResponseForNonAuth();
         } else {
-            it = methods.find(_req->getMethod());
-            (this->*(it->second))();
+            Location *loc = getRequest()->getLocation();
+            Redirect &rdr = loc->getRedirectRef();
+            if (rdr.set()) {
+                redirect(rdr.getCodeRef(), rdr.getURIRef());
+                Log.debug() << "Response:: " << rdr.getCodeRef() << " to " << rdr.getURIRef() << Log.endl;
+            } else {
+                it = methods.find(_req->getMethod());
+                (this->*(it->second))();
+            }
         }
     }
 
@@ -186,7 +193,7 @@ Response::PUT(void) {
 int
 Response::makeResponseForDir(std::string &resourcePath) {
     if (!endsWith(resourcePath, "/")) {
-        return redirect301(getRequest()->getRawUri() + "/");
+        return redirect(MOVED_PERMANENTLY, _req->getRawUri() + "/");
     } else if (isSetIndexFile(resourcePath)) {
         return makeResponseForFile(resourcePath);
     } else if (_req->getLocation()->getAutoindexRef()) {
@@ -220,12 +227,12 @@ Response::contentForGetHead(void) {
 }
 
 int
-Response::redirect301(const std::string &loc) {
-    setStatus(MOVED_PERMANENTLY);
-    addHeader(LOCATION, loc);
+Response::redirect(HTTP::StatusCode code, const std::string &url) {
+    setStatus(code);
+    addHeader(LOCATION, url);
     addHeader(CONTENT_TYPE);
     setBody(HTML_BEG BODY_BEG H1_BEG
-            "Redirect 301"
+            "Redirect " + ultos(code) +
             H1_END BODY_END HTML_END);
     return 1;
 }

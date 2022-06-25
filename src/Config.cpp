@@ -296,14 +296,16 @@ isValidKeywords(JSON::Object *src, bool (*validator)(const std::string &)) {
 // Object parsing
 int
 parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
-    res.clear();
-    
-    ConfStatus status = basicCheck(src, "CGI", OBJECT, res, res);
+    std::map<std::string, HTTP::CGI> def;
+    // res.clear();
+    const std::string &key = "CGI";
+
+    ConfStatus status = basicCheck(src, key, OBJECT, res, def);
     if (status != SET) {
         return status;
     }
 
-    JSON::Object *obj = src->get("CGI")->toObj();
+    JSON::Object *obj = src->get(key)->toObj();
 
     JSON::Object::iterator it  = obj->begin();
     JSON::Object::iterator end = obj->end();
@@ -394,28 +396,33 @@ isValidErrorPages(std::map<int, std::string> &res) {
 }
 
 int
-parseRedirect(JSON::Object *src, Redirect &res) {
-    ConfStatus status = basicCheck(src, "redirect", OBJECT, res, res);
+parseRedirect(JSON::Object *src, HTTP::Redirect &res) {
+    HTTP::Redirect def;
+
+    const std::string &key = "redirect";
+
+    ConfStatus status = basicCheck(src, key, OBJECT, res, def);
     if (status != SET) {
         return status;
     }
 
-    JSON::Object *rd = src->get("redirect")->toObj();
-
-    if (!getUInteger(rd, "code", res.getCodeRef()))
+    JSON::Object *rd = src->get(key)->toObj();
+    int code = 0;
+    if (!getUInteger(rd, "code", code))
         return NONE_OR_INV;
 
-    if (!getString(rd, "uri", res.getURIRef()))
+    if (!getString(rd, "url", res.getURIRef()))
         return NONE_OR_INV;
 
-    res.toggle();
+    res.getCodeRef() = static_cast<HTTP::StatusCode>(code);
+    res.set(true);
     return SET;
 }
 
 int
-isValidRedirect(Redirect &res) {
+isValidRedirect(HTTP::Redirect &res) {
 
-    if (res.isSet()) {
+    if (res.set()) {
         if (res.getCodeRef() < 300 && res.getCodeRef() > 308) {
             Log.error() << "Redirect code " << res.getCodeRef() << " is invalid" << Log.endl;
             return 0;

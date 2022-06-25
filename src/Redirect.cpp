@@ -1,13 +1,14 @@
 #include "Redirect.hpp"
 
+namespace HTTP {
+
 Redirect::Redirect(void)
-    : _code(0)
-    , _uri("")
+    : _code(MOVED_PERMANENTLY)
     , _set(false) { }
 
 Redirect::~Redirect(void) { }
 
-int &
+StatusCode &
 Redirect::getCodeRef(void) {
     return _code;
 }
@@ -17,13 +18,14 @@ Redirect::getURIRef(void) {
     return _uri;
 }
 
-bool
-Redirect::toggle(void) {
-    _set = !_set;
-    return _set;
+void
+Redirect::set(bool val) {
+    _set = val;
 }
 
 bool
-Redirect::isSet(void) {
+Redirect::set(void) {
     return _set;
+}
+
 }

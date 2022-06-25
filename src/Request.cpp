@@ -228,7 +228,7 @@ Request::setAuthFlag(bool flag) {
 
 const std::string
 Request::getHeaderValue(uint32_t key) const {
-    // return _headers[key];
+    // return _headers[key]; does the same thing
     std::map<uint32_t, RequestHeader>::const_iterator it = _headers.find(key);
     if (it == _headers.end()) {
         return "";
@@ -340,7 +340,7 @@ Request::isValidMethod(const std::string &method) {
     return false;
 }
 
-// Should be moved later
+// Should be moved later (Part of the RFC validator)
 bool
 Request::isValidProtocol(const std::string &protocol) {
     if (protocol.find("HTTP/") != 0) {
@@ -378,6 +378,8 @@ StatusCode
 Request::checkHeaders(void) {
 
     setFlag(PARSED_HEADERS);
+    
+    // We should not check header host, but host entity itself 
     // if (!isHeaderExist(HOST)) {
     //     Log.error() << "Request:: Host not found" << Log.endl;
     //     return BAD_REQUEST;

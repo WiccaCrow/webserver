@@ -27,6 +27,10 @@
                 ".js": "/usr/local/bin/node",
                 ".cgi": ""
             },
+            "redirect": {
+                "code": 301,
+                "url": "/feedback"
+            },
             "methods_allowed": [ "GET", "PUT", "POST" ],
             "post_max_body": 100,
             "autoindex": true,
@@ -55,7 +59,7 @@
                     },
                     "autoindex": false,
                     "index": [ "index.html", "index.php" ],
-                    "methods_allowed": [ "DELETE" ],
+                    "methods_allowed": [ "DELETE", "GET" ],
                     "post_max_body": 300
                 }
             }

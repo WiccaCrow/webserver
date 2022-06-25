@@ -9,12 +9,12 @@ Client::Client()
     , _serverPort(0)
     , _shouldBeClosed(false)
     , _reqPoolReady(true)
-    , _replyDone(false)
     , _data(NULL)
     , _dataSize(0)
     , _dataPos(0)
     , _headSent(false)
-    , _bodySent(false) {}
+    , _bodySent(false)
+    , _replyDone(false) {}
 
 Client::~Client() {
     for (size_t i = 0; i < _requests.size(); i++) {

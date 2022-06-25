@@ -47,6 +47,9 @@ ErrorResponses::ErrorResponses() {
     _errorResponses.insert(std::make_pair(HTTP::BAD_REQUEST,
         HTML_BEG HEAD_BEG TITLE_BEG "400 Bad Request" TITLE_END HEAD_END
         BODY_BEG H1_CENTER_BEG "<b>400</b> Bad Request" H1_CENTER_END HR BODY_END HTML_END));
+    _errorResponses.insert(std::make_pair(HTTP::UNAUTHORIZED,
+        HTML_BEG HEAD_BEG TITLE_BEG "401 Unauthorized" TITLE_END HEAD_END
+        BODY_BEG H1_CENTER_BEG "<b>401</b> Unauthorized" H1_CENTER_END HR BODY_END HTML_END));
     _errorResponses.insert(std::make_pair(HTTP::FORBIDDEN,
         HTML_BEG HEAD_BEG TITLE_BEG "403 Forbidden" TITLE_END HEAD_END
         BODY_BEG H1_CENTER_BEG "<b>403</b> Forbidden" H1_CENTER_END HR BODY_END HTML_END));
