@@ -211,22 +211,21 @@ isValidOctet(char *octet) {
     return (x >= 0 && x <= 255);
 }
 
-bool
-isValidIp(const std::string &ip) {
-    char buf[32];
-    strncpy(buf, ip.c_str(), 32);
-
-    int   count = 0;
-    char *octet = strtok(buf, ".");
-    while (octet) {
-        count++;
-        if (!isValidOctet(octet)) {
-            return 0;
-        }
-        octet = strtok(NULL, ".");
-    }
-    return (count == 4);
-}
+// bool
+// isValidIp(const std::string &ip) {
+//     char buf[32];
+//     strncpy(buf, ip.c_str(), 32);
+//     int   count = 0;
+//     char *octet = strtok(buf, ".");
+//     while (octet) {
+//         count++;
+//         if (!isValidOctet(octet)) {
+//             return 0;
+//         }
+//         octet = strtok(NULL, ".");
+//     }
+//     return (count == 4);
+// }
 
 bool
 isValidScheme(const std::string &s) {

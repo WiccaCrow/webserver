@@ -234,71 +234,70 @@ getDefaultAllowedMethods() {
     return allowed;
 }
 
+const char * validKeywords[] = {
+    KW_ADDR, KW_PORT, KW_SERVER_NAMES, KW_ERROR_PAGES,
+    KW_LOCATIONS, KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, 
+    KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, NULL
+};
+
+const char * validServerBlockKeywords[] = {
+    KW_ADDR, KW_PORT, KW_SERVER_NAMES, KW_ERROR_PAGES,
+    KW_LOCATIONS, KW_CGI, KW_ROOT, KW_INDEX, KW_AUTOINDEX, 
+    KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, NULL
+};
+
+const char * validLocationKeywords[] = {
+    KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, 
+    KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, NULL
+};
+
+const char * validRedirectKeywords[] = {
+    KW_CODE, KW_URL, NULL
+};
+
+const char * validAuthBasicKeywords[] = {
+    KW_REALM, KW_USER_FILE, NULL
+};
+
 bool
-isValidKeywordLocation(const std::string &key) {
-    std::vector<std::string> allowed(9);
+isValidKeyword(const std::string &key, const char *contextKeywords[]) {
 
-    allowed.push_back("CGI");
-    allowed.push_back("root");
-    allowed.push_back("alias");
-    allowed.push_back("methods_allowed");
-    allowed.push_back("post_max_body");
-    allowed.push_back("autoindex");
-    allowed.push_back("index");
-    allowed.push_back("auth_basic");
-    allowed.push_back("redirect");
-
-    if (std::find(allowed.begin(), allowed.end(), key) == allowed.end()) {
-        Log.error() << "Keyword " << key << " is unrecognized or can't be used in location context" << Log.endl;
-        return false;
+    for (size_t i = 0; contextKeywords[i]; i++) {
+        if (contextKeywords[i] == key) {
+            return true;
+        }
     }
-    return true;
+
+    for (size_t i = 0; validKeywords[i]; i++) {
+        if (validKeywords[i] == key) {
+            Log.error() << "Wrong context for keyword " << key << Log.endl;
+            return false;
+        }
+    }
+
+    Log.error() << "Unrecognized keyword " << key << Log.endl;
+    return false;
 }
 
 bool
-isValidKeywordServerBlock(const std::string &key) {
-    std::vector<std::string> allowed(13);
-
-    allowed.push_back("port");
-    allowed.push_back("server_names");
-    allowed.push_back("error_pages");
-    allowed.push_back("addr");
-    allowed.push_back("locations");
-    allowed.push_back("CGI");
-    allowed.push_back("root");
-    allowed.push_back("methods_allowed");
-    allowed.push_back("post_max_body");
-    allowed.push_back("autoindex");
-    allowed.push_back("index");
-    allowed.push_back("redirect");
-    allowed.push_back("auth_basic");
-
-    if (std::find(allowed.begin(), allowed.end(), key) == allowed.end()) {
-        Log.error() << "Keyword " << key << " is unrecognized or can't be used in serverblock context" << Log.endl;
-        return false;
-    }
-    return true;
-}
-
-bool
-isValidKeywords(JSON::Object *src, bool (*validator)(const std::string &)) {
+isValidKeywords(JSON::Object *src, const char *validKeywords[]) {
     JSON::Object::iterator it  = src->begin();
     JSON::Object::iterator end = src->end();
-
     for (; it != end; it++) {
-        if (!validator(it->first)) {
+        if (!isValidKeyword(it->first, validKeywords)) {
             return false;
         }
     }
     return true;
 }
 
+
 // Object parsing
 int
 parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
     std::map<std::string, HTTP::CGI> def;
-    // res.clear();
-    const std::string &key = "CGI";
+
+    const std::string &key = KW_CGI;
 
     ConfStatus status = basicCheck(src, key, OBJECT, res, def);
     if (status != SET) {
@@ -312,9 +311,8 @@ parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
     for (; it != end; it++) {
         HTTP::CGI cgi;
 
-        std::string value = "";
+        std::string value;
         if (!getString(obj, it->first, value)) {
-            Log.error() << it->first << " must be a string" << Log.endl;
             return NONE_OR_INV;
         }
         cgi.setExecPath(value);
@@ -329,13 +327,13 @@ parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
 
 int
 isValidCGI(std::map<std::string, HTTP::CGI> &res) {
-    std::map<std::string, HTTP::CGI>::iterator it  = res.begin();
-    std::map<std::string, HTTP::CGI>::iterator end = res.end();
+    std::map<std::string, HTTP::CGI>::iterator it;
 
-    for (; it != end; it++) {
+    for (it = res.begin(); it != res.end(); it++) {
         if (!isExtension(it->first)) {
             Log.error() << it->first << ": incorrect extension" << Log.endl;
             return false;
+
         } else if (!it->second.isCompiled() && !isExecutableFile(it->second.getExecPath())) {
             Log.error() << it->second.getExecPath() << " is not an executable file" << Log.endl;
             return false;
@@ -346,32 +344,32 @@ isValidCGI(std::map<std::string, HTTP::CGI> &res) {
 
 int
 parseErrorPages(JSON::Object *src, std::map<int, std::string> &res) {
-    const std::string &key = "error_pages";
 
-    ConfStatus status = basicCheck(src, key, OBJECT, res, res);
+    ConfStatus status = basicCheck(src, KW_ERROR_PAGES, OBJECT, res, res);
     if (status != SET) {
         return status;
     }
 
-    JSON::Object *errObj = src->get(key)->toObj();
+    JSON::Object *obj = src->get(KW_ERROR_PAGES)->toObj();
 
-    JSON::Object::iterator it  = errObj->begin();
-    JSON::Object::iterator end = errObj->end();
-    for (; it != end; it++) {
+    JSON::Object::iterator it;
+    for (it = obj->begin(); it != obj->end(); it++) {
+
         double value = strtod(it->first.c_str(), NULL);
         if (!isUInteger(value)) {
-            Log.error() << key << " code is not an interger" << Log.endl;
+            Log.error() << KW_ERROR_PAGES << " code is not an positive interger" << Log.endl;
+            return NONE_OR_INV;
+        } else if (value < 300 || value > 599) {
+            Log.error() << KW_ERROR_PAGES << " code " << value << " is beyong boundaries" << Log.endl;
             return NONE_OR_INV;
         }
-        else if (value < 100 || value > 599) {
-            Log.error() << key << " code " << value << " is beyong boundaries" << Log.endl;
-            return NONE_OR_INV;
-        }
+
         int code = static_cast<int>(value);
         if (it->second->isNull() || !it->second->isStr()) {
-            Log.error() << key << " value " << value <<  " is not a string" << Log.endl;
+            Log.error() << KW_ERROR_PAGES << " value " << value <<  " is not a string" << Log.endl;
             return NONE_OR_INV;
         }
+
         res.insert(std::make_pair(code, it->second->toStr()));
     }
     return SET;
@@ -379,10 +377,9 @@ parseErrorPages(JSON::Object *src, std::map<int, std::string> &res) {
 
 int
 isValidErrorPages(std::map<int, std::string> &res) {
-    std::map<int, std::string>::iterator it  = res.begin();
-    std::map<int, std::string>::iterator end = res.end();
+    std::map<int, std::string>::iterator it;
 
-    for (; it != end; it++) {
+    for (it = res.begin(); it != res.end(); it++) {
         if (!resourceExists(it->second)) {
             Log.error() << it->second << ": file does not exist" << Log.endl;
             return false;
@@ -399,19 +396,17 @@ int
 parseRedirect(JSON::Object *src, HTTP::Redirect &res) {
     HTTP::Redirect def;
 
-    const std::string &key = "redirect";
-
-    ConfStatus status = basicCheck(src, key, OBJECT, res, def);
+    ConfStatus status = basicCheck(src, KW_REDIRECT, OBJECT, res, def);
     if (status != SET) {
         return status;
     }
 
-    JSON::Object *rd = src->get(key)->toObj();
+    JSON::Object *obj = src->get(KW_REDIRECT)->toObj();
     int code = 0;
-    if (!getUInteger(rd, "code", code))
+    if (!getUInteger(obj, KW_CODE, code))
         return NONE_OR_INV;
 
-    if (!getString(rd, "url", res.getURIRef()))
+    if (!getString(obj, KW_URL, res.getURIRef()))
         return NONE_OR_INV;
 
     res.getCodeRef() = static_cast<HTTP::StatusCode>(code);
@@ -424,10 +419,10 @@ isValidRedirect(HTTP::Redirect &res) {
 
     if (res.set()) {
         if (res.getCodeRef() < 300 && res.getCodeRef() > 308) {
-            Log.error() << "Redirect code " << res.getCodeRef() << " is invalid" << Log.endl;
+            Log.error() << KW_REDIRECT << "::" << KW_CODE << " " << res.getCodeRef() << " is invalid" << Log.endl;
             return 0;
         } else if (res.getURIRef().empty()) {
-            Log.error() << "Redirect uri is empty" << Log.endl;
+            Log.error() << KW_REDIRECT << "::" << KW_URL << " is empty" << Log.endl;
             return 0;
         }
     }
@@ -436,18 +431,21 @@ isValidRedirect(HTTP::Redirect &res) {
 
 int
 parseAuth(JSON::Object *src, HTTP::Auth &res) {
-    ConfStatus status = basicCheck(src, "auth_basic", OBJECT, res, res);
+
+    ConfStatus status = basicCheck(src, KW_AUTH_BASIC, OBJECT, res, res);
     if (status != SET) {
         return status;
     }
 
-    JSON::Object *rd = src->get("auth_basic")->toObj();
+    JSON::Object *obj = src->get(KW_AUTH_BASIC)->toObj();
 
-    if (!getString(rd, "realm", res.getRealmRef()))
+    if (!getString(obj, KW_REALM, res.getRealmRef())) {
         return NONE_OR_INV;
+    }
 
-    if (!getString(rd, "user_file", res.getFileRef()))
+    if (!getString(obj, KW_USER_FILE, res.getFileRef())) {
         return NONE_OR_INV;
+    }
 
     res.set(true);
     return SET;
@@ -458,16 +456,16 @@ isValidAuth(HTTP::Auth &res) {
 
     if (res.isSet()) {
         if (res.getRealmRef().empty()) {
-            Log.error() << "Auth realm cannot be empty" << Log.endl;
+            Log.error() << KW_REALM << " is empty" << Log.endl;
             return 0;
         } else if (!resourceExists(res.getFileRef())) {
-            Log.error() << "Auth::user_file " << res.getFileRef() << " does not exist" << Log.endl;
+            Log.error() << KW_USER_FILE << " " << res.getFileRef() << " does not exist" << Log.endl;
             return 0;
         } else if (!isReadableFile(res.getFileRef())) {
-            Log.error() << "Auth::user_file " << res.getFileRef() << " is not readable" << Log.endl;
+            Log.error() << KW_USER_FILE << " " << res.getFileRef() << " is not readable" << Log.endl;
             return 0;
         } else if (!res.loadData()) {
-            Log.error() << "Auth::cannot load data from " << res.getFileRef() << Log.endl;
+            Log.error() << KW_USER_FILE << " " << res.getFileRef() << " load failed" << Log.endl;
             return 0;
         }
     }
@@ -483,105 +481,104 @@ int checkMutualExclusions(JSON::Object *src, const std::string &key1, const std:
 
 int
 parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
+
     if (&dst != &def) {
 
-        if (!isValidKeywords(src, isValidKeywordLocation)) {
-            return 0;
+        if (!isValidKeywords(src, validLocationKeywords)) {
+            return NONE_OR_INV;
         }
-        if (!checkMutualExclusions(src, "alias", "root")) {
-            Log.error() << "#### root and alias are mutually exclusive" << Log.endl;
-            return 0;
+        if (!checkMutualExclusions(src, KW_ALIAS, KW_ROOT)) {
+            Log.error() << KW_ROOT << " and " << KW_ALIAS " are mutually exclusive" << Log.endl;
+            return NONE_OR_INV;
         }
 
-        ConfStatus aliasStatus = (ConfStatus)getString(src, "alias", dst.getAliasRef(), "");
+        ConfStatus aliasStatus = (ConfStatus)getString(src, KW_ALIAS, dst.getAliasRef(), "");
         
         if (aliasStatus == NONE_OR_INV) {
-            Log.error() << "#### Failed to parse alias" << Log.endl;
-            return 0;
+            Log.error() << KW_ALIAS << " parsing failed" << Log.endl;
+            return NONE_OR_INV;
         }
 
         if (aliasStatus != DEFAULT) {
             if (!resourceExists(dst.getAliasRef())) {
-                Log.error() << "#### alias: " << dst.getAliasRef() + " does not exist" << Log.endl;
+                Log.error() << KW_ALIAS << " " << dst.getAliasRef() + " does not exist" << Log.endl;
                 return NONE_OR_INV;
             } else if (!isDirectory(dst.getAliasRef())) {
-                Log.error() << "#### alias should be a directory" << Log.endl;
+                Log.error() << KW_ALIAS << " must be a directory" << Log.endl;
                 return NONE_OR_INV;
             }
         } 
     }
 
-    if (!getString(src, "root", dst.getRootRef(), def.getRootRef())) {
-        Log.error() << "#### Failed to parse \"root\"" << Log.endl;
+    if (!getString(src, KW_ROOT, dst.getRootRef(), def.getRootRef())) {
+        Log.error() << KW_ROOT << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     } else if (!resourceExists(dst.getRootRef())) {
-        Log.error() << "#### \"root\": " << dst.getRootRef() << " does not exist" << Log.endl;
+        Log.error() << KW_ROOT << dst.getRootRef() << " does not exist" << Log.endl;
         return NONE_OR_INV;
     } else if (!isDirectory(dst.getRootRef())) {
-        Log.error() << "#### \"root\" should be a directory" << Log.endl;
+        Log.error() << KW_ROOT << " must be a directory" << Log.endl;
         return NONE_OR_INV;
-    } else if (dst.getRootRef()[dst.getRootRef().length() - 1] != '/') { // ?
+    } else if (dst.getRootRef()[dst.getRootRef().length() - 1] != '/') { // ??
         dst.getRootRef() += "/";
     }
 
-    if (!getUInteger(src, "post_max_body", dst.getPostMaxBodyRef(), 200)) {
-        Log.error() << "#### Failed to parse \"post_max_body\"" << Log.endl;
+    if (!getUInteger(src, KW_POST_MAX_BODY, dst.getPostMaxBodyRef(), 200)) {
+        Log.error() << KW_POST_MAX_BODY << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     }
 
-    if (!getBoolean(src, "autoindex", dst.getAutoindexRef(), false)) {
-        Log.error() << "#### Failed to parse \"autoindex\"" << Log.endl;
+    if (!getBoolean(src, KW_AUTOINDEX, dst.getAutoindexRef(), false)) {
+        Log.error() << KW_AUTOINDEX << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     }
 
     if (!parseRedirect(src, dst.getRedirectRef())) {
-        Log.error() << "#### Failed to parse \"redirect\"" << Log.endl;
+        Log.error() << KW_REDIRECT << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     } else if (!isValidRedirect(dst.getRedirectRef())) {
         return NONE_OR_INV;
     }
 
     if (!parseAuth(src, dst.getAuthRef())) {
-        Log.error() << "#### Failed to parse \"auth_basic\"" << Log.endl;
+        Log.error() << KW_AUTH_BASIC << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     } else if (!isValidAuth(dst.getAuthRef())) {
         return NONE_OR_INV;
     }
 
     if (!parseCGI(src, dst.getCGIsRef())) {
-        Log.error() << "#### Failed to parse \"CGI\"" << Log.endl;
+        Log.error() << KW_CGI << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     } else if (!isValidCGI(dst.getCGIsRef())) {
-        Log.error() << "#### Invalid \"CGI\". Prototype: \"extension\": \"path-to-executable\"" << Log.endl;
+        Log.error() << KW_CGI << " is invalid, usage: <ext>:<path-to-exec>" << Log.endl;
         return NONE_OR_INV;
     }
 
-    if (!getArray(src, "methods_allowed", dst.getAllowedMethodsRef(), getDefaultAllowedMethods())) {
-        Log.error() << "#### Failed to parse \"methods_allowed\"" << Log.endl;
+    if (!getArray(src, KW_METHODS_ALLOWED, dst.getAllowedMethodsRef(), getDefaultAllowedMethods())) {
+        Log.error() << KW_METHODS_ALLOWED << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     } else if (!isSubset(getDefaultAllowedMethods(), dst.getAllowedMethodsRef())) {
-        Log.error() << "#### Unrecognized value in \"methods_allowed\"" << Log.endl;
+        Log.error() << KW_METHODS_ALLOWED << " has unrecognized value" << Log.endl;
         return NONE_OR_INV;
     }
 
-    if (!getArray(src, "index", dst.getIndexRef(), def.getIndexRef())) {
-        Log.error() << "#### Failed to parse \"index\"" << Log.endl;
+    if (!getArray(src, KW_INDEX, dst.getIndexRef(), def.getIndexRef())) {
+        Log.error() << KW_INDEX << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     }
-
-    // Filename checking among indexes ?
 
     return SET;
 }
 
 int
 parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res, HTTP::Location &base) {
-    ConfStatus status = basicCheck(src, "locations", OBJECT, res, res);
+    ConfStatus status = basicCheck(src, KW_LOCATIONS, OBJECT, res, res);
     if (status != SET) {
         return status;
     }
 
-    JSON::Object *locations = src->get("locations")->toObj();
+    JSON::Object *locations = src->get(KW_LOCATIONS)->toObj();
 
     JSON::Object::iterator it  = locations->begin();
     JSON::Object::iterator end = locations->end();
@@ -592,13 +589,14 @@ parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res, HT
         }
 
         if (!isValidPath(it->first)) {
-            Log.error() << "### location path \"" << it->first << "\" is incorrect" << Log.endl;
+            Log.error() << "location " << it->first << " invalid path" << Log.endl;
             return NONE_OR_INV;
         }
         dst.getPathRef() = it->first;
+
         JSON::Object *location = it->second->toObj();
         if (!parseLocation(location, dst, base)) {
-            Log.error() << "### Failed to parse location \"" << it->first << "\"" << Log.endl;
+            Log.error() << "location " << it->first << " parsing failed" << Log.endl;
             return NONE_OR_INV;
         }
         
@@ -607,40 +605,52 @@ parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res, HT
     return SET;
 }
 
+bool
+isValidPort(int port) {
+    if (port > 65535) {
+        Log.error() << KW_PORT << " upper bound in 65535" << Log.endl;
+        return false;
+    } else if (port > 49151) {
+        Log.info() << KW_PORT << " 49151-65535 reserved for client apps" << Log.endl;
+    } else if (port < 1024 && getuid() != 0) {
+        Log.error() << KW_PORT << " 0-1023 reserved for OS-daemons in unix (use sudo)" << Log.endl;
+        return false;
+    }
+    return true;
+}
+
 int
 parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
 
-    if (!isValidKeywords(src, isValidKeywordServerBlock)) {
+    if (!isValidKeywords(src, validServerBlockKeywords)) {
         return NONE_OR_INV;
     }
 
-    if (!getArray(src, "server_names", dst.getServerNamesRef(), dst.getServerNamesRef())) {
-        Log.error() << "## Failed to parse \"server_names\"" << Log.endl;
+    if (!getArray(src, KW_SERVER_NAMES, dst.getServerNamesRef(), dst.getServerNamesRef())) {
+        Log.error() << KW_SERVER_NAMES << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     }
 
-    if (!getString(src, "addr", dst.getAddrRef(), "0.0.0.0")) {
-        Log.error() << "## Failed to parse \"addr\"" << Log.endl;
+    if (!getString(src, KW_ADDR, dst.getAddrRef(), "0.0.0.0")) {
+        Log.error() << KW_ADDR << " parsing failed" << Log.endl;
         return NONE_OR_INV;
-    } else if (!isValidIp(dst.getAddrRef())) {
-        Log.error() << "## \"addr\" is invalid or not in ipv4 format" << Log.endl;
+    } else if (!isValidIpv4(dst.getAddrRef())) {
+        Log.error() << KW_ADDR << " is invalid or not in ipv4 format" << Log.endl;
         return NONE_OR_INV;
     }
 
-    if (!getUInteger(src, "port", dst.getPortRef())) {
-        Log.error() << "## Failed to parse \"port\"" << Log.endl;
+    if (!getUInteger(src, KW_PORT, dst.getPortRef())) {
+        Log.error() << KW_PORT << " parsing failed" << Log.endl;
         return NONE_OR_INV;
-    } else if (dst.getPortRef() < 1024) {
-        Log.info() << "## WARNING: Ports lower than 1024 reserved for OS" << Log.endl;
-    } else if ( dst.getPortRef() > 49151) {
-        Log.info() << "## WARNING: Ports higher than 49151 reserved for client apps" << Log.endl;
+    } else if (!isValidPort(dst.getPortRef())) {
+        return NONE_OR_INV;
     }
 
     if (!parseErrorPages(src, dst.getErrPathsRef())) {
-        Log.error() << "## Failed to parse \"error_pages\"" << Log.endl;
+        Log.error() << KW_ERROR_PAGES << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     } else if (!isValidErrorPages(dst.getErrPathsRef())) {
-        Log.error() << "## Failed to parse \"error_pages\"" << Log.endl;
+        Log.error() << KW_ERROR_PAGES << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     }
 
@@ -648,12 +658,12 @@ parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
     // realpath("./", resolvedPath);
     dst.getLocationBaseRef().getRootRef() = "./";
     if (!parseLocation(src, dst.getLocationBaseRef(), dst.getLocationBaseRef())) {
-        Log.error() << "## Failed to parse \"location base\"" << Log.endl;
+        Log.error() << "location_base" << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     }
 
     if (!parseLocations(src, dst.getLocationsRef(), dst.getLocationBaseRef())) {
-        Log.error() << "## Failed to parse \"locations\"" << Log.endl;
+        Log.error() << KW_LOCATIONS << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     }
 
@@ -662,33 +672,34 @@ parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
 
 int
 parseServerBlocks(JSON::Object *src, Server *serv) {
-    ConfStatus status = basicCheck(src, "servers", OBJECT);
+
+    ConfStatus status = basicCheck(src, KW_SERVERS, OBJECT);
     if (status != SET) {
         return status;
     }
 
-    JSON::Object *servers = src->get("servers")->toObj();
+    JSON::Object *servers = src->get(KW_SERVERS)->toObj();
 
-    JSON::Object::iterator it  = servers->begin();
-    JSON::Object::iterator end = servers->end();
-    if (it == end) {
-        Log.error() << "At least one server block is needed." << Log.endl;
+    if (servers->begin() == servers->end()) {
+        Log.error() << "Serverblocks not found" << Log.endl;
         return NONE_OR_INV;
     }
-    for (; it != end; it++) {
-        HTTP::ServerBlock block_dst;
-        block_dst.setBlockname(it->first);
+
+    JSON::Object::iterator it;
+    for (it = servers->begin(); it != servers->end(); it++) {
+        HTTP::ServerBlock servBlock;
+        servBlock.setBlockname(it->first);
 
         if (!basicCheck(servers, it->first, OBJECT)) {
             return NONE_OR_INV;
         }
 
-        JSON::Object *block_src = it->second->toObj();
-        if (!parseServerBlock(block_src, block_dst)) {
-            Log.error() << "# Failed to parse server block \"" << it->first << "\"" << Log.endl;
+        JSON::Object *obj = it->second->toObj();
+        if (!parseServerBlock(obj, servBlock)) {
+            Log.error() << "Serverblock " << it->first << " parsing failed" << Log.endl;
             return NONE_OR_INV;
         }
-        serv->addServerBlock(block_dst);
+        serv->addServerBlock(servBlock);
     }
     return SET;
 }
@@ -700,7 +711,7 @@ loadConfig(const string filename) {
         JSON::JSON json(filename);
         ptr = json.parse();
         if (ptr == NULL) {
-            Log.error() << "Failed to parse config file" << Log.endl;
+            Log.error() << "Failed to parse " << filename << Log.endl;
             return NULL;
         }
     } catch (std::exception &e) {

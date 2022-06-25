@@ -3,9 +3,6 @@
 #include "JSON.hpp"
 #include "Server.hpp"
 
-int isInteger(double &num);
-int isUInteger(double &num);
-
 enum ExpectedType {
     STRING,
     BOOLEAN,
@@ -19,6 +16,32 @@ enum ConfStatus {
     SET,
     DEFAULT
 };
+
+#ifndef CONFIG_KEYWORDS
+    # define CONFIG_KEYWORDS
+    # define KW_SERVERS          "servers"
+    # define KW_ADDR             "addr"
+    # define KW_PORT             "port"
+    # define KW_SERVER_NAMES     "server_names"
+    # define KW_ERROR_PAGES      "error_pages"
+    # define KW_LOCATIONS        "locations"
+    # define KW_CGI              "cgi"
+    # define KW_ROOT             "root"
+    # define KW_ALIAS            "alias"
+    # define KW_INDEX            "index"
+    # define KW_AUTOINDEX        "autoindex"
+    # define KW_METHODS_ALLOWED  "methods_allowed"
+    # define KW_POST_MAX_BODY    "post_max_body"
+    # define KW_REDIRECT         "redirect"
+    # define KW_AUTH_BASIC       "auth_basic"
+    # define KW_REALM            "realm"
+    # define KW_USER_FILE        "user_file"
+    # define KW_CODE             "code" 
+    # define KW_URL              "url"
+#endif
+
+int isInteger(double &num);
+int isUInteger(double &num);
 
 std::string getDataTypeName(ExpectedType type);
 int         typeExpected(JSON::AType *ptr, ExpectedType type);
