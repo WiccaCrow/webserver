@@ -123,7 +123,7 @@ public:
     void       resolvePath(void);
 
 private:
-    bool isValidMethod(const std::string &method);
+    // bool isValidMethod(const std::string &method);
     // bool isValidPath(const std::string &path);
     bool isValidProtocol(const std::string &protocol);
 

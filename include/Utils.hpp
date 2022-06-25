@@ -9,7 +9,6 @@
 
 std::vector<std::string> split(const std::string &source, const std::string &delimiters);
 std::string              getWord(const std::string &line, const char *delims, size_t &pos);
-std::string              itoh(int nb);
 
 std::string &rtrim(std::string &s, const char *t);
 std::string &ltrim(std::string &s, const char *t);
@@ -35,6 +34,8 @@ std::string sztos(size_t val);
 
 #endif
 
+std::string itohs(int nb);
+
 bool stoll(long long &num, char const *s);
 bool stoll(char const *s);
 
@@ -43,6 +44,10 @@ size_t strlen_u8(const std::string &s);
 time_t getModifiedTime(const std::string &file);
 
 // RFC validation
+
+extern const char * validMethods[];
+
+bool isValidMethod(const std::string &s);
 bool isValidPath(const std::string &s);
 bool isValidIpv4(const std::string &s);
 bool isValidIpv6(const std::string &s);

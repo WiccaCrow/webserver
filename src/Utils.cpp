@@ -197,6 +197,23 @@ isPchar(const char *s) {
     return isUnreserved(*s) || isPctEncoded(s) || isSubDelims(*s) || !strchr("@:", *s);
 }
 
+const char * validMethods[] = {
+    "GET", "DELETE", "POST",
+    "PUT", "HEAD", "CONNECT",
+    "OPTIONS", "TRACE", "PATCH", 
+    NULL
+};
+
+bool
+isValidMethod(const std::string &method) {
+
+    for (int i = 0; validMethods[i]; ++i) {
+        if (validMethods[i] == method)
+            return true;
+    }
+    return false;
+}
+
 bool
 isValidOctet(char *octet) {
     if (octet[0] == '0' && octet[1] != '\0')
@@ -210,22 +227,6 @@ isValidOctet(char *octet) {
     int x = atoi(octet);
     return (x >= 0 && x <= 255);
 }
-
-// bool
-// isValidIp(const std::string &ip) {
-//     char buf[32];
-//     strncpy(buf, ip.c_str(), 32);
-//     int   count = 0;
-//     char *octet = strtok(buf, ".");
-//     while (octet) {
-//         count++;
-//         if (!isValidOctet(octet)) {
-//             return 0;
-//         }
-//         octet = strtok(NULL, ".");
-//     }
-//     return (count == 4);
-// }
 
 bool
 isValidScheme(const std::string &s) {

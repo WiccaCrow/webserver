@@ -325,21 +325,6 @@ Request::checkSL(void) {
     return CONTINUE;
 }
 
-// Need to move to another place so config and request could use the same array
-bool
-Request::isValidMethod(const std::string &method) {
-    static const std::string validMethods[9] = {
-        "GET", "DELETE", "POST",
-        "PUT", "HEAD", "CONNECT",
-        "OPTIONS", "TRACE", "PATCH"
-    };
-    for (int i = 0; i < 9; ++i) {
-        if (validMethods[i] == method)
-            return true;
-    }
-    return false;
-}
-
 // Should be moved later (Part of the RFC validator)
 bool
 Request::isValidProtocol(const std::string &protocol) {
