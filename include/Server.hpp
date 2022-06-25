@@ -22,11 +22,13 @@
 #include "Response.hpp"
 #include "ServerBlock.hpp"
 
-#include "PoolController.hpp"
-
 #ifndef SOMAXCONN
     # define SOMAXCONN 128
 #endif
+
+struct WorkerInfo {
+    int id;
+};
 
 class Server {
 
@@ -45,8 +47,7 @@ private:
     pthread_t _threads[WORKERS];
 
 public:
-    PoolController poolCtl;
-    PoolController wPoolCtls[WORKERS];
+    WorkerInfo workerInfos[WORKERS];
 
     Server();
     Server(const std::string &_addr, const uint16_t _port);

@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "Pool.hpp"
 
 const size_t reservedClients = 64;
 
@@ -6,15 +7,21 @@ const size_t reservedClients = 64;
 // Designed to stop workers
 bool finished;
 
+// Thread-safe container
+typedef Pool<HTTP::Request *>  RequestPool;
+typedef Pool<HTTP::Response *> ResponsePool;
+
+RequestPool requests;
+ResponsePool responses;
+
 Server::Server() 
     : _socketsCount(0) {
     _pollfds.reserve(reservedClients);
     _clients.reserve(reservedClients);
 
     for (size_t i = 0; i < WORKERS; i++) {
-        wPoolCtls[i].id = i;
+        workerInfos[i].id = i;
     }
-    
 }
 
 Server::~Server() {
@@ -24,10 +31,6 @@ Server::~Server() {
             _pollfds[i].fd = -1;
         }
     }
-
-    // Not the best solution, but fine for current purposes
-    // It'll be better to handle SIG_INT
-    PoolController::mutexDestroy(); 
 }
 
 // Could be used for re-reading config:
@@ -82,50 +85,52 @@ Server::addListenSocket(const std::string &addr, size_t port) {
     return fd;
 }
 
-void *worker_cycle(void *ptr) {
-    PoolController *poolCtl = reinterpret_cast<PoolController *>(ptr);
+void *workerCycle(void *ptr) {
 
-    if (poolCtl == NULL) {
-        Log.error() << "Invalid poolController" << Log.endl;
-        return NULL; // or exit ?
-    }
+    WorkerInfo *w = reinterpret_cast<WorkerInfo *>(ptr);
 
     while (!finished) {
+    
+        HTTP::Request *req = NULL;
+    
+        try {
+            req = requests.pop_front();
 
-        HTTP::Request *req = poolCtl->getRequest();
-
-        if (req == NULL) {
+        } catch (RequestPool::Empty &e) {            
             usleep(WORKER_TIMEOUT);
             continue ;
-        } else {
-            HTTP::Response *res = new HTTP::Response(req);
-            if (res != NULL) {
-                const int fd = res->getClient()->getFd();
-                const std::string &uri = req->getRawUri();
-                Log.debug() << "Worker[" << poolCtl->id << "] for [" << fd << "]: req " << uri << " started" << Log.endl; 
-                res->handle();
-                Log.debug() << "Worker[" << poolCtl->id << "] for [" << fd << "]: req " << uri << " processed" << Log.endl; 
-                poolCtl->putResponse(res);
-                Log.debug() << "Worker[" << poolCtl->id << "] for [" << fd << "]: req " << uri << " returned" << Log.endl; 
-            } else {
-                Log.syserr() << "Cannot allocate memory for Response" << Log.endl;
-            }
         }
-    }
 
+        HTTP::Response *res = new HTTP::Response(req);
+
+        if (res == NULL) {
+            Log.syserr() << "Cannot allocate memory for Response" << Log.endl;
+            // Not sure what to do; only continue will lead to leaks
+            continue ;
+        }
+
+        const int fd = res->getClient()->getFd();
+        const std::string &uri = req->getRawUri();
+
+        Log.debug() << "Worker[" << w->id << "] for [" << fd << "]: req " << uri << " started" << Log.endl; 
+        res->handle();
+        Log.debug() << "Worker[" << w->id << "] for [" << fd << "]: req " << uri << " processed" << Log.endl; 
+        responses.push_back(res);
+        Log.debug() << "Worker[" << w->id << "] for [" << fd << "]: req " << uri << " returned" << Log.endl; 
+ 
+    }
     return NULL;
 }
 
 void
 Server::createWorkers(void) {
-    PoolController::mutexInit();
 
     finished = false;
     for (size_t i = 0; i < WORKERS; i++) {
-        if (pthread_create(&_threads[i], NULL, worker_cycle, &wPoolCtls[i])) {
-            Log.syserr() << "Server::pthread create failed for worker" << i << Log.endl;
+        if (pthread_create(&_threads[i], NULL, workerCycle, &workerInfos[i])) {
+            Log.syserr() << "Server::pthread create failed for worker" << workerInfos[i].id << Log.endl;
         } else {
-            Log.debug() << "Server:: Worker[" << i << "] created" << Log.endl;
+            Log.debug() << "Server:: Worker[" << workerInfos[i].id << "] created" << Log.endl;
         }
     }
 }
@@ -136,9 +141,9 @@ Server::destroyWorkers(void) {
     finished = true;
     for (size_t i = 0; i < WORKERS; i++) {
         if (pthread_join(_threads[i], NULL)) {
-            Log.syserr() << "Server::pthread join failed for worker" << i << Log.endl;
+            Log.syserr() << "Server::pthread join failed for worker" << workerInfos[i].id << Log.endl;
         } else {
-            Log.debug() << "Server:: Worker[" << i << "] destroyed" << Log.endl;
+            Log.debug() << "Server:: Worker[" << workerInfos[i].id << "] destroyed" << Log.endl;
         }
     }
 }
@@ -149,7 +154,12 @@ Server::freePool(void) {
     HTTP::Response *res = NULL;
 
     do {
-        res = poolCtl.getResponse();
+        try {
+            res = responses.pop_front();
+        } catch (ResponsePool::Empty &e) {            
+            break;
+        }
+    
         if (res != NULL) {
             Log.debug() << "Server::freePool into [" << res->getClient()->getFd() << "]: " << res->getRequest()->getRawUri() << Log.endl;
             res->getClient()->addResponse(res);
@@ -208,11 +218,10 @@ Server::pollInHandler(size_t id) {
     }
 
     if (_clients[id]->requestReady()) {
-        HTTP::Request *req = NULL;
-        
-        req = _clients[id]->getTopRequest();
+        HTTP::Request *req = _clients[id]->getTopRequest();
         _clients[id]->removeTopRequest();
-        poolCtl.putRequest(req);
+        requests.push_back(req);
+        // poolCtl.putRequest(req);
         _clients[id]->requestPoolReady(true);
     }
 
