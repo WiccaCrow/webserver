@@ -7,22 +7,15 @@ Client::Client()
     : _fd(-1)
     , _clientPort(0)
     , _serverPort(0)
+    , _req(NULL)
     , _shouldBeClosed(false)
-    , _reqPoolReady(true)
     , _data(NULL)
     , _dataSize(0)
     , _dataPos(0)
     , _headSent(false)
-    , _bodySent(false)
-    , _replyDone(false) {}
+    , _bodySent(false) {}
 
-Client::~Client() {
-    for (size_t i = 0; i < _requests.size(); i++) {
-        if (_requests[i] != NULL) {
-            delete _requests[i];
-        }
-    }
-    
+Client::~Client() {   
     for (size_t i = 0; i < _responses.size(); i++) {
         if (_responses[i] != NULL) {
             delete _responses[i];
@@ -37,27 +30,21 @@ Client::Client(const Client &client) {
 Client &
 Client::operator=(const Client &other) {
     if (this != &other) {
-        _requests = other._requests;
-        _responses = other._responses;
-        _reqPoolReady = other._reqPoolReady;
+        _responses      = other._responses;
         _fd             = other._fd;
         _clientIpAddr   = other._clientIpAddr;
         _serverIpAddr   = other._serverIpAddr;
         _clientPort     = other._clientPort;
         _serverPort     = other._serverPort;
         _shouldBeClosed = other._shouldBeClosed;
-        _replyDone = other._replyDone;
-        _data = other._data;
-        _dataSize = other._dataSize;
-        _dataPos = other._dataPos;
-        _headSent = other._headSent;
-        _bodySent = other._bodySent;
+        _data           = other._data;
+        _dataSize       = other._dataSize;
+        _dataPos        = other._dataPos;
+        _headSent       = other._headSent;
+        _bodySent       = other._bodySent;
     }
     return *this;
 }
-
-void
-Client::initResponseMethodsHeaders(void) {}
 
 int
 Client::getFd(void) const {
@@ -83,7 +70,6 @@ const std::string &
 Client::getServerIpAddr(void) const {
     return _serverIpAddr;
 }
-
 
 void
 Client::setPort(size_t port) {
@@ -117,12 +103,18 @@ Client::getHostname() const {
 
 Request *
 Client::getRequest() {
-    return _requests.back();
+    return _req;
 }
+
+void
+Client::setRequest(Request *req) {
+    _req = req;
+}
+
 
 Response *
 Client::getResponse() {
-    return _responses.back();
+    return _responses.front();
 }
 
 void
@@ -138,16 +130,12 @@ Client::shouldBeClosed(void) const {
 void
 Client::addRequest(void) {
 
-    Request *req = new Request(this);
-    if (req == NULL) {
-        Log.syserr() << "Cannot allocate request" << Log.endl;
+    _req = new Request(this);
+    if (_req == NULL) {
+        Log.syserr() << "Cannot allocate memory for Request" << Log.endl;
         setFd(-1);
     }
-
     Log.debug() << "----------------------" << Log.endl;
-    
-    _requests.push_back(req);
-    requestPoolReady(false);
 }
 
 void
@@ -156,34 +144,9 @@ Client::addResponse(Response *res) {
 }
 
 void
-Client::removeTopRequest(void) {
-    _requests.pop_front();
-}
-
-void
-Client::removeTopResponse(void) {
+Client::removeResponse(void) {
     delete _responses.front();
     _responses.pop_front();
-}
-
-bool
-Client::requestPoolReady(void) {
-    return _reqPoolReady;
-}
-
-void
-Client::requestPoolReady(bool flag) {
-    _reqPoolReady = flag;
-}
-
-Request *
-Client::getTopRequest(void) {
-    return _requests.front();
-}
-
-Response *
-Client::getTopResponse(void) {
-    return _responses.front();
 }
 
 bool
@@ -193,50 +156,23 @@ Client::validSocket(void) {
 
 bool
 Client::requestReady(void) {
-    return validSocket() && _requests.size() && getTopRequest()->isFormed();
+    return validSocket() && getRequest() && getRequest()->isFormed();
 }
 
 bool
 Client::replyReady(void) {
-    return validSocket() && _responses.size() && getTopResponse()->isFormed();
+    return validSocket() && _responses.size() && getResponse()->isFormed();
 }
 
 bool
 Client::replyDone(void) {
-    return _replyDone;
+    return _headSent && _bodySent;
 }
 
 void
-Client::replyDone(bool flag) {
-    _replyDone = flag;
-}
-
-
-void
-Client::checkIfFailed(void) {
-
-    static const size_t size = 4;
-    static const StatusCode failedStatuses[size] = {
-        BAD_REQUEST,
-        REQUEST_TIMEOUT,
-        INTERNAL_SERVER_ERROR,
-        PAYLOAD_TOO_LARGE
-    };
-
-    for (size_t i = 0; i < size; i++) {
-        if (getTopResponse()->getStatus() == failedStatuses[i]) {
-            setFd(-1);
-            break ;
-        }
-    }
-}
-
-void
-Client::process(void) {
-
-    Log.debug() << "Client::process [" << _fd << "]" << Log.endl;
-
-    getTopResponse()->handle();
+Client::replyDone(bool val) {
+    _headSent = val;
+    _bodySent = val;
 }
 
 bool
@@ -257,6 +193,8 @@ Client::sendData(void) {
     } while (_dataPos < _dataSize);
 
     if (sent == 0) {
+        _headSent = true;
+        _bodySent = true;
         shouldBeClosed(true);
     }
 
@@ -273,7 +211,7 @@ Client::reply(void) {
 
     signal(SIGPIPE, SIG_IGN);
 
-    Response *rsp = getTopResponse();
+    Response *rsp = getResponse();
 
     if (!_headSent) {
         if (_dataPos == 0) {
@@ -290,19 +228,17 @@ Client::reply(void) {
         _bodySent = sendData();
     }
 
-    if (_headSent && _bodySent) {
-        _replyDone = true;
-        _dataPos = 0;
+    if (replyDone()) {
         _data = NULL;
+        _dataPos = 0;
         _dataSize = 0;
-        _headSent = false;
-        _bodySent = false;
     }
-    
+
     if (shouldBeClosed()) {
         Log.debug() << "Client::shouldBeClosed" << Log.endl;
         setFd(-1);
     }
+    
 }
 
 static const size_t MAX_PACKET_SIZE = 65536;
@@ -331,7 +267,7 @@ Client::getline(std::string &line) {
     }
 
     size_t pos = 0;
-    const size_t bodySize = getTopRequest()->getBodySize();
+    const size_t bodySize = getRequest()->getBodySize();
     if (!bodySize) {
         pos = _rem.find("\r\n");
         if (pos == std::string::npos) {

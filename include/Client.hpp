@@ -24,20 +24,18 @@ private:
     std::string _clientIpAddr;
     std::string _serverIpAddr;
 
-    std::deque<HTTP::Request *> _requests;
+    Request *_req;
     std::deque<HTTP::Response *> _responses;
 
     std::string _rem;
 
     bool        _shouldBeClosed;
-    bool        _reqPoolReady;
 
     const char *_data;
     size_t      _dataSize;
     size_t      _dataPos;
     bool        _headSent;
     bool        _bodySent;
-    bool        _replyDone;
     
     bool    sendData(void);
     int     readSocket(void);
@@ -77,11 +75,11 @@ public:
 
     const std::string getHostname(void) const;
 
-    Request *    getRequest();
-    Response *   getResponse();
+    Request *    getRequest(void);
+    void         setRequest(Request *);
+    Response *   getResponse(void);
 
     void receive(void);
-    void process(void);
     void reply(void);
     void checkIfFailed(void);
 
@@ -92,15 +90,7 @@ public:
 
     void addRequest(void);
     void addResponse(Response *);
-
-    bool requestPoolReady(void);
-    void requestPoolReady(bool);
-
-    void removeTopRequest(void);
-    void removeTopResponse(void);
-
-    Request *getTopRequest(void);
-    Response *getTopResponse(void);
+    void removeResponse(void);
 
     bool validSocket(void);
     bool requestReady(void);

@@ -156,15 +156,11 @@ Server::freePool(void) {
     do {
         try {
             res = responses.pop_front();
+            res->getClient()->addResponse(res);
+            Log.debug() << "Server::freePool into [" << res->getClient()->getFd() << "]: " << res->getRequest()->getRawUri() << Log.endl;
         } catch (ResponsePool::Empty &e) {            
             break;
         }
-    
-        if (res != NULL) {
-            Log.debug() << "Server::freePool into [" << res->getClient()->getFd() << "]: " << res->getRequest()->getRawUri() << Log.endl;
-            res->getClient()->addResponse(res);
-        }
-
     } while (res != NULL);
 
 }
@@ -209,23 +205,22 @@ Server::getServerBlocks(size_t port) {
 void
 Server::pollInHandler(size_t id) {
     
-    if (_clients[id]->requestPoolReady()) {
-        _clients[id]->addRequest();
+    HTTP::Client *client = _clients[id];
+
+    if (!client->getRequest()) {
+        client->addRequest();
     }
 
-    if (!_clients[id]->requestReady()) {
-        _clients[id]->receive();
+    if (!client->requestReady()) {
+        client->receive();
     }
 
-    if (_clients[id]->requestReady()) {
-        HTTP::Request *req = _clients[id]->getTopRequest();
-        _clients[id]->removeTopRequest();
-        requests.push_back(req);
-        // poolCtl.putRequest(req);
-        _clients[id]->requestPoolReady(true);
+    if (client->requestReady()) {
+        requests.push_back(client->getRequest());
+        client->setRequest(NULL);
     }
 
-    if (!_clients[id]->validSocket()) {
+    if (!client->validSocket()) {
         disconnectClient(id);
     }
 }
@@ -242,28 +237,30 @@ Server::pollHupHandler(size_t id) {
 // Or check presence of the client in freePool
 void
 Server::pollOutHandler(size_t id) {
-    if (!_clients[id]) {
+    
+    HTTP::Client *client = _clients[id];
+
+    if (client == NULL) {
         return ;
     }
 
-    if (_clients[id]->replyReady() && !_clients[id]->replyDone()) {
-        _clients[id]->reply();
+    if (client->replyReady() && !client->replyDone()) {
+        client->reply();
     }
     
-    if (_clients[id]->replyDone()) {
-        _clients[id]->checkIfFailed();
-        _clients[id]->removeTopResponse();
-        _clients[id]->replyDone(false);
+    if (client->replyDone()) {
+        client->removeResponse();
+        client->replyDone(false);
     }
 
-    if (!_clients[id]->validSocket()) {
+    if (!client->validSocket()) {
         disconnectClient(id);
     }
 }
 
 void
 Server::pollErrHandler(size_t id) {
-    Log.syserr() << "Server::POLLERR occured on the " << _pollfds[id].fd << "socket" << Log.endl;
+    Log.syserr() << "Server::pollerr on [" << _pollfds[id].fd << "]" << Log.endl;
     exit(1);
 }
 
@@ -342,11 +339,9 @@ Server::addClient(int fd, HTTP::Client *client) {
     if (it == _pollfds.end()) {
         it = _pollfds.insert(_pollfds.end(), tmp);
         _clients.insert(_clients.end(), NULL);
+    } else {
+        *it = tmp;
     }
-
-    *it = (struct pollfd) {
-        fd, POLLIN | POLLOUT, 0
-    };
 
     size_t id = std::distance(_pollfds.begin(), it);
     _clients[id] = client;

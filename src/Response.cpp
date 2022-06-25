@@ -23,13 +23,6 @@ Response::Response(Request *req)
     , _fileaddr(NULL)
     , _filefd(-1)
 {
-    methods.insert(std::make_pair("GET", &Response::GET));
-    methods.insert(std::make_pair("PUT", &Response::PUT));
-    methods.insert(std::make_pair("POST", &Response::POST));
-    methods.insert(std::make_pair("HEAD", &Response::HEAD));
-    methods.insert(std::make_pair("DELETE", &Response::DELETE));
-    methods.insert(std::make_pair("OPTIONS", &Response::OPTIONS));
-
     headers.push_back(ResponseHeader(DATE));
     headers.push_back(ResponseHeader(SERVER));
     headers.push_back(ResponseHeader(KEEP_ALIVE));
@@ -57,7 +50,6 @@ Response &Response::operator=(const Response &other) {
         _isFormed = other._isFormed;
         _status = other._status;
         headers = other.headers;
-        methods = other.methods;
         _fileaddr = other._fileaddr;
         _filefd = other._filefd;
     }
@@ -77,28 +69,71 @@ Response::~Response() {
 }
 
 void
-Response::handle(void) {
-    std::map<std::string, Response::Handler>::iterator it;
+Response::shouldBeClosedIf(void) {
 
-    if (getStatus() < BAD_REQUEST) {
-        if (_req->authNeeded() && !_req->isAuthorized()) {
-            makeResponseForNonAuth();
-        } else {
-            Location *loc = getRequest()->getLocation();
-            Redirect &rdr = loc->getRedirectRef();
-            if (rdr.set()) {
-                redirect(rdr.getCodeRef(), rdr.getURIRef());
-                Log.debug() << "Response:: " << rdr.getCodeRef() << " to " << rdr.getURIRef() << Log.endl;
-            } else {
-                it = methods.find(_req->getMethod());
-                (this->*(it->second))();
-            }
+    static const size_t size = 5;
+    static const StatusCode failedStatuses[size] = {
+        BAD_REQUEST,
+        REQUEST_TIMEOUT,
+        INTERNAL_SERVER_ERROR,
+        PAYLOAD_TOO_LARGE,
+        UNAUTHORIZED
+    };
+
+    for (size_t i = 0; i < size; i++) {
+        if (getStatus() == failedStatuses[i]) {
+            getClient()->shouldBeClosed(true);
+            addHeader(CONNECTION, "close");
+            break ;
         }
     }
+}
 
+void
+Response::performMethod(void) {
+
+    const std::string &method = getRequest()->getMethod();
+    
+           if (method == "GET") {
+        GET();
+    } else if (method == "PUT") {
+        PUT();
+    } else if (method == "POST") {
+        POST();
+    } else if (method == "HEAD") {
+        HEAD();
+    } else if (method == "PATCH") {
+        PATCH();
+    } else if (method == "TRACE") {
+        TRACE();
+    } else if (method == "DELETE") {
+        DELETE();
+    } else if (method == "OPTIONS") {
+        OPTIONS();
+    } else if (method == "CONNECT") {
+        CONNECT();
+    }
+}
+
+void
+Response::handle(void) {
+
+    if (getStatus() < BAD_REQUEST) {
+    
+        if (getRequest()->authNeeded() && !getRequest()->isAuthorized()) {
+            makeResponseForNonAuth();
+        } else if (getRequest()->getLocation()->getRedirectRef().set()) {
+            Redirect &rdr = getRequest()->getLocation()->getRedirectRef();
+            makeResponseForRedirect(rdr.getCodeRef(), rdr.getURIRef());
+        } else {
+            performMethod();
+        }
+    }
+    
     if (getStatus() >= BAD_REQUEST) {
         makeResponseForError();
-        addHeader(CONTENT_TYPE);
+        shouldBeClosedIf();
+        addHeader(CONTENT_TYPE); // ?
     }
 
     makeHead();
@@ -111,7 +146,6 @@ Response::makeResponseForNonAuth(void) {
     setStatus(UNAUTHORIZED);
     addHeader(DATE, Time::gmt());
     addHeader(WWW_AUTHENTICATE);
-    getClient()->shouldBeClosed(true);
 }
 
 void
@@ -126,11 +160,9 @@ Response::DELETE(void) {
             setStatus(FORBIDDEN);
             return;
         }
-    } else {
-        if (remove(resourcePath.c_str())) {
-            setStatus(FORBIDDEN);
-            return;
-        }
+    } else if (remove(resourcePath.c_str())) {
+        setStatus(FORBIDDEN);
+        return;
     }
     setStatus(OK);
     addHeader(CONTENT_TYPE);
@@ -153,6 +185,21 @@ Response::GET(void) {
 void
 Response::OPTIONS(void) {
     addHeader(ALLOW);
+}
+
+void
+Response::CONNECT(void) {
+    setStatus(NOT_IMPLEMENTED);
+}
+
+void
+Response::TRACE(void) {
+    setStatus(NOT_IMPLEMENTED);
+}
+
+void
+Response::PATCH(void) {
+    setStatus(NOT_IMPLEMENTED);
 }
 
 void
@@ -193,7 +240,7 @@ Response::PUT(void) {
 int
 Response::makeResponseForDir(std::string &resourcePath) {
     if (!endsWith(resourcePath, "/")) {
-        return redirect(MOVED_PERMANENTLY, _req->getRawUri() + "/");
+        return makeResponseForRedirect(MOVED_PERMANENTLY, _req->getRawUri() + "/");
     } else if (isSetIndexFile(resourcePath)) {
         return makeResponseForFile(resourcePath);
     } else if (_req->getLocation()->getAutoindexRef()) {
@@ -227,13 +274,16 @@ Response::contentForGetHead(void) {
 }
 
 int
-Response::redirect(HTTP::StatusCode code, const std::string &url) {
+Response::makeResponseForRedirect(HTTP::StatusCode code, const std::string &url) {
+
     setStatus(code);
     addHeader(LOCATION, url);
     addHeader(CONTENT_TYPE);
     setBody(HTML_BEG BODY_BEG H1_BEG
             "Redirect " + ultos(code) +
             H1_END BODY_END HTML_END);
+
+    Log.debug() << "Response:: " << code << " to " << url << Log.endl;
     return 1;
 }
 
@@ -615,43 +665,31 @@ Response::makeResponseForCGI(CGI &cgi) {
 }
 
 // Rewrite
-void
-Response::makeChunk() {
-    _res = "";
-
-    if (!getHeader(TRANSFER_ENCODING) ) {
-        return ;
-    }
-
-    if (_resourceFileStream.eof()) {
-        _resourceFileStream.close();
-        _resourceFileStream.clear();
-        return ;
-    }
-    char buffer[CHUNK_SIZE] = {0};
-    _resourceFileStream.read(buffer, sizeof(buffer) - 1);
-    if (_resourceFileStream.fail() && !_resourceFileStream.eof()) {
-        setStatus(INTERNAL_SERVER_ERROR);
-        _client->shouldBeClosed(true);
-        return ;
-    } else {
-        _res.assign(buffer, _resourceFileStream.gcount());
-        _res = itoh(_resourceFileStream.gcount()) + "\r\n" + _res + "\r\n";
-    }
-    if (_resourceFileStream.eof()) {
-        _res += "0\r\n\r\n";
-    }
-}
-
-size_t
-Response::getResponseLength() {
-    return (_res.length());
-}
-
-const std::string &
-Response::getResponse() {
-    return _res;
-}
+// void
+// Response::makeChunk() {
+//     _res = "";
+//     if (!getHeader(TRANSFER_ENCODING) ) {
+//         return ;
+//     }
+//     if (_resourceFileStream.eof()) {
+//         _resourceFileStream.close();
+//         _resourceFileStream.clear();
+//         return ;
+//     }
+//     char buffer[CHUNK_SIZE] = {0};
+//     _resourceFileStream.read(buffer, sizeof(buffer) - 1);
+//     if (_resourceFileStream.fail() && !_resourceFileStream.eof()) {
+//         setStatus(INTERNAL_SERVER_ERROR);
+//         _client->shouldBeClosed(true);
+//         return ;
+//     } else {
+//         _res.assign(buffer, _resourceFileStream.gcount());
+//         _res = itoh(_resourceFileStream.gcount()) + "\r\n" + _res + "\r\n";
+//     }
+//     if (_resourceFileStream.eof()) {
+//         _res += "0\r\n\r\n";
+//     }
+// }
 
 const std::string &
 Response::getBody() const {

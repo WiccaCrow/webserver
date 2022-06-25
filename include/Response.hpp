@@ -46,12 +46,7 @@ class Response {
     struct stat _filestat;
     RangeSet    _range;
 
-    std::ifstream _resourceFileStream;
-
 public:
-    typedef void (Response::*Handler)(void);
-    std::map<std::string, Handler> methods;
-
     typedef std::list<ResponseHeader>::iterator iter;
     typedef std::list<ResponseHeader>::const_iterator const_iter;
     std::list<ResponseHeader> headers;
@@ -75,7 +70,11 @@ public:
     void OPTIONS(void);
     void POST(void);
     void PUT(void);
+    void CONNECT(void);
+    void PATCH(void);
+    void TRACE(void);
 
+    void        performMethod(void);
     void        makeResponseForError(void);
     void        makeResponseForNonAuth(void);
     int         makeResponseForDir(std::string &resourcePath);
@@ -83,9 +82,9 @@ public:
     void        makeResponseForRange(void);
     void        makeResponseForMultipartRange(void);
     int         makeResponseForCGI(CGI &cgi);
+    int         makeResponseForRedirect(StatusCode code, const std::string &url);
 
     int         contentForGetHead(void);
-    int         redirect(StatusCode code, const std::string &url);
     bool        isSetIndexFile(std::string &resourcePath);
     int         openFileToResponse(std::string resourcePath);
     int         listing(const std::string &resourcePath);
@@ -102,14 +101,12 @@ public:
 
     std::map<std::string, CGI>::iterator isCGI(const std::string &filepath);
     
-    int recognizeHeaders(CGI &cgi);
-
     void  makeChunk();
 
     // setters, getters
     // to send response
-    size_t             getResponseLength(void);
-    const std::string &getResponse(void);
+    void shouldBeClosedIf(void);
+
     const std::string &getBody(void) const;
     const std::string &getHead(void) const;
     void               setBody(const std::string &);
