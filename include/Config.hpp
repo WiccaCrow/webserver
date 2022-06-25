@@ -43,7 +43,7 @@ enum ConfStatus {
 int isInteger(double &num);
 int isUInteger(double &num);
 
-std::string getDataTypeName(ExpectedType type);
+std::string getExpectedTypeName(ExpectedType type);
 int         typeExpected(JSON::AType *ptr, ExpectedType type);
 
 template <typename T>

@@ -11,7 +11,7 @@ isUInteger(double &num) {
 }
 
 std::string
-getDataTypeName(ExpectedType type) {
+getExpectedTypeName(ExpectedType type) {
     switch (type) {
         case ARRAY:
             return "array";
@@ -56,7 +56,7 @@ basicCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res,
     }
 
     if (!typeExpected(ptr, type)) {
-        Log.error() << key << ": expected " << getDataTypeName(type) << Log.endl;
+        Log.error() << key << ": expected " << getExpectedTypeName(type) << Log.endl;
         Log.error() << key << ": got " << ptr->getType() << Log.endl;
         return NONE_OR_INV;
     }
@@ -72,7 +72,7 @@ basicCheck(JSON::Object *src, const std::string &key, ExpectedType type) {
     }
 
     if (!typeExpected(ptr, type)) {
-        Log.error() << key << ": expected " << getDataTypeName(type) << Log.endl;
+        Log.error() << key << ": expected " << getExpectedTypeName(type) << Log.endl;
         Log.error() << key << ": got " << ptr->getType() << Log.endl;
         return NONE_OR_INV;
     }
@@ -216,20 +216,13 @@ getArray(JSON::Object *src, const std::string &key, std::vector<std::string> &re
     return SET;
 }
 
-// Default values
 std::vector<std::string>
 getDefaultAllowedMethods() {
-    std::vector<std::string> allowed(9);
 
-    allowed.push_back("GET");
-    allowed.push_back("DELETE");
-    allowed.push_back("POST");
-    allowed.push_back("PUT");
-    allowed.push_back("HEAD");
-    allowed.push_back("CONNECT");
-    allowed.push_back("OPTIONS");
-    allowed.push_back("TRACE");
-    allowed.push_back("PATCH");
+    std::vector<std::string> allowed(9);
+    for (size_t i = 0; validMethods[i]; i++) {
+        allowed.push_back(validMethods[i]);   
+    }
 
     return allowed;
 }
@@ -580,10 +573,10 @@ parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res, HT
 
     JSON::Object *locations = src->get(KW_LOCATIONS)->toObj();
 
-    JSON::Object::iterator it  = locations->begin();
-    JSON::Object::iterator end = locations->end();
-    for (; it != end; it++) {
-        HTTP::Location dst = base;
+    JSON::Object::iterator it;
+    for (it = locations->begin(); it != locations->end(); it++) {
+    
+        HTTP::Location location = base;
         if (!basicCheck(locations, it->first, OBJECT)) {
             return NONE_OR_INV;
         }
@@ -592,15 +585,15 @@ parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res, HT
             Log.error() << "location " << it->first << " invalid path" << Log.endl;
             return NONE_OR_INV;
         }
-        dst.getPathRef() = it->first;
+        location.getPathRef() = it->first;
 
-        JSON::Object *location = it->second->toObj();
-        if (!parseLocation(location, dst, base)) {
+        JSON::Object *obj = it->second->toObj();
+        if (!parseLocation(obj, location, base)) {
             Log.error() << "location " << it->first << " parsing failed" << Log.endl;
             return NONE_OR_INV;
         }
         
-        res.insert(std::make_pair(it->first, dst));
+        res.insert(std::make_pair(it->first, location));
     }
     return SET;
 }
@@ -715,7 +708,7 @@ loadConfig(const string filename) {
             return NULL;
         }
     } catch (std::exception &e) {
-        Log.error() << e.what() << Log.endl;
+        Log.error() << e.what() << " " << filename <<  Log.endl;
         return NULL;
     }
 
