@@ -3,11 +3,13 @@
 const size_t reservedClients = 64;
 
 // Declared in Globals.hpp
+// Designed to stop workers
 bool finished;
 
 Server::Server() 
     : _socketsCount(0) {
     _pollfds.reserve(reservedClients);
+    _clients.reserve(reservedClients);
 
     for (size_t i = 0; i < WORKERS; i++) {
         wPoolCtls[i].id = i;
@@ -22,8 +24,9 @@ Server::~Server() {
             _pollfds[i].fd = -1;
         }
     }
+
     // Not the best solution, but fine for current purposes
-    // Good choice is to handle SIG_INT
+    // It'll be better to handle SIG_INT
     PoolController::mutexDestroy(); 
 }
 
@@ -97,11 +100,13 @@ void *worker_cycle(void *ptr) {
         } else {
             HTTP::Response *res = new HTTP::Response(req);
             if (res != NULL) {
-                Log.debug() << "Worker[" << poolCtl->id << "] for [" << res->getClient()->getFd() << "]: req " << req->getRawUri() << " started" << Log.endl; 
+                const int fd = res->getClient()->getFd();
+                const std::string &uri = req->getRawUri();
+                Log.debug() << "Worker[" << poolCtl->id << "] for [" << fd << "]: req " << uri << " started" << Log.endl; 
                 res->handle();
-                Log.debug() << "Worker[" << poolCtl->id << "] for [" << res->getClient()->getFd() << "]: req " << req->getRawUri() << " processed" << Log.endl; 
+                Log.debug() << "Worker[" << poolCtl->id << "] for [" << fd << "]: req " << uri << " processed" << Log.endl; 
                 poolCtl->putResponse(res);
-                Log.debug() << "Worker[" << poolCtl->id << "] for [" << res->getClient()->getFd() << "]: req " << req->getRawUri() << " returned" << Log.endl; 
+                Log.debug() << "Worker[" << poolCtl->id << "] for [" << fd << "]: req " << uri << " returned" << Log.endl; 
             } else {
                 Log.syserr() << "Cannot allocate memory for Response" << Log.endl;
             }
@@ -194,24 +199,24 @@ Server::getServerBlocks(size_t port) {
 void
 Server::pollInHandler(size_t id) {
     
-    if (_clients[id].requestPoolReady()) {
-        _clients[id].addRequest();
+    if (_clients[id]->requestPoolReady()) {
+        _clients[id]->addRequest();
     }
 
-    if (!_clients[id].requestReady()) {
-        _clients[id].receive();
+    if (!_clients[id]->requestReady()) {
+        _clients[id]->receive();
     }
 
-    if (_clients[id].requestReady()) {
+    if (_clients[id]->requestReady()) {
         HTTP::Request *req = NULL;
         
-        req = _clients[id].getTopRequest();
-        _clients[id].removeTopRequest();
+        req = _clients[id]->getTopRequest();
+        _clients[id]->removeTopRequest();
         poolCtl.putRequest(req);
-        _clients[id].requestPoolReady(true);
+        _clients[id]->requestPoolReady(true);
     }
 
-    if (!_clients[id].validSocket()) {
+    if (!_clients[id]->validSocket()) {
         disconnectClient(id);
     }
 }
@@ -228,18 +233,21 @@ Server::pollHupHandler(size_t id) {
 // Or check presence of the client in freePool
 void
 Server::pollOutHandler(size_t id) {
+    if (!_clients[id]) {
+        return ;
+    }
 
-    if (_clients[id].replyReady() && !_clients[id].replyDone()) {
-        _clients[id].reply();
+    if (_clients[id]->replyReady() && !_clients[id]->replyDone()) {
+        _clients[id]->reply();
     }
     
-    if (_clients[id].replyDone()) {
-        _clients[id].checkIfFailed();
-        _clients[id].removeTopResponse();
-        _clients[id].replyDone(false);
+    if (_clients[id]->replyDone()) {
+        _clients[id]->checkIfFailed();
+        _clients[id]->removeTopResponse();
+        _clients[id]->replyDone(false);
     }
 
-    if (!_clients[id].validSocket()) {
+    if (!_clients[id]->validSocket()) {
         disconnectClient(id);
     }
 }
@@ -261,10 +269,10 @@ Server::start(void) {
         pollServ();
         const size_t size = _pollfds.size();
         for (size_t id = 0; id < size; id++) {
-            if (_pollfds[id].revents & POLLIN) {
-                _pollfds[id].revents = 0;
-                id >= _socketsCount ? 
-                pollInHandler(id) : connectClient(id);
+            if (id < _socketsCount && _pollfds[id].revents & POLLIN) {
+                connectClient(id);
+            } else if (_pollfds[id].revents & POLLIN) {
+                pollInHandler(id);
             } else if (_pollfds[id].revents & POLLHUP) {
                 pollHupHandler(id);
             } else if (_pollfds[id].revents & POLLOUT) {
@@ -272,6 +280,7 @@ Server::start(void) {
             } else if (_pollfds[id].revents & POLLERR) {
                 pollErrHandler(id);
             }
+            _pollfds[id].revents = 0;
         }
     }
     destroyWorkers();
@@ -308,8 +317,32 @@ Server::pollServ(void) {
 }
 
 static int
-fdFree(struct pollfd pfd) {
+isFree(struct pollfd pfd) {
     return (pfd.fd == -1);
+}
+
+size_t
+Server::addClient(int fd, HTTP::Client *client) {
+    std::vector<struct pollfd>::iterator it;
+    
+    struct pollfd tmp = {
+        fd, POLLIN | POLLOUT, 0
+    };
+
+    it = std::find_if(_pollfds.begin(), _pollfds.end(), isFree);
+    if (it == _pollfds.end()) {
+        it = _pollfds.insert(_pollfds.end(), tmp);
+        _clients.insert(_clients.end(), NULL);
+    }
+
+    *it = (struct pollfd) {
+        fd, POLLIN | POLLOUT, 0
+    };
+
+    size_t id = std::distance(_pollfds.begin(), it);
+    _clients[id] = client;
+
+    return id;
 }
 
 void
@@ -318,7 +351,7 @@ Server::connectClient(size_t servid) {
     struct sockaddr_in servData;
     socklen_t servLen = sizeof(servData);
     if (getsockname(_pollfds[servid].fd, (struct sockaddr *)&servData, &servLen) < 0) {
-        Log.syserr() << "Server::getsockname failed for fd = " << _pollfds[servid].fd << Log.endl;
+        Log.syserr() << "Server::getsockname [" << _pollfds[servid].fd << "]" << Log.endl;
         return ;
     }
 
@@ -328,35 +361,21 @@ Server::connectClient(size_t servid) {
 
     if (fd < 0) {
         Log.syserr() << "Server::accept" << Log.endl;
-        return;
+        return ;
     }
 
     fcntl(fd, F_SETFL, O_NONBLOCK);
 
-    size_t id;
-    std::vector<struct pollfd>::iterator it;
-    it = std::find_if(_pollfds.begin(), _pollfds.end(), fdFree);
-    if (it != _pollfds.end()) {
-        it->fd     = fd;
-        it->events = POLLIN | POLLOUT;
-        it->revents = 0;
-        id   = std::distance(_pollfds.begin(), it);
-    } else {
-        // _pollfds.insert(it, (struct pollfd) { fd, POLLIN | POLLOUT, 0 });
-        _pollfds.push_back((struct pollfd) { fd, POLLIN | POLLOUT, 0 });
-        id = _pollfds.size() - 1;
-    }
-    // it->fd      = fd;
-    // size_t id   = std::distance(_pollfds.begin(), it);
+    HTTP::Client *client = new HTTP::Client();
+    client->setFd(fd);
+    client->setPort(ntohs(clientData.sin_port));
+    client->setIpAddr(inet_ntoa(clientData.sin_addr));
+    client->setServerPort(ntohs(servData.sin_port));
+    client->setServerIpAddr(inet_ntoa(servData.sin_addr));
 
-    _clients.insert(std::make_pair(id, HTTP::Client()));
-    _clients[id].setFd(fd);
-    _clients[id].setPort(ntohs(clientData.sin_port));
-    _clients[id].setIpAddr(inet_ntoa(clientData.sin_addr));
-    _clients[id].setServerPort(ntohs(servData.sin_port));
-    _clients[id].setServerIpAddr(inet_ntoa(servData.sin_addr));
+    addClient(fd, client);
 
-    Log.debug() << "Server::connect [" << fd << "] -> " << _clients[id].getHostname() << Log.endl;
+    Log.debug() << "Server::connect [" << fd << "] -> " << client->getHostname() << Log.endl;
 }
 
 void
@@ -364,7 +383,8 @@ Server::disconnectClient(size_t id) {
     const int fd = _pollfds[id].fd;
 
     close(fd);
-    _clients.erase(id);
+    delete _clients[id];
+    _clients[id] = NULL;
     _pollfds[id].fd      = -1;
     _pollfds[id].events  = 0;
     _pollfds[id].revents = 0;

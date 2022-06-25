@@ -35,7 +35,7 @@ private:
 
     std::map<size_t, std::list<HTTP::ServerBlock> > _serverBlocks;
     std::vector<struct pollfd>     _pollfds;
-    std::map<size_t, HTTP::Client> _clients;
+    std::vector<HTTP::Client *>    _clients;
     int                            _pollResult;
     size_t              _socketsCount;
     void fillServBlocksFds(void);
@@ -71,5 +71,7 @@ public:
     void pollHupHandler(size_t id);
     void pollOutHandler(size_t id);
     void pollErrHandler(size_t id);
+
+    size_t addClient(int fd, HTTP::Client *);
 
 };
