@@ -10,11 +10,11 @@ main(int ac, char **av) {
     Log.enableLogFile();
 
     if (ac > 2) {
-        Log.error() << "Usage: " << av[0] << " [config.json]" << Log.endl;
+        Log.error() << "Usage: " << av[0] << " [conf.json]" << Log.endl;
         return 1;
     }
 
-    std::string config = (ac == 1 ? "./conf/default.json" : av[1]);
+    std::string config = (ac == 1 ? "./default/conf.json" : av[1]);
 
     g_server = loadConfig(config);
     if (!g_server) {
