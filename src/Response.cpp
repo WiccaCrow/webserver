@@ -18,8 +18,7 @@ Response::Response(Request *req)
     , _cgi(NULL)
     , _bodyLength(0)
     , _isFormed(false)
-    , _status(req->getStatus())
-{
+    , _status(req->getStatus()) {
     methods.insert(std::make_pair("GET", &Response::GET));
     methods.insert(std::make_pair("PUT", &Response::PUT));
     methods.insert(std::make_pair("POST", &Response::POST));
@@ -73,18 +72,24 @@ Response::clear() {}
 void
 Response::handle(void) {
     std::map<std::string, Response::Handler>::iterator it;
+                std::cout << "         test 2  " << std::endl;
 
     if (getStatus() >= BAD_REQUEST) {
         this->setErrorResponse(getStatus());
+    } else if (_req->getMethod() == "") {
+        _res = _body = _req->getBody();
+        isFormed(true);
+                std::cout << "         test 3  "<< std::endl;
+        return ;
     } else if (_req->authNeeded() && !_req->isAuthorized()) {
         this->unauthorized();
-    } else { // if (!_proxy)
+    } else {
         it = methods.find(_req->getMethod());
         (this->*(it->second))();
     }
 
     _res = getStatusLine() + makeHeaders() + getBody();
-
+                std::cout << "         test 4  "<< std::endl;
     isFormed(true);
 }
 
@@ -97,29 +102,30 @@ Response::unauthorized(void) {
     getClient()->shouldBeClosed(true);
 }
 
-void
-Response::runProxy() {
-    _client->setProxyUri(&_req->getUriRef());
-    size_t id = _client->proxyRun();
-    _status   = _client->getProxyStatus();
+// void
+// Response::proxyRun() {
+//     _client->setProxyUri(&_req->getUriRef());
+//     size_t id = _client->proxyRun();
+//     _status   = _client->getProxyStatus();
 
-    if (_status == OK) {
-        setBody("Connection Established.");
-        g_server->getClient(id)->setProxyFdOut(_client->getFd());
-        g_server->getClient(id)->setProxyidOtherSide(_client->getId());
-    }
-}
-
-void
-Response::CONNECT(void) {
-    runProxy();
-}
+//     if (_status == OK) {
+//         setBody("Connection Established.");
+//         g_server->getClient(id)->setProxyFdOut(_client->getFd());
+//         g_server->getClient(id)->setProxyidOtherSide(_client->getId());
+//     }
+// }
 
 void
 Response::makeProxyResponse(std::string response) {
     _body = response;
     _res = _body;
     isFormed(true);
+}
+
+void
+Response::CONNECT(void) {
+    setStatus(OK);
+    setBody("Connection Established.");
 }
 
 void

@@ -221,15 +221,17 @@ RequestHeader::Host(Request &req) {
     URI &host = req.getHostRef();
     host.parse(value);
 
-    if (!isValidHost(host._host)) {
-        Log.error() << "Host: Invalid Host " << host._host << std::endl;
-        return BAD_REQUEST;
-    }
-    
-    if (req.getClient()->getServerPort() != host._port) {
-        Log.error() << "Host: Port mismatch " << host._port_s << std::endl;
-        return BAD_REQUEST;
-    }
+    // if (req.getMethod() != "CONNECT") {
+    //     if (!isValidHost(host._host)) {
+    //         Log.error() << "Host: Invalid Host " << host._host << std::endl;
+    //         return BAD_REQUEST;
+    //     }
+        
+    //     if (req.getClient()->getServerPort() != host._port) {
+    //         Log.error() << "Host: Port mismatch " << host._port_s << std::endl;
+    //         return BAD_REQUEST;
+    //     }
+    // }
     
     return CONTINUE;
 }

@@ -5,7 +5,8 @@
 namespace HTTP {
 
 Request::Request()
-    : _servBlock(NULL)
+    : _status(OK)
+    , _servBlock(NULL)
     , _location(NULL)
     , _client(NULL)
     , _isChuckSize(false)
@@ -18,7 +19,8 @@ Request::Request()
 }
 
 Request::Request(Client *client)
-    : _servBlock(NULL)
+    : _status(OK)
+    , _servBlock(NULL)
     , _location(NULL)
     , _client(client)
     , _isChuckSize(false)
@@ -254,8 +256,8 @@ Request::parseLine(std::string &line) {
     } else {
         setStatus(PROCESSING);
     }
-
     if (getStatus() != CONTINUE) {
+std::cout << "      parseLine" << std::endl;
         if (!_servBlock) {
             Log.debug() << "Serverblock is not set after parsing. Default matching" << std::endl;
             setServerBlock(getClient()->matchServerBlock(_host._host));
@@ -284,7 +286,13 @@ Request::parseSL(const std::string &line) {
 
     skipSpaces(line, pos);
     _rawURI = getWord(line, " ", pos);
+std::cout << "    uri str: " << _rawURI << std::endl;
+    
     _uri.parse(_rawURI);
+std::cout << "    uri host: " << _uri._host << std::endl;
+std::cout << "    uri port: " << _uri._port_s << std::endl;
+std::cout << "    uri scheme: " << _uri._scheme << std::endl;
+
 
     skipSpaces(line, pos);
     _protocol = getWord(line, " ", pos);
@@ -301,8 +309,14 @@ Request::parseSL(const std::string &line) {
 StatusCode
 Request::checkSL(void) {
     if (!isValidMethod(_method)) {
-        Log.debug() << "Request::parseSL: Method " << _method << " is not implemented" << std::endl;
-        return BAD_REQUEST;
+        if (getMethod() != "CONNECT") {
+            Log.debug() << "Request::parseSL: Method " << _method << " is not implemented" << std::endl;
+            return BAD_REQUEST;
+        } else if (_client->matchServerBlock(_uri._host)) {
+            Log.debug() << "Request::parseSL: Method " << _method << ": invalid host" << std::endl;
+            return BAD_REQUEST;
+        }
+        Log.info() << "Request::parseSL: Method " << _method << ": for proxy" << std::endl;
     }
 
     // if (isValidPath(_rawURI)) {

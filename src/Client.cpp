@@ -61,7 +61,7 @@ Client::getFd(void) const {
 }
 
 void
-Client::setFd(int fd) {
+Client::setFdIn(int fd) {
     _fdIn = fd;
 }
 
@@ -152,7 +152,7 @@ Client::addRequest(void) {
     Request *req = new Request(this);
     if (req == NULL) {
         Log.syserr() << "Cannot allocate request" << std::endl;
-        setFd(-1);
+        setFdIn(-1);
     }
 
     Log.debug() << "----------------------" << std::endl;
@@ -166,7 +166,7 @@ Client::addResponse(Response *res) {
     // Response *res = new Response(getRequest());
     // if (res == NULL) {
     //     Log.syserr() << "Cannot allocate response" << std::endl;
-    //     setFd(-1);
+    //     setFdIn(-1);
     // }
     _responses.push_back(res);
     // requestPoolReady(true);
@@ -228,11 +228,6 @@ Client::setProxyidOtherSide(size_t id) {
     _proxy.idOtherSide(id);
 }
 
-size_t
-Client::proxyRun() {
-    return _proxy.run();
-}
-
 bool
 Client::validSocket(void) {
     return _fdIn != -1;
@@ -272,7 +267,7 @@ Client::checkIfFailed(void) {
 
     for (size_t i = 0; i < size; i++) {
         if (getTopResponse()->getStatus() == failedStatuses[i]) {
-            setFd(-1);
+            setFdIn(-1);
             break ;
         }
     }
@@ -282,7 +277,7 @@ void
 Client::process(void) {
 
     Log.debug() << "Client::process [" << _fdIn << "]" << std::endl;
-    if (isProxy()) {
+    if (_fdIn != *_fdOut) {
         getTopResponse()->makeProxyResponse(getTopRequest()->getBody());
     } else {
         getTopResponse()->handle();
@@ -307,7 +302,7 @@ Client::reply(void) {
             }
             else if (n == 0) {
                 Log.debug() << "Client::send 0 returned (disc)" << std::endl;
-                setFd(-1);
+                setFdIn(-1);
                 break ;
             }
             else {
@@ -335,7 +330,7 @@ Client::reply(void) {
     }
 
     if (shouldBeClosed()) {
-        setFd(-1);
+        setFdIn(-1);
     }
 }
 
@@ -386,6 +381,18 @@ Client::getline(std::string &line) {
     return LINE_FOUND;
 }
 
+void
+Client::proxyRun(void) {
+    setProxyUri(&getRequest()->getUriRef());
+    size_t id = _proxy.run();
+    getRequest()->setStatus(_proxy.getStatus());
+
+    if (getRequest()->getStatus() == OK) {
+        g_server->getClient(id)->setProxyFdOut(getFd());
+        g_server->getClient(id)->_fdOut = &_fdIn;
+        g_server->getClient(id)->setProxyidOtherSide(getId());
+    }
+}
 
 void
 Client::receive(void) {
@@ -396,13 +403,17 @@ Client::receive(void) {
 
     Log.debug() << "Client::receive [" << _fdIn << "]" << std::endl;
 
-    if (isProxy()) {
+                std::cout << "         test receive: is proxy " << _fdIn << " fdOut " << *_fdOut << std::endl;
+    if (_fdIn != *_fdOut) { // proxy
+                std::cout << "         test receive: is proxy "<< std::endl;
+        _rem = "";
         if (!readSocket()) {
-            setFd(-1);
+            setFdIn(-1);
         } else {
             getRequest()->setBody(_rem);
             getRequest()->isFormed(true);
         }
+                std::cout << "         test  "<< std::endl;
         return ;
     }
 
@@ -411,12 +422,15 @@ Client::receive(void) {
 
         switch (getline(line)) {
             case LINE_FOUND: {
-                // std::cout << "         test line: "<< line << std::endl;
+                std::cout << "         test line: "<< line << std::endl;
                 getRequest()->parseLine(line);
+                if (getRequest()->getMethod() == "CONNECT" && !getProxy()->on()) {
+                    proxyRun();
+                }
                 break ;
             }
             case SOCK_CLOSED: {
-                setFd(-1);
+                setFdIn(-1);
                 return ;
             }
             case LINE_NOT_FOUND: {

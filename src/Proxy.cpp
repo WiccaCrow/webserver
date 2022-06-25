@@ -48,7 +48,7 @@ Proxy::clear(void) {
 void
 Proxy::setUri(URI *uri) {
     _uri  = uri;
-    _host = _uri->_scheme;
+    _host = _uri->_host;
     _port = _uri->_port_s;
 }
 
@@ -66,6 +66,7 @@ Proxy::run(void) {
             struct sockaddr_in *addr = (struct sockaddr_in *) p->ai_addr;
             _idOtherSide = g_server->proxySetFdAndClient(_fdOut, addr);
             on(true);
+            setStatus(OK);
         }
         freeaddrinfo(ipListAddrinfo);
     }
@@ -89,6 +90,9 @@ Proxy::setConnection(struct addrinfo *p) {
         Log.debug() << "CONNECT: for this host:port (" << _host << ":" << _port 
                     << ") connection not possible: " << std::endl;
     }
+    
+    char ip[INET_ADDRSTRLEN];
+    Log.info() << "CONNECT: Connection Established ip: " << inet_ntop(AF_INET, &((struct sockaddr_in *) p->ai_addr)->sin_addr, ip, INET_ADDRSTRLEN)<< std::endl;
 
     return p;
 }

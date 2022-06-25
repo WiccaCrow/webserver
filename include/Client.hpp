@@ -57,7 +57,7 @@ public:
 
     Status getline(std::string &line);
 
-    void setFd(int fd);
+    void setFdIn(int fd);
     int  getFd(void) const;
 
     void   setId(size_t fd);
@@ -77,8 +77,8 @@ public:
 
     const std::string getHostname(void) const;
 
-    Request *    getRequest();
-    Response *   getResponse();
+    Request *    getRequest(void);
+    Response *   getResponse(void);
 
     void receive(void);
     void process(void);
@@ -109,7 +109,7 @@ public:
     void       setProxyUri(URI *uri);
     void       setProxyFdOut(int fd);
     void       setProxyidOtherSide(size_t id);
-    size_t     proxyRun(void);
+    void       proxyRun(void);
 
     bool validSocket(void);
     bool requestReady(void);

@@ -360,7 +360,7 @@ Server::addClient(size_t id, int fd,
                   struct sockaddr_in *servData) {
     _clients.insert(std::make_pair(id, HTTP::Client()));
     _clients[id].setId(id);
-    _clients[id].setFd(fd);
+    _clients[id].setFdIn(fd);
     _clients[id].setPort(ntohs(clientDataIp4->sin_port));
     _clients[id].setIpAddr(inet_ntoa(clientDataIp4->sin_addr));
     if (servData) {
