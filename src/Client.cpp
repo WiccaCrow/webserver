@@ -151,7 +151,7 @@ Client::removeResponse(void) {
 
 bool
 Client::validSocket(void) {
-    return _fd != -1;
+    return _fd != -1 && !shouldBeClosed();
 }
 
 bool
@@ -253,7 +253,7 @@ Client::readSocket(void) {
         _rem.erase();
 
     } else if (recvBytes > 0) {
-        buf[recvBytes] = '\0';
+        buf[recvBytes] = '\0';    
         _rem += buf;
     }
     return recvBytes;
@@ -263,6 +263,10 @@ Client::Status
 Client::getline(std::string &line) {
 
     if (!readSocket()) {
+        return SOCK_CLOSED;
+    }
+
+    if (_rem.find("\x06") != std::string::npos) {
         return SOCK_CLOSED;
     }
 
@@ -304,7 +308,7 @@ Client::receive(void) {
                 break ;
             }
             case SOCK_CLOSED: {
-                setFd(-1);
+                shouldBeClosed(true);
                 return ;
             }
             case LINE_NOT_FOUND: {
