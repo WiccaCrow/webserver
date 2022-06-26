@@ -279,6 +279,10 @@ Server::start(void) {
 
         pollServ();
         for (size_t id = 0; id < _pollfds.size(); id++) {
+            if (_pollfds[id].revents & POLLNVAL) {
+                continue;
+            }
+
             if (id < _socketsCount &&_pollfds[id].revents & POLLIN) {
                 connectClient(id);
             } else if (_pollfds[id].revents & POLLIN) {
@@ -330,7 +334,7 @@ Server::addClient(int fd, HTTP::Client *client) {
     std::vector<struct pollfd>::iterator it;
     
     struct pollfd tmp = {
-        fd, POLLIN | POLLOUT, 0
+        fd, POLLIN | POLLOUT | POLLHUP, 0
     };
 
     it = std::find_if(_pollfds.begin(), _pollfds.end(), isFree);

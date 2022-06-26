@@ -182,26 +182,23 @@ Client::sendData(void) {
     do {
         sent = send(_fd, _data + _dataPos, _dataSize - _dataPos, 0);
         if (sent <= 0) {
-            Log.debug() << "Client::reply [" << _fd << "]: " << sent << Log.endl;
             break ;
         }
         _dataPos += sent;
-
-        Log.debug() << "Client::reply [" << _fd << "]: ";
-        Log << _dataPos << "/" << _dataSize << " bytes" << Log.endl;
-
     } while (_dataPos < _dataSize);
 
     if (sent == 0) {
         _headSent = true;
         _bodySent = true;
         shouldBeClosed(true);
+        Log.debug() << "Client::reply [" << _fd << "] disconnect" << Log.endl;
     }
 
     if (_dataPos < _dataSize) {
         return false;
     }
 
+    Log.debug() << "Client::reply [" << _fd << "]: " << _dataPos << "/" << _dataSize << " bytes" << Log.endl;
     _dataPos = 0;
     return true;
 }
