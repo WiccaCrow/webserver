@@ -31,6 +31,12 @@ Server::~Server() {
             _pollfds[i].fd = -1;
         }
     }
+
+    for (size_t i = 0; i < _clients.size(); i++) {
+        if (_clients[i] != NULL) {
+            delete _clients[i];
+        }
+    }
 }
 
 // Could be used for re-reading config:
@@ -45,7 +51,6 @@ Server &
 Server::operator=(const Server &obj) {
     if (this != &obj) {
         _serverBlocks = obj._serverBlocks;
-        _pollResult = obj._pollResult;
         _pollfds    = obj._pollfds;
         _clients    = obj._clients;
         _socketsCount = obj._socketsCount;
@@ -56,7 +61,7 @@ Server::operator=(const Server &obj) {
 // Private functions
 
 int
-Server::addListenSocket(const std::string &addr, size_t port) {
+Server::createListenSocket(const std::string &addr, size_t port) {
     
     int i = 1;
     struct sockaddr_in data;
@@ -149,7 +154,7 @@ Server::destroyWorkers(void) {
 }
 
 void
-Server::freePool(void) {
+Server::freeResponsePool(void) {
     
     HTTP::Response *res = NULL;
 
@@ -165,30 +170,32 @@ Server::freePool(void) {
 
 }
 
+void 
+Server::addListenSocket(const std::string &addr, size_t port) {
+    int fd = createListenSocket(addr, port);
+    _pollfds.push_back((struct pollfd) { fd, POLLIN, 0 });
+    _clients.push_back(NULL);
+    _socketsCount++;
+    Log.info() << "Server::listen [" << fd << "] -> " << addr << ":" << port << Log.endl;
+}
+
 void
 Server::fillServBlocksFds(void) {
     typedef std::map<size_t, std::set<std::string> >::iterator iter_m;
     typedef std::list<HTTP::ServerBlock>::iterator iter_l;
     typedef std::set<std::string>::iterator iter_s;
 
-    std::map<size_t, std::set<std::string> >uniqueAddr;
-    for (iter lst = _serverBlocks.begin(); lst != _serverBlocks.end(); ++lst) {
-        std::list<HTTP::ServerBlock> &l = lst->second;
-        for (iter_l sb = l.begin() ; sb != l.end(); sb++) {
-            uniqueAddr[lst->first].insert(sb->getAddrRef());
+    std::map<size_t, std::set<std::string> > uniqueAddr;
+    for (iter it = _serverBlocks.begin(); it != _serverBlocks.end(); ++it) {
+        for (iter_l sb = it->second.begin(); sb != it->second.end(); ++sb) {
+            uniqueAddr[it->first].insert(sb->getAddrRef());
         }
     }
 
-    for (iter_m ua = uniqueAddr.begin(); ua != uniqueAddr.end(); ++ua) {
-        std::set<std::string> &addrs = ua->second;
-
-        const size_t port = ua->first;
-        for (iter_s addr = addrs.begin(); addr != addrs.end(); addr++) {
-            int fd = addListenSocket(*addr, port);
-            _pollfds.push_back((struct pollfd) { fd, POLLIN, 0 });
-            _clients.push_back(NULL);
-            _socketsCount++;
-            Log.info() << "Server::listen [" << fd << "] -> " << *addr << ":" << port << Log.endl;
+    for (iter_m it = uniqueAddr.begin(); it != uniqueAddr.end(); ++it) {
+        const size_t port = it->first;
+        for (iter_s addr = it->second.begin(); addr != it->second.end(); ++addr) {
+            addListenSocket(*addr, port);
         }
     }
 }
@@ -269,15 +276,24 @@ Server::pollErrHandler(size_t id) {
     exit(1);
 }
 
+void finish(int code) {
+    (void)code;
+    finished = true;
+}
+
 void
 Server::start(void) {
     fillServBlocksFds();
     createWorkers();
-    while (1) {
-        freePool();
-        _pollResult = 0;
+    signal(SIGINT, finish);
 
-        pollServ();
+    while (!finished) {
+        freeResponsePool();
+
+        if (poll() <= 0) {
+            continue ;
+        }
+    
         for (size_t id = 0; id < _pollfds.size(); id++) {
             if (_pollfds[id].revents & POLLNVAL) {
                 continue;
@@ -297,6 +313,7 @@ Server::start(void) {
             _pollfds[id].revents = 0;
         }
     }
+
     destroyWorkers();
 }
 
@@ -311,17 +328,19 @@ Server::handlePollError() {
         Log.debug() << "limit(soft): " << rlim.rlim_cur << Log.endl;
         Log.debug() << "limit(hard): " << rlim.rlim_max << Log.endl;
     }
-    exit(1);
 }
 
-void
-Server::pollServ(void) {
-    while (_pollResult == 0) {
-        _pollResult = poll(_pollfds.data(), _pollfds.size(), 1000000);
-    }
-    if (_pollResult < 0) {
+int
+Server::poll(void) {
+
+    int res = ::poll(_pollfds.data(), _pollfds.size(), 100000);
+
+    if (res < 0) {
         handlePollError();
+        finish(0);
     }
+
+    return res;
 }
 
 static int

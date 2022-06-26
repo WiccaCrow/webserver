@@ -38,11 +38,11 @@ private:
     std::map<size_t, std::list<HTTP::ServerBlock> > _serverBlocks;
     std::vector<struct pollfd>     _pollfds;
     std::vector<HTTP::Client *>    _clients;
-    int                            _pollResult;
-    size_t              _socketsCount;
-    void fillServBlocksFds(void);
+    size_t                          _socketsCount;
 
-    int addListenSocket(const std::string &addr, size_t port);
+    void fillServBlocksFds(void);
+    int createListenSocket(const std::string &addr, size_t port);
+    void addListenSocket(const std::string &addr, size_t port);
 
     pthread_t _threads[WORKERS];
 
@@ -59,12 +59,12 @@ public:
     void   addServerBlock(HTTP::ServerBlock &servBlock);
     std::list<HTTP::ServerBlock> &getServerBlocks(size_t port);
     
-    void freePool(void);
+    void freeResponsePool(void);
     void createWorkers(void);
     void destroyWorkers(void);
     
+    int  poll(void);
     void start(void);
-    void pollServ(void);
     void connectClient(size_t id);
     void disconnectClient(size_t id);
     void handlePollError();
