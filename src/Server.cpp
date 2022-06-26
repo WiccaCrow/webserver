@@ -243,6 +243,11 @@ Server::pollOutHandler(size_t id) {
         _clients[id].replyDone(false);
     }
 
+    // if (_clients[id].getFdOut() == -1) {
+    //     size_t idOtherSide = _clients[id].getProxy()->idOtherSide();
+    //     disconnectClient(idOtherSide);
+    //     Log.debug() << "disconnect other side" << std::endl;
+    // }
     if (!_clients[id].validSocket()) {
         disconnectClient(id);
     }
@@ -351,6 +356,7 @@ Server::proxySetFdAndClient(int fd,
     size_t id = addSockToPollfd(fd);
     addClient(id, fd, clientDataIp4 , NULL);
     _clients[id].getProxy()->on(true);
+    // Log.debug() << "Server::proxy::connect [" << fd << "] -> " << _clients[id].getHostname() << std::endl;
     return id;
 }
 
@@ -361,6 +367,7 @@ Server::addClient(size_t id, int fd,
     _clients.insert(std::make_pair(id, HTTP::Client()));
     _clients[id].setId(id);
     _clients[id].setFdIn(fd);
+    _clients[id].setFdOut(fd);
     _clients[id].setPort(ntohs(clientDataIp4->sin_port));
     _clients[id].setIpAddr(inet_ntoa(clientDataIp4->sin_addr));
     if (servData) {
@@ -391,15 +398,6 @@ Server::addSockToPollfd(int fd) {
 
 void
 Server::disconnectClient(size_t id) {
-    if (_clients[id].isProxy()) {
-        size_t idOtherSide = _clients[id].getProxy()->idOtherSide();
-        disconnectClientOneSide(idOtherSide);
-    }
-    disconnectClientOneSide(id);
-}
-
-void
-Server::disconnectClientOneSide(size_t id) {
     const int fd = _pollfds[id].fd;
 
     close(fd);

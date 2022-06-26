@@ -36,13 +36,13 @@ public:
     void   setUri(URI *uri);
     size_t run(void);
 
-    struct addrinfo *setConnection(struct addrinfo *p);
+    addrinfo *setConnection(addrinfo *p);
 
     void       setStatus(StatusCode code);
     StatusCode getStatus(void);
 
     void  setFdOut(int fd);
-    int  *getFdOut(void);
+    int   getFdOut(void);
 
     bool on(void);
     void on(bool onOff);

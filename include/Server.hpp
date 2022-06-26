@@ -70,7 +70,6 @@ public:
     size_t  addClient(size_t id, int fd, struct sockaddr_in *cli4, struct sockaddr_in *servData);
     size_t  addSockToPollfd(int fd);
     void    disconnectClient(size_t id);
-    void    disconnectClientOneSide(size_t id);
     void    handlePollError();
     void    pollInHandler(size_t id);
     void    pollHupHandler(size_t id);

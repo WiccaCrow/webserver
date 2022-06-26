@@ -72,14 +72,12 @@ Response::clear() {}
 void
 Response::handle(void) {
     std::map<std::string, Response::Handler>::iterator it;
-                std::cout << "         test 2  " << std::endl;
 
     if (getStatus() >= BAD_REQUEST) {
         this->setErrorResponse(getStatus());
     } else if (_req->getMethod() == "") {
         _res = _body = _req->getBody();
         isFormed(true);
-                std::cout << "         test 3  "<< std::endl;
         return ;
     } else if (_req->authNeeded() && !_req->isAuthorized()) {
         this->unauthorized();
@@ -88,8 +86,7 @@ Response::handle(void) {
         (this->*(it->second))();
     }
 
-    _res = getStatusLine() + makeHeaders() + getBody();
-                std::cout << "         test 4  "<< std::endl;
+    makeFullResponse();
     isFormed(true);
 }
 
@@ -102,24 +99,16 @@ Response::unauthorized(void) {
     getClient()->shouldBeClosed(true);
 }
 
-// void
-// Response::proxyRun() {
-//     _client->setProxyUri(&_req->getUriRef());
-//     size_t id = _client->proxyRun();
-//     _status   = _client->getProxyStatus();
-
-//     if (_status == OK) {
-//         setBody("Connection Established.");
-//         g_server->getClient(id)->setProxyFdOut(_client->getFd());
-//         g_server->getClient(id)->setProxyidOtherSide(_client->getId());
-//     }
-// }
-
 void
 Response::makeProxyResponse(std::string response) {
     _body = response;
     _res = _body;
     isFormed(true);
+}
+
+void
+Response::makeFullResponse(void) {
+    _res = getStatusLine() + makeHeaders() + getBody();
 }
 
 void

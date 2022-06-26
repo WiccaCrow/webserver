@@ -55,33 +55,43 @@ Proxy::setUri(URI *uri) {
 size_t
 Proxy::run(void) {
     // fill struct addrinfo
-    struct addrinfo *ipListAddrinfo;
+    addrinfo *ipListAddrinfo = NULL;
     if (getaddrinfo(_host.c_str(), _port.c_str(), NULL, &ipListAddrinfo)) {
         setStatus(INTERNAL_SERVER_ERROR);
         Log.error() << "CONNECT: error in getaddrinfo (host: " << _host << ")" << std::endl;
-    } else {
-        struct addrinfo *p = setConnection(ipListAddrinfo);
-        // add fd for poll and client
-        if (p && p->ai_family == AF_INET) {
-            struct sockaddr_in *addr = (struct sockaddr_in *) p->ai_addr;
-            _idOtherSide = g_server->proxySetFdAndClient(_fdOut, addr);
-            on(true);
-            setStatus(OK);
-        }
-        freeaddrinfo(ipListAddrinfo);
+        return 0;
     }
+ 
+    addrinfo *p = setConnection(ipListAddrinfo);
+    // add fd for poll and client
+    if (p && p->ai_family == AF_INET) {
+        struct sockaddr_in *addr = (struct sockaddr_in *) p->ai_addr;
+        _idOtherSide = g_server->proxySetFdAndClient(_fdOut, addr);
+        on(true);
+        setStatus(OK);
+    }
+    freeaddrinfo(ipListAddrinfo);
+    
     return _idOtherSide;
 }
 
-struct addrinfo *
-Proxy::setConnection(struct addrinfo *p) {
+addrinfo *
+Proxy::setConnection(addrinfo *p) {
     for (; p; p = p->ai_next) {
+        if (p->ai_socktype != SOCK_STREAM) {
+            continue ;
+        }
         _fdOut = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (_fdOut == -1 || connect(_fdOut, p->ai_addr, p->ai_addrlen) == -1) {
-            Log.info() << "CONNECT: connection not possible: "
-                        << (_fdOut == -1 ? "sockfd ": "connect") << " == -1" << std::endl;
+        if (_fdOut == -1) {
+            Log.syserr() << "socket failed" << std::endl;
             continue;
         }
+        int res = connect(_fdOut, p->ai_addr, p->ai_addrlen);
+        if (res < 0) {
+            Log.syserr() << "connect failed" << std::endl;
+            continue;
+        }
+        Log.info() << "connect: " << res << std::endl;
         break ;
     }
 
@@ -92,7 +102,7 @@ Proxy::setConnection(struct addrinfo *p) {
     }
     
     char ip[INET_ADDRSTRLEN];
-    Log.info() << "CONNECT: Connection Established ip: " << inet_ntop(AF_INET, &((struct sockaddr_in *) p->ai_addr)->sin_addr, ip, INET_ADDRSTRLEN)<< std::endl;
+    Log.info() << "CONNECT: Connection Established (fd[" << _fdOut <<"]), ip: " << inet_ntop(AF_INET, &((struct sockaddr_in *) p->ai_addr)->sin_addr, ip, INET_ADDRSTRLEN)<< std::endl;
 
     return p;
 }
@@ -112,9 +122,9 @@ Proxy::setFdOut(int fd) {
     _fdOut = fd;
 }
 
-int *
+int
 Proxy::getFdOut(void) {
-    return &_fdOut;
+    return _fdOut;
 }
 
 bool

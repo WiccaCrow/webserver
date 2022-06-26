@@ -19,7 +19,7 @@ class Client {
 
 private:
     int         _fdIn;
-    int        *_fdOut;
+    int         _fdOut;
     size_t      _clientPort;
     std::string _clientIpAddr;
     size_t      _serverPort;
@@ -58,7 +58,10 @@ public:
     Status getline(std::string &line);
 
     void setFdIn(int fd);
-    int  getFd(void) const;
+    int  getFdIn(void) const;
+
+    void setFdOut(int fd);
+    int  getFdOut(void) const;
 
     void   setId(size_t fd);
     size_t getId(void) const; 
@@ -89,6 +92,7 @@ public:
     void shouldBeClosed(bool);
 
     bool isProxy(void);
+    bool readForProxy(void);
 
     HTTP::ServerBlock *matchServerBlock(const std::string &host) const;
 
