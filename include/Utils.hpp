@@ -35,7 +35,7 @@ std::string sztos(size_t val);
 #endif
 
 std::string itohs(int nb);
-
+bool stoi64(int64_t &, const std::string &);
 bool stoll(long long &num, char const *s);
 bool stoll(char const *s);
 

@@ -105,14 +105,14 @@ RangeSet::parse(const std::string &s) {
     }
 
     if (pos == 0) {
-        if (!stoll(this->suffix, s.c_str() + 1)) {
+        if (!stoi64(this->suffix, s.substr(1))) {
             return false;
         } else if (this->suffix < 0) {
             return false;
         }
     } else {
 
-        if (!stoll(this->beg, s.substr(0, pos).c_str())) {
+        if (!stoi64(this->beg, s.substr(0, pos))) {
             return false;
         }
 
@@ -121,7 +121,7 @@ RangeSet::parse(const std::string &s) {
             return true;
         }
 
-        if (!stoll(this->end, s.substr(pos + 1).c_str())) {
+        if (!stoi64(this->end, s.substr(pos + 1).c_str())) {
             return false;
         }
 

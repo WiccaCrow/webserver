@@ -16,6 +16,14 @@ stoll(long long &num, char const *s) {
     return !(ss.fail() || ss.get(c));
 }
 
+bool
+stoi64(int64_t &num, const std::string &s) {
+    char              c;
+    std::stringstream ss(s.c_str());
+    ss >> num;
+    return !(ss.fail() || ss.get(c));
+}
+
 // Returns true if the conversion of a string to a number is true
 bool
 stoll(char const *s) {
