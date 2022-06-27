@@ -32,47 +32,59 @@ struct WorkerInfo {
 
 class Server {
 
+public:
+    typedef std::list<HTTP::ServerBlock> ServersList;
+    typedef ServersList::iterator iter_sl;
+    
+    typedef std::map<size_t, ServersList> ServersMap;
+    typedef ServersMap::iterator iter_sm;
+
+    typedef std::vector<struct pollfd> PollFdVector;
+    typedef PollFdVector::iterator iter_pfd;
+
+    typedef std::vector<HTTP::Client *> ClientVector;
+    typedef PollFdVector::iterator iter_cv;
+
 private:
-    typedef std::map<size_t, std::list<HTTP::ServerBlock> >::iterator iter;
-
-    std::map<size_t, std::list<HTTP::ServerBlock> > _serverBlocks;
-    std::vector<struct pollfd>     _pollfds;
-    std::vector<HTTP::Client *>    _clients;
-    size_t                          _socketsCount;
-
-    void fillServBlocksFds(void);
-    int createListenSocket(const std::string &addr, size_t port);
-    void addListenSocket(const std::string &addr, size_t port);
-
-    pthread_t _threads[WORKERS];
+    ServersMap    _serverBlocks;
+    PollFdVector  _pollfds;
+    ClientVector  _clients;
+    size_t        _socketsCount;
+    
+    bool          _working;
+    pthread_t     _threads[WORKERS];
+    WorkerInfo    _workerInfos[WORKERS];
 
 public:
-    WorkerInfo workerInfos[WORKERS];
-
-    Server();
+    Server(void);
     Server(const std::string &_addr, const uint16_t _port);
     Server(const Server &obj);
-    ~Server();
+    ~Server(void);
 
     Server &operator=(const Server &obj);
 
     void   addServerBlock(HTTP::ServerBlock &servBlock);
     std::list<HTTP::ServerBlock> &getServerBlocks(size_t port);
     
+    bool isWorking(void);
+
     void freeResponsePool(void);
+    void createSockets(void);
     void createWorkers(void);
     void destroyWorkers(void);
     
     int  poll(void);
     void start(void);
+    void finish(void);
     void connectClient(size_t id);
     void disconnectClient(size_t id);
-    void handlePollError();
     void pollInHandler(size_t id);
     void pollHupHandler(size_t id);
     void pollOutHandler(size_t id);
     void pollErrHandler(size_t id);
 
-    size_t addClient(int fd, HTTP::Client *);
 
+    int createListenSocket(const std::string &addr, size_t port);
+    int addListenSocket(const std::string &addr, size_t port);
+    size_t addSocket(struct pollfd, HTTP::Client * = NULL);
 };

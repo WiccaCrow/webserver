@@ -141,6 +141,7 @@ Client::addRequest(void) {
 void
 Client::addResponse(Response *res) {
     _responses.push_back(res);
+    Log.debug() << "Client::addResponse " << res->getRequest()->getUriRef()._path << Log.endl;
 }
 
 void

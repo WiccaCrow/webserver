@@ -186,4 +186,19 @@ public:
         return s;
     }
 
+    bool empty(void) {
+
+        if (!_locked) {
+            pthread_mutex_lock(&_locker);
+        }
+
+        bool empty = _pool.empty();
+
+        if (!_locked) {
+            pthread_mutex_unlock(&_locker);
+        }
+
+        return empty;
+    }
+
 };

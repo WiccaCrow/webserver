@@ -3,24 +3,20 @@
 
 const size_t reservedClients = 64;
 
-// Declared in Globals.hpp
-// Designed to stop workers
-bool finished;
-
-// Thread-safe container
 typedef Pool<HTTP::Request *>  RequestPool;
 typedef Pool<HTTP::Response *> ResponsePool;
 
+// Thread-safe container
 RequestPool requests;
 ResponsePool responses;
 
 Server::Server() 
-    : _socketsCount(0) {
+    : _socketsCount(0), _working(true) {
     _pollfds.reserve(reservedClients);
     _clients.reserve(reservedClients);
 
     for (size_t i = 0; i < WORKERS; i++) {
-        workerInfos[i].id = i;
+        _workerInfos[i].id = i;
     }
 }
 
@@ -58,6 +54,11 @@ Server::operator=(const Server &obj) {
     return (*this);
 }
 
+bool
+Server::isWorking(void) {
+    return _working;
+}
+
 // Private functions
 
 int
@@ -72,19 +73,19 @@ Server::createListenSocket(const std::string &addr, size_t port) {
     int fd;
     if ((fd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
         Log.syserr() << "Server::socket ->" << addr << ":" << port << Log.endl;
-        exit(1);
+        return -1;
     }
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) < 0) {
         Log.syserr() << "Server::setsockopt ->" << addr << ":" << port << Log.endl;
-        exit(1);
+        return -1;
     }
     if (bind(fd, (struct sockaddr *)&data, sizeof(data)) < 0) {
         Log.syserr() << "Server::bind ->" << addr << ":" << port << Log.endl;
-        exit(1);
+        return -1;
     }
     if (listen(fd, SOMAXCONN) < 0) {
         Log.syserr() << "Server::listen ->" << addr << ":" << port << Log.endl;
-        exit(1);
+        return -1;
     }
     
     return fd;
@@ -94,61 +95,58 @@ void *workerCycle(void *ptr) {
 
     WorkerInfo *w = reinterpret_cast<WorkerInfo *>(ptr);
 
-    while (!finished) {
-    
-        HTTP::Request *req = NULL;
+    Log.debug() << "Worker:: [" << w->id << "] created" << Log.endl;
+
+    while (g_server->isWorking()) {
     
         try {
-            req = requests.pop_front();
+            HTTP::Request *req = requests.pop_front();
+            HTTP::Response *res = new HTTP::Response(req);
+
+            if (res == NULL) {
+                Log.syserr() << "Cannot allocate memory for Response" << Log.endl;
+                // Returning req back to pool, so worker could try again. 
+                requests.push_back(req);
+                usleep(WORKER_TIMEOUT);
+                continue ;
+            }
+
+            const std::string &path = req->getUriRef()._path;
+
+            Log.debug() << "Worker:: [" << w->id << "] -> " << path << " started" << Log.endl; 
+            res->handle();
+            Log.debug() << "Worker:: [" << w->id << "] -> " << path << " finished" << Log.endl; 
+            responses.push_back(res);
 
         } catch (RequestPool::Empty &e) {            
             usleep(WORKER_TIMEOUT);
             continue ;
         }
-
-        HTTP::Response *res = new HTTP::Response(req);
-
-        if (res == NULL) {
-            Log.syserr() << "Cannot allocate memory for Response" << Log.endl;
-            // Not sure what to do; only continue will lead to leaks
-            continue ;
-        }
-
-        const int fd = res->getClient()->getFd();
-        const std::string &uri = req->getRawUri();
-
-        Log.debug() << "Worker[" << w->id << "] for [" << fd << "]: req " << uri << " started" << Log.endl; 
-        res->handle();
-        Log.debug() << "Worker[" << w->id << "] for [" << fd << "]: req " << uri << " processed" << Log.endl; 
-        responses.push_back(res);
-        Log.debug() << "Worker[" << w->id << "] for [" << fd << "]: req " << uri << " returned" << Log.endl; 
- 
     }
+    Log.debug() << "Worker:: [" << w->id << "] destroyed" << Log.endl;
     return NULL;
 }
 
 void
 Server::createWorkers(void) {
 
-    finished = false;
+    if (!isWorking()) {
+        return ;
+    }
+
     for (size_t i = 0; i < WORKERS; i++) {
-        if (pthread_create(&_threads[i], NULL, workerCycle, &workerInfos[i])) {
-            Log.syserr() << "Server::pthread create failed for worker" << workerInfos[i].id << Log.endl;
-        } else {
-            Log.debug() << "Server:: Worker[" << workerInfos[i].id << "] created" << Log.endl;
+        if (pthread_create(&_threads[i], NULL, workerCycle, &_workerInfos[i])) {
+            Log.syserr() << "Server::pthread_create failed for worker " << _workerInfos[i].id << Log.endl;
         }
     }
 }
 
 void
 Server::destroyWorkers(void) {
-    
-    finished = true;
+
     for (size_t i = 0; i < WORKERS; i++) {
         if (pthread_join(_threads[i], NULL)) {
-            Log.syserr() << "Server::pthread join failed for worker" << workerInfos[i].id << Log.endl;
-        } else {
-            Log.debug() << "Server:: Worker[" << workerInfos[i].id << "] destroyed" << Log.endl;
+            Log.syserr() << "Server::pthread_join failed for worker " << _workerInfos[i].id << Log.endl;
         }
     }
 }
@@ -156,46 +154,59 @@ Server::destroyWorkers(void) {
 void
 Server::freeResponsePool(void) {
     
-    HTTP::Response *res = NULL;
-
     do {
         try {
-            res = responses.pop_front();
+            HTTP::Response *res = responses.pop_front();
             res->getClient()->addResponse(res);
-            Log.debug() << "Server::freePool into [" << res->getClient()->getFd() << "]: " << res->getRequest()->getRawUri() << Log.endl;
         } catch (ResponsePool::Empty &e) {            
-            break;
+            return ;
         }
-    } while (res != NULL);
+    } while (!responses.empty());
 
 }
 
-void 
+int 
 Server::addListenSocket(const std::string &addr, size_t port) {
     int fd = createListenSocket(addr, port);
-    _pollfds.push_back((struct pollfd) { fd, POLLIN, 0 });
-    _clients.push_back(NULL);
-    _socketsCount++;
+
     Log.info() << "Server::listen [" << fd << "] -> " << addr << ":" << port << Log.endl;
+    if (fd >= 0) {
+        addSocket((struct pollfd) { fd, POLLIN, 0 });
+        _socketsCount++;
+    }
+    return fd;
 }
 
 void
-Server::fillServBlocksFds(void) {
-    typedef std::map<size_t, std::set<std::string> >::iterator iter_m;
-    typedef std::list<HTTP::ServerBlock>::iterator iter_l;
-    typedef std::set<std::string>::iterator iter_s;
+Server::createSockets(void) {
 
-    std::map<size_t, std::set<std::string> > uniqueAddr;
-    for (iter it = _serverBlocks.begin(); it != _serverBlocks.end(); ++it) {
-        for (iter_l sb = it->second.begin(); sb != it->second.end(); ++sb) {
-            uniqueAddr[it->first].insert(sb->getAddrRef());
+    typedef std::set<std::string> uniqueAddr;
+    typedef uniqueAddr::iterator iter_ua;
+
+    typedef std::map<size_t, uniqueAddr> uniqueValMap;
+    typedef uniqueValMap::iterator iter_uvm;
+
+    if (!isWorking()) {
+        return ;
+    }
+
+    uniqueValMap uniqueAddrs;
+    for (iter_sm it = _serverBlocks.begin(); it != _serverBlocks.end(); ++it) {
+        for (iter_sl sb = it->second.begin(); sb != it->second.end(); ++sb) {
+            const size_t port = it->first;
+            const std::string &addr = sb->getAddrRef();
+            uniqueAddrs[port].insert(addr);
         }
     }
 
-    for (iter_m it = uniqueAddr.begin(); it != uniqueAddr.end(); ++it) {
-        const size_t port = it->first;
-        for (iter_s addr = it->second.begin(); addr != it->second.end(); ++addr) {
-            addListenSocket(*addr, port);
+    for (iter_uvm it = uniqueAddrs.begin(); it != uniqueAddrs.end(); ++it) {
+        for (iter_ua ua = it->second.begin(); ua != it->second.end(); ++ua) {
+            const size_t port = it->first;
+            const std::string &addr = *ua;
+            if (addListenSocket(addr, port) < 0) {
+                finish();
+                return ;
+            }
         }
     }
 }
@@ -237,14 +248,6 @@ Server::pollInHandler(size_t id) {
     }
 }
 
-void
-Server::pollHupHandler(size_t id) {
-    Log.syserr() << "Server::POLLHUP occured on the " << _pollfds[id].fd << "socket" << Log.endl;
-    if (id >= _socketsCount) {
-        disconnectClient(id);
-    }
-}
-
 // Do not remove client until all responses performed (returned from workers) !
 // Or check presence of the client in freePool
 void
@@ -271,23 +274,37 @@ Server::pollOutHandler(size_t id) {
 }
 
 void
-Server::pollErrHandler(size_t id) {
-    Log.syserr() << "Server::pollerr on [" << _pollfds[id].fd << "]" << Log.endl;
-    exit(1);
+Server::pollHupHandler(size_t id) {
+    Log.syserr() << "Server::POLLHUP occured on the " << _pollfds[id].fd << "socket" << Log.endl;
+    if (id >= _socketsCount) {
+        disconnectClient(id);
+    }
 }
 
-void finish(int code) {
-    (void)code;
-    finished = true;
+void
+Server::pollErrHandler(size_t id) {
+    Log.syserr() << "Server::pollerr on [" << _pollfds[id].fd << "]" << Log.endl;
+}
+
+void
+Server::finish(void) {
+    _working = false;
+}
+
+void sigint_handler(int) {
+    g_server->finish();
+    Log << std::endl;
+    Log.info() << "Server is stopping..." << Log.endl;
 }
 
 void
 Server::start(void) {
-    fillServBlocksFds();
-    createWorkers();
-    signal(SIGINT, finish);
+    signal(SIGINT, sigint_handler);
 
-    while (!finished) {
+    createSockets();
+    createWorkers();
+
+    while (isWorking()) {
         freeResponsePool();
 
         if (poll() <= 0) {
@@ -299,7 +316,7 @@ Server::start(void) {
                 continue;
             }
 
-            if (id < _socketsCount &&_pollfds[id].revents & POLLIN) {
+            if (id < _socketsCount && _pollfds[id].revents & POLLIN) {
                 connectClient(id);
             } else if (_pollfds[id].revents & POLLIN) {
                 pollInHandler(id);
@@ -317,29 +334,36 @@ Server::start(void) {
     destroyWorkers();
 }
 
-void
-Server::handlePollError() {
-    Log.syserr() << "Server::poll" << Log.endl;
-
-    if (errno == EINVAL) {
-        struct rlimit rlim;
-        getrlimit(RLIMIT_NOFILE, &rlim);
-        Log.debug() << "ndfs: " << _pollfds.size() << Log.endl;
-        Log.debug() << "limit(soft): " << rlim.rlim_cur << Log.endl;
-        Log.debug() << "limit(hard): " << rlim.rlim_max << Log.endl;
-    }
-}
-
 int
 Server::poll(void) {
 
     int res = ::poll(_pollfds.data(), _pollfds.size(), 100000);
 
     if (res < 0) {
-        handlePollError();
-        finish(0);
+        switch (errno) {
+            case EINTR: {
+                if (isWorking()) {
+                    Log.syserr() << "Server::poll" << Log.endl;
+                }
+                break ;
+            }
+            case EAGAIN: {
+                Log.syserr() << "Server::poll" << Log.endl;
+                break ;
+            }
+            case EINVAL: {
+                struct rlimit rlim;
+                getrlimit(RLIMIT_NOFILE, &rlim);
+                Log.syserr() << "Server::poll" << Log.endl;
+                Log.debug() << "Server:: ndfs: " << _pollfds.size() << Log.endl;
+                Log.debug() << "Server:: limit(soft): " << rlim.rlim_cur << Log.endl;
+                Log.debug() << "Server:: limit(hard): " << rlim.rlim_max << Log.endl;
+                break ;
+            }
+            default:
+                break ;
+        }
     }
-
     return res;
 }
 
@@ -349,19 +373,14 @@ isFree(struct pollfd pfd) {
 }
 
 size_t
-Server::addClient(int fd, HTTP::Client *client) {
-    std::vector<struct pollfd>::iterator it;
-    
-    struct pollfd tmp = {
-        fd, POLLIN | POLLOUT | POLLHUP, 0
-    };
+Server::addSocket(struct pollfd pfd, HTTP::Client *client) {
 
-    it = std::find_if(_pollfds.begin(), _pollfds.end(), isFree);
+    iter_pfd it = std::find_if(_pollfds.begin(), _pollfds.end(), isFree);
     if (it == _pollfds.end()) {
-        it = _pollfds.insert(_pollfds.end(), tmp);
+        it = _pollfds.insert(_pollfds.end(), pfd);
         _clients.insert(_clients.end(), NULL);
     } else {
-        *it = tmp;
+        *it = pfd;
     }
 
     size_t id = std::distance(_pollfds.begin(), it);
@@ -398,9 +417,9 @@ Server::connectClient(size_t servid) {
     client->setServerPort(ntohs(servData.sin_port));
     client->setServerIpAddr(inet_ntoa(servData.sin_addr));
 
-    size_t id = addClient(fd, client);
+    addSocket((struct pollfd){ fd, POLLIN | POLLOUT, 0 }, client);
 
-    Log.debug() << "Server::connect [" << fd << "] -> " << id << " " << client->getHostname() << Log.endl;
+    Log.debug() << "Server::connect [" << fd << "] -> " << client->getHostname() << Log.endl;
 }
 
 void
