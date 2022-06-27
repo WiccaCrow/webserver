@@ -112,5 +112,31 @@ Logger::operator<<(std::ostream& (*func)(std::ostream &)) {
             func(std::cout);
         }
     }
+    pthread_mutex_unlock(&_lock_print);
     return *this;
+}
+
+std::ostream&
+Logger::cr(std::ostream& out) {
+    out << '\r';
+    out.flush();
+    return out;
+}
+
+std::ostream&
+Logger::flush(std::ostream& out) {
+    out << std::flush;
+    return out;
+}
+
+std::ostream&
+Logger::endl(std::ostream& out) {
+    out << std::endl;
+    return out;
+}
+
+std::ostream&
+Logger::ends(std::ostream& out) {
+    out << std::ends;
+    return out;
 }

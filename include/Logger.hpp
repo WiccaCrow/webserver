@@ -48,6 +48,8 @@ public:
     Logger     &print(uint8_t);
     void        enableLogFile(void);
 
+    Logger &operator<<(std::ostream& (*func)(std::ostream &));
+    
     template<typename T>
     Logger& operator<<(const T &val) {
         if (_flags & _flag) {
@@ -64,36 +66,11 @@ public:
         return *this;
     }
 
-    static std::ostream&
-    cr(std::ostream& out) {
-        out << '\r';
-        out.flush();
-        pthread_mutex_unlock(&_lock_print);
-        return out;
-    }
+    static std::ostream& cr(std::ostream& out);
+    static std::ostream& flush(std::ostream& out);
+    static std::ostream& endl(std::ostream& out);
+    static std::ostream& ends(std::ostream& out);
 
-    static std::ostream&
-    flush(std::ostream& out) {
-        out << std::flush;
-        pthread_mutex_unlock(&_lock_print);
-        return out;
-    }
-
-    static std::ostream&
-    endl(std::ostream& out) {
-        out << std::endl;
-        pthread_mutex_unlock(&_lock_print);
-        return out;
-    }
-
-    static std::ostream&
-    ends(std::ostream& out) {
-        out << std::ends;
-        pthread_mutex_unlock(&_lock_print);
-        return out;
-    }
-
-    Logger &operator<<(std::ostream& (*func)(std::ostream &));
 };
 
 extern Logger Log;
