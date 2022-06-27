@@ -10,6 +10,7 @@
 #include <pthread.h>
 
 #include "Time.hpp"
+#include "Utils.hpp"
 
 #ifndef LOGS_DIR
     # define LOGS_DIR "logs"
@@ -26,6 +27,7 @@ class Logger : private std::streambuf, public std::ostream {
     
 private:
     std::string _logfile;
+    std::string _logDir;
     bool        _logToFile;
     uint8_t     _flags;
     uint8_t     _flag;
@@ -47,6 +49,7 @@ public:
     Logger     &syserr(void);
     Logger     &print(uint8_t);
     void        enableLogFile(void);
+    void        setLogDir(const std::string &);
 
     Logger &operator<<(std::ostream& (*func)(std::ostream &));
     

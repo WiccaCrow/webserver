@@ -11,6 +11,10 @@
     # define GATEWAY_INTERFACE "CGI/1.1"
 #endif
 
+#ifndef DEFAULT_CONF_PATH
+    # define DEFAULT_CONF_PATH "./default/conf.json"
+#endif
+
 #ifndef WORKERS
     # define WORKERS 3
 #endif

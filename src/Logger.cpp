@@ -31,6 +31,7 @@ pthread_mutex_t Logger::_lock_print;
 
 Logger::Logger() : std::ostream(this)
     , _logfile("")
+    , _logDir(LOGS_DIR"/")
     , _logToFile(false)
     , _flags(0) {
     pthread_mutex_init(&_lock_print, NULL);
@@ -41,13 +42,18 @@ Logger::~Logger() {
 }
 
 void
+Logger::setLogDir(const std::string &dir) {
+    _logDir = dir;
+    if (!endsWith(_logDir, "/")) {
+        _logDir += '/';
+    }
+}
+
+void
 Logger::enableLogFile(void) {
 
-    const std::string logDir = LOGS_DIR"/";
-    const std::string logFile = Time::local("%d-%m-%Y_%H-%M-%S") + ".log";
-
     _logToFile = true;
-    _logfile   = logDir + logFile;
+    _logfile   = _logDir + Time::local("%d-%m-%Y_%H-%M-%S") + ".log";
 
     _out.open(_logfile.c_str(), std::ios_base::out | std::ios_base::trunc);
 
