@@ -18,17 +18,15 @@
 #include "Utils.hpp"
 #include "Client.hpp"
 #include "Logger.hpp"
+#include "Worker.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
 #include "ServerBlock.hpp"
+#include "Pool.hpp"
 
 #ifndef SOMAXCONN
     # define SOMAXCONN 128
 #endif
-
-struct WorkerInfo {
-    int id;
-};
 
 class Server {
 
@@ -52,37 +50,40 @@ private:
     size_t        _socketsCount;
     
     bool          _working;
-    pthread_t     _threads[WORKERS];
-    WorkerInfo    _workerInfos[WORKERS];
+    Worker        _workers[WORKERS];
 
 public:
     Server(void);
-    Server(const std::string &_addr, const uint16_t _port);
-    Server(const Server &obj);
+    Server(const Server &other);
     ~Server(void);
-
-    Server &operator=(const Server &obj);
+    Server &operator=(const Server &other);
 
     void   addServerBlock(HTTP::ServerBlock &servBlock);
-    std::list<HTTP::ServerBlock> &getServerBlocks(size_t port);
+    ServersList &getServerBlocks(size_t port);
     
     bool isWorking(void);
-
-    void freeResponsePool(void);
-    void createSockets(void);
-    void createWorkers(void);
-    void destroyWorkers(void);
-    
-    int  poll(void);
     void start(void);
     void finish(void);
+    
+    // Thread-safe container
+    Pool<HTTP::Request *> requests;
+    Pool<HTTP::Response *> responses;
+
+private:
     void connectClient(size_t id);
     void disconnectClient(size_t id);
+    
+    int  poll(void);
+    void process(void);
     void pollInHandler(size_t id);
     void pollHupHandler(size_t id);
     void pollOutHandler(size_t id);
     void pollErrHandler(size_t id);
 
+    void freeResponsePool(void);
+    void createSockets(void);
+    void startWorkers(void);
+    void stopWorkers(void);
 
     int createListenSocket(const std::string &addr, size_t port);
     int addListenSocket(const std::string &addr, size_t port);
