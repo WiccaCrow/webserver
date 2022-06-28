@@ -45,8 +45,8 @@ bool operator!=(const RangeSet &r1, const RangeSet &r2) {
 }
 
 RangeSet::RangeSet(void) : beg(-1), end(-1), suffix(-1) {}
-RangeSet::RangeSet(long long s) : beg(-1), end(-1), suffix(s) {}
-RangeSet::RangeSet(long long b, long long e) : beg(b), end(e), suffix(-1) {}
+RangeSet::RangeSet(int64_t s) : beg(-1), end(-1), suffix(s) {}
+RangeSet::RangeSet(int64_t b, int64_t e) : beg(b), end(e), suffix(-1) {}
 RangeSet::~RangeSet(void) {}
 
 const std::string
