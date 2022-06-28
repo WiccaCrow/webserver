@@ -51,7 +51,7 @@ basicCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res,
     JSON::AType *ptr = src->get(key);
     if (ptr->isNull()) {
         res = def;
-        Log.info() << "Used default parameter for " << key << Log.endl;
+        Log.info() << "Used default parameter for " << src->getKey() << "::" << key << Log.endl;
         return DEFAULT;
     }
 
