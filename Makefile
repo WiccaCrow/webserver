@@ -35,6 +35,7 @@ SRCS     =  Auth.cpp                Location.cpp            SHA1.cpp           \
             ErrorResponses.cpp      Response.cpp            main.cpp           \
             Header.cpp              ResponseContType.cpp    Range.cpp		   \
             HeaderNames.cpp         ResponseHeader.cpp      Worker.cpp         \
+			AClient.cpp
 
 OBJS = $(addprefix $(OBJS_DIR)/, $(SRCS:.cpp=.o))
 DEPS = $(addprefix $(DEPS_DIR)/, $(SRCS:.cpp=.d))
