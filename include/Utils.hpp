@@ -34,6 +34,9 @@ std::string sztos(size_t val);
 
 #endif
 
+void writeFile(const std::string &file, const std::string &content);
+std::string readFile(const std::string &file);
+
 std::string itohs(int nb);
 bool stoi64(int64_t &, const std::string &);
 bool stoll(long long &num, char const *s);

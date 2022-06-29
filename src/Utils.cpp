@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <vector>
 #include <sstream>
+#include <fstream>
 
 // Returns true if the conversion of a string to a number is true
 // and initialize num argument
@@ -92,6 +93,24 @@ toLowerCase(std::string &s) {
     for (size_t i = 0; i < length; ++i) {
         s[i] = std::tolower(s[i]);
     }
+}
+
+void
+writeFile(const std::string &file, const std::string &content) {
+    std::ofstream out(file.c_str(),
+        std::ios_base::out | std::ios_base::trunc);
+    if (out.is_open() && out.good()) {
+        out << content;
+    }
+}
+
+std::string
+readFile(const std::string &filename) {
+    std::ifstream in(filename.c_str());
+    if (!in.is_open()) {
+        return "";
+    }
+    return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
 }
 
 std::string
