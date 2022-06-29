@@ -211,6 +211,12 @@ Request::getResolvedPath() const {
     return _resolvedPath;
 }
 
+void
+Request::setResolvedPath(const std::string &path) {
+    _resolvedPath = path;
+}
+
+
 bool
 Request::authNeeded(void) {
     return getLocation()->getAuthRef().isSet();
@@ -241,6 +247,33 @@ Request::set(uint8_t flag) const {
     return _parseFlags & flag;
 }
 
+HTTP::ServerBlock *
+matchServerBlock(const std::string &host, size_t port, const std::string &ip) {
+    typedef std::list<HTTP::ServerBlock>::iterator iter_l;
+    typedef std::list<HTTP::ServerBlock> bslist;
+
+    bool searchByName = !isValidIpv4(host) ? true : false;
+
+    bslist &blocks = g_server->getServerBlocks(port);
+    iter_l found = blocks.end();
+    for (iter_l block = blocks.begin(); block != blocks.end(); ++block) {
+        if (block->hasAddr(ip)) {
+            if (found == blocks.end()) {
+                found = block;
+                if (!searchByName) {
+                    break ;
+                }
+            }
+            if (searchByName && block->hasName(host)) {
+                found = block;
+                break ;
+            }
+        }
+    }
+    Log.debug() << "Client:: servBlock " << found->getBlockName() << " for " << host << ":" << port << Log.endl;
+    return &(*found);
+}
+
 bool
 Request::parseLine(std::string &line) {
     if (!set(PARSED_SL)) {
@@ -258,7 +291,7 @@ Request::parseLine(std::string &line) {
     if (getStatus() != CONTINUE) {
         if (!_servBlock) {
             Log.debug() << "Serverblock is not set after parsing. Default matching" << Log.endl;
-            setServerBlock(getClient()->matchServerBlock(_host._host));
+            setServerBlock(matchServerBlock(_host._host, getClient()->getServerPort(), getClient()->getServerIpAddr()));
         }
         if (!_location) {
             Log.debug() << "Location is not set after parsing. Default matching" << Log.endl;
@@ -345,17 +378,17 @@ Request::isValidProtocol(const std::string &protocol) {
 void
 Request::resolvePath(void) {
     if (_location->getAliasRef().empty()) {
-        _resolvedPath = _location->getRootRef();
+        setResolvedPath(_location->getRootRef());
         if (_uri._path[0] == '/' && _uri._path.length() > 1) {
             _resolvedPath += _uri._path.substr(1);
         }
     } else {
-        _resolvedPath = _location->getAliasRef();
+        setResolvedPath(_location->getAliasRef());
         if (_uri._path.length() > _location->getPathRef().length()) {
             _resolvedPath += _uri._path.substr(_location->getPathRef().length());
         }
     }
-    _resolvedPath = URI::URLdecode(_resolvedPath);
+    setResolvedPath(URI::URLdecode(_resolvedPath));
     Log.debug() << "Request::resolvePath: " << _resolvedPath << Log.endl;
 }
 
@@ -371,7 +404,7 @@ Request::checkHeaders(void) {
     // }
 
     if (!_servBlock) {
-        setServerBlock(getClient()->matchServerBlock(_uri._host));
+        setServerBlock(matchServerBlock(_uri._host, getClient()->getServerPort(), getClient()->getServerIpAddr()));
     }
     if (!_location) {
         setLocation(getServerBlock()->matchLocation(_uri._path));

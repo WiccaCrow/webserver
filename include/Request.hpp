@@ -99,6 +99,7 @@ public:
     // Needed to be improved
     const std::string &getQueryString() const;
     const std::string &getResolvedPath() const;
+    void setResolvedPath(const std::string &);
     const std::string  getHeaderValue(uint32_t key) const;
 
     bool empty();
