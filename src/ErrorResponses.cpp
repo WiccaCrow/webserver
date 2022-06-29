@@ -3,46 +3,6 @@
 
 namespace HTTP {
 
-std::string
-readFile(const std::string &filename) {
-    std::string res;
-
-    std::ifstream in(filename.c_str());
-    if (!in.is_open()) {
-        return "";
-    }
-    return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
-}
-
-void
-HTTP::Response::makeResponseForError(void) {
-
-    std::string response;
-    if (getRequest()->getServerBlock() != NULL) {
-
-        std::map<int, std::string> &pages = getRequest()->getServerBlock()->getErrPathsRef();
-        std::map<int, std::string>::iterator it = pages.find(getStatus());
-
-        if (it != pages.end()) {
-            response = readFile(it->second);
-        
-            if (!response.empty()) {
-                setBody(response);
-                return ;
-            }
-        }
-    }
-
-    response = errorResponses[getStatus()];
-    if (response.empty()) {
-        Log.error() << "Unknown response code: " << static_cast<int>(getStatus()) << Log.endl;
-        setStatus(UNKNOWN_ERROR);
-        setBody(errorResponses[UNKNOWN_ERROR]);
-    } else {
-        setBody(response);
-    }
-}
-
 ErrorResponses::ErrorResponses() {
     _errorResponses.insert(std::make_pair(HTTP::BAD_REQUEST,
         HTML_BEG HEAD_BEG TITLE_BEG "400 Bad Request" TITLE_END HEAD_END
@@ -99,6 +59,14 @@ ErrorResponses::ErrorResponses() {
 
 ErrorResponses::~ErrorResponses() {}
 
+bool ErrorResponses::has(int code) const {
+    return _errorResponses.find(code) != _errorResponses.end();
+}
+
+bool ErrorResponses::has(StatusCode code) const {
+    return this->has(static_cast<int>(code));
+}
+
 const std::string &ErrorResponses::operator[](StatusCode code) const {
     return this->operator[](static_cast<int>(code));
 }
@@ -106,7 +74,7 @@ const std::string &ErrorResponses::operator[](StatusCode code) const {
 const std::string &ErrorResponses::operator[](int code) const {
     std::map<int, std::string>::const_iterator it = _errorResponses.find(code);
     if (it == _errorResponses.end()) {
-        return _empty;
+        return _errorResponses.find(UNKNOWN_ERROR)->second;
     }
     return it->second;
 }
