@@ -30,7 +30,6 @@ Response::Response(Request *req)
     headers.push_back(ResponseHeader(CONTENT_TYPE));
     headers.push_back(ResponseHeader(CONTENT_LENGTH));
     headers.push_back(ResponseHeader(ACCEPT_RANGES));
-
 }
 
 Response::Response(const Response &other) {
@@ -59,6 +58,9 @@ Response &Response::operator=(const Response &other) {
 Response::~Response() { 
     if (getRequest() != NULL) {
         delete getRequest();
+    }
+    if (_cgi != NULL) {
+        delete _cgi;
     } 
     if (_filefd != -1) {
         close(_filefd);
@@ -120,10 +122,10 @@ Response::handle(void) {
 
     if (getStatus() < BAD_REQUEST) {
     
+        Redirect &rdr = getRequest()->getLocation()->getRedirectRef();
         if (getRequest()->authNeeded() && !getRequest()->isAuthorized()) {
             makeResponseForNonAuth();
-        } else if (getRequest()->getLocation()->getRedirectRef().set()) {
-            Redirect &rdr = getRequest()->getLocation()->getRedirectRef();
+        } else if (rdr.set()) {
             makeResponseForRedirect(rdr.getCodeRef(), rdr.getURIRef());
         } else {
             performMethod();
@@ -136,8 +138,10 @@ Response::handle(void) {
         addHeader(CONTENT_TYPE); // ?
     }
 
-    makeHead();
-    isFormed(true);
+    if (!isFormed()) {
+        makeHead();
+        isFormed(true);
+    }
 }
 
 void
@@ -204,9 +208,8 @@ Response::PATCH(void) {
 
 void
 Response::POST(void) {
-    std::map<std::string, CGI>::iterator it = isCGI(_req->getResolvedPath());
-    if (it != _req->getLocation()->getCGIsRef().end()) {
-        makeResponseForCGI(it->second);
+    if (isCGI(_req->getResolvedPath())) {
+        makeResponseForCGI();
     } else {
         setStatus(NO_CONTENT);
     }
@@ -214,7 +217,8 @@ Response::POST(void) {
 
 void
 Response::PUT(void) {
-    std::string resourcePath = _req->getResolvedPath();
+    const std::string &resourcePath = _req->getResolvedPath();
+    
     if (isDirectory(resourcePath)) {
         setStatus(FORBIDDEN);
         return ;
@@ -223,13 +227,13 @@ Response::PUT(void) {
             setStatus(FORBIDDEN);
             return ;
         } else {
-            writeFile(resourcePath);
+            writeFile(resourcePath, getRequest()->getBody());
             setBody(HTML_BEG BODY_BEG H1_BEG
                     "File is overwritten."
                     H1_END BODY_END HTML_END);
         }
     } else {
-        writeFile(resourcePath);
+        writeFile(resourcePath, getRequest()->getBody());
         setBody(HTML_BEG BODY_BEG H1_BEG
                 "File created."
                 H1_END BODY_END HTML_END);
@@ -238,16 +242,17 @@ Response::PUT(void) {
 }
 
 int
-Response::makeResponseForDir(std::string &resourcePath) {
+Response::makeResponseForDir(void) {
+    const std::string &resourcePath = getRequest()->getResolvedPath();
+
     if (!endsWith(resourcePath, "/")) {
-        return makeResponseForRedirect(MOVED_PERMANENTLY, _req->getRawUri() + "/");
-    } else if (isSetIndexFile(resourcePath)) {
-        return makeResponseForFile(resourcePath);
-    } else if (_req->getLocation()->getAutoindexRef()) {
+        return makeResponseForRedirect(MOVED_PERMANENTLY, getRequest()->getRawUri() + "/");
+    } else if (indexFileExists(resourcePath)) {
+        return makeResponseForFile();
+    } else if (getRequest()->getLocation()->getAutoindexRef()) {
         addHeader(CONTENT_TYPE);
         return listing(resourcePath);
     } else {
-        // autoindex off
         setStatus(FORBIDDEN);
         return 0;
     }
@@ -256,7 +261,7 @@ Response::makeResponseForDir(std::string &resourcePath) {
 
 int
 Response::contentForGetHead(void) {
-    std::string resourcePath = _req->getResolvedPath();
+    const std::string &resourcePath = _req->getResolvedPath();
 
     if (!resourceExists(resourcePath)) {
         setStatus(NOT_FOUND);
@@ -264,9 +269,9 @@ Response::contentForGetHead(void) {
     }
 
     if (isDirectory(resourcePath)) {
-        return makeResponseForDir(resourcePath);
+        return makeResponseForDir();
     } else if (isFile(resourcePath)) {
-        return makeResponseForFile(resourcePath);
+        return makeResponseForFile();
     } else {
         setStatus(FORBIDDEN);
         return 0;
@@ -288,12 +293,12 @@ Response::makeResponseForRedirect(HTTP::StatusCode code, const std::string &url)
 }
 
 bool
-Response::isSetIndexFile(std::string &resourcePath) {
+Response::indexFileExists(const std::string &resourcePath) {
     const std::vector<std::string> &indexes = _req->getLocation()->getIndexRef();
     for (size_t i = 0; i < indexes.size(); ++i) {
         std::string path = resourcePath + indexes[i];
         if (isFile(path)) {
-            resourcePath = path;
+            getRequest()->setResolvedPath(path);
             return true;
         }
     }
@@ -312,10 +317,12 @@ Response::getEtagFile(const std::string &filename) {
 }
 
 int
-Response::makeResponseForFile(const std::string &resourcePath) {
-    std::map<std::string, CGI>::iterator it = isCGI(resourcePath);
-    if (it != _req->getLocation()->getCGIsRef().end()) {
-        return makeResponseForCGI(it->second);
+Response::makeResponseForFile(void) {
+
+    const std::string &resourcePath = _req->getResolvedPath();
+
+    if (isCGI(resourcePath)) {
+        return makeResponseForCGI();
     }
 
     if (!openFileToResponse(resourcePath)) {
@@ -328,10 +335,10 @@ Response::makeResponseForFile(const std::string &resourcePath) {
     } else if (ranges.size() > 1) {
         makeResponseForMultipartRange();
     } else {
+        setBody(std::string(_fileaddr, getFileSize()));
         // if (getFileSize() > REGLR_DWNLD_MAX_SIZE) {
         //     addHeader(TRANSFER_ENCODING, "chunked");
         // }
-        setBody(std::string(_fileaddr, getFileSize()));
     }
     
     addHeader(CONTENT_TYPE, getContentType(resourcePath));
@@ -396,7 +403,7 @@ Response::makeResponseForRange(void) {
 }
 
 int
-Response::openFileToResponse(std::string resourcePath) {
+Response::openFileToResponse(const std::string &resourcePath) {
 
     _filefd = open(resourcePath.c_str(), O_RDONLY);
     if (_filefd < 0) {
@@ -574,22 +581,10 @@ Response::getContentType(const std::string &resourcePath) {
 }
 
 void
-Response::writeFile(const std::string &resourcePath) {
-    std::ofstream outputToNewFile(resourcePath.c_str(),
-        std::ios_base::out | std::ios_base::trunc);
-    outputToNewFile << _req->getBody();
-}
-
-const std::string &
-Response::getStatusLine(void) {
-    return statusLines[getStatus()];
-}
-
-void
 Response::makeHead(void) {
 
     _head.reserve(512);
-    _head = getStatusLine();
+    _head = statusLines[getStatus()];
 
     for (iter it = headers.begin(); it != headers.end(); ++it) {
         if (it->value.empty()) {
@@ -600,12 +595,12 @@ Response::makeHead(void) {
         }
     }
 
-    if (_cgi != NULL) {
-        const_iter it = _cgi->getExtraHeaders().begin();
-        for ( ; it != _cgi->getExtraHeaders().end(); ++it) {
-            _head += it->key + ": " + it->value + "\r\n";
-        }
-    }
+    // if (_cgi != NULL) {
+    //     const_iter it = _cgi->getExtraHeaders().begin();
+    //     for ( ; it != _cgi->getExtraHeaders().end(); ++it) {
+    //         _head += it->key + ": " + it->value + "\r\n";
+    //     }
+    // }
 
     _head += "\r\n";
 }
@@ -638,29 +633,16 @@ Response::addHeader(uint32_t hash) {
 }
 
 int
-Response::makeResponseForCGI(CGI &cgi) {
-    _cgi = &cgi;
-    cgi.clear();
-    cgi.linkRequest(_req);
-    cgi.setEnv();
-    if (!cgi.exec()) {
+Response::makeResponseForCGI(void) {
+    _cgi->link(getRequest(), this);
+    if (!_cgi->setEnv() || !_cgi->exec()) {
         setStatus(BAD_GATEWAY);
         return 0;
     }
-    cgi.parseHeaders();
-    setBody(cgi.getBody());
-
-    if (!cgi.isValidContentLength()) {
-        setStatus(BAD_GATEWAY);
-        return 0;
+    if (!getRequest()->getBody().empty()) {
+        setBody(getRequest()->getBody());
+        isFormed(true);
     }
-
-    const_iter it = cgi.getHeaders().begin();
-    const_iter end = cgi.getHeaders().end();
-    for (; it != end; ++it) {
-        addHeader(it->hash, it->value);
-    }
-
     return 1;
 }
 
@@ -759,18 +741,20 @@ Response::getFileSize(void) {
 }
 
 
-std::map<std::string, CGI>::iterator
+bool
 Response::isCGI(const std::string &filepath) {
-    std::map<std::string, CGI> &cgis = _req->getLocation()->getCGIsRef();
-    std::map<std::string, CGI>::iterator it  = cgis.begin();
-    std::map<std::string, CGI>::iterator end = cgis.end();
-    for (; it != end; it++) {
+    typedef std::map<std::string, CGI> cgisMap;
+    typedef cgisMap::iterator iter;
+
+    cgisMap &cgis = getRequest()->getLocation()->getCGIsRef();
+    for (iter it = cgis.begin(); it != cgis.end(); it++) {
         if (endsWith(filepath, it->first)) {
-            it->second.setScriptPath(filepath);
-            return it;
+            _cgi = new CGI(it->second);
+            _cgi->setScriptPath(filepath);
+            return true;
         }
     }
-    return end;
+    return false;
 }
 
 } // namespace HTTP

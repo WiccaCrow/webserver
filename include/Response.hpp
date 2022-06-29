@@ -77,29 +77,28 @@ public:
     void        performMethod(void);
     void        makeResponseForError(void);
     void        makeResponseForNonAuth(void);
-    int         makeResponseForDir(std::string &resourcePath);
-    int         makeResponseForFile(const std::string &resourcePath);
+    int         makeResponseForDir(void);
+    int         makeResponseForFile(void);
     void        makeResponseForRange(void);
     void        makeResponseForMultipartRange(void);
-    int         makeResponseForCGI(CGI &cgi);
-    int         makeResponseForRedirect(StatusCode code, const std::string &url);
+    int         makeResponseForCGI(void);
+    int         makeResponseForRedirect(StatusCode, const std::string &);
 
     int         contentForGetHead(void);
-    bool        isSetIndexFile(std::string &resourcePath);
-    int         openFileToResponse(std::string resourcePath);
+    bool        indexFileExists(const std::string &resourcePath);
+    int         openFileToResponse(const std::string &resourcePath);
     int         listing(const std::string &resourcePath);
     int         fillDirContent(std::deque<std::string> &, const std::string &directory);
     std::string createTableLine(const std::string &file);
     int         fillFileStat(const std::string &file, struct stat *st);
     std::string getContentType(const std::string &resourcePath);
-    void        writeFile(const std::string &resourcePath);
 
     ResponseHeader *getHeader(uint32_t hash);
     void            makeHead(void);
     void            addHeader(uint32_t hash, const std::string &value);
     void            addHeader(uint32_t hash);
 
-    std::map<std::string, CGI>::iterator isCGI(const std::string &filepath);
+    bool  isCGI(const std::string &filepath);
     
     void  makeChunk();
 
