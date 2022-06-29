@@ -26,22 +26,13 @@ class CGI {
 private:
     std::string _execpath;
     std::string _filepath;
-    const char *_args[3];
-    bool        _isCompiled;
+    bool        _compiled;
+    char      **_env;
 
     Request    *_req;
     Response   *_res;
 
-    size_t            _bodyPos;
-    std::stringstream _ss;
-
-    std::list<ResponseHeader> _headers;
-    std::list<ResponseHeader> _extraHeaders;
-
 public:
-    typedef std::list<ResponseHeader>::iterator iter;
-    typedef std::list<ResponseHeader>::iterator const_iter;
-
     CGI(void);
     ~CGI(void);
 
@@ -49,32 +40,20 @@ public:
     CGI &operator=(const CGI &);
 
     int  exec(void);
-    void setCompiled(bool);
-    bool isCompiled(void);
+    void compiled(bool);
+    bool compiled(void);
 
-    void linkRequest(Request *req);
-    void setEnv(void);
-    void setFullEnv(void);
-    void setExecPath(const std::string);
+    void link(Request *req, Response *res);
     bool setScriptPath(const std::string);
-    void resetStream(void);
-    void clear(void);
 
-    void parseHeaders(void);
-    bool isValidContentLength(void);
+    bool initEnv(void);
+    bool setEnv(void);
+    bool setFullEnv(void);
 
-    const std::list<ResponseHeader> &getHeaders(void) const;
-    const std::list<ResponseHeader> &getExtraHeaders(void) const;
+    void setExecPath(const std::string);
     const std::string getExecPath(void) const;
-    const std::string getBody(void) const;
-    size_t getBodyLength(void) ;
-    std::stringstream &getResult(void);
 
-    static const bool extraHeaderEnabled;
     static const std::string compiledExt;
-    static const std::string extraHeaderPrefix;
-
-    static char ** const env;
 };
 
 }
