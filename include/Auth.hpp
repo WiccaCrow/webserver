@@ -14,6 +14,7 @@ class Auth {
 
     std::string _realm;
     std::string _file;
+    std::string _type;
     bool        _set;
 
     std::map<std::string, std::string> _data;
@@ -25,6 +26,7 @@ class Auth {
 
     std::string &getFileRef(void);
     std::string &getRealmRef(void);
+    std::string getType(void) const;
     bool isSet(void) const;
     void set(bool);
     void setFile(const std::string &);

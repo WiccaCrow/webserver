@@ -2,7 +2,7 @@
 
 namespace HTTP {
 
-Auth::Auth(void) : _set(false) {}
+Auth::Auth(void) : _type("Basic"), _set(false) {}
 
 Auth::~Auth(void) {}
 
@@ -41,6 +41,11 @@ Auth::loadData(void) {
         _data.insert(crds);
     }
     return true;
+}
+
+std::string 
+Auth::getType(void) const {
+    return isSet() ? _type : "";
 }
 
 std::string &
