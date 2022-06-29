@@ -16,6 +16,7 @@
 #include <list>
 
 #include "Utils.hpp"
+#include "AClient.hpp"
 #include "Client.hpp"
 #include "Logger.hpp"
 #include "Worker.hpp"
@@ -40,7 +41,7 @@ public:
     typedef std::vector<struct pollfd> PollFdVector;
     typedef PollFdVector::iterator iter_pfd;
 
-    typedef std::vector<HTTP::Client *> ClientVector;
+    typedef std::vector<HTTP::AClient *> ClientVector;
     typedef PollFdVector::iterator iter_cv;
 
 private:
@@ -68,6 +69,7 @@ public:
     // Thread-safe container
     Pool<HTTP::Request *> requests;
     Pool<HTTP::Response *> responses;
+    size_t addSocket(struct pollfd, HTTP::AClient * = NULL);
 
 private:
     void connectClient(size_t id);
@@ -75,10 +77,6 @@ private:
     
     int  poll(void);
     void process(void);
-    void pollInHandler(size_t id);
-    void pollHupHandler(size_t id);
-    void pollOutHandler(size_t id);
-    void pollErrHandler(size_t id);
 
     void freeResponsePool(void);
     void createSockets(void);
@@ -87,5 +85,4 @@ private:
 
     int createListenSocket(const std::string &addr, size_t port);
     int addListenSocket(const std::string &addr, size_t port);
-    size_t addSocket(struct pollfd, HTTP::Client * = NULL);
 };

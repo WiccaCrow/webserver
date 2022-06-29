@@ -74,6 +74,11 @@ Server::start(void) {
     signal(SIGINT, sigint_handler);
 
     createSockets();
+
+    if (!isWorking()) {
+        return ;
+    }
+    
     startWorkers();
 
     while (isWorking()) {
@@ -166,10 +171,6 @@ Server::createSockets(void) {
 void
 Server::startWorkers(void) {
 
-    if (!isWorking()) {
-        return ;
-    }
-
     for (size_t i = 0; i < Worker::count; i++) {
         _workers[i].create();
     }
@@ -198,87 +199,29 @@ Server::freeResponsePool(void) {
 }
 
 void
-Server::pollInHandler(size_t id) {
-    
-    HTTP::Client *client = _clients[id];
-
-    if (client == NULL) {
-        return ;
-    }
-
-    if (!client->getRequest()) {
-        client->addRequest();
-    }
-
-    if (!client->requestReady()) {
-        client->receive();
-    }
-
-    if (client->requestReady()) {
-        requests.push_back(client->getRequest());
-        client->setRequest(NULL);
-    }
-
-    if (!client->validSocket()) {
-        disconnectClient(id);
-    }
-}
-
-// Do not remove client until all responses performed (returned from workers) !
-// Or check presence of the client in freePool
-void
-Server::pollOutHandler(size_t id) {
-    
-    HTTP::Client *client = _clients[id];
-
-    if (client == NULL) {
-        return ;
-    }
-
-    if (client->replyReady() && !client->replyDone()) {
-        client->reply();
-    }
-    
-    if (client->replyDone()) {
-        client->removeResponse();
-        client->replyDone(false);
-    }
-
-    if (!client->validSocket()) {
-        disconnectClient(id);
-    }
-}
-
-void
-Server::pollHupHandler(size_t id) {
-    Log.syserr() << "Server::POLLHUP occured on the " << _pollfds[id].fd << "socket" << Log.endl;
-    if (id >= _socketsCount) {
-        disconnectClient(id);
-    }
-}
-
-void
-Server::pollErrHandler(size_t id) {
-    Log.syserr() << "Server::pollerr on [" << _pollfds[id].fd << "]" << Log.endl;
-}
-
-void
 Server::process(void) {
     for (size_t id = 0; id < _pollfds.size(); id++) {
         if (_pollfds[id].revents & POLLNVAL) {
-            continue;
+            continue ;
         }
-
         if (id < _socketsCount && _pollfds[id].revents & POLLIN) {
             connectClient(id);
+        }
+
+        if (_clients[id] == NULL) {
+            continue ;
         } else if (_pollfds[id].revents & POLLIN) {
-            pollInHandler(id);
+            _clients[id]->pollin();
         } else if (_pollfds[id].revents & POLLHUP) {
-            pollHupHandler(id);
+            _clients[id]->pollhup();
         } else if (_pollfds[id].revents & POLLOUT) {
-            pollOutHandler(id);
+            _clients[id]->pollout();
         } else if (_pollfds[id].revents & POLLERR) {
-            pollErrHandler(id);
+            _clients[id]->pollerr();
+        }
+
+        if (_clients[id]->shouldBeClosed()) {
+            disconnectClient(id);
         }
         _pollfds[id].revents = 0;
     }
@@ -303,7 +246,7 @@ isFree(struct pollfd pfd) {
 }
 
 size_t
-Server::addSocket(struct pollfd pfd, HTTP::Client *client) {
+Server::addSocket(struct pollfd pfd, HTTP::AClient *client) {
 
     iter_pfd it = std::find_if(_pollfds.begin(), _pollfds.end(), isFree);
     if (it == _pollfds.end()) {
@@ -318,6 +261,11 @@ Server::addSocket(struct pollfd pfd, HTTP::Client *client) {
 
     return id;
 }
+
+// void
+// Server::createClient() {
+//     socket + connect(); + ClientProxy();
+// }
 
 void
 Server::connectClient(size_t servid) {
@@ -341,7 +289,8 @@ Server::connectClient(size_t servid) {
     fcntl(fd, F_SETFL, O_NONBLOCK);
 
     HTTP::Client *client = new HTTP::Client();
-    client->setFd(fd);
+    client->setReadFd(fd);
+    client->setWriteFd(fd);
     client->setPort(ntohs(clientData.sin_port));
     client->setIpAddr(inet_ntoa(clientData.sin_addr));
     client->setServerPort(ntohs(servData.sin_port));
