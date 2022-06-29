@@ -1,51 +1,28 @@
 #pragma once
 
-#include <map>
-#include <poll.h>
-#include <sys/socket.h>
 #include <string>
 #include <unistd.h>
-#include <queue>
+#include <deque>
 
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Logger.hpp"
 #include "Status.hpp"
 #include "Globals.hpp"
+#include "AClient.hpp"
 
 namespace HTTP {
 
-class Client {
+class Client : public AClient { 
 
 private:
-    int         _fd;
     size_t      _clientPort;
-    size_t      _serverPort;
     std::string _clientIpAddr;
-    std::string _serverIpAddr;
+    bool _headSent;
+    bool _bodySent;
 
     Request *_req;
     std::deque<HTTP::Response *> _responses;
-
-    std::string _rem;
-
-    bool        _shouldBeClosed;
-
-    const char *_data;
-    size_t      _dataSize;
-    size_t      _dataPos;
-    bool        _headSent;
-    bool        _bodySent;
-    
-    bool    sendData(void);
-    int     readSocket(void);
-
-public:
-    enum Status {
-        LINE_NOT_FOUND = -1,
-        SOCK_CLOSED    = 0,
-        LINE_FOUND     = 1
-    };
 
 public:
     Client(void);
@@ -54,40 +31,27 @@ public:
 
     Client &operator=(const Client &client);
 
-    void initResponseMethodsHeaders(void);
-
-    Status getline(std::string &line);
-
-    void setFd(int fd);
-    int  getFd(void) const;
-
-    void setPort(size_t port);
-    size_t  getPort(void) const;
-
-    void setServerPort(size_t port);
-    size_t getServerPort(void) const;
-
-    void               setServerIpAddr(const std::string &);
-    const std::string &getServerIpAddr(void) const;
-
-    void               setIpAddr(const std::string &);
-    const std::string &getIpAddr(void) const;
-
     const std::string getHostname(void) const;
 
     Request *    getRequest(void);
     void         setRequest(Request *);
     Response *   getResponse(void);
 
-    void receive(void);
-    void reply(void);
+    virtual void pollin(void);
+    virtual void pollout(void);
+    virtual void pollhup(void);
+    virtual void pollerr(void);
+
+    virtual void receive(void);
+    virtual void reply(void);
+
+    void setPort(size_t port);
+    size_t  getPort(void) const;
+
+    void               setIpAddr(const std::string &);
+    const std::string &getIpAddr(void) const;
+
     void checkIfFailed(void);
-
-    bool shouldBeClosed(void) const;
-    void shouldBeClosed(bool);
-
-    HTTP::ServerBlock *matchServerBlock(const std::string &host) const;
-
     void addRequest(void);
     void addResponse(Response *);
     void removeResponse(void);
@@ -97,6 +61,8 @@ public:
     bool replyReady(void);
     bool replyDone(void);
     void replyDone(bool);
+
+    // HTTP::ServerBlock *matchServerBlock(const std::string &host, size_t port) const;
 };
 
 }

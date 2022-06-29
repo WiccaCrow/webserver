@@ -1,14 +1,14 @@
-#include "Client.hpp"
+#include "ClientProxy.hpp"
 #include "Server.hpp"
 
 namespace HTTP {
 
-Client::Client() 
+ClientProxy::ClientProxy() 
     : AClient()
     , _headSent(false)
     , _bodySent(false) {}
 
-Client::~Client() {
+ClientProxy::~ClientProxy() {
     for (size_t i = 0; i < _responses.size(); i++) {
         if (_responses[i] != NULL) {
             delete _responses[i];
@@ -16,12 +16,12 @@ Client::~Client() {
     }
 }
 
-Client::Client(const Client &other) : AClient(other) {
+ClientProxy::ClientProxy(const ClientProxy &other) : AClient(other) {
     *this = other;
 }
 
-Client &
-Client::operator=(const Client &other) {
+ClientProxy &
+ClientProxy::operator=(const ClientProxy &other) {
     if (this != &other) {
         _responses      = other._responses;
         _clientIpAddr   = other._clientIpAddr;
@@ -31,97 +31,7 @@ Client::operator=(const Client &other) {
 }
 
 void
-Client::setIpAddr(const std::string &ipaddr) {
-    _clientIpAddr = ipaddr;
-}
-
-const std::string &
-Client::getIpAddr(void) const {
-    return _clientIpAddr;
-}
-
-void
-Client::setPort(size_t port) {
-    _clientPort = port;
-}
-
-size_t
-Client::getPort(void) const {
-    return _clientPort;
-}
-
-const std::string
-Client::getHostname() const {
-    return (_clientPort != 0 ? _clientIpAddr + ":" + sztos(_clientPort) : _clientIpAddr);
-}
-
-Request *
-Client::getRequest() {
-    return _req;
-}
-
-void
-Client::setRequest(Request *req) {
-    _req = req;
-}
-
-
-Response *
-Client::getResponse() {
-    return _responses.front();
-}
-
-void
-Client::addRequest(void) {
-
-    _req = new Request(this);
-    if (_req == NULL) {
-        Log.syserr() << "Cannot allocate memory for Request" << Log.endl;
-        shouldBeClosed(true);
-    }
-    Log.debug() << "----------------------" << Log.endl;
-}
-
-void
-Client::addResponse(Response *res) {
-    _responses.push_back(res);
-    Log.debug() << "Client::addResponse " << res->getRequest()->getUriRef()._path << Log.endl;
-}
-
-void
-Client::removeResponse(void) {
-    delete _responses.front();
-    _responses.pop_front();
-}
-
-bool
-Client::validSocket(void) {
-    return getWriteFd() != -1 && getReadFd() != -1 && !shouldBeClosed();
-}
-
-bool
-Client::requestReady(void) {
-    return validSocket() && getRequest() && getRequest()->isFormed();
-}
-
-bool
-Client::replyReady(void) {
-    return validSocket() && _responses.size() && getResponse()->isFormed();
-}
-
-bool
-Client::replyDone(void) {
-    return _headSent && _bodySent;
-}
-
-void
-Client::replyDone(bool val) {
-    _headSent = val;
-    _bodySent = val;
-}
-
-void
-Client::pollin(void) {
+ClientProxy::pollin(void) {
 
     if (!getRequest()) {
         addRequest();
@@ -135,37 +45,136 @@ Client::pollin(void) {
         g_server->requests.push_back(getRequest());
         setRequest(NULL);
     }
+
 }
 
 void
-Client::pollout(void) {
+ClientProxy::pollout(void) {
 
-    if (replyReady() && !replyDone()) {
-        reply();
+}
+
+void
+ClientProxy::receive(void) {
+
+    if (getReadFd() < 0) {
+        return;
     }
-    
-    if (replyDone()) {
-        removeResponse();
-        replyDone(false);
+
+    if (!readSocket()) {
+        _res->makeResponseForError(BAD_GATEWAY);
+        _res->isFormed(true);
+        return ;
     }
 
+    Log.debug() << "ClientProxy::receive [" << getReadFd() << "]" << Log.endl;
+
+    while (!getRequest()->isFormed()) {
+        std::string line;
+
+        if (!getline(line, getRequest()->getBodySize())) {
+            return ;
+        } 
+        getRequest()->parseLine(line);
+    }
 }
 
 void
-Client::pollhup(void) {
-    shouldBeClosed(true);
-    Log.syserr() << "Client::pollhup " << getReadFd() << Log.endl;
-}
-
-
-void
-Client::pollerr(void) {
-    shouldBeClosed(true);
-    Log.syserr() << "Client::pollerr " << getReadFd() << Log.endl;
+Client::setStatus(StatusCode status) {
+    _status = status;
 }
 
 void
-Client::reply(void) {
+ClientProxy::setIpAddr(const std::string &ipaddr) {
+    _clientIpAddr = ipaddr;
+}
+
+const std::string &
+ClientProxy::getIpAddr(void) const {
+    return _clientIpAddr;
+}
+
+void
+ClientProxy::setPort(size_t port) {
+    _clientPort = port;
+}
+
+size_t
+ClientProxy::getPort(void) const {
+    return _clientPort;
+}
+
+const std::string
+ClientProxy::getHostname() const {
+    return (_clientPort != 0 ? _clientIpAddr + ":" + sztos(_clientPort) : _clientIpAddr);
+}
+
+Request *
+ClientProxy::getRequest() {
+    return _req;
+}
+
+void
+ClientProxy::setRequest(Request *req) {
+    _req = req;
+}
+
+
+Response *
+ClientProxy::getResponse() {
+    return _responses.front();
+}
+
+void
+ClientProxy::addRequest(void) {
+
+    _req = new Request(this);
+    if (_req == NULL) {
+        Log.syserr() << "Cannot allocate memory for Request" << Log.endl;
+        shouldBeClosed(true);
+    }
+    Log.debug() << "----------------------" << Log.endl;
+}
+
+void
+ClientProxy::addResponse(Response *res) {
+    _responses.push_back(res);
+    Log.debug() << "ClientProxy::addResponse " << res->getRequest()->getUriRef()._path << Log.endl;
+}
+
+void
+ClientProxy::removeResponse(void) {
+    delete _responses.front();
+    _responses.pop_front();
+}
+
+bool
+ClientProxy::validSocket(void) {
+    return getWriteFd() != -1 && getReadFd() != -1 && !shouldBeClosed();
+}
+
+bool
+ClientProxy::requestReady(void) {
+    return validSocket() && getRequest() && getRequest()->isFormed();
+}
+
+bool
+ClientProxy::replyReady(void) {
+    return validSocket() && _responses.size() && getResponse()->isFormed();
+}
+
+bool
+ClientProxy::replyDone(void) {
+    return _headSent && _bodySent;
+}
+
+void
+ClientProxy::replyDone(bool val) {
+    _headSent = val;
+    _bodySent = val;
+}
+
+void
+ClientProxy::reply(void) {
 
     signal(SIGPIPE, SIG_IGN);
 
@@ -193,34 +202,10 @@ Client::reply(void) {
     }
 
     // if (shouldBeClosed()) {
-    //     Log.debug() << "Client::shouldBeClosed" << Log.endl;
+    //     Log.debug() << "ClientProxy::shouldBeClosed" << Log.endl;
     //     setReadFd(-1);
     //     setWriteFd(-1);
     // }
-}
-
-void
-Client::receive(void) {
-
-    if (getReadFd() < 0) {
-        return;
-    }
-
-    if (!readSocket()) {
-        shouldBeClosed(true);
-        return ;
-    }
-
-    Log.debug() << "Client::receive [" << getReadFd() << "]" << Log.endl;
-
-    while (!getRequest()->isFormed()) {
-        std::string line;
-
-        if (!getline(line, getRequest()->getBodySize())) {
-            return ;
-        } 
-        getRequest()->parseLine(line);
-    }
 }
 
 }
