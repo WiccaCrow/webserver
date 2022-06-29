@@ -153,13 +153,13 @@ Request::getRawUri() const {
 }
 
 bool
-Request::isFormed(void) const {
-    return _isFormed;
+Request::formed(void) const {
+    return _formed;
 }
 
 void
-Request::isFormed(bool formed) {
-    _isFormed = formed;
+Request::formed(bool formed) {
+    _formed = formed;
 }
 
 void

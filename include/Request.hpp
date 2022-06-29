@@ -57,7 +57,7 @@ private:
     bool     _isAuthorized;
     uint32_t _storedHash;
 
-    bool _isFormed;
+    bool _formed;
     bool _chuckedRequested;
 
     std::map<std::string, std::string> _cookie;
@@ -93,8 +93,8 @@ public:
 
     RangeList                               &getRangeList();
 
-    bool    isFormed(void) const;
-    void    isFormed(bool formed);
+    bool    formed(void) const;
+    void    formed(bool formed);
 
     // Needed to be improved
     const std::string &getQueryString() const;
