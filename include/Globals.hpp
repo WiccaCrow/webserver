@@ -3,7 +3,39 @@
 #include <map>
 #include <string>
 
-#ifndef SERVER_SOFTWARE
+#ifndef SOMAXCONN
+    # define SOMAXCONN 128
+#endif
+
+#ifndef CHUNK_SIZE
+    # define CHUNK_SIZE 40960
+#endif
+
+#ifndef SERVER_PROTOCOL
+    # define SERVER_PROTOCOL "HTTP/1.1"
+#endif
+
+#ifndef SP
+    # define SP " "
+#endif
+
+#ifndef HTAB
+    # define HTAB "\t"
+#endif
+
+#ifndef CR
+    # define CR "\r"
+#endif
+
+#ifndef LF
+    # define LF "\n"
+#endif
+
+#ifndef CRLF
+    # define CRLF CR LF
+#endif
+
+#ifndef SERVER_SOFTWARE 
     # define SERVER_SOFTWARE "webserv/1.0.0"
 #endif
 

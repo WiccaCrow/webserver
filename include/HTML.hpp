@@ -33,6 +33,11 @@
 #define TH_BEG "<th>"
 #define TH_END "</th>"
 
+#define B_BEG "<b>"
+#define B_END "</b>"
+
+#define DEF_PAGE_BEG HTML_BEG BODY_BEG H1_BEG
+#define DEF_PAGE_END H1_END BODY_END HTML_END
 
 #define DEFAULT_CSS \
         "<style>" \
