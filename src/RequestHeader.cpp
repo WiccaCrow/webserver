@@ -49,7 +49,7 @@ RequestHeader::AcceptEncoding(Request &req) {
     // gzip compress deflate br identity *
     for (size_t i = 0; i < encodings.size(); i++) {
         
-        trim(encodings[i], " \r\n");
+        trim(encodings[i], SP CRLF);
         std::string encoding = encodings[i];
         
         size_t pos = encodings[i].find(';');
@@ -120,8 +120,8 @@ RequestHeader::Authorization(Request &req) {
             return UNAUTHORIZED;
         }
 
-        req.setAuthFlag(auth.isAuthorized(decoded));
-        if (req.isAuthorized()) {
+        req.authorized(auth.isAuthorized(decoded));
+        if (req.authorized()) {
             req.setStoredHash(receivedHash);
             Log.debug() << "Authorization::Succeed" << Log.endl;
         } else {
@@ -151,7 +151,7 @@ RequestHeader::Connection(Request &req) {
 
 StatusCode
 RequestHeader::ContentLength(Request &req) {
-    if (req.isHeaderExist(TRANSFER_ENCODING)) {
+    if (req.headers.has(TRANSFER_ENCODING)) {
         Log.debug() << "ContentLength::ContentLength: TransferEncoding header exist" << Log.endl;
         return BAD_REQUEST;
     }
@@ -160,7 +160,7 @@ RequestHeader::ContentLength(Request &req) {
     if (!stoll(length, value.c_str())) {
         return BAD_REQUEST;
     }
-    req.setBodySizeFlag(false);
+    // req.isChunkSize(false);
     req.setBodySize(length);
 
     return CONTINUE;
@@ -317,7 +317,7 @@ RequestHeader::IfModifiedSince(Request &req) {
 
     // A recipient MUST ignore If-Modified-Since if the request contains an
     // If-None-Match header field;
-    if (req.isHeaderExist(IF_NONE_MATCH)) {
+    if (req.headers.has(IF_NONE_MATCH)) {
         // Maybe value should be cleared
         Log.debug() << "IfModifiedSince:: IfNoneMatch present" << Log.endl;
         return CONTINUE;
@@ -353,7 +353,7 @@ RequestHeader::IfUnmodifiedSince(Request &req) {
 
     // A recipient MUST ignore If-Modified-Since if the request contains an
     // If-None-Match header field;
-    if (req.isHeaderExist(IF_MATCH)) {
+    if (req.headers.has(IF_MATCH)) {
         // Maybe value should be cleared
         Log.debug() << "IfUnModifiedSince:: IfMatch present" << Log.endl;
         return CONTINUE;
@@ -437,7 +437,7 @@ RequestHeader::TransferEncoding(Request &req) {
     std::set<std::string> acceptedValues;
     acceptedValues.insert("chunked");
 
-    if (req.isHeaderExist(CONTENT_LENGTH)) {
+    if (req.headers.has(CONTENT_LENGTH)) {
         Log.debug() << "ContentLength::TransferEncoding: ContentLength header exist" << Log.endl;
         return BAD_REQUEST;
     }
@@ -449,14 +449,14 @@ RequestHeader::TransferEncoding(Request &req) {
             return NOT_IMPLEMENTED;
         }
     }
-    req.setBodySizeFlag(true);
+    req.isChunkSize(true);
     return CONTINUE;
 }
 
 StatusCode
 RequestHeader::TE(Request &req) {
     if (value == "trailers") {
-        req.chuckedRequested(true);
+        req.chunked(true);
     }
     return CONTINUE;
 }
