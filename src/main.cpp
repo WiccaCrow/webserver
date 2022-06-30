@@ -8,18 +8,18 @@ void
 printUsage(void) {
     Log.info() << "Usage: webserv [conf.json] [-flags]" << Log.endl;
     Log.info() << "Config:" << Log.endl;
-    Log.info() << "\t" << "path - absolute or relative path to json config" << Log.endl;
-    Log.info() << "\t" << "default config path: " << DEFAULT_CONF_PATH << Log.endl;
+    Log.info() << HTAB << "path - absolute or relative path to json config" << Log.endl;
+    Log.info() << HTAB << "default config path: " << DEFAULT_CONF_PATH << Log.endl;
     Log.info() << "Config:" << Log.endl;
     Log.info() << "Flags:" << Log.endl;
     Log.info() << " -h : help :)" << Log.endl;
     Log.info() << " -l : log level, values:" << Log.endl;
-    Log.info() << "\t" << "d - debug" << Log.endl;
-    Log.info() << "\t" << "i - info" << Log.endl;
-    Log.info() << "\t" << "e - error" << Log.endl;
-    Log.info() << "\t" << "s - system error" << Log.endl;
+    Log.info() << HTAB << "d - debug" << Log.endl;
+    Log.info() << HTAB << "i - info" << Log.endl;
+    Log.info() << HTAB << "e - error" << Log.endl;
+    Log.info() << HTAB << "s - system error" << Log.endl;
     Log.info() << " -d : logs directory, value:" << Log.endl;
-    Log.info() << "\t" << "path - absolute or relative path to existing directory" << Log.endl;
+    Log.info() << HTAB << "path - absolute or relative path to existing directory" << Log.endl;
 }
 
 int
