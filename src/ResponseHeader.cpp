@@ -48,14 +48,8 @@ ResponseHeader::Age(Response &res) {
 
 void
 ResponseHeader::Allow(Response &res) {
-    if (res.getRequest()->getMethod() == "OPTIONS") {
-        std::vector<std::string> &allowedMethods = res.getRequest()->getLocation()->getAllowedMethodsRef();
-        for (int i = 0, nbMetods = allowedMethods.size(); i < nbMetods;) {
-            value += allowedMethods[i];
-            if (++i != nbMetods) {
-                value += ", ";
-            }
-        }
+    if (res.getRequest()->getMethod() == "OPTIONS") { // What if any other method?
+        value = join(res.getRequest()->getLocation()->getAllowedMethodsRef());
     }
 }
 
@@ -76,15 +70,12 @@ ResponseHeader::Connection(Response &res) {
         return ;
     }
 
-    // res.getRequest()->getStatus() != MOVED_PERMANENTLY && 
-    if (res.getRequest()->getHeaderValue(CONNECTION) == "close") {
+    if (res.getRequest()->headers.value(CONNECTION) == "close") {
         res.getClient()->shouldBeClosed(true);
         value = "close";
     } else {
-        // res.getClient()->shouldBeClosed(false);
         value = "keep-alive";
-        ResponseHeader *ptr = res.getHeader(KEEP_ALIVE);
-        ptr->handle(res);
+        res.headers[KEEP_ALIVE].handle(res);
     }
 }
 
@@ -108,8 +99,8 @@ ResponseHeader::ContentLength(Response &res) {
     if (!value.empty()) {
         return ;
     }
-    if (res.getBodyLength() != 0) {
-        value = sztos(res.getBodyLength());
+    if (res.getBody().length() != 0) {
+        value = sztos(res.getBody().length());
     }
 }
 
@@ -172,8 +163,8 @@ ResponseHeader::Host(Response &res) {
 void
 ResponseHeader::KeepAlive(Response &res) {
     (void)res;
-    ResponseHeader *ptr = res.getHeader(CONNECTION);
-    if (ptr && ptr->value != "close") {
+    
+    if (res.headers.value(CONNECTION) != "close") {
         value = "timeout=55, max=1000";
     }
 }
