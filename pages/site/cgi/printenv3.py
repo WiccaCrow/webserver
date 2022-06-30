@@ -2,8 +2,7 @@ import os
 import fileinput
 
 headers = []
-body = """
-<html>
+body = """<html>
 <head>
     <title>Server-provided Environment variables</title>
 </head>
@@ -20,7 +19,7 @@ for line in fileinput.input():
     body += line
 body += "</p></body></html>"
 
-headers.append("Content-type: text/html")
+headers.append("Content-Type: text/html")
 headers.append("Content-Length: %d" % len(body))
 
 for header in headers:

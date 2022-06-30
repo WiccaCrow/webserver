@@ -11,8 +11,8 @@ for (let key in process.env) {
 }
 body += "</table></body></html>\n";
 
-headers.push("Content-type: text/html");
-headers.push(`Content-length: ${body.length}`);
+headers.push("Content-Type: text/html");
+headers.push(`Content-Length: ${body.length}`);
 
 headers.forEach(header => {
     console.log(header);
