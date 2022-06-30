@@ -7,7 +7,8 @@
 #include <unistd.h>
 #include <vector>
 
-std::vector<std::string> split(const std::string &source, const std::string &delimiters);
+std::string join(std::vector<std::string> &v, const std::string &delim = ", ");
+std::vector<std::string> split(const std::string &source, const std::string &delimiters = " ");
 std::string              getWord(const std::string &line, const char *delims, size_t &pos);
 
 std::string &rtrim(std::string &s, const char *t);
@@ -49,7 +50,7 @@ time_t getModifiedTime(const std::string &file);
 // RFC validation
 
 extern const char * validMethods[];
-
+bool isValidProtocol(const std::string &protocol);
 bool isValidMethod(const std::string &s);
 bool isValidPath(const std::string &s);
 bool isValidIpv4(const std::string &s);

@@ -36,7 +36,7 @@ stoll(char const *s) {
 }
 
 std::vector<std::string>
-split(const std::string &source, const std::string &delimiters = " ") {
+split(const std::string &source, const std::string &delimiters) {
     size_t prev = 0;
     size_t curr = 0;
 
@@ -53,6 +53,18 @@ split(const std::string &source, const std::string &delimiters = " ") {
     }
 
     return results;
+}
+
+std::string
+join(std::vector<std::string> &v, const std::string &delim) {
+    std::string res;
+    for (size_t i = 0; i < v.size(); ++i) {
+        res += v[i];
+        if (i + 1 < v.size()) {
+            res += delim;
+        }
+    }
+    return res;
 }
 
 std::string
@@ -239,6 +251,20 @@ isValidMethod(const std::string &method) {
             return true;
     }
     return false;
+}
+
+bool
+isValidProtocol(const std::string &protocol) {
+    if (protocol.find("HTTP/") != 0) {
+        return false;
+    }
+    if (!isdigit(protocol[5]) || protocol[6] != '.') {
+        return false;
+    }
+    if (!isdigit(protocol[7]) || protocol.length() != 8) {
+        return false;
+    }
+    return true;
 }
 
 bool
