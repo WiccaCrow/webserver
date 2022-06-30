@@ -50,8 +50,18 @@ Location::getCGIsRef(void) {
     return _CGIs;
 }
 
+std::vector<std::string> &
+Location::getDomainsRef(void) {
+    return _domains;
+}
+
 Redirect &
 Location::getRedirectRef(void) {
     return _redirect;
+}
+
+std::map<int, std::string> &
+Location::getErrorPagesRef(void) {
+    return _errorPages;
 }
 }

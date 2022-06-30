@@ -16,9 +16,7 @@ private:
     std::string              _addr;
     int                      _port;
     std::vector<std::string> _server_names;
-
     Location                        _locationBase;
-    std::map<int, std::string>      _errorPagesPaths;
     std::map<std::string, Location> _locations;
 
     // Methods
@@ -43,7 +41,6 @@ public:
     int                                   &getPortRef(void);
     Location                              &getLocationBaseRef(void);
     std::vector<std::string>              &getServerNamesRef(void);
-    std::map<int, std::string>            &getErrPathsRef(void);
     std::map<std::string, Location>       &getLocationsRef(void);
     const std::map<std::string, Location> &getLocationsRef(void) const;
     const std::string                     &getBlockName(void) const;

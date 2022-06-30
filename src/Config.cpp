@@ -240,7 +240,7 @@ const char * validServerBlockKeywords[] = {
 };
 
 const char * validLocationKeywords[] = {
-    KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, 
+    KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, KW_ERROR_PAGES,
     KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, NULL
 };
 
@@ -263,7 +263,7 @@ isValidKeyword(const std::string &key, const char *contextKeywords[]) {
 
     for (size_t i = 0; validKeywords[i]; i++) {
         if (validKeywords[i] == key) {
-            Log.error() << "Wrong context for keyword " << key << Log.endl;
+            Log.error() << "Invalid context for keyword " << key << Log.endl;
             return false;
         }
     }
@@ -290,6 +290,7 @@ int
 parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
     std::map<std::string, HTTP::CGI> def;
 
+    res.clear();
     const std::string &key = KW_CGI;
 
     ConfStatus status = basicCheck(src, key, OBJECT, res, def);
@@ -310,7 +311,7 @@ parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
         }
         cgi.setExecPath(value);
         if (it->first == cgi.compiledExt) {
-            cgi.setCompiled(true);
+            cgi.compiled(true);
         }
         
         res.insert(std::make_pair(it->first, cgi));
@@ -327,7 +328,7 @@ isValidCGI(std::map<std::string, HTTP::CGI> &res) {
             Log.error() << it->first << ": incorrect extension" << Log.endl;
             return false;
 
-        } else if (!it->second.isCompiled() && !isExecutableFile(it->second.getExecPath())) {
+        } else if (!it->second.compiled() && !isExecutableFile(it->second.getExecPath())) {
             Log.error() << it->second.getExecPath() << " is not an executable file" << Log.endl;
             return false;
         }
@@ -338,7 +339,11 @@ isValidCGI(std::map<std::string, HTTP::CGI> &res) {
 int
 parseErrorPages(JSON::Object *src, std::map<int, std::string> &res) {
 
-    ConfStatus status = basicCheck(src, KW_ERROR_PAGES, OBJECT, res, res);
+    res.clear();
+
+    std::map<int, std::string> def;
+
+    ConfStatus status = basicCheck(src, KW_ERROR_PAGES, OBJECT, res, def);
     if (status != SET) {
         return status;
     }
@@ -533,6 +538,14 @@ parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
         return NONE_OR_INV;
     }
 
+    if (!parseErrorPages(src, dst.getErrorPagesRef())) {
+        Log.error() << KW_ERROR_PAGES << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } else if (!isValidErrorPages(dst.getErrorPagesRef())) {
+        Log.error() << KW_ERROR_PAGES << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    }
+
     if (!parseAuth(src, dst.getAuthRef())) {
         Log.error() << KW_AUTH_BASIC << " parsing failed" << Log.endl;
         return NONE_OR_INV;
@@ -636,14 +649,6 @@ parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
         Log.error() << KW_PORT << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     } else if (!isValidPort(dst.getPortRef())) {
-        return NONE_OR_INV;
-    }
-
-    if (!parseErrorPages(src, dst.getErrPathsRef())) {
-        Log.error() << KW_ERROR_PAGES << " parsing failed" << Log.endl;
-        return NONE_OR_INV;
-    } else if (!isValidErrorPages(dst.getErrPathsRef())) {
-        Log.error() << KW_ERROR_PAGES << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     }
 
