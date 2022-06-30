@@ -1,7 +1,6 @@
 #include "CGI.hpp"
 #include "Request.hpp"
 #include "Client.hpp"
-#include "ClientCGI.hpp"
 #include "Server.hpp"
 
 namespace HTTP {
@@ -14,10 +13,12 @@ CGI::CGI(void)
     , _env(NULL) {}
 
 CGI::~CGI(void) {
-    for (size_t i = 0; i < envCount; i++) {
-        delete[] _env[i];
+    if (_env != NULL) {
+        for (size_t i = 0; i < envCount; i++) {
+            delete[] _env[i];
+        }
+        delete[] _env;
     }
-    delete[] _env;
 }
 
 CGI::CGI(const CGI &other) {
@@ -86,26 +87,28 @@ CGI::setFullEnv(void) {
     setenv("PATH_INFO", "", 1);
     setenv("PATH_TRANSLATED", _req->getResolvedPath().c_str(), 1); // ?
 
-    setenv("REMOTE_HOST", _req->getHeaderValue(HOST).c_str(), 1);
+    setenv("REMOTE_HOST", _req->headers.value(HOST).c_str(), 1);
     setenv("REMOTE_ADDR", _req->getClient()->getIpAddr().c_str(), 1);
     setenv("REMOTE_USER", "", 1);
     setenv("REMOTE_IDENT", "", 1);
 
     setenv("AUTH_TYPE", _req->getLocation()->getAuthRef().getType().c_str(), 1);
-    setenv("QUERY_STRING", _req->getQueryString().c_str(), 1);
+    setenv("QUERY_STRING", _req->getUriRef()._query.c_str(), 1);
     setenv("REQUEST_METHOD", _req->getMethod().c_str(), 1);
     setenv("SCRIPT_NAME", _req->getResolvedPath().c_str(), 1);
     setenv("CONTENT_LENGTH", sztos(_req->getBody().length()).c_str(), 1);
-    setenv("CONTENT_TYPE", _req->getHeaderValue(CONTENT_TYPE).c_str(), 1);
+    setenv("CONTENT_TYPE", _req->headers.value(CONTENT_TYPE).c_str(), 1);
 
     setenv("GATEWAY_INTERFACE", GATEWAY_INTERFACE, 1);
     setenv("SERVER_NAME",  _req->getUriRef().getAuthority().c_str(), 1);
     setenv("SERVER_SOFTWARE", SERVER_SOFTWARE, 1);
-    setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
+    setenv("SERVER_PROTOCOL", SERVER_PROTOCOL, 1);
 
     // Current server block
     setenv("SERVER_PORT", sztos(_req->getServerBlock()->getPort()).c_str(), 1); // 80
     setenv("REDIRECT_STATUS", "200", 1);
+    
+    return true;
 }
 
 bool
@@ -121,7 +124,7 @@ CGI::setEnv(void) {
     setValue(_env[1], _req->getResolvedPath()); // Definitely not like that
     
     // REMOTE_HOST
-    setValue(_env[2], _req->getHeaderValue(HOST)); // host, maybe should be without port
+    setValue(_env[2], _req->getHostRef()._host.c_str()); // host, maybe should be without port
     
     // REMOTE_ADDR
     setValue(_env[3], _req->getClient()->getIpAddr()); // ipv4 addr
@@ -136,7 +139,7 @@ CGI::setEnv(void) {
     setValue(_env[6], _req->getLocation()->getAuthRef().getType());
     
     // QUERY_STRING
-    setValue(_env[7], _req->getQueryString());
+    setValue(_env[7],  _req->getUriRef()._query);
     
     // REQUEST_METHOD
     setValue(_env[8], _req->getMethod());
@@ -148,7 +151,7 @@ CGI::setEnv(void) {
     setValue(_env[10], sztos(_req->getBody().length()));
     
     // CONTENT_TYPE
-    setValue(_env[11], _req->getHeaderValue(CONTENT_TYPE));
+    setValue(_env[11], _req->headers.value(CONTENT_TYPE));
     
     // GATEWAY_INTERFACE
     setValue(_env[12], GATEWAY_INTERFACE);
@@ -160,13 +163,15 @@ CGI::setEnv(void) {
     setValue(_env[14], SERVER_SOFTWARE);
     
     // SERVER_PROTOCOL
-    setValue(_env[15], "HTTP/1.1");
+    setValue(_env[15], SERVER_PROTOCOL);
     
     // SERVER_PORT
     setValue(_env[16], sztos(_req->getServerBlock()->getPort()));
 
     // REDIRECT_STATUS
     setValue(_env[17], "200");
+
+    return true;
 }
 
 void
@@ -197,7 +202,7 @@ CGI::setScriptPath(const std::string path) {
 
 int
 CGI::exec() {
-    if (compiled() && !isExecutableFile(_filepath) || !isExecutableFile(_execpath)) {
+    if ((compiled() && !isExecutableFile(_filepath)) || !isExecutableFile(_execpath)) {
         Log.error() << _filepath << " is not executable" << Log.endl;
         return 0;
     }
@@ -279,21 +284,32 @@ CGI::exec() {
         }
     }
 
-    restore_std(tmp[0], tmp[1]);
-    close_pipe(tmp[0], tmp[1]);
-    close_pipe(in[0], -1);
-    close_pipe(-1, out[1]);
-    // Important to close it before reading
-
     if (!_req->getBody().empty()) {
-        _res->getClient()->setWriteFd(in[1]);
+        if (write(in[1], _req->getBody().c_str(), _req->getBody().length()) == -1) {
+            Log.syserr() << "CGI::write: " << Log.endl;
+            restore_std(tmp[0], tmp[1]);
+            close_pipe(tmp[0], tmp[1]);
+            close_pipe(in[0], in[1]);
+            close_pipe(out[0], out[1]);
+            kill(childPID, SIGKILL);
+            return 0;
+        }
     }
 
-    ClientCGI *client = new ClientCGI();
-    client->setReadFd(out[0]);
-    // Place twice in pollfds ? If not, then pollout will never be checked
-    client->setWriteFd(_res->getClient()->getReadFd());
-    g_server->addSocket((struct pollfd) { out[0], POLLIN, 0 }, client);
+    restore_std(tmp[0], tmp[1]);
+    close_pipe(tmp[0], tmp[1]);
+    close_pipe(in[0], in[1]);
+
+    // Important to close it before reading
+    close_pipe(-1, out[1]);
+
+    if (fcntl(out[0], F_SETFL, O_NONBLOCK) < 0) {
+        Log.error() << "fcntl failed" << Log.endl;
+    }
+
+    _res->getClient()->setServerFd(out[0]);
+    size_t id = g_server->addPollfd(out[0], POLLIN);
+    g_server->addClient(id, _res->getClient());
 
     return 1;
 }
