@@ -113,7 +113,7 @@ public:
         return ref;
     }
 
-    void push_front(const_reference ref) {
+    void push_front(reference ref) {
 
         if (!_locked) {    
             pthread_mutex_lock(&_locker);
@@ -126,7 +126,7 @@ public:
         }
     }
 
-    void push_back(const_reference ref) {
+    void push_back(reference ref) {
 
         if (!_locked) {    
             pthread_mutex_lock(&_locker);
