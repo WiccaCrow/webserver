@@ -3,9 +3,8 @@
 
 size_t Worker::count = 0;
 
-Worker::Worker(void) : _id(count++) {
-    Log.debug() << "Worker:: [" << _id << "] created" << Log.endl;
-}
+Worker::Worker(void) : _id(count++) {}
+Worker::~Worker(void) {}
 
 Worker::Worker(const Worker &other) {
     *this = other;
@@ -20,9 +19,6 @@ Worker::operator=(const Worker &other) {
     return *this;
 }
 
-Worker::~Worker(void) {
-    Log.debug() << "Worker:: [" << _id << "] destroyed" << Log.endl;
-}
 
 int
 Worker::id(void) const {
@@ -56,45 +52,26 @@ Worker::join(void) {
     return 1;
 }
 
-static HTTP::Request *
-popRequest(void) {
-    try {
-        HTTP::Request *req = g_server->requests.pop_front();
-        return req;
-
-    } catch (Pool<HTTP::Request *>::Empty &e) {            
-        return NULL;
-    }
-}
-
 void *
 Worker::_cycle(void *ptr) {
     
     Worker *w = reinterpret_cast<Worker *>(ptr);
 
     Log.debug() << "Worker:: [" << w->id() << "] started" << Log.endl;
-    while (g_server->isWorking()) {
+    while (g_server->working()) {
 
-        HTTP::Request *req = popRequest();
-        if (req == NULL) {
-            usleep(WORKER_TIMEOUT);
-            continue ;
-        }
-    
-        HTTP::Response *res = new HTTP::Response(req);
-        if (res == NULL) {
-            Log.syserr() << "Cannot allocate memory for Response" << Log.endl;
-            g_server->requests.push_back(req);
+        HTTP::Response *res = NULL;
+        try {
+            res = g_server->responses.pop_front();
+        } catch(Pool<HTTP::Response *>::Empty &e) {
             usleep(WORKER_TIMEOUT);
             continue ;
         }
 
-        const std::string &path = req->getUriRef()._path;
+        const std::string &path = res->getRequest()->getUriRef()._path;
         Log.debug() << "Worker:: [" << w->id() << "] -> " << path << " started" << Log.endl; 
         res->handle();
         Log.debug() << "Worker:: [" << w->id() << "] -> " << path << " finished" << Log.endl;
-
-        g_server->responses.push_back(res);
     }
 
     Log.debug() << "Worker:: [" << w->id() << "] stopped" << Log.endl;

@@ -3,6 +3,7 @@
 #include "Logger.hpp"
 #include "Globals.hpp"
 #include "Response.hpp"
+#include <pthread.h>
 
 class Worker {
 
