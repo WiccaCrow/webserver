@@ -19,53 +19,123 @@
 #include "Time.hpp"
 #include "Range.hpp"
 
-#define PARSED_NONE    0x0
-#define PARSED_SL      0x1
-#define PARSED_HEADERS 0x2
-#define PARSED_BODY    0x4
+#define PARSED_NONE    0
+#define PARSED_SL      1
+#define PARSED_HEADERS 2
+#define PARSED_BODY    4
 
 namespace HTTP {
 
 class Client;
 
-class Request {
+class ARequest {
+
+private:
+    std::string       _protocol;
+    int               _major : 4;
+    int               _minor : 4;
+
+    std::string       _body;
+    std::string       _head;
+
+    
+    // Parsing
+    bool              _isChunkSize;
+    size_t            _bodySize;
+    size_t            _chunkSize;
+    size_t            _parseFlags;
+
+    bool              _formed;
+    bool              _chunked;
+
+    // Internal status
+    StatusCode        _status;
+
+public:
+    ARequest(void);
+    virtual ~ARequest(void);
+
+    ARequest(const ARequest &);
+    ARequest &operator=(const ARequest &);
+    
+    void setProtocol(const std::string &protocol);
+    void setMajor(int major);
+    void setMinor(int minor);
+    void setFlag(size_t);
+    void setBody(const std::string &);
+    void setHead(const std::string &);
+    void setBodySize(size_t);
+    void setStatus(StatusCode);
+
+    bool flagSet(size_t) const;
+    size_t getFlags(void) const;
+    size_t getBodySize(void) const;
+    StatusCode getStatus(void) const;
+    const std::string &getBody(void) const;
+    const std::string &getHead(void) const;
+    const std::string &getProtocol(void) const;
+    int getMajor(void);
+    int getMinor(void);
+    
+    StatusCode parseChunk(const std::string &);
+    StatusCode writeChunkSize(const std::string &);
+    StatusCode writeChuck(const std::string &);
+
+    virtual bool parseLine(std::string &) = 0;
+    virtual StatusCode parseSL(const std::string &) = 0;
+    virtual StatusCode checkSL(void) = 0;
+    virtual StatusCode parseHeader(const std::string &) = 0;
+    virtual StatusCode checkHeaders(void) = 0;    
+    virtual StatusCode parseBody(const std::string &) = 0;
+    virtual StatusCode writeBody(const std::string &) = 0;
+
+    bool formed(void) const;
+    void formed(bool);
+
+    bool chunked(void) const;
+    void chunked(bool);
+    bool isChunkSize(void) const;
+    void isChunkSize(bool);
+
+};
+
+
+
+
+
+
+class Request : public ARequest {
 
 private:
     std::string                       _method;
-    URI                               _uri;
     std::string                       _rawURI;
-    std::string                       _protocol;
-    std::string                       _resolvedPath;
+
+    URI                               _uri;
     URI                               _host;
     URI                               _referrer;
-    std::map<uint32_t, RequestHeader> _headers;
-    StatusCode                        _status;
-    int                               _major : 4;
-    int                               _minor : 4;
 
-    ServerBlock *_servBlock;
-    Location    *_location;
-    Client      *_client;
+    RangeList                         _ranges;
 
-    bool          _isChuckSize;
-    size_t        _chunkSize;
-    size_t        _bodySize;
-    std::string   _body;
-    uint8_t       _parseFlags;
-    RangeList     _ranges;
+    std::string                       _resolvedPath;
+    
+    ServerBlock *                     _servBlock;
+    Location    *                     _location;
+    Client      *                     _client;
 
-    bool     _isAuthorized;
-    uint32_t _storedHash;
 
-    bool _formed;
-    bool _chuckedRequested;
+    // why here?
+    uint32_t                          _storedHash; 
+    bool                              _authorized;
 
-    std::map<std::string, std::string> _cookie;
+
+    std::map<std::string, std::string> _cookie; // ?
 
 public:
-    Request();
+    Headers<RequestHeader>            headers;
+
+    Request(void);
     Request(Client *);
-    ~Request();
+    ~Request(void);
 
     Request(const Request &other);
     Request &operator=(const Request &other);
@@ -73,83 +143,46 @@ public:
     ServerBlock *getServerBlock() const;
     void         setServerBlock(ServerBlock *);
 
-    Location *getLocation(void);
+    Location *getLocation(void) const;
     void      setLocation(Location *);
 
-    Client *getClient();
-    void          setClient(Client *);
+    Client *getClient(void);
+    void    setClient(Client *);
 
-    const std::string                       &getPath() const;
-    const std::string                       &getMethod() const;
-    const std::string                       &getProtocol() const;
-    const std::map<uint32_t, RequestHeader> &getHeaders() const;
-    const std::string                       &getBody() const;
-    const uint8_t                           &getFlags() const;
-    const HTTP::StatusCode                  &getStatus() const;
-    URI                                     &getUriRef();
-    URI                                     &getHostRef();
-    URI                                     &getReferrerRef();
-    const std::string                       &getRawUri() const;
 
-    RangeList                               &getRangeList();
+    virtual bool parseLine(std::string &);
 
-    bool    formed(void) const;
-    void    formed(bool formed);
+    virtual StatusCode parseSL(const std::string &);
+    virtual StatusCode checkSL(void);
 
-    // Needed to be improved
-    const std::string &getQueryString() const;
-    const std::string &getResolvedPath() const;
+    virtual StatusCode parseHeader(const std::string &);
+    virtual StatusCode checkHeaders(void);
+
+    virtual StatusCode parseBody(const std::string &);
+    virtual StatusCode writeBody(const std::string &);
+
+    const std::string    &getPath(void) const;
+    const std::string    &getMethod(void) const;
+    const std::string    &getRawUri(void) const;
+    
+    URI                  &getUriRef(void);
+    URI                  &getHostRef(void);
+    URI                  &getReferrerRef(void);
+
+    RangeList            &getRangeList(void);
+
+    const std::string    &getResolvedPath(void) const;
     void setResolvedPath(const std::string &);
-    const std::string  getHeaderValue(uint32_t key) const;
-
-    bool empty();
-
-    int  set(uint8_t flag) const;
-    void setFlag(uint8_t flag);
-    void removeFlag(uint8_t flag);
-    void clear(void);
-
-    bool parseLine(std::string &line);
-
-    StatusCode parseSL(const std::string &line);
-    StatusCode parseHeader(const std::string &line);
-    StatusCode parseChunk(const std::string &line);
-    StatusCode writeChunkSize(const std::string &line);
-    StatusCode writeChuck(const std::string &line);
-    StatusCode parseBody(const std::string &line);
-    StatusCode writeBody(const std::string &line);
-
-    StatusCode checkSL(void);
-    StatusCode checkHeaders(void);
-    void       resolvePath(void);
-
-private:
-    // bool isValidMethod(const std::string &method);
-    // bool isValidPath(const std::string &path);
-    bool isValidProtocol(const std::string &protocol);
-
-public:
-    // for chunked
-    bool          getBodySizeFlag();
-    void          setBodySizeFlag(bool isSize);
-    size_t        getBodySize();
-    void          setBodySize(size_t size);
-    void          setStatus(const HTTP::StatusCode &status);
-
-    bool authNeeded(void);
-    bool isAuthorized(void) const;
-    bool isHeaderExist(const HeaderCode code);
-    bool isHeaderExist(const uint32_t code);
-    void setAuthFlag(bool);
+    void resolvePath(void);
+    
+    bool authorized(void) const;
+    void authorized(bool);
 
     uint32_t getStoredHash() const;
     void     setStoredHash(uint32_t);
 
     const std::map<std::string, std::string> &getCookie(void);
     void                                      setCookie(std::map<std::string, std::string> cookie);
-
-    void chuckedRequested(bool);
-    bool chuckedRequested(void);
 };
 
 } // namespace HTTP

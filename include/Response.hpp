@@ -20,36 +20,31 @@
 #include "Request.hpp"
 #include "ResponseHeader.hpp"
 #include "HTML.hpp"
+#include "ErrorResponses.hpp"
 
 namespace HTTP {
 
-# define CHUNK_SIZE 40960
-
 class Client;
 
-class Response {
+class Response : public ARequest {
 
-    std::string _res;
-    std::string _resLeftToSend;
+    std::string _rawStatus;
+
     Request    *_req;
-    Client     *_client;
     CGI        *_cgi;
-    std::string _body;
-    std::string _head;
-    std::string _extraHeaders;
-    size_t      _bodyLength;
-    bool        _isFormed;
-    StatusCode  _status;
+    bool        _pending;
 
     char        *_fileaddr;
     int         _filefd;
     struct stat _filestat;
+
     RangeSet    _range;
 
+    bool        _isProxy;
+    bool        _isCGI;
+
 public:
-    typedef std::list<ResponseHeader>::iterator iter;
-    typedef std::list<ResponseHeader>::const_iterator const_iter;
-    std::list<ResponseHeader> headers;
+    Headers<ResponseHeader> headers;
 
     Response(void);
     Response(Request *req);
@@ -74,7 +69,7 @@ public:
     void PATCH(void);
     void TRACE(void);
 
-    void        performMethod(void);
+    void        makeResponseForMethod(void);
     void        makeResponseForError(void);
     void        makeResponseForNonAuth(void);
     int         makeResponseForDir(void);
@@ -85,20 +80,18 @@ public:
     int         makeResponseForRedirect(StatusCode, const std::string &);
 
     int         contentForGetHead(void);
-    bool        indexFileExists(const std::string &resourcePath);
-    int         openFileToResponse(const std::string &resourcePath);
-    int         listing(const std::string &resourcePath);
+    bool        indexFileExists(const std::string &);
+    int         openFileToResponse(const std::string &);
+    int         listing(const std::string &);
     int         fillDirContent(std::deque<std::string> &, const std::string &directory);
-    std::string createTableLine(const std::string &file);
+    std::string createTableLine(const std::string &);
     int         fillFileStat(const std::string &file, struct stat *st);
-    std::string getContentType(const std::string &resourcePath);
+    std::string getContentType(const std::string &);
 
-    ResponseHeader *getHeader(uint32_t hash);
-    void            makeHead(void);
-    void            addHeader(uint32_t hash, const std::string &value);
-    void            addHeader(uint32_t hash);
+    void        makeHead(void);
+    void        addHeader(uint32_t, const std::string & = "");
 
-    bool  isCGI(const std::string &filepath);
+    void        matchCGI(const std::string &filepath);
     
     void  makeChunk();
 
@@ -106,27 +99,32 @@ public:
     // to send response
     void shouldBeClosedIf(void);
 
-    const std::string &getBody(void) const;
-    const std::string &getHead(void) const;
-    void               setBody(const std::string &);
-    size_t             getBodyLength(void) const;
-    void               setBodyLength(size_t);
-    Request           *getRequest(void);
     const std::string &getStatusLine(void);
-    StatusCode         getStatus();
-    void               setStatus(HTTP::StatusCode status);
 
-    Client *        getClient(void);
+    Request *getRequest(void);
+    Client *getClient(void);
 
-    bool            isFormed(void) const;
-    void            isFormed(bool formed);
+    bool pending(void) const;
+    void pending(bool);
 
     std::string getEtagFile(const std::string &filename);
 
     void *getFileAddr(void);
     int64_t getFileSize(void);
 
+    bool isCGI(void) const;
+    bool isProxy(void) const;
+
     const std::string getContentRangeValue(RangeSet &);
+
+    virtual bool parseLine(std::string &);
+    virtual StatusCode parseSL(const std::string &);
+    virtual StatusCode checkSL(void);
+    virtual StatusCode parseHeader(const std::string &);
+    virtual StatusCode checkHeaders(void);    
+    virtual StatusCode parseBody(const std::string &);
+    virtual StatusCode writeBody(const std::string &);
+
 };
 
 } // namespace HTTP

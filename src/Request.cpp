@@ -4,31 +4,229 @@
 
 namespace HTTP {
 
-Request::Request()
-    : _servBlock(NULL)
-    , _location(NULL)
-    , _client(NULL)
-    , _isChuckSize(false)
-    , _chunkSize(0)
+ARequest::ARequest(void)
+    : _major(0)
+    , _minor(0) 
+    , _isChunkSize(false)
     , _bodySize(0)
+    , _chunkSize(0)
     , _parseFlags(PARSED_NONE)
-    , _isAuthorized(false)
-    , _storedHash(0)
-    , _isFormed(false) {
+    , _formed(false)
+    , _status(OK) {}
+
+ARequest::~ARequest(void) {}
+ARequest::ARequest(const ARequest &other) {
+    *this = other;
 }
 
+ARequest &
+ARequest::operator=(const ARequest &other) {
+    if (this != &other) {
+        _body         = other._body;
+        _head         = other._head;
+        _bodySize     = other._bodySize;
+        _isChunkSize  = other._isChunkSize;
+        _parseFlags   = other._parseFlags;
+        _chunkSize    = other._chunkSize;
+        _formed       = other._formed;
+        _chunked      = other._chunked;
+        _status       = other._status;
+        _minor        = other._minor;
+        _major        = other._major;
+        _protocol     = other._protocol;
+
+    }
+    return *this;
+}
+
+const std::string &
+ARequest::getBody(void) const {
+    return _body;
+}
+
+const std::string &
+ARequest::getHead(void) const {
+    return _head;
+}
+
+const std::string &
+ARequest::getProtocol(void) const {
+    return _protocol;
+}
+
+int
+ARequest::getMajor(void) {
+    return _major;
+}
+int
+ARequest::getMinor(void) {
+    return _minor;
+}
+void
+ARequest::setBody(const std::string &body) {
+    _body = body;
+}
+
+void
+ARequest::setHead(const std::string &head) {
+    _head = head;
+}
+
+
+size_t
+ARequest::getFlags(void) const {
+    return _parseFlags;
+}
+
+StatusCode
+ARequest::getStatus() const {
+    return _status;
+}
+
+bool
+ARequest::formed(void) const {
+    return _formed;
+}
+
+void
+ARequest::formed(bool formed) {
+    _formed = formed;
+}
+
+void
+ARequest::setProtocol(const std::string &protocol) {
+    _protocol = protocol;
+}
+
+void
+ARequest::setMajor(int major) {
+    _major = major;
+}
+
+void
+ARequest::setMinor(int minor) {
+    _minor = minor;
+}
+
+void
+ARequest::setFlag(size_t flag) {
+    _parseFlags |= flag;
+}
+
+void
+ARequest::chunked(bool flag) {
+    _chunked = flag;
+}
+
+bool
+ARequest::chunked(void) const {
+    return _chunked;
+}
+
+bool
+ARequest::flagSet(size_t flag) const {
+    return _parseFlags & flag;
+}
+
+// for chunked
+bool
+ARequest::isChunkSize(void) const {
+    return _isChunkSize;
+}
+
+void
+ARequest::isChunkSize(bool flag) {
+    _isChunkSize = flag;
+}
+
+size_t
+ARequest::getBodySize(void) const {
+    return _bodySize;
+}
+
+void
+ARequest::setBodySize(size_t size) {
+    _bodySize = size;
+}
+
+void
+ARequest::setStatus(StatusCode status) {
+    _status = status;
+}
+
+StatusCode
+ARequest::writeChuck(const std::string &chunk) {
+
+    if (_chunkSize >= chunk.length()) {
+        _body += chunk;
+        _chunkSize -= chunk.length();
+
+    } else {
+        if (chunk[_chunkSize] != '\r' || 
+            chunk[_chunkSize + 1] != '\n') {
+            Log.error() << "ARequest:: Invalid chuck length" << Log.endl;
+            return BAD_REQUEST;
+        }
+        _body += chunk.substr(0, chunk.length() - 2);
+        _chunkSize = 0;
+        isChunkSize(true);
+    }
+
+    return CONTINUE;
+}
+
+StatusCode
+ARequest::parseChunk(const std::string &line) {    
+    return (isChunkSize() ? writeChunkSize(line) : writeChuck(line));
+}
+
+StatusCode
+ARequest::writeChunkSize(const std::string &line) {
+
+    if (line.empty()) {
+        Log.error() << "Request:: Chunk size is empty" << Log.endl;
+        return BAD_REQUEST;
+    }
+
+    char *end = NULL;
+    _chunkSize = strtoul(line.c_str(), &end, 16);
+
+    if (!end || end[0] != '\r' || end[1] != '\n') {
+        Log.error() << "Request:: Chunks size is invalid: " << line << Log.endl;
+        return BAD_REQUEST;
+
+    } else if (_chunkSize == ULONG_MAX) {
+        Log.error() << "Request:: Chunk size is ULONG_MAX: " << line << Log.endl;
+        return BAD_REQUEST;
+
+    } else if (_chunkSize == 0 && line[0] != '0') {
+        Log.error() << "Request:: Chunk size parsing failed: " << line << Log.endl;
+        return BAD_REQUEST;
+
+    } else if (_chunkSize == 0) {
+        setFlag(PARSED_BODY);
+        return PROCESSING;
+    }
+
+    isChunkSize(false);
+    return CONTINUE;
+}
+
+Request::Request(void) 
+    : ARequest()
+    , _servBlock(NULL)
+    , _location(NULL)
+    , _client(NULL)
+    , _storedHash(0)
+    , _authorized(false) {}
+
 Request::Request(Client *client)
-    : _servBlock(NULL)
+    : ARequest()
+    , _servBlock(NULL)
     , _location(NULL)
     , _client(client)
-    , _isChuckSize(false)
-    , _chunkSize(0)
-    , _bodySize(0)
-    , _parseFlags(PARSED_NONE)
-    , _isAuthorized(false)
-    , _storedHash(0)
-    , _isFormed(false) {
-}
+    , _storedHash(0) 
+    , _authorized(false) {}
 
 Request::~Request() {}
 
@@ -42,58 +240,18 @@ Request::operator=(const Request &other) {
         _method       = other._method;
         _uri          = other._uri;
         _rawURI       = other._rawURI;
-        _protocol     = other._protocol;
         _resolvedPath = other._resolvedPath;
-        _headers      = other._headers;
-        _status       = other._status;
         _servBlock    = other._servBlock;
         _location     = other._location;
-        _isChuckSize  = other._isChuckSize;
-        _bodySize     = other._bodySize;
-        _body         = other._body;
-        _parseFlags   = other._parseFlags;
-        _isAuthorized = other._isAuthorized;
+        _authorized   = other._authorized;
         _cookie       = other._cookie;
-        _chunkSize    = other._chunkSize;
         _client       = other._client;
-        _isFormed     = other._isFormed;
         _host         = other._host;
-        _minor        = other._minor;
-        _major        = other._major;
         _storedHash   = other._storedHash;
-        _chuckedRequested = other._chuckedRequested;
+       
+        headers      = other.headers;
     }
     return *this;
-}
-
-ServerBlock *
-Request::getServerBlock() const {
-    return _servBlock;
-}
-
-void
-Request::setServerBlock(ServerBlock *serverBlock) {
-    _servBlock = serverBlock;
-}
-
-Location *
-Request::getLocation(void) {
-    return _location;
-}
-
-void
-Request::setLocation(Location *location) {
-    _location = location;
-}
-
-Client *
-Request::getClient() {
-    return _client;
-}
-
-void
-Request::setClient(Client *client) {
-    _client = client;
 }
 
 const std::string &
@@ -106,30 +264,38 @@ Request::getPath() const {
     return _uri._path;
 }
 
-const std::string &
-Request::getProtocol() const {
-    return _protocol;
+
+
+ServerBlock *
+Request::getServerBlock(void) const {
+    return _servBlock;
 }
 
-const std::map<uint32_t, RequestHeader> &
-Request::getHeaders() const {
-    return _headers;
+void
+Request::setServerBlock(ServerBlock *servBlock) {
+    _servBlock = servBlock;
 }
 
-const std::string &
-Request::getBody() const {
-    return _body;
+Location *
+Request::getLocation(void) const {
+    return _location;
 }
 
-const uint8_t &
-Request::getFlags() const {
-    return _parseFlags;
+void
+Request::setLocation(Location *location) {
+    _location = location;
 }
 
-const HTTP::StatusCode &
-Request::getStatus() const {
-    return _status;
+Client *
+Request::getClient(void) {
+    return _client;
 }
+
+void
+Request::setClient(Client *client) {
+    _client = client;
+}
+
 
 URI &
 Request::getUriRef() {
@@ -152,26 +318,6 @@ Request::getRawUri() const {
     return _rawURI;
 }
 
-bool
-Request::formed(void) const {
-    return _formed;
-}
-
-void
-Request::formed(bool formed) {
-    _formed = formed;
-}
-
-void
-Request::setFlag(uint8_t flag) {
-    _parseFlags |= flag;
-}
-
-void
-Request::removeFlag(uint8_t flag) {
-    _parseFlags &= ~flag;
-}
-
 uint32_t
 Request::getStoredHash() const {
     return _storedHash;
@@ -187,24 +333,7 @@ Request::setStoredHash(uint32_t hash) {
     _storedHash = hash;
 }
 
-void
-Request::chuckedRequested(bool flag) {
-    _chuckedRequested = flag;
-}
 
-bool
-Request::chuckedRequested(void) {
-    return _chuckedRequested;
-}
-
-// Remove
-void
-Request::clear() {}
-
-const std::string &
-Request::getQueryString() const {
-    return _uri._query;
-}
 
 const std::string &
 Request::getResolvedPath() const {
@@ -216,37 +345,18 @@ Request::setResolvedPath(const std::string &path) {
     _resolvedPath = path;
 }
 
-
 bool
-Request::authNeeded(void) {
-    return getLocation()->getAuthRef().isSet();
-}
-
-bool
-Request::isAuthorized(void) const {
-    return _isAuthorized;
+Request::authorized(void) const {
+    return !getLocation()->getAuthRef().isSet() || _authorized;
 }
 
 void
-Request::setAuthFlag(bool flag) {
-    _isAuthorized = flag;
+Request::authorized(bool flag) {
+    _authorized = flag;
 }
 
-const std::string
-Request::getHeaderValue(uint32_t key) const {
-    // return _headers[key]; does the same thing
-    std::map<uint32_t, RequestHeader>::const_iterator it = _headers.find(key);
-    if (it == _headers.end()) {
-        return "";
-    }
-    return it->second.value;
-}
 
-int
-Request::set(uint8_t flag) const {
-    return _parseFlags & flag;
-}
-
+// Maybe should be moved back to Client?
 HTTP::ServerBlock *
 matchServerBlock(const std::string &host, size_t port, const std::string &ip) {
     typedef std::list<HTTP::ServerBlock>::iterator iter_l;
@@ -276,13 +386,14 @@ matchServerBlock(const std::string &host, size_t port, const std::string &ip) {
 
 bool
 Request::parseLine(std::string &line) {
-    if (!set(PARSED_SL)) {
-        rtrim(line, "\r\n");
+
+    if (!flagSet(PARSED_SL)) {
+        rtrim(line, CRLF);
         setStatus(!line.empty() ? parseSL(line) : CONTINUE);
-    } else if (!set(PARSED_HEADERS)) {
-        rtrim(line, "\r\n");
+    } else if (!flagSet(PARSED_HEADERS)) {
+        rtrim(line, CRLF);
         setStatus(!line.empty() ? parseHeader(line) : checkHeaders());
-    } else if (!set(PARSED_BODY)) {
+    } else if (!flagSet(PARSED_BODY)) {
         setStatus(parseBody(line));
     } else {
         setStatus(PROCESSING);
@@ -298,13 +409,13 @@ Request::parseLine(std::string &line) {
             setLocation(getServerBlock()->matchLocation(_uri._path));
             resolvePath();
         }
-        isFormed(true);
+        formed(true);
 
         if (getStatus() == PROCESSING) {
             setStatus(OK);
         }
     }
-    return isFormed();
+    return formed();
 }
 
 StatusCode
@@ -320,7 +431,7 @@ Request::parseSL(const std::string &line) {
     _uri.parse(_rawURI);
 
     skipSpaces(line, pos);
-    _protocol = getWord(line, " ", pos);
+    setProtocol(getWord(line, " ", pos));
 
     skipSpaces(line, pos);
     if (line[pos]) {
@@ -343,36 +454,22 @@ Request::checkSL(void) {
     //     return BAD_REQUEST;
     // }
 
-    if (!isValidProtocol(_protocol)) {
-        Log.debug() << "Request::checkSL: protocol " << _protocol << " is not valid" << Log.endl;
+    if (!isValidProtocol(getProtocol())) {
+        Log.debug() << "Request::checkSL: protocol " << getProtocol() << " is not valid" << Log.endl;
         return BAD_REQUEST;
-    } else if (_major > 1) {
-        Log.debug() << "Request::checkSL: protocol " << _protocol << " is not supported" << Log.endl;
+    } 
+    setMajor(getProtocol()[5] - '0');
+    setMinor(getProtocol()[7] - '0');
+    if (getMajor() > 1) {
+        Log.debug() << "Request::checkSL: protocol " << getProtocol() << " is not supported" << Log.endl;
         return HTTP_VERSION_NOT_SUPPORTED;
-    } else if (_major != 1 || _minor != 1) {
+    } else if (getMajor() != 1 || getMinor() != 1) {
         Log.debug() << "Request::checkSL: protocol " << _method << " is not implemented" << Log.endl;
         return BAD_REQUEST;
     }
 
     setFlag(PARSED_SL);
     return CONTINUE;
-}
-
-// Should be moved later (Part of the RFC validator)
-bool
-Request::isValidProtocol(const std::string &protocol) {
-    if (protocol.find("HTTP/") != 0) {
-        return false;
-    }
-    if (!isdigit(protocol[5]) || protocol[6] != '.') {
-        return false;
-    }
-    _major = protocol[5] - '0';
-    if (!isdigit(protocol[7]) || protocol.length() != 8) {
-        return false;
-    }
-    _minor = protocol[7] - '0';
-    return true;
 }
 
 void
@@ -412,8 +509,8 @@ Request::checkHeaders(void) {
     }
 
     // Call each header handler
-    std::map<uint32_t, RequestHeader>::iterator it;
-    for (it = _headers.begin(); it != _headers.end(); it++) {
+    Headers<RequestHeader>::iterator it;
+    for (it = headers.begin(); it != headers.end(); ++it) {
         StatusCode status = it->second.handle(*this);
         if (status != CONTINUE) {
             return status;
@@ -426,7 +523,7 @@ Request::checkHeaders(void) {
         return METHOD_NOT_ALLOWED;
     }
 
-    if (!isHeaderExist(TRANSFER_ENCODING) && !isHeaderExist(CONTENT_LENGTH)) {
+    if (!headers.has(TRANSFER_ENCODING) && !headers.has(CONTENT_LENGTH)) {
         // PUT or POST or PATCH
         if (_method[0] == 'P') {
             Log.error() << "Request::Transfer-Encoding/Content-Length is missing in request" << Log.endl;
@@ -445,76 +542,17 @@ Request::parseHeader(const std::string &line) {
     RequestHeader header;
 
     if (!header.parse(line)) {
-        Log.debug() << "ParseHeader:: Invalid header " << line << Log.endl;
+        Log.debug() << "ARequest:: Invalid header " << line << Log.endl;
         return BAD_REQUEST;
     }
 
     // dublicate header
-    if (isHeaderExist(header.hash)) {
-        Log.debug() << "ParseHeader:: Dublicated header" << Log.endl;
+    if (headers.has(header.hash)) {
+        Log.debug() << "ARequest:: Dublicated header" << Log.endl;
         return BAD_REQUEST;
     }
 
-    // header.handle(*this);
-    _headers.insert(std::make_pair(header.hash, header));
-    return CONTINUE;
-}
-
-StatusCode
-Request::writeChuck(const std::string &chunk) {
-
-    if (_chunkSize >= chunk.length()) {
-        _body += chunk;
-        _chunkSize -= chunk.length();
-
-    } else {
-        if (chunk[_chunkSize] != '\r' || 
-            chunk[_chunkSize + 1] != '\n') {
-            Log.error() << "Request:: Invalid chuck length" << Log.endl;
-            return BAD_REQUEST;
-        }
-        _body += chunk.substr(0, chunk.length() - 2);
-        _chunkSize = 0;
-        _isChuckSize = true;
-    }
-
-    return CONTINUE;
-}
-
-StatusCode
-Request::parseChunk(const std::string &line) {    
-    return (_isChuckSize ? writeChunkSize(line) : writeChuck(line));
-}
-
-StatusCode
-Request::writeChunkSize(const std::string &line) {
-
-    if (line.empty()) {
-        Log.error() << "Request:: Chunk size is empty" << Log.endl;
-        return BAD_REQUEST;
-    }
-
-    char *end = NULL;
-    _chunkSize = strtoul(line.c_str(), &end, 16);
-
-    if (!end || end[0] != '\r' || end[1] != '\n') {
-        Log.error() << "Request:: Chunks size is invalid: " << line << Log.endl;
-        return BAD_REQUEST;
-
-    } else if (_chunkSize == ULONG_MAX) {
-        Log.error() << "Request:: Chunk size is ULONG_MAX: " << line << Log.endl;
-        return BAD_REQUEST;
-
-    } else if (_chunkSize == 0 && line[0] != '0') {
-        Log.error() << "Request:: Chunk size parsing failed: " << line << Log.endl;
-        return BAD_REQUEST;
-
-    } else if (_chunkSize == 0) {
-        setFlag(PARSED_BODY);
-        return PROCESSING;
-    }
-
-    _isChuckSize = false;
+    headers.insert(header);
     return CONTINUE;
 }
 
@@ -522,62 +560,28 @@ StatusCode
 Request::writeBody(const std::string &body) {
     Log.debug() << "Request::writeBody " << body << Log.endl;
 
-    if (body.length() > _bodySize) {
-        Log.error() << "Request: the body length is too long" << Log.endl;
+    if (body.length() > getBodySize()) {
+        Log.error() << "Request: Body length is too long" << Log.endl;
         return BAD_REQUEST;
     }
-    _body = body;
+    setBody(body);
     setFlag(PARSED_BODY);
     return PROCESSING;
-}
-
-bool
-Request::isHeaderExist(const HeaderCode code) {
-    return isHeaderExist(static_cast<uint32_t>(code));
-}
-
-bool
-Request::isHeaderExist(const uint32_t code) {
-    return (_headers.find(code) != _headers.end());
 }
 
 StatusCode
 Request::parseBody(const std::string &line) {
     Log.debug() << "Request::parseBody " << line << Log.endl;
-    if (isHeaderExist(TRANSFER_ENCODING)) {
+    if (headers.has(TRANSFER_ENCODING)) {
         Log.debug() << "Request::parseChunk" << Log.endl;
         return parseChunk(line);
-    } else if (isHeaderExist(CONTENT_LENGTH)) {
+    } else if (headers.has(CONTENT_LENGTH)) {
         Log.debug() << "Request::writeBody" << Log.endl;
         return writeBody(line);
     }
     return PROCESSING;
 }
 
-// for chunked
-bool
-Request::getBodySizeFlag() {
-    return (_isChuckSize);
-}
-
-void
-Request::setBodySizeFlag(bool isSize) {
-    _isChuckSize = isSize;
-}
-
-size_t
-Request::getBodySize() {
-    return (_bodySize);
-}
-void
-Request::setBodySize(size_t size) {
-    _bodySize = size;
-}
-
-void
-Request::setStatus(const HTTP::StatusCode &status) {
-    _status = status;
-}
 
 const std::map<std::string, std::string> &
 Request::getCookie(void) {
