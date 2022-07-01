@@ -3,7 +3,7 @@
 const std::size_t reservedClients = 64;
 
 Server::Server() 
-    : _working(true) {
+    : _working(true), isDaemon(false) {
     _pollfds.reserve(reservedClients);
     // _clients.reserve(reservedClients);
 }
@@ -70,7 +70,40 @@ sigint_handler(int) {
 }
 
 void
+Server::daemon(void) {
+    pid_t pid, sid;
+        
+    pid = fork();
+    if (pid < 0) {
+        Log.syserr() << "Daemon:: fork failed" << Log.endl;
+        exit(EXIT_FAILURE);
+    }
+
+    if (pid > 0) {
+        Log.info() << "Daemon:: starting with pid " << pid << Log.endl;
+        exit(EXIT_SUCCESS);
+    }
+
+    umask(0);       
+   
+    sid = setsid();
+    if (sid < 0) {
+        Log.syserr() << "Daemon::SID creation failed" << Log.endl;
+        exit(EXIT_FAILURE);
+    }
+
+    Log.logToStd(false);
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+}
+
+void
 Server::start(void) {
+    if (isDaemon) {
+        daemon();
+    }
+
     signal(SIGINT, sigint_handler);
 
     createSockets();
@@ -223,7 +256,7 @@ Server::queuePollFd(int fd, int events) {
     _waitingFds.push_back(tmp);
 }
 
-std::size_t
+void
 Server::addPollFd(void) {
 
     do {
@@ -231,7 +264,7 @@ Server::addPollFd(void) {
         try {
             tmp = _waitingFds.pop_front();
         } catch (Pool<struct pollfd>::Empty &e) {
-            return 0;
+            return ;
         }
 
         iter_pfd it = std::find_if(_pollfds.begin(), _pollfds.end(), isFree);
@@ -242,7 +275,7 @@ Server::addPollFd(void) {
         }
     } while (!_waitingFds.empty());
 
-    return 0;
+    return ;
 }
 
 void

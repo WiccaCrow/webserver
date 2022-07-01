@@ -53,6 +53,9 @@ private:
     Pool<struct pollfd>  _waitingFds;
 
 public:
+    bool isDaemon;
+    Pool<HTTP::Response *> responses;
+
     Server(void);
     Server(const Server &);
     ~Server(void);
@@ -65,18 +68,17 @@ public:
     void start(void);
     void finish(void);
 
-    Pool<HTTP::Response *> responses;
-
-    void    addClient(int fd, HTTP::Client * = NULL);
+    void addClient(int fd, HTTP::Client * = NULL);
     
     void queuePollFd(int fd, int events);
-    std::size_t  addPollFd(void);
-    void    rmPollFd(int fd);
+    void addPollFd(void);
+    void rmPollFd(int fd);
 
 private:
     void connect(std::size_t servid, int servfd);
     void disconnect(int fd);
-    
+   
+    void daemon(void);
     int  poll(void);
     void process(void);
     void checkTimeout(void);

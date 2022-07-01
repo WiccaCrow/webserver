@@ -4,6 +4,8 @@
 
 Server *g_server;
 
+bool isDaemon = false;
+
 void
 printUsage(void) {
     Log.info() << "Usage: webserv [conf.json] [-flags]" << Log.endl;
@@ -77,6 +79,9 @@ parseFlags(char **av) {
         } else if (!strcmp(av[i], "-h")) {
             printUsage();
             return 0;
+        } else if (!strcmp(av[i], "--daemon")) {
+            isDaemon = true;
+            i++;
         } else if (i == 1 && !endsWith(av[i], ".json")) {
             Log.error() << "Unknown parameter " << av[i] << Log.endl;
             printUsage();
@@ -94,7 +99,7 @@ main(int ac, char **av) {
     if (!parseFlags(av)) {
         return 1;
     }
-    Log.enableLogFile();
+    Log.logToFile(true);
 
     std::string config = DEFAULT_CONF_PATH;
     if (av[1] && endsWith(av[1], ".json")) {
@@ -107,6 +112,7 @@ main(int ac, char **av) {
     }
     Log.info() << "Config " << config << " is loaded" << Log.endl;
 
+    g_server->isDaemon = isDaemon;
     g_server->start();
 
     delete g_server;

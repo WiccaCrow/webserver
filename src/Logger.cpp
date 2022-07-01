@@ -33,6 +33,7 @@ Logger::Logger() : std::ostream(this)
     , _logfile("")
     , _logDir(LOGS_DIR"/")
     , _logToFile(false)
+    , _logToStd(true)
     , _flags(0) {
     pthread_mutex_init(&_lock_print, NULL);
 }
@@ -50,17 +51,31 @@ Logger::setLogDir(const std::string &dir) {
 }
 
 void
-Logger::enableLogFile(void) {
+Logger::logToStd(bool flag) {
+    _logToStd = flag;
+}
 
-    _logToFile = true;
-    _logfile   = _logDir + Time::local("%d-%m-%Y_%H-%M-%S") + ".log";
+void
+Logger::logToFile(bool flag) {
 
-    _out.open(_logfile.c_str(), std::ios_base::out | std::ios_base::trunc);
+    if (_logToFile == flag) {
+        return ;
+    }
 
-    if (!_out.good()) {
-        this->error() << "Cannot open/create logfile " << _logfile << Log.endl;
+    _logToFile = flag;
+    if (_logToFile) {
+        _logfile = _logDir + Time::local("%d-%m-%Y_%H-%M-%S") + ".log";
+
+        _out.open(_logfile.c_str(), std::ios_base::out | std::ios_base::trunc);
+
+        if (!_out.good()) {
+            this->error() << "Cannot open/create logfile " << _logfile << Log.endl;
+        } else {
+            this->info() << "Logging into " << _logfile.c_str() << Log.endl;
+        }
     } else {
-        this->info() << "Logging into " << _logfile.c_str() << Log.endl;
+        _out.close();
+        _out.clear();
     }
 }
 

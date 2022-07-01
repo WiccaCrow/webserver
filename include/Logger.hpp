@@ -29,6 +29,7 @@ private:
     std::string _logfile;
     std::string _logDir;
     bool        _logToFile;
+    bool        _logToStd;
     uint8_t     _flags;
     uint8_t     _flag;
     static pthread_mutex_t _lock_print;
@@ -48,7 +49,8 @@ public:
     Logger     &error(void);
     Logger     &syserr(void);
     Logger     &print(uint8_t);
-    void        enableLogFile(void);
+    void        logToFile(bool);
+    void        logToStd(bool);
     void        setLogDir(const std::string &);
 
     Logger &operator<<(std::ostream& (*func)(std::ostream &));
@@ -60,10 +62,12 @@ public:
                 _out << val;
             }
 
-            if ((_flag & LOG_ERROR) || (_flag & LOG_SYSERR)) {
-                std::cerr << val;
-            } else {
-                std::cout << val;
+            if (_logToStd) {
+                if ((_flag & LOG_ERROR) || (_flag & LOG_SYSERR)) {
+                    std::cerr << val;
+                } else {
+                    std::cout << val;
+                }
             }
         }
         return *this;
