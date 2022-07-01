@@ -16,42 +16,20 @@ namespace HTTP {
 class Proxy {
 
 private:
-    URI         *_uri;
+    Response    *_res;
+
     std::string  _host;
     std::string  _port;
-    bool         _on;
-    StatusCode   _status;
-    int          _fdOut;
-    std::size_t       _idOtherSide;
-    Response    *_res;
 
 public:
     Proxy(void);
-    Proxy(URI *);
     ~Proxy(void);
 
-    Proxy(const Proxy &other);
-    Proxy &operator=(const Proxy &other);
+    Proxy(const Proxy &);
+    Proxy &operator=(const Proxy &);
 
-    void clear(void);
-
-    void   setUri(URI *uri);
-    std::size_t run(void);
-
-    addrinfo *setConnection(addrinfo *p);
-
-    void       setStatus(StatusCode code);
-    StatusCode getStatus(void);
-
-    void  setFdOut(int fd);
-    int   getFdOut(void);
-
-    bool on(void);
-    void on(bool onOff);
-
-    void   idOtherSide(std::size_t id);
-    std::size_t idOtherSide(void);
-
+    int pass(void);
+    int setConnection(struct addrinfo *);
 };
 
 }

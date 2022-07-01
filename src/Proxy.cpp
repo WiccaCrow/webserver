@@ -3,20 +3,7 @@
 
 namespace HTTP {
 
-Proxy::Proxy(void)
-            : _uri(NULL)
-            , _on(false)
-            , _fdOut(-1)
-            , _idOtherSide(0) {}
-
-Proxy::Proxy(URI *uri)
-            : _uri(uri)
-            , _host(_uri->_scheme)
-            , _port(_uri->_port_s)
-            , _on(false)
-            , _fdOut(-1)
-            , _idOtherSide(0) {}
-
+Proxy::Proxy(void) {}
 Proxy::~Proxy(void) {}
 
 Proxy::Proxy(const Proxy &other) {
@@ -26,120 +13,62 @@ Proxy::Proxy(const Proxy &other) {
 Proxy &
 Proxy::operator=(const Proxy &other) {
     if (this != &other) {
-        _uri         = other._uri;
-        _on          = other._on;
-        _status      = other._status;
-        _fdOut       = other._fdOut;
-        _idOtherSide = other._idOtherSide;
-        if (_uri) {
-            _host        = _uri->_scheme;
-            _port        = _uri->_port_s;
-        }
+        // Rewrite
     }
     return *this;
 }
 
-void
-Proxy::clear(void) {
-    _uri = NULL;
-    _on  = false;
-}
+int
+Proxy::pass(void) {
 
-void
-Proxy::setUri(URI *uri) {
-    _uri  = uri;
-    _host = _uri->_host;
-    _port = _uri->_port_s;
-}
-
-std::size_t
-Proxy::run(void) {
-    // fill struct addrinfo
-    addrinfo *ipListAddrinfo = NULL;
-    if (getaddrinfo(_host.c_str(), _port.c_str(), NULL, &ipListAddrinfo)) {
-        setStatus(INTERNAL_SERVER_ERROR);
-        Log.error() << "Proxy::getaddrinfo for " << _host << ":" << _port << std::endl;
-        return 0;
+    int res = 0;
+    struct addrinfo *addrlst = NULL;
+    if (getaddrinfo(_host.c_str(), _port.c_str(), NULL, &addrlst)) {
+        Log.error() << "Proxy::getaddrinfo -> " << _host << ":" << _port << std::endl;
+        res = 0;
     }
  
-    addrinfo *p = setConnection(ipListAddrinfo);
-    // add fd for poll and client
-    if (p && p->ai_family == AF_INET) {
-        struct sockaddr_in *addr = (struct sockaddr_in *) p->ai_addr;
-        _idOtherSide = g_server->addPollfd(_fdOut, POLLIN | POLLOUT);
-        g_server->addClient(_idOtherSide, _res->getClient());
-        on(true);
-        setStatus(OK);
-    }
-    freeaddrinfo(ipListAddrinfo);
-    
-    return _idOtherSide;
-}
-
-addrinfo *
-Proxy::setConnection(addrinfo *p) {
-    for (; p; p = p->ai_next) {
-        if (p->ai_socktype != SOCK_STREAM) {
-            continue ;
-        }
-        _fdOut = g_server->connect(p->ai_addr, p->ai_addrlen);
-        if (_fdOut == -1) {
-            Log.debug() << "Proxy::connection failed" << std::endl;
-            continue;
-        }
-        break ;
+    if (!setConnection(addrlst)) {
+        res = 0;
     }
 
-    if (!p) {
-        setStatus(BAD_GATEWAY);
-        Log.debug() << "Proxy: for this " << _host << ":" << _port 
-                    << " connection not possible: " << std::endl;
-    }
-    
-    char ip[INET_ADDRSTRLEN];
-    Log.info() << "Proxy: Connection Established (fd[" << _fdOut <<"]), ip: " << inet_ntop(AF_INET, &((struct sockaddr_in *) p->ai_addr)->sin_addr, ip, INET_ADDRSTRLEN)<< std::endl;
-
-    return p;
-}
-
-void
-Proxy::setStatus(StatusCode code) {
-    _status = code;
-}
-
-StatusCode
-Proxy::getStatus(void) {
-    return _status;
-}
-
-void
-Proxy::setFdOut(int fd) {
-    _fdOut = fd;
+    freeaddrinfo(addrlst);
+    return res;
 }
 
 int
-Proxy::getFdOut(void) {
-    return _fdOut;
-}
+Proxy::setConnection(struct addrinfo *lst) {
 
-bool
-Proxy::on(void) {
-    return _on;
-}
+    Socket *sock = _res->getClient()->getTargetSock();
+    int fd = sock->create();
 
-void
-Proxy::on(bool onOff) {
-    _on = onOff;
-}
+    if (fd < 0) {
+        Log.error() << "Proxy:: Cannot create socket" << Log.endl;
+        return 0;
+    }
 
-void   
-Proxy::idOtherSide(std::size_t id) {
-    _idOtherSide = id;
-}
+    for (; lst; lst = lst->ai_next) {
+        if (lst->ai_socktype != SOCK_STREAM) {
+            continue ;
+        }
 
-std::size_t 
-Proxy::idOtherSide(void) {
-    return _idOtherSide;
+        if (sock->connect(lst->ai_addr, lst->ai_addrlen)) {
+            break ;
+        }
+    }
+
+    if (lst == NULL) {
+        Log.error() << "Proxy:: Failed [" << fd << "] -> " << _host << ":" << _port << std::endl;
+        return 0;
+    }
+
+    struct sockaddr_in *addr = (struct sockaddr_in *)lst->ai_addr;
+    Log.info() << "Proxy:: Established [" << fd << "] -> " << inet_ntoa(addr->sin_addr) << std::endl;
+
+    g_server->queuePollFd(fd, POLLIN | POLLOUT);
+    g_server->addClient(fd, _res->getClient());
+
+    return 1;
 }
 
 }

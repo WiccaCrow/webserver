@@ -386,8 +386,6 @@ CGI::exec(Response *res) {
     res->getClient()->setTargetTimeout(time(0));
 
     g_server->queuePollFd(fd, POLLIN);
-    // Should add data to server's queue
-    // std::size_t id = g_server->addPollFd(fd, POLLIN);
     g_server->addClient(fd, res->getClient());
 
     return 1;
