@@ -27,6 +27,26 @@ Socket::setFd(int fd) {
 }
 
 void
+Socket::setAddr(const std::string &addr) {
+    _addr = addr;
+}
+
+std::size_t
+Socket::getPort(void) const {
+    return _port;
+}
+
+void
+Socket::setPort(std::size_t port) {
+    _port = port;
+}
+
+const std::string &
+Socket::getAddr(void) const {
+    return _addr;
+}
+
+void
 Socket::setData(const char *data) {
     _data = data;
 }
@@ -70,6 +90,7 @@ Socket::create(int af) {
         Log.syserr() << "Server:: socket failed" << Log.endl;
     } else {
         _af = af;
+        _fd = fd;
     }
     return fd;
 }
@@ -181,4 +202,5 @@ Socket::getline(std::string &line, std::size_t size) {
 
     line = _rem.substr(0, pos);
     _rem.erase(0, pos);
+    return 1;
 }
