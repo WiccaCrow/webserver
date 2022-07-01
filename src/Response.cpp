@@ -599,7 +599,9 @@ Response::makeHead(void) {
 
 void
 Response::addHeader(uint32_t hash, const std::string &value) {
-    headers[hash].value = value;
+    if (headers[hash].value.empty()) {
+        headers[hash].value = value;
+    }
 }
 
 int

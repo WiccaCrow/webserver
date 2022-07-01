@@ -167,28 +167,30 @@ Server::stopWorkers(void) {
 void
 Server::process(void) {
     for (std::size_t id = 0; id < _pollfds.size(); id++) {
-        if (_pollfds[id].revents & POLLNVAL) {
+        const int fd = _pollfds[id].fd;
+
+        if (fd < 0 || _pollfds[id].revents & POLLNVAL) {
             continue ;
         }
 
         if (id < _sockets.size()) {
             if (_pollfds[id].revents & POLLIN) {
-                connect(id, _pollfds[id].fd);
+                connect(id, fd);
             }
-        } else if (_clients[id] != NULL) {
+        } else {
 
             if (_pollfds[id].revents & POLLIN) {
-                _clients[id]->pollin(_pollfds[id].fd);
+                _clients[fd]->pollin(fd);
             } else if (_pollfds[id].revents & POLLHUP) {
-                _clients[id]->pollhup(_pollfds[id].fd);
+                _clients[fd]->pollhup(fd);
             } else if (_pollfds[id].revents & POLLOUT) {
-                _clients[id]->pollout(_pollfds[id].fd);
+                _clients[fd]->pollout(fd);
             } else if (_pollfds[id].revents & POLLERR) {
-                _clients[id]->pollerr(_pollfds[id].fd);
+                _clients[fd]->pollerr(fd);
             }
 
-            if (_clients[id]->shouldBeClosed()) {
-                disconnect(_pollfds[id].fd);
+            if (_clients[fd]->shouldBeClosed()) {
+                disconnect(fd);
             }
         }
         _pollfds[id].revents = 0;
@@ -271,7 +273,6 @@ Server::checkTimeout(void) {
 
     std::time_t cur = std::time(0);
 
-    
     for (ClientsMap::iterator it = _clients.begin(); it != _clients.end(); ++it) {
 
         std::time_t t_client = it->second->getClientTimeout();

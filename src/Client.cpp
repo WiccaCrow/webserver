@@ -282,8 +282,8 @@ Client::receive(Request *req) {
     
     if (!getClientSock()->read()) {
         Log.debug() << "Client:: [" << getClientSock()->getFd() << "] peer closed connection" << Log.endl;
-        g_server->rmPollFd(getClientSock()->getFd());
-        g_server->rmPollFd(getTargetSock()->getFd());
+        // g_server->rmPollFd(getClientSock()->getFd());
+        // g_server->rmPollFd(getTargetSock()->getFd());
         shouldBeClosed(true);
         return ;
     }
