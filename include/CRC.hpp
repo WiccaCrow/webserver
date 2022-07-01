@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stddef.h>
+#include <cstddef>
 #include <stdint.h>
 
-uint32_t crc(const char *buf, size_t len);
+uint32_t crc(const char *buf, std::size_t len);

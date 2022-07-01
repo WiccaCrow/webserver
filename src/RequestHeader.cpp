@@ -47,12 +47,12 @@ RequestHeader::AcceptEncoding(Request &req) {
     std::vector<std::string> encodings = split(value, ",");
 
     // gzip compress deflate br identity *
-    for (size_t i = 0; i < encodings.size(); i++) {
+    for (std::size_t i = 0; i < encodings.size(); i++) {
         
         trim(encodings[i], SP CRLF);
         std::string encoding = encodings[i];
         
-        size_t pos = encodings[i].find(';');
+        std::size_t pos = encodings[i].find(';');
         if (pos == std::string::npos) {
             encoding = encodings[i].substr(0, pos);
         }
@@ -177,8 +177,8 @@ RequestHeader::Cookie(Request &req) {
     std::map<std::string, std::string> cookie;
 
     std::vector<std::string> cookie_pairs = split(value, " ;");
-    for (size_t i = 0; i < cookie_pairs.size(); ++i) {
-        size_t colonPos = cookie_pairs[i].find(':');
+    for (std::size_t i = 0; i < cookie_pairs.size(); ++i) {
+        std::size_t colonPos = cookie_pairs[i].find(':');
         if (colonPos == std::string::npos) {
             continue;
         }
@@ -226,7 +226,7 @@ RequestHeader::Host(Request &req) {
         return BAD_REQUEST;
     }
     
-    if (req.getClient()->getServerPort() != host._port) {
+    if (req.getClient()->getServerSock()->getPort() != host._port) {
         Log.error() << "Host: Port mismatch " << host._port_s << Log.endl;
         return BAD_REQUEST;
     }
@@ -443,7 +443,7 @@ RequestHeader::TransferEncoding(Request &req) {
     }
 
     std::vector<std::string> currentValues = split(this->value, " ,");
-    for (size_t i = 0; i < currentValues.size(); ++i) {
+    for (std::size_t i = 0; i < currentValues.size(); ++i) {
         if (acceptedValues.find(currentValues[i]) == acceptedValues.end()) {
             Log.error() << "Transfer coding parameter \"" << currentValues[i] << "\" is not supported" << Log.endl;
             return NOT_IMPLEMENTED;

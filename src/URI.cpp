@@ -37,7 +37,7 @@ void URI::parse(std::string uri) {
     }
 
     // scheme    
-    size_t pos = uri.find("://");
+    std::size_t pos = uri.find("://");
     iter_t schemeEnd = uri.begin();
     if (pos != std::string::npos) {
         std::advance(schemeEnd, pos);
@@ -101,7 +101,7 @@ std::string URI::URLencode(const std::string &s) {
 
     std::string result;
     result.reserve(s.length() * 3);
-    for (size_t i = 0; i < s.length(); i++) {
+    for (std::size_t i = 0; i < s.length(); i++) {
         if (shouldBeEncoded[static_cast<unsigned char>(s[i])]) {
             result += s[i];
         } else {
@@ -145,7 +145,7 @@ std::string URI::URLdecode(const std::string &s) {
     std::string result;
     // abcedf 6
     result.reserve(s.length());
-    size_t i;
+    std::size_t i;
     for (i = 0; i < s.length() - 2; i++) {
         if (static_cast<unsigned char>(s[i]) == '%') {
             char d1 = hex2dec[static_cast<unsigned char>(s[i + 1])];

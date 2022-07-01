@@ -9,14 +9,14 @@
 
 std::string join(std::vector<std::string> &v, const std::string &delim = ", ");
 std::vector<std::string> split(const std::string &source, const std::string &delimiters = " ");
-std::string              getWord(const std::string &line, const char *delims, size_t &pos);
+std::string              getWord(const std::string &line, const char *delims, std::size_t &pos);
 
 std::string &rtrim(std::string &s, const char *t);
 std::string &ltrim(std::string &s, const char *t);
 
 void trim(std::string &s, const char *t);
 void toLowerCase(std::string &s);
-void skipSpaces(const std::string &line, size_t &pos);
+void skipSpaces(const std::string &line, std::size_t &pos);
 
 bool startsWith(const std::string &str, const std::string &beg);
 bool endsWith(const std::string &str, const std::string &end);
@@ -31,7 +31,7 @@ std::string ultos(unsigned long val);
 std::string lltos(long long val);
 std::string ltos(long val);
 std::string itos(int val);
-std::string sztos(size_t val);
+std::string sztos(std::size_t val);
 
 #endif
 
@@ -43,7 +43,7 @@ bool stoi64(int64_t &, const std::string &);
 bool stoll(long long &num, char const *s);
 bool stoll(char const *s);
 
-size_t strlen_u8(const std::string &s);
+std::size_t strlen_u8(const std::string &s);
 
 time_t getModifiedTime(const std::string &file);
 

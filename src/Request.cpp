@@ -73,7 +73,7 @@ ARequest::setHead(const std::string &head) {
 }
 
 
-size_t
+std::size_t
 ARequest::getFlags(void) const {
     return _parseFlags;
 }
@@ -109,7 +109,7 @@ ARequest::setMinor(int minor) {
 }
 
 void
-ARequest::setFlag(size_t flag) {
+ARequest::setFlag(std::size_t flag) {
     _parseFlags |= flag;
 }
 
@@ -124,7 +124,7 @@ ARequest::chunked(void) const {
 }
 
 bool
-ARequest::flagSet(size_t flag) const {
+ARequest::flagSet(std::size_t flag) const {
     return _parseFlags & flag;
 }
 
@@ -139,13 +139,13 @@ ARequest::isChunkSize(bool flag) {
     _isChunkSize = flag;
 }
 
-size_t
+std::size_t
 ARequest::getBodySize(void) const {
     return _bodySize;
 }
 
 void
-ARequest::setBodySize(size_t size) {
+ARequest::setBodySize(std::size_t size) {
     _bodySize = size;
 }
 
@@ -358,13 +358,13 @@ Request::authorized(bool flag) {
 
 // Maybe should be moved back to Client?
 HTTP::ServerBlock *
-matchServerBlock(const std::string &host, size_t port, const std::string &ip) {
+matchServerBlock(const std::string &host, std::size_t port, const std::string &ip) {
     typedef std::list<HTTP::ServerBlock>::iterator iter_l;
     typedef std::list<HTTP::ServerBlock> bslist;
 
     bool searchByName = !isValidIpv4(host) ? true : false;
 
-    bslist &blocks = g_server->getServerBlocks(port);
+    bslist &blocks = g_server->operator[](port);
     iter_l found = blocks.end();
     for (iter_l block = blocks.begin(); block != blocks.end(); ++block) {
         if (block->hasAddr(ip)) {
@@ -402,7 +402,7 @@ Request::parseLine(std::string &line) {
     if (getStatus() != CONTINUE) {
         if (!_servBlock) {
             Log.debug() << "Serverblock is not set after parsing. Default matching" << Log.endl;
-            setServerBlock(matchServerBlock(_host._host, getClient()->getServerPort(), getClient()->getServerIpAddr()));
+            setServerBlock(matchServerBlock(_host._host, getClient()->getServerSock()->getPort(), getClient()->getServerSock()->getAddr()));
         }
         if (!_location) {
             Log.debug() << "Location is not set after parsing. Default matching" << Log.endl;
@@ -423,7 +423,7 @@ Request::parseSL(const std::string &line) {
 
     Log.debug() << line << Log.endl;
 
-    size_t pos = 0;
+    std::size_t pos = 0;
     _method    = getWord(line, " ", pos);
 
     skipSpaces(line, pos);
@@ -501,7 +501,7 @@ Request::checkHeaders(void) {
     // }
 
     if (!_servBlock) {
-        setServerBlock(matchServerBlock(_uri._host, getClient()->getServerPort(), getClient()->getServerIpAddr()));
+        setServerBlock(matchServerBlock(_uri._host, getClient()->getServerSock()->getPort(), getClient()->getServerSock()->getAddr()));
     }
     if (!_location) {
         setLocation(getServerBlock()->matchLocation(_uri._path));

@@ -220,7 +220,7 @@ Location::MethodsVec
 getDefaultAllowedMethods() {
 
     Location::MethodsVec allowed(9);
-    for (size_t i = 0; validMethods[i]; i++) {
+    for (std::size_t i = 0; validMethods[i]; i++) {
         allowed.push_back(validMethods[i]);   
     }
 
@@ -255,13 +255,13 @@ const char * validAuthBasicKeywords[] = {
 bool
 isValidKeyword(const std::string &key, const char *contextKeywords[]) {
 
-    for (size_t i = 0; contextKeywords[i]; i++) {
+    for (std::size_t i = 0; contextKeywords[i]; i++) {
         if (contextKeywords[i] == key) {
             return true;
         }
     }
 
-    for (size_t i = 0; validKeywords[i]; i++) {
+    for (std::size_t i = 0; validKeywords[i]; i++) {
         if (validKeywords[i] == key) {
             Log.error() << "Invalid context for keyword " << key << Log.endl;
             return false;
@@ -300,7 +300,7 @@ parseCGI(Object *src, Location::CGIsMap &res) {
 
     Object *obj = src->get(key)->toObj();
 
-    for (Object::iterator it = obj->begin(); it != obj->end();; it++) {
+    for (Object::iterator it = obj->begin(); it != obj->end(); it++) {
         CGI cgi;
 
         std::string value;
@@ -698,7 +698,7 @@ loadConfig(const string filename) {
 
     Object *ptr;
     try {
-        JSON::JSON json(filename);
+        Parser json(filename);
         ptr = json.parse();
         if (ptr == NULL) {
             Log.error() << "Failed to parse " << filename << Log.endl;

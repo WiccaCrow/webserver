@@ -62,7 +62,7 @@ Response::~Response(void) {
 void
 Response::shouldBeClosedIf(void) {
 
-    static const size_t size = 5;
+    static const std::size_t size = 5;
     static const StatusCode failedStatuses[size] = {
         BAD_REQUEST,
         REQUEST_TIMEOUT,
@@ -71,8 +71,9 @@ Response::shouldBeClosedIf(void) {
         UNAUTHORIZED
     };
 
-    for (size_t i = 0; i < size; i++) {
+    for (std::size_t i = 0; i < size; i++) {
         if (getStatus() == failedStatuses[i]) {
+            Log.debug() << "Response::shouldBeClosedIf" << Log.endl;
             getClient()->shouldBeClosed(true);
             addHeader(CONNECTION, "close");
             break ;
@@ -287,7 +288,7 @@ Response::makeResponseForRedirect(StatusCode code, const std::string &url) {
 bool
 Response::indexFileExists(const std::string &resourcePath) {
     const std::vector<std::string> &indexes = _req->getLocation()->getIndexRef();
-    for (size_t i = 0; i < indexes.size(); ++i) {
+    for (std::size_t i = 0; i < indexes.size(); ++i) {
         std::string path = resourcePath + indexes[i];
         if (isFile(path)) {
             getRequest()->setResolvedPath(path);
@@ -565,7 +566,7 @@ std::string
 Response::getContentType(const std::string &resourcePath) {
     typedef std::map<std::string, std::string>::const_iterator c_iter;
 
-    size_t pos = resourcePath.find_last_of('.');
+    std::size_t pos = resourcePath.find_last_of('.');
     if (pos != std::string::npos) {
         c_iter it = MIMEs.find(resourcePath.substr(pos + 1));
         if (it != MIMEs.end()) {
@@ -604,9 +605,7 @@ Response::addHeader(uint32_t hash, const std::string &value) {
 int
 Response::makeResponseForCGI(void) {
     _isCGI = true;
-    _cgi->link(getRequest(), this);
-    if (!_cgi->setEnv() || !_cgi->exec()) {
-        Log.debug() << "Failed" << Log.endl;
+    if (!_cgi->exec(this)) {
         setStatus(BAD_GATEWAY);
         return 0;
     } else {
@@ -722,11 +721,7 @@ Response::matchCGI(const std::string &filepath) {
 bool
 Response::parseLine(std::string &line) {
 
-    // Log.debug() << "Line: " << line << Log.endl;
-    if (_isCGI) {
-        setFlag(PARSED_SL);
-    }
-    if (!flagSet(PARSED_SL)) {
+    if (!_isCGI && !flagSet(PARSED_SL)) {
         rtrim(line, CRLF);
         setStatus(!line.empty() ? parseSL(line) : CONTINUE);
     } else if (!flagSet(PARSED_HEADERS)) {
@@ -765,7 +760,7 @@ Response::parseSL(const std::string &line) {
 
     Log.debug() << line << Log.endl;
 
-    size_t pos = 0;
+    std::size_t pos = 0;
     setProtocol(getWord(line, " ", pos));
     skipSpaces(line, pos);
 
@@ -845,12 +840,6 @@ Response::checkHeaders(void) {
 
     headers.erase(CONNECTION);
     headers.erase(KEEP_ALIVE);
-    
-    // We should not check header host, but host entity itself 
-    // if (!isHeaderExist(HOST)) {
-    //     Log.error() << "Response:: Host not found" << Log.endl;
-    //     return BAD_REQUEST;
-    // }
 
     Log.debug() << "Response::ParsedHeaders::Continue" << Log.endl;
     return CONTINUE;
@@ -881,6 +870,10 @@ Response::parseBody(const std::string &line) {
     } else if (headers.has(CONTENT_LENGTH)) {
         Log.debug() << "Response::writeBody" << Log.endl;
         return writeBody(line);
+    } else {
+        setBody(getBody() + line);
+        return CONTINUE;
+        // _body += line;
     }
     return PROCESSING;
 }

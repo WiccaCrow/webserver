@@ -85,11 +85,11 @@ ServerBlock::hasAddr(const std::string &addr) const {
 
 Location *
 ServerBlock::matchLocation(const std::string &path) {
-    size_t matchMaxLen = 0;
+    std::size_t matchMaxLen = 0;
 
     LocationsMap::iterator match = _locations.end();
     for (LocationsMap::iterator it = _locations.begin(); it != _locations.end(); ++it) {
-        size_t len = it->first.length();
+        std::size_t len = it->first.length();
         if (path.find(it->first) == 0 && (path.length() == it->first.length() || path[it->first.length()] == '/')) {
             if (len > matchMaxLen) {
                 match = it;

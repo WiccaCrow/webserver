@@ -52,7 +52,7 @@ Proxy::setUri(URI *uri) {
     _port = _uri->_port_s;
 }
 
-size_t
+std::size_t
 Proxy::run(void) {
     // fill struct addrinfo
     addrinfo *ipListAddrinfo = NULL;
@@ -133,11 +133,11 @@ Proxy::on(bool onOff) {
 }
 
 void   
-Proxy::idOtherSide(size_t id) {
+Proxy::idOtherSide(std::size_t id) {
     _idOtherSide = id;
 }
 
-size_t 
+std::size_t 
 Proxy::idOtherSide(void) {
     return _idOtherSide;
 }

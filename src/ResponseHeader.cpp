@@ -71,6 +71,7 @@ ResponseHeader::Connection(Response &res) {
     }
 
     if (res.getRequest()->headers.value(CONNECTION) == "close") {
+        Log.debug() << "ResponseHeader::Connection close detected" << Log.endl;
         res.getClient()->shouldBeClosed(true);
         value = "close";
     } else {

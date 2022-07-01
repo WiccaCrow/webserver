@@ -31,7 +31,7 @@ parseLogLevel(const char *val) {
     }
 
     uint8_t logLevel = 0;
-    for (size_t i = 0; val[i]; i++) {
+    for (std::size_t i = 0; val[i]; i++) {
         switch (val[i]) {
             case 'd': logLevel |= LOG_DEBUG; break;
             case 'i': logLevel |= LOG_INFO; break;
@@ -63,7 +63,7 @@ parseLogDirectory(const char *val) {
 
 int
 parseFlags(char **av) {
-    for (size_t i = 1; av[i]; i++) {
+    for (std::size_t i = 1; av[i]; i++) {
         if (!strcmp(av[i], "-l")) {
             if (!parseLogLevel(av[i + 1])) {
                 return 0;

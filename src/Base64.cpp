@@ -19,7 +19,7 @@ const std::string Base64::encode(const std::string &in) {
 
     std::string res;
     res.reserve((in.length() / 3) * 4);
-    for (size_t i = 0; i < in.size(); i += 3) {
+    for (std::size_t i = 0; i < in.size(); i += 3) {
 
         char o1 = in[i];
         char o2 = o1 != 0 ? in[i + 1] : 0;
@@ -44,7 +44,7 @@ const std::string Base64::decode(const std::string &in) {
     std::string res;
     res.reserve((in.length() / 4) * 3);
 
-    for (size_t i = 0; i < in.size(); i += 4) {
+    for (std::size_t i = 0; i < in.size(); i += 4) {
 
         if (in[i] & 0x80) {
             // Invalid string

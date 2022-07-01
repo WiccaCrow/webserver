@@ -37,8 +37,8 @@ stoll(char const *s) {
 
 std::vector<std::string>
 split(const std::string &source, const std::string &delimiters) {
-    size_t prev = 0;
-    size_t curr = 0;
+    std::size_t prev = 0;
+    std::size_t curr = 0;
 
     std::vector<std::string> results;
     while ((curr = source.find_first_of(delimiters, prev)) != std::string::npos) {
@@ -58,7 +58,7 @@ split(const std::string &source, const std::string &delimiters) {
 std::string
 join(std::vector<std::string> &v, const std::string &delim) {
     std::string res;
-    for (size_t i = 0; i < v.size(); ++i) {
+    for (std::size_t i = 0; i < v.size(); ++i) {
         res += v[i];
         if (i + 1 < v.size()) {
             res += delim;
@@ -101,8 +101,8 @@ trim(std::string &s, const char *t) {
 
 void
 toLowerCase(std::string &s) {
-    size_t length = s.length();
-    for (size_t i = 0; i < length; ++i) {
+    std::size_t length = s.length();
+    for (std::size_t i = 0; i < length; ++i) {
         s[i] = std::tolower(s[i]);
     }
 }
@@ -126,9 +126,9 @@ readFile(const std::string &filename) {
 }
 
 std::string
-getWord(const std::string &line, const char *delims, size_t &pos) {
-    size_t tmp = pos;
-    size_t end = pos = line.find(delims, pos);
+getWord(const std::string &line, const char *delims, std::size_t &pos) {
+    std::size_t tmp = pos;
+    std::size_t end = pos = line.find(delims, pos);
 
     if (end == std::string::npos)
         end = pos = line.length();
@@ -136,7 +136,7 @@ getWord(const std::string &line, const char *delims, size_t &pos) {
 }
 
 void
-skipSpaces(const std::string &line, size_t &pos) {
+skipSpaces(const std::string &line, std::size_t &pos) {
     for (; line[pos] == ' '; pos++)
         ;
 }
@@ -179,7 +179,7 @@ itos(int val) {
 }
 
 std::string
-sztos(size_t val) {
+sztos(std::size_t val) {
     char buf[25];
     snprintf(buf, 25, "%zu", val);
     return std::string(buf);
@@ -188,11 +188,11 @@ sztos(size_t val) {
 #endif
 
 
-size_t strlen_u8(const std::string &s) {
+std::size_t strlen_u8(const std::string &s) {
 
-    size_t ic = 0; //char index
+    std::size_t ic = 0; //char index
 
-    for (size_t i = 0; i < s.length(); i++, ic++) {
+    for (std::size_t i = 0; i < s.length(); i++, ic++) {
         int c = static_cast<unsigned char>(s[i]);
         if (!isascii(c)) {
             if ((c & 0xE0) == 0xC0) {
@@ -283,7 +283,7 @@ isValidOctet(char *octet) {
 
 bool
 isValidScheme(const std::string &s) {
-    for (size_t i = 0; i < s.size(); i++) {
+    for (std::size_t i = 0; i < s.size(); i++) {
         if (!isalnum(s[i]) && !strchr("+-.", s[i])) {
             return false;
         }
@@ -293,7 +293,7 @@ isValidScheme(const std::string &s) {
 
 bool
 isValidPort(const std::string &s) {
-    for (size_t i = 0; i < s.size(); i++) {
+    for (std::size_t i = 0; i < s.size(); i++) {
         if (!isdigit(s[i])) {
             return false;
         }
@@ -303,7 +303,7 @@ isValidPort(const std::string &s) {
 
 bool
 isValidUserInfo(const std::string &s) {
-    for (size_t i = 0; i < s.length(); ++i) {
+    for (std::size_t i = 0; i < s.length(); ++i) {
         if (isPctEncoded(s.c_str() + i)) {
             i += 2;
         } else if (!isUnreserved(s[i]) && !isSubDelims(s[i]) && s[i] != ':') {
@@ -316,7 +316,7 @@ isValidUserInfo(const std::string &s) {
 
 bool
 isValidAuthority(const std::string &s) {
-    size_t posA = s.find("@");
+    std::size_t posA = s.find("@");
     if (posA != std::string::npos) {
         if (!isValidUserInfo(s.substr(0, posA))) {
             return false;
@@ -324,7 +324,7 @@ isValidAuthority(const std::string &s) {
     } else {
         posA = 0;
     }
-    size_t posC = s.find(":", posA + 1);
+    std::size_t posC = s.find(":", posA + 1);
     if (posC != std::string::npos) {
         if (!isValidPort(s.substr(posC + 1))) {
             return false;
@@ -357,10 +357,10 @@ isValidIpLiteral(const std::string &s) {
     return isValidIpvFuture(s) || isValidIpv6(s);
 }
 
-size_t
+std::size_t
 isSegmentNz(const std::string &s) {
 
-    for (size_t i = 0; i < s.length(); ++i) {
+    for (std::size_t i = 0; i < s.length(); ++i) {
         if (isPctEncoded(s.c_str() + i)) {
             i += 2;
         } else if (!isUnreserved(s[i]) && !isSubDelims(s[i]) && !strchr("@:", s[i]) ) {
@@ -370,10 +370,10 @@ isSegmentNz(const std::string &s) {
     return s.length();
 }
 
-size_t
+std::size_t
 isSegmentNzNc(const std::string &s) {
 
-    for (size_t i = 0; i < s.length(); ++i) {
+    for (std::size_t i = 0; i < s.length(); ++i) {
         if (isPctEncoded(s.c_str() + i)) {
             i += 2;
         } else if (!isUnreserved(s[i]) && !isSubDelims(s[i]) && s[i] != '@') {
@@ -383,14 +383,14 @@ isSegmentNzNc(const std::string &s) {
     return s.length();
 }
 
-size_t
+std::size_t
 isValidSegment(const std::string &s) {
 
     if (s[0] != '/') {
         return 0;
     }
 
-    for (size_t i = 1; i < s.length(); ++i) {
+    for (std::size_t i = 1; i < s.length(); ++i) {
         if (isPctEncoded(s.c_str() + i)) {
             i += 2;
         } else if (!isUnreserved(s[i]) && !isSubDelims(s[i]) && !strchr("@:", s[i])) {
@@ -412,8 +412,8 @@ bool
 isValidPathAbempty(const std::string &s) {
     // *( "/" segment )
 
-    for (size_t i = 0; i < s.size(); ) {
-        size_t pos = isValidSegment(s.substr(i));
+    for (std::size_t i = 0; i < s.size(); ) {
+        std::size_t pos = isValidSegment(s.substr(i));
         if (pos == 0) {
             return false;
         }
@@ -434,7 +434,7 @@ isValidPathAbsolute(const std::string &s) {
     } else if (s.length() == 1) {
         return true;
     } else {
-        size_t pos = isSegmentNz(s.substr(1));
+        std::size_t pos = isSegmentNz(s.substr(1));
         if (pos == 0) {
             return false;
         } else if (pos == s.length()) {
@@ -450,7 +450,7 @@ bool
 isValidPathNoScheme(const std::string &s) {
     // segment-nz-nc *( "/" segment )  
 
-    size_t pos = isSegmentNzNc(s);
+    std::size_t pos = isSegmentNzNc(s);
     if (pos == 0) {
         return false;
     } else if (pos == s.length()) {
@@ -464,7 +464,7 @@ bool
 isValidPathRootless(const std::string &s) {
     // segment-nz *( "/" segment )
 
-    size_t pos = isSegmentNz(s);
+    std::size_t pos = isSegmentNz(s);
     if (pos == 0) {
         return false;
     } else if (pos == s.length()) {
@@ -486,7 +486,7 @@ isValidRegName(const std::string &regname) {
     if (regname.length() > 255) {
         return false;
     }
-    for (size_t i = 0; i < regname.length(); ++i) {
+    for (std::size_t i = 0; i < regname.length(); ++i) {
         if (isPctEncoded(regname.c_str() + i)) {
             i += 2;
         } else if (!isUnreserved(regname[i]) && !isSubDelims(regname[i])) {
@@ -512,7 +512,7 @@ isValidPath(const std::string &path) {
 
 bool
 isWord(const std::string word) {
-    for (size_t i = 0; i < word.length(); i++) {
+    for (std::size_t i = 0; i < word.length(); i++) {
         if (!isalnum(word[i]))
             return false;
     }

@@ -15,7 +15,7 @@ struct URI {
     std::string _path;
     std::string _query;
     std::string _fragment;
-    size_t _port;
+    std::size_t _port;
 
     void parse(std::string uri);
     static std::string URLencode(const std::string &);

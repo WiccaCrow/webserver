@@ -47,7 +47,7 @@ static uint32_t crc_table[] = {
 };
 
 uint32_t
-crc(const char *buf, size_t len) {
+crc(const char *buf, std::size_t len) {
     register uint32_t oldcrc32;
 
     oldcrc32 = 0xFFFFFFFF;

@@ -10,7 +10,7 @@ static bool
 splitCredentials(const std::string &line, std::pair<std::string, std::string> &ref) {
     
     std::pair<std::string, std::string> crds;
-    size_t pos = line.find(':');
+    std::size_t pos = line.find(':');
     if (pos == std::string::npos) {
         return false;
     }

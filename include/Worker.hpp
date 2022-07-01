@@ -8,7 +8,7 @@
 class Worker {
 
 public:
-    static size_t count;
+    static std::size_t count;
 
 private:
     int       _id;

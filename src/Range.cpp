@@ -99,7 +99,7 @@ RangeSet::combine(const RangeSet &r2) {
 bool
 RangeSet::parse(const std::string &s) {
 
-    size_t pos = s.find('-');
+    std::size_t pos = s.find('-');
     if (pos == std::string::npos) {
         return false;
     }
@@ -172,24 +172,24 @@ bool RangeList::empty(void) {
     return (_ranges.begin() == _ranges.end());
 }
 
-size_t
+std::size_t
 RangeList::size(void) {
     return _ranges.size();
 }
 
-RangeSet &RangeList::operator[](size_t index) {
+RangeSet &RangeList::operator[](std::size_t index) {
     return _ranges[index];
 }
 
 RangeList::iterator
-RangeList::iter_at(size_t index) {
+RangeList::iter_at(std::size_t index) {
     iterator it = _ranges.begin();
     std::advance(it, index);
     return it;
 }
 
 RangeList::const_iterator
-RangeList::iter_at(size_t index) const {
+RangeList::iter_at(std::size_t index) const {
     const_iterator it = _ranges.begin();
     std::advance(it, index);
     return it;
@@ -206,7 +206,7 @@ RangeList::parse(const std::string &s) {
 
     ltrim(_raw, " ");
 
-    size_t pos = _raw.find('=');
+    std::size_t pos = _raw.find('=');
     if (pos == std::string::npos) {
         return false;
     }
@@ -221,7 +221,7 @@ RangeList::parse(const std::string &s) {
         return false;
     }
 
-    for (size_t i = 0; i < ranges.size(); i++) {
+    for (std::size_t i = 0; i < ranges.size(); i++) {
         RangeSet set;
         if (!set.parse(ranges[i])) {
             _ranges.clear();
@@ -242,7 +242,7 @@ RangeList::compress(void) {
 
     std::sort(_ranges.begin(), _ranges.end());
 
-    for (size_t i = 0; i < _ranges.size() - 1; ) {        
+    for (std::size_t i = 0; i < _ranges.size() - 1; ) {        
         if (_ranges[i].combine(_ranges[i + 1])) {
             _ranges.erase(iter_at(i + 1));
             i = 0;

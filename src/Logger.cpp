@@ -11,12 +11,12 @@ static const std::vector<std::string> initTitles(void) {
     titles[LOG_ERROR] = "ERROR";
     titles[LOG_SYSERR] = "SYSERR";
 
-    size_t max = 0;
-    for (size_t i = 0; i < titles.size(); i++) {
+    std::size_t max = 0;
+    for (std::size_t i = 0; i < titles.size(); i++) {
         max = titles[i].length() > max ? titles[i].length() : max;
     }
 
-    for (size_t i = 0; i < titles.size(); i++) {
+    for (std::size_t i = 0; i < titles.size(); i++) {
         if (!titles[i].empty()) {
             titles[i] += std::string(max - titles[i].length(), ' ');
         }

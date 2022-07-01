@@ -16,7 +16,7 @@ bool
 Header::parse(const std::string &line, bool trimKey) {
     
     // Log.debug() << line << Log.endl;
-    size_t colonPos = line.find(':');
+    std::size_t colonPos = line.find(':');
     if (colonPos == std::string::npos) {
         return false;
     }

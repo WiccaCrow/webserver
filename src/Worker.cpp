@@ -1,7 +1,7 @@
 #include "Worker.hpp"
 #include "Server.hpp"
 
-size_t Worker::count = 0;
+std::size_t Worker::count = 0;
 
 Worker::Worker(void) : _id(count++) {}
 Worker::~Worker(void) {}

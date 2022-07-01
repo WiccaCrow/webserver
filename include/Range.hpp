@@ -75,12 +75,12 @@ public:
     const_reverse_iterator rbegin() const;
     const_reverse_iterator rend() const;
 
-    RangeSet &operator[](size_t index);
+    RangeSet &operator[](std::size_t index);
     bool empty(void);
-    size_t size(void);
+    std::size_t size(void);
     
-    iterator iter_at(size_t);
-    const_iterator iter_at(size_t) const;
+    iterator iter_at(std::size_t);
+    const_iterator iter_at(std::size_t) const;
 
     bool parse(const std::string &);
     void compress(void);

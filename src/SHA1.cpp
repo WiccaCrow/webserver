@@ -23,7 +23,7 @@ shift(int n, uint32_t x) {
 }
 
 static uint32_t
-f(size_t t, uint32_t B, uint32_t C, uint32_t D) {
+f(std::size_t t, uint32_t B, uint32_t C, uint32_t D) {
     if (t < 20) {
         return (B & C) | (~B & D);
     } else if (t < 40) {
@@ -37,13 +37,13 @@ f(size_t t, uint32_t B, uint32_t C, uint32_t D) {
 
 static void
 processChunk(void) {
-    for (size_t t = 16; t < 80; t++) {
+    for (std::size_t t = 16; t < 80; t++) {
         W[t] = shift(1, W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16]);
     }
 
     uint32_t A = H[0], B = H[1], C = H[2], D = H[3], E = H[4];
 
-    for (size_t t = 0; t < 80; t++) {
+    for (std::size_t t = 0; t < 80; t++) {
         uint32_t tmp = shift(5, A) + f(t, B, C, D) + E + W[t] + K[t / 20];
         E = D;
         D = C;
@@ -61,8 +61,8 @@ processChunk(void) {
 
 static void
 copyChuck(uint32_t *W, const uint8_t *str) {
-    size_t i = 0;
-    for (size_t j = 0; j < 16; j++) {    
+    std::size_t i = 0;
+    for (std::size_t j = 0; j < 16; j++) {    
         unsigned char tmp = str[i] ? str[i] : 0x80;
         W[j] = tmp;
         tmp = (tmp == 0x80) ? 0x0 : str[i + 1] ? str[i + 1] : 0x80;
@@ -83,9 +83,9 @@ SHA1(const std::string &msg) {
     uint64_t bits = static_cast<uint64_t>(msg.length() * 8);
     const uint8_t *str = reinterpret_cast<const uint8_t *>(msg.c_str());
 
-    size_t i = 0;
-    const size_t chucksCount = (msg.length() / 64) + 1;
-    for (size_t index = 1; index < chucksCount; index++) {
+    std::size_t i = 0;
+    const std::size_t chucksCount = (msg.length() / 64) + 1;
+    for (std::size_t index = 1; index < chucksCount; index++) {
         copyChuck(W, (str + i));
         i += 64;
         processChunk();

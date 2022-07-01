@@ -22,7 +22,7 @@ private:
     bool         _on;
     StatusCode   _status;
     int          _fdOut;
-    size_t       _idOtherSide;
+    std::size_t       _idOtherSide;
     Response    *_res;
 
 public:
@@ -36,7 +36,7 @@ public:
     void clear(void);
 
     void   setUri(URI *uri);
-    size_t run(void);
+    std::size_t run(void);
 
     addrinfo *setConnection(addrinfo *p);
 
@@ -49,8 +49,8 @@ public:
     bool on(void);
     void on(bool onOff);
 
-    void   idOtherSide(size_t id);
-    size_t idOtherSide(void);
+    void   idOtherSide(std::size_t id);
+    std::size_t idOtherSide(void);
 
 };
 
