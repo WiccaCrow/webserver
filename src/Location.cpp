@@ -35,33 +35,34 @@ Location::getRootRef(void) {
     return _root;
 }
 
-std::vector<std::string> &
-Location::getIndexRef(void) {
-    return _index;
-}
-
-std::vector<std::string> &
-Location::getAllowedMethodsRef(void) {
-    return _allowedMethods;
-}
-
-std::map<std::string, HTTP::CGI> &
-Location::getCGIsRef(void) {
-    return _CGIs;
-}
-
-std::vector<std::string> &
-Location::getDomainsRef(void) {
-    return _domains;
-}
-
 Redirect &
 Location::getRedirectRef(void) {
     return _redirect;
 }
 
-std::map<int, std::string> &
+Location::IndicesVec &
+Location::getIndexRef(void) {
+    return _index;
+}
+
+Location::MethodsVec &
+Location::getAllowedMethodsRef(void) {
+    return _allowedMethods;
+}
+
+Location::CGIsMap &
+Location::getCGIsRef(void) {
+    return _CGIs;
+}
+
+Location::DomainsVec &
+Location::getDomainsRef(void) {
+    return _domains;
+}
+
+Location::ErrorPagesMap &
 Location::getErrorPagesRef(void) {
     return _errorPages;
 }
+
 }

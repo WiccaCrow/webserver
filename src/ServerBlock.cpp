@@ -43,7 +43,7 @@ ServerBlock::getAddrRef(void) {
     return _addr;
 }
 
-std::vector<std::string> &
+ServerBlock::ServerNamesVec &
 ServerBlock::getServerNamesRef(void) {
     return _server_names;
 }
@@ -58,12 +58,12 @@ ServerBlock::getPortRef(void) {
     return _port;
 }
 
-std::map<std::string, Location> &
+ServerBlock::LocationsMap &
 ServerBlock::getLocationsRef(void) {
     return _locations;
 }
 
-const std::map<std::string, Location> &
+const ServerBlock::LocationsMap &
 ServerBlock::getLocationsRef(void) const {
     return _locations;
 }
@@ -87,10 +87,8 @@ Location *
 ServerBlock::matchLocation(const std::string &path) {
     size_t matchMaxLen = 0;
 
-    std::map<std::string, Location>::iterator it = _locations.begin();
-    std::map<std::string, Location>::iterator end = _locations.end();
-    std::map<std::string, Location>::iterator match = _locations.end();
-    for (; it != end; it++) {
+    LocationsMap::iterator match = _locations.end();
+    for (LocationsMap::iterator it = _locations.begin(); it != _locations.end(); ++it) {
         size_t len = it->first.length();
         if (path.find(it->first) == 0 && (path.length() == it->first.length() || path[it->first.length()] == '/')) {
             if (len > matchMaxLen) {
@@ -99,7 +97,7 @@ ServerBlock::matchLocation(const std::string &path) {
             }
         }
     }
-    if (match == end) {
+    if (match == _locations.end()) {
         Log.debug() << "ServerBlock:: location: / for " << path << Log.endl;
         return &_locationBase;
     }

@@ -29,7 +29,7 @@ getExpectedTypeName(ExpectedType type) {
 }
 
 int
-typeExpected(JSON::AType *ptr, ExpectedType type) {
+typeExpected(AType *ptr, ExpectedType type) {
     switch (type) {
         case STRING:
             return ptr->isStr();
@@ -47,8 +47,8 @@ typeExpected(JSON::AType *ptr, ExpectedType type) {
 
 template <typename T>
 ConfStatus
-basicCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res, T def) {
-    JSON::AType *ptr = src->get(key);
+basicCheck(Object *src, const std::string &key, ExpectedType type, T &res, T def) {
+    AType *ptr = src->get(key);
     if (ptr->isNull()) {
         res = def;
         Log.info() << "Used default parameter for " << src->getKey() << "::" << key << Log.endl;
@@ -64,8 +64,8 @@ basicCheck(JSON::Object *src, const std::string &key, ExpectedType type, T &res,
 }
 
 ConfStatus
-basicCheck(JSON::Object *src, const std::string &key, ExpectedType type) {
-    JSON::AType *ptr = src->get(key);
+basicCheck(Object *src, const std::string &key, ExpectedType type) {
+    AType *ptr = src->get(key);
     if (ptr->isNull()) {
         Log.error() << key << "does not exist." << Log.endl;
         return NONE_OR_INV;
@@ -80,7 +80,7 @@ basicCheck(JSON::Object *src, const std::string &key, ExpectedType type) {
 }
 
 int
-getUInteger(JSON::Object *src, const std::string &key, int &res, int def) {
+getUInteger(Object *src, const std::string &key, int &res, int def) {
     ConfStatus status = basicCheck(src, key, NUMBER, res, def);
     if (status != SET) {
         return status;
@@ -97,7 +97,7 @@ getUInteger(JSON::Object *src, const std::string &key, int &res, int def) {
 }
 
 int
-getUInteger(JSON::Object *src, const std::string &key, int &res) {
+getUInteger(Object *src, const std::string &key, int &res) {
     ConfStatus status = basicCheck(src, key, NUMBER);
     if (status != SET) {
         return status;
@@ -114,7 +114,7 @@ getUInteger(JSON::Object *src, const std::string &key, int &res) {
 }
 
 int
-getString(JSON::Object *src, const std::string &key, std::string &res, std::string def) {
+getString(Object *src, const std::string &key, std::string &res, std::string def) {
     ConfStatus status = basicCheck(src, key, STRING, res, def);
     if (status != SET) {
         return status;
@@ -125,7 +125,7 @@ getString(JSON::Object *src, const std::string &key, std::string &res, std::stri
 }
 
 int
-getString(JSON::Object *src, const std::string &key, std::string &res) {
+getString(Object *src, const std::string &key, std::string &res) {
     ConfStatus status = basicCheck(src, key, STRING);
     if (status != SET) {
         return status;
@@ -136,7 +136,7 @@ getString(JSON::Object *src, const std::string &key, std::string &res) {
 }
 
 int
-getBoolean(JSON::Object *src, const std::string &key, bool &res, bool def) {
+getBoolean(Object *src, const std::string &key, bool &res, bool def) {
     ConfStatus status = basicCheck(src, key, BOOLEAN, res, def);
     if (status != SET) {
         return status;
@@ -147,7 +147,7 @@ getBoolean(JSON::Object *src, const std::string &key, bool &res, bool def) {
 }
 
 int
-getBoolean(JSON::Object *src, const std::string &key, bool &res) {
+getBoolean(Object *src, const std::string &key, bool &res) {
     ConfStatus status = basicCheck(src, key, BOOLEAN);
     if (status != SET) {
         return status;
@@ -171,19 +171,19 @@ isSubset(std::vector<T> set, std::vector<T> subset) {
 }
 
 int
-getArray(JSON::Object *src, const std::string &key, std::vector<std::string> &res, std::vector<std::string> def) {
+getArray(Object *src, const std::string &key, std::vector<std::string> &res, std::vector<std::string> def) {
     ConfStatus status = basicCheck(src, key, ARRAY, res, def);
     if (status != SET) {
         return status;
     }
 
-    JSON::Array *arr = src->get(key)->toArr();
+    Array *arr = src->get(key)->toArr();
 
     // Overwriting inherited values from location_base
     res.clear();
 
-    JSON::Array::iterator it  = arr->begin();
-    JSON::Array::iterator end = arr->end();
+    Array::iterator it  = arr->begin();
+    Array::iterator end = arr->end();
     for (; it != end; it++) {
         if ((*it)->isNull() || !(*it)->isStr()) {
             Log.error() << key << " has mixed value(s)" << Log.endl;
@@ -195,16 +195,16 @@ getArray(JSON::Object *src, const std::string &key, std::vector<std::string> &re
 }
 
 int
-getArray(JSON::Object *src, const std::string &key, std::vector<std::string> &res) {
+getArray(Object *src, const std::string &key, std::vector<std::string> &res) {
     ConfStatus status = basicCheck(src, key, ARRAY);
     if (status != SET) {
         return status;
     }
 
-    JSON::Array *arr = src->get(key)->toArr();
+    Array *arr = src->get(key)->toArr();
 
-    JSON::Array::iterator it  = arr->begin();
-    JSON::Array::iterator end = arr->end();
+    Array::iterator it  = arr->begin();
+    Array::iterator end = arr->end();
     res.clear();
     for (; it != end; it++) {
         if ((*it)->isNull() || !(*it)->isStr()) {
@@ -216,10 +216,10 @@ getArray(JSON::Object *src, const std::string &key, std::vector<std::string> &re
     return SET;
 }
 
-std::vector<std::string>
+Location::MethodsVec
 getDefaultAllowedMethods() {
 
-    std::vector<std::string> allowed(9);
+    Location::MethodsVec allowed(9);
     for (size_t i = 0; validMethods[i]; i++) {
         allowed.push_back(validMethods[i]);   
     }
@@ -273,10 +273,9 @@ isValidKeyword(const std::string &key, const char *contextKeywords[]) {
 }
 
 bool
-isValidKeywords(JSON::Object *src, const char *validKeywords[]) {
-    JSON::Object::iterator it  = src->begin();
-    JSON::Object::iterator end = src->end();
-    for (; it != end; it++) {
+isValidKeywords(Object *src, const char *validKeywords[]) {
+
+    for (Object::iterator it = src->begin(); it != src->end(); ++it) {
         if (!isValidKeyword(it->first, validKeywords)) {
             return false;
         }
@@ -287,10 +286,11 @@ isValidKeywords(JSON::Object *src, const char *validKeywords[]) {
 
 // Object parsing
 int
-parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
-    std::map<std::string, HTTP::CGI> def;
-
+parseCGI(Object *src, Location::CGIsMap &res) {
+    
+    Location::CGIsMap def;
     res.clear();
+
     const std::string &key = KW_CGI;
 
     ConfStatus status = basicCheck(src, key, OBJECT, res, def);
@@ -298,12 +298,10 @@ parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
         return status;
     }
 
-    JSON::Object *obj = src->get(key)->toObj();
+    Object *obj = src->get(key)->toObj();
 
-    JSON::Object::iterator it  = obj->begin();
-    JSON::Object::iterator end = obj->end();
-    for (; it != end; it++) {
-        HTTP::CGI cgi;
+    for (Object::iterator it = obj->begin(); it != obj->end();; it++) {
+        CGI cgi;
 
         std::string value;
         if (!getString(obj, it->first, value)) {
@@ -320,10 +318,9 @@ parseCGI(JSON::Object *src, std::map<std::string, HTTP::CGI> &res) {
 }
 
 int
-isValidCGI(std::map<std::string, HTTP::CGI> &res) {
-    std::map<std::string, HTTP::CGI>::iterator it;
+isValidCGI(Location::CGIsMap &res) {
 
-    for (it = res.begin(); it != res.end(); it++) {
+    for (Location::CGIsMap::iterator it = res.begin(); it != res.end(); it++) {
         if (!isExtension(it->first)) {
             Log.error() << it->first << ": incorrect extension" << Log.endl;
             return false;
@@ -337,21 +334,19 @@ isValidCGI(std::map<std::string, HTTP::CGI> &res) {
 }
 
 int
-parseErrorPages(JSON::Object *src, std::map<int, std::string> &res) {
+parseErrorPages(Object *src, Location::ErrorPagesMap &res) {
 
+    Location::ErrorPagesMap def;
     res.clear();
-
-    std::map<int, std::string> def;
 
     ConfStatus status = basicCheck(src, KW_ERROR_PAGES, OBJECT, res, def);
     if (status != SET) {
         return status;
     }
 
-    JSON::Object *obj = src->get(KW_ERROR_PAGES)->toObj();
+    Object *obj = src->get(KW_ERROR_PAGES)->toObj();
 
-    JSON::Object::iterator it;
-    for (it = obj->begin(); it != obj->end(); it++) {
+    for (Object::iterator it = obj->begin(); it != obj->end(); ++it) {
 
         double value = strtod(it->first.c_str(), NULL);
         if (!isUInteger(value)) {
@@ -374,10 +369,9 @@ parseErrorPages(JSON::Object *src, std::map<int, std::string> &res) {
 }
 
 int
-isValidErrorPages(std::map<int, std::string> &res) {
-    std::map<int, std::string>::iterator it;
+isValidErrorPages(Location::ErrorPagesMap &res) {
 
-    for (it = res.begin(); it != res.end(); it++) {
+    for (Location::ErrorPagesMap::iterator it = res.begin(); it != res.end(); ++it) {
         if (!resourceExists(it->second)) {
             Log.error() << it->second << ": file does not exist" << Log.endl;
             return false;
@@ -391,15 +385,15 @@ isValidErrorPages(std::map<int, std::string> &res) {
 }
 
 int
-parseRedirect(JSON::Object *src, HTTP::Redirect &res) {
-    HTTP::Redirect def;
+parseRedirect(Object *src, Redirect &res) {
+    Redirect def;
 
     ConfStatus status = basicCheck(src, KW_REDIRECT, OBJECT, res, def);
     if (status != SET) {
         return status;
     }
 
-    JSON::Object *obj = src->get(KW_REDIRECT)->toObj();
+    Object *obj = src->get(KW_REDIRECT)->toObj();
     int code = 0;
     if (!getUInteger(obj, KW_CODE, code))
         return NONE_OR_INV;
@@ -407,13 +401,13 @@ parseRedirect(JSON::Object *src, HTTP::Redirect &res) {
     if (!getString(obj, KW_URL, res.getURIRef()))
         return NONE_OR_INV;
 
-    res.getCodeRef() = static_cast<HTTP::StatusCode>(code);
+    res.getCodeRef() = static_cast<StatusCode>(code);
     res.set(true);
     return SET;
 }
 
 int
-isValidRedirect(HTTP::Redirect &res) {
+isValidRedirect(Redirect &res) {
 
     if (res.set()) {
         if (res.getCodeRef() < 300 && res.getCodeRef() > 308) {
@@ -428,14 +422,14 @@ isValidRedirect(HTTP::Redirect &res) {
 }
 
 int
-parseAuth(JSON::Object *src, HTTP::Auth &res) {
+parseAuth(Object *src, Auth &res) {
 
     ConfStatus status = basicCheck(src, KW_AUTH_BASIC, OBJECT, res, res);
     if (status != SET) {
         return status;
     }
 
-    JSON::Object *obj = src->get(KW_AUTH_BASIC)->toObj();
+    Object *obj = src->get(KW_AUTH_BASIC)->toObj();
 
     if (!getString(obj, KW_REALM, res.getRealmRef())) {
         return NONE_OR_INV;
@@ -450,7 +444,7 @@ parseAuth(JSON::Object *src, HTTP::Auth &res) {
 }
 
 int
-isValidAuth(HTTP::Auth &res) {
+isValidAuth(Auth &res) {
 
     if (res.isSet()) {
         if (res.getRealmRef().empty()) {
@@ -470,15 +464,15 @@ isValidAuth(HTTP::Auth &res) {
     return 1;
 }
 
-int checkMutualExclusions(JSON::Object *src, const std::string &key1, const std::string &key2) {
-    JSON::AType *ptr1 = src->get(key1);
-    JSON::AType *ptr2 = src->get(key2);
+int checkMutualExclusions(Object *src, const std::string &key1, const std::string &key2) {
+    AType *ptr1 = src->get(key1);
+    AType *ptr2 = src->get(key2);
     
     return ptr1->isNull() || ptr2->isNull();
 }
 
 int
-parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
+parseLocation(Object *src, Location &dst, Location &def) {
 
     if (&dst != &def) {
 
@@ -578,16 +572,15 @@ parseLocation(JSON::Object *src, HTTP::Location &dst, HTTP::Location &def) {
 }
 
 int
-parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res, HTTP::Location &base) {
+parseLocations(Object *src, ServerBlock::LocationsMap &res, Location &base) {
     ConfStatus status = basicCheck(src, KW_LOCATIONS, OBJECT, res, res);
     if (status != SET) {
         return status;
     }
 
-    JSON::Object *locations = src->get(KW_LOCATIONS)->toObj();
+    Object *locations = src->get(KW_LOCATIONS)->toObj();
 
-    JSON::Object::iterator it;
-    for (it = locations->begin(); it != locations->end(); it++) {
+    for (Object::iterator it = locations->begin(); it != locations->end(); it++) {
     
         HTTP::Location location = base;
         if (!basicCheck(locations, it->first, OBJECT)) {
@@ -600,7 +593,7 @@ parseLocations(JSON::Object *src, std::map<std::string, HTTP::Location> &res, HT
         }
         location.getPathRef() = it->first;
 
-        JSON::Object *obj = it->second->toObj();
+        Object *obj = it->second->toObj();
         if (!parseLocation(obj, location, base)) {
             Log.error() << "location " << it->first << " parsing failed" << Log.endl;
             return NONE_OR_INV;
@@ -626,7 +619,7 @@ isValidPort(int port) {
 }
 
 int
-parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
+parseServerBlock(Object *src, ServerBlock &dst) {
 
     if (!isValidKeywords(src, validServerBlockKeywords)) {
         return NONE_OR_INV;
@@ -669,42 +662,41 @@ parseServerBlock(JSON::Object *src, HTTP::ServerBlock &dst) {
 }
 
 int
-parseServerBlocks(JSON::Object *src, Server *serv) {
+parseServerBlocks(Object *src, Server::ServersMap &servers) {
 
     ConfStatus status = basicCheck(src, KW_SERVERS, OBJECT);
     if (status != SET) {
         return status;
     }
 
-    JSON::Object *servers = src->get(KW_SERVERS)->toObj();
+    Object *obj = src->get(KW_SERVERS)->toObj();
 
-    if (servers->begin() == servers->end()) {
+    if (obj->begin() == obj->end()) {
         Log.error() << "Serverblocks not found" << Log.endl;
         return NONE_OR_INV;
     }
 
-    JSON::Object::iterator it;
-    for (it = servers->begin(); it != servers->end(); it++) {
-        HTTP::ServerBlock servBlock;
+    for (Object::iterator it = obj->begin(); it != obj->end(); it++) {
+        ServerBlock servBlock;
         servBlock.setBlockname(it->first);
 
-        if (!basicCheck(servers, it->first, OBJECT)) {
+        if (!basicCheck(obj, it->first, OBJECT)) {
             return NONE_OR_INV;
         }
 
-        JSON::Object *obj = it->second->toObj();
-        if (!parseServerBlock(obj, servBlock)) {
+        if (!parseServerBlock(it->second->toObj(), servBlock)) {
             Log.error() << "Serverblock " << it->first << " parsing failed" << Log.endl;
             return NONE_OR_INV;
         }
-        serv->addServerBlock(servBlock);
+        servers[servBlock.getPort()].push_back(servBlock);
     }
     return SET;
 }
 
 Server *
 loadConfig(const string filename) {
-    JSON::Object *ptr;
+
+    Object *ptr;
     try {
         JSON::JSON json(filename);
         ptr = json.parse();
@@ -718,7 +710,9 @@ loadConfig(const string filename) {
     }
 
     Server *serv = new Server();
-    if (!parseServerBlocks(ptr, serv)) {
+    if (serv == NULL) {
+        Log.syserr() << "Cannot allocate memory for Server" << Log.endl;
+    } else if (!parseServerBlocks(ptr, serv->getServerBlocks())) {
         delete serv;
         serv = NULL;
     }

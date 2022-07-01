@@ -11,44 +11,40 @@ namespace HTTP {
 
 class ServerBlock {
 
-private:
-    std::string              _blockname;
-    std::string              _addr;
-    int                      _port;
-    std::vector<std::string> _server_names;
-    Location                        _locationBase;
-    std::map<std::string, Location> _locations;
+public:
+    typedef std::map<std::string, HTTP::Location> LocationsMap;
+    typedef std::vector<std::string>              ServerNamesVec;
 
-    // Methods
+private:
+    std::string     _blockname;
+    std::string     _addr;
+    int             _port;
+    LocationsMap    _locations;
+    Location        _locationBase;
+    ServerNamesVec  _server_names;
 
 public:
     ServerBlock();
-    ServerBlock(const ServerBlock &obj);
+    ServerBlock(const ServerBlock &);
     ~ServerBlock();
 
-    // Operators
-    ServerBlock &operator=(const ServerBlock &obj);
+    ServerBlock &operator=(const ServerBlock &);
 
-    // Set atributs
     void setAddr(const std::string &);
     void setBlockname(const std::string &);
 
-    // Get and show atributs
-    int          getPort(void) const;
-
-
-    std::string                           &getAddrRef(void);
-    int                                   &getPortRef(void);
-    Location                              &getLocationBaseRef(void);
-    std::vector<std::string>              &getServerNamesRef(void);
-    std::map<std::string, Location>       &getLocationsRef(void);
-    const std::map<std::string, Location> &getLocationsRef(void) const;
-    const std::string                     &getBlockName(void) const;
+    std::string         &getAddrRef(void);
+    int                 &getPortRef(void);
+    int                 getPort(void) const;
+    Location            &getLocationBaseRef(void);
+    ServerNamesVec      &getServerNamesRef(void);
+    LocationsMap        &getLocationsRef(void);
+    const LocationsMap  &getLocationsRef(void) const;
+    const std::string   &getBlockName(void) const;
     
     bool hasName(const std::string &) const;
     bool hasAddr(const std::string &) const;
 
-    // other methods
     Location *matchLocation(const std::string &path);
 };
 
