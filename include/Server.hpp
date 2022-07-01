@@ -16,18 +16,12 @@
 #include <list>
 
 #include "Utils.hpp"
-#include "AClient.hpp"
 #include "Client.hpp"
 #include "Logger.hpp"
 #include "Worker.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
 #include "ServerBlock.hpp"
-#include "Pool.hpp"
-
-#ifndef SOMAXCONN
-    # define SOMAXCONN 128
-#endif
 
 class Server {
 
@@ -35,54 +29,61 @@ public:
     typedef std::list<HTTP::ServerBlock> ServersList;
     typedef ServersList::iterator iter_sl;
     
-    typedef std::map<size_t, ServersList> ServersMap;
+    typedef std::map<std::size_t, ServersList> ServersMap;
     typedef ServersMap::iterator iter_sm;
 
-    typedef std::vector<struct pollfd> PollFdVector;
-    typedef PollFdVector::iterator iter_pfd;
+    typedef std::vector<struct pollfd> PollFdVec;
+    typedef PollFdVec::iterator iter_pfd;
 
-    typedef std::vector<HTTP::AClient *> ClientVector;
-    typedef PollFdVector::iterator iter_cv;
+    typedef std::vector<Socket *> SocketsVec;
+    typedef SocketsVec::iterator iter_sv;
+
+    typedef std::map<int, HTTP::Client *> ClientsMap;
+    typedef ClientsMap::iterator iter_cm;
 
 private:
-    ServersMap    _serverBlocks;
-    PollFdVector  _pollfds;
-    ClientVector  _clients;
-    size_t        _socketsCount;
+    ServersMap    _servers;
+    SocketsVec    _sockets;
+    ClientsMap    _clients;
+    PollFdVec     _pollfds;
     
     bool          _working;
     Worker        _workers[WORKERS];
 
+    Pool<struct pollfd>  _waitingFds;
+
 public:
     Server(void);
-    Server(const Server &other);
+    Server(const Server &);
     ~Server(void);
-    Server &operator=(const Server &other);
+    Server &operator=(const Server &);
 
-    void   addServerBlock(HTTP::ServerBlock &servBlock);
-    ServersList &getServerBlocks(size_t port);
+    ServersList &operator[](std::size_t port);
+    ServersMap &getServerBlocks(void);
     
-    bool isWorking(void);
+    bool working(void);
     void start(void);
     void finish(void);
-    
-    // Thread-safe container
-    Pool<HTTP::Request *> requests;
+
     Pool<HTTP::Response *> responses;
-    size_t addSocket(struct pollfd, HTTP::AClient * = NULL);
+
+    void    addClient(int fd, HTTP::Client * = NULL);
+    
+    void queuePollFd(int fd, int events);
+    std::size_t  addPollFd(void);
+    void    rmPollFd(int fd);
 
 private:
-    void connectClient(size_t id);
-    void disconnectClient(size_t id);
+    void connect(std::size_t servid, int servfd);
+    void disconnect(int fd);
     
     int  poll(void);
     void process(void);
+    void checkTimeout(void);
 
-    void freeResponsePool(void);
     void createSockets(void);
     void startWorkers(void);
     void stopWorkers(void);
 
-    int createListenSocket(const std::string &addr, size_t port);
-    int addListenSocket(const std::string &addr, size_t port);
+    int addListenSocket(const std::string &addr, std::size_t port);
 };

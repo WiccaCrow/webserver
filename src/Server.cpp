@@ -1,60 +1,60 @@
 #include "Server.hpp"
 
-const size_t reservedClients = 64;
+const std::size_t reservedClients = 64;
 
 Server::Server() 
-    : _socketsCount(0), _working(true) {
+    : _working(true) {
     _pollfds.reserve(reservedClients);
-    _clients.reserve(reservedClients);
+    // _clients.reserve(reservedClients);
 }
 
 Server::~Server() {
-    for (size_t i = 0; i < _pollfds.size(); i++) {
+    for (std::size_t i = 0; i < _pollfds.size(); i++) {
         if (_pollfds[i].fd != -1) {
             close(_pollfds[i].fd);
             _pollfds[i].fd = -1;
         }
     }
 
-    for (size_t i = 0; i < _clients.size(); i++) {
-        if (_clients[i] != NULL) {
-            delete _clients[i];
-        }
-    }
+    // for (std::size_t i = 0; i < _clients.size(); i++) {
+    //     if (_clients[i] != NULL) {
+    //         delete _clients[i];
+    //     }
+    // }
 }
 
 // Could be used for re-reading config:
 // Try to read new configuration into another server,
 // and if server is not NULL, then do old_server = new_server,
 // else keep old configuration and log message.
-Server::Server(const Server &obj) {
-    operator=(obj);
+Server::Server(const Server &other) {
+    operator=(other);
 }
 
 Server &
-Server::operator=(const Server &obj) {
-    if (this != &obj) {
-        _serverBlocks = obj._serverBlocks;
-        _pollfds    = obj._pollfds;
-        _clients    = obj._clients;
-        _socketsCount = obj._socketsCount;
+Server::operator=(const Server &other) {
+    if (this != &other) {
+        _servers    = other._servers;
+        _pollfds    = other._pollfds;
+        _clients    = other._clients;
+        _sockets    = other._sockets;
     }
     return (*this);
 }
 
 bool
-Server::isWorking(void) {
+Server::working(void) {
     return _working;
 }
 
-void
-Server::addServerBlock(HTTP::ServerBlock &servBlock) {
-    _serverBlocks[servBlock.getPort()].push_back(servBlock);
+Server::ServersList &
+Server::operator[](std::size_t port) {
+    return _servers[port];
 }
 
-std::list<HTTP::ServerBlock> &
-Server::getServerBlocks(size_t port) {
-    return _serverBlocks[port];
+Server::ServersMap &
+Server::getServerBlocks(void) {
+    return _servers;
 }
 
 void
@@ -74,64 +74,44 @@ Server::start(void) {
     signal(SIGINT, sigint_handler);
 
     createSockets();
-
-    if (!isWorking()) {
+    if (!working()) {
         return ;
     }
     
     startWorkers();
-
-    while (isWorking()) {
-        freeResponsePool();
-
+    while (working()) {
+        addPollFd();
         if (poll() > 0) {
             process();
         }
+        checkTimeout();
     }
-
     stopWorkers();
 }
 
-int
-Server::createListenSocket(const std::string &addr, size_t port) {
-    
-    int i = 1;
-    struct sockaddr_in data;
-    data.sin_family = AF_INET;
-    data.sin_port   = htons(port);
-    data.sin_addr.s_addr = inet_addr(addr.c_str());
-
-    int fd;
-    if ((fd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
-        Log.syserr() << "Server::socket ->" << addr << ":" << port << Log.endl;
-        return -1;
-    }
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) < 0) {
-        Log.syserr() << "Server::setsockopt ->" << addr << ":" << port << Log.endl;
-        return -1;
-    }
-    if (bind(fd, (struct sockaddr *)&data, sizeof(data)) < 0) {
-        Log.syserr() << "Server::bind ->" << addr << ":" << port << Log.endl;
-        return -1;
-    }
-    if (listen(fd, SOMAXCONN) < 0) {
-        Log.syserr() << "Server::listen ->" << addr << ":" << port << Log.endl;
-        return -1;
-    }
-
-    Log.info() << "Server::listen [" << fd << "] -> " << addr << ":" << port << Log.endl;
-    return fd;
-}
-
 int 
-Server::addListenSocket(const std::string &addr, size_t port) {
-    int fd = createListenSocket(addr, port);
+Server::addListenSocket(const std::string &addr, std::size_t port) {
 
-    if (fd >= 0) {
-        addSocket((struct pollfd) { fd, POLLIN, 0 });
-        _socketsCount++;
+    Socket *sock = new Socket();
+    if (sock == NULL) {
+        Log.syserr() << "Server:: Cannot allocate memory for Socket" << Log.endl;
+        return -1;
     }
-    return fd;
+
+    if (sock->create() < 0) {
+        delete sock;
+        return -1;
+    }
+
+    if (sock->listen(addr, port) < 0) {
+        delete sock;
+        return -1;
+    }
+
+    queuePollFd(sock->getFd(), POLLIN);
+    _sockets.push_back(sock);
+
+    return 0;
 }
 
 void
@@ -140,17 +120,17 @@ Server::createSockets(void) {
     typedef std::set<std::string> uniqueAddr;
     typedef uniqueAddr::iterator iter_ua;
 
-    typedef std::map<size_t, uniqueAddr> uniqueValMap;
+    typedef std::map<std::size_t, uniqueAddr> uniqueValMap;
     typedef uniqueValMap::iterator iter_uvm;
 
-    if (!isWorking()) {
+    if (!working()) {
         return ;
     }
 
     uniqueValMap uniqueAddrs;
-    for (iter_sm it = _serverBlocks.begin(); it != _serverBlocks.end(); ++it) {
+    for (iter_sm it = _servers.begin(); it != _servers.end(); ++it) {
         for (iter_sl sb = it->second.begin(); sb != it->second.end(); ++sb) {
-            const size_t port = it->first;
+            const std::size_t port = it->first;
             const std::string &addr = sb->getAddrRef();
             uniqueAddrs[port].insert(addr);
         }
@@ -158,7 +138,7 @@ Server::createSockets(void) {
 
     for (iter_uvm it = uniqueAddrs.begin(); it != uniqueAddrs.end(); ++it) {
         for (iter_ua ua = it->second.begin(); ua != it->second.end(); ++ua) {
-            const size_t port = it->first;
+            const std::size_t port = it->first;
             const std::string &addr = *ua;
             if (addListenSocket(addr, port) < 0) {
                 finish();
@@ -171,7 +151,7 @@ Server::createSockets(void) {
 void
 Server::startWorkers(void) {
 
-    for (size_t i = 0; i < Worker::count; i++) {
+    for (std::size_t i = 0; i < Worker::count; i++) {
         _workers[i].create();
     }
 }
@@ -179,49 +159,37 @@ Server::startWorkers(void) {
 void
 Server::stopWorkers(void) {
 
-    for (size_t i = 0; i < Worker::count; i++) {
+    for (std::size_t i = 0; i < Worker::count; i++) {
         _workers[i].join();
     }
 }
 
 void
-Server::freeResponsePool(void) {
-    
-    do {
-        try {
-            HTTP::Response *res = responses.pop_front();
-            res->getClient()->addResponse(res);
-        } catch (Pool<HTTP::Response *>::Empty &e) {            
-            return ;
-        }
-    } while (!responses.empty());
-
-}
-
-void
 Server::process(void) {
-    for (size_t id = 0; id < _pollfds.size(); id++) {
+    for (std::size_t id = 0; id < _pollfds.size(); id++) {
         if (_pollfds[id].revents & POLLNVAL) {
             continue ;
         }
-        if (id < _socketsCount && _pollfds[id].revents & POLLIN) {
-            connectClient(id);
-        }
 
-        if (_clients[id] == NULL) {
-            continue ;
-        } else if (_pollfds[id].revents & POLLIN) {
-            _clients[id]->pollin();
-        } else if (_pollfds[id].revents & POLLHUP) {
-            _clients[id]->pollhup();
-        } else if (_pollfds[id].revents & POLLOUT) {
-            _clients[id]->pollout();
-        } else if (_pollfds[id].revents & POLLERR) {
-            _clients[id]->pollerr();
-        }
+        if (id < _sockets.size()) {
+            if (_pollfds[id].revents & POLLIN) {
+                connect(id, _pollfds[id].fd);
+            }
+        } else if (_clients[id] != NULL) {
 
-        if (_clients[id]->shouldBeClosed()) {
-            disconnectClient(id);
+            if (_pollfds[id].revents & POLLIN) {
+                _clients[id]->pollin(_pollfds[id].fd);
+            } else if (_pollfds[id].revents & POLLHUP) {
+                _clients[id]->pollhup(_pollfds[id].fd);
+            } else if (_pollfds[id].revents & POLLOUT) {
+                _clients[id]->pollout(_pollfds[id].fd);
+            } else if (_pollfds[id].revents & POLLERR) {
+                _clients[id]->pollerr(_pollfds[id].fd);
+            }
+
+            if (_clients[id]->shouldBeClosed()) {
+                disconnect(_pollfds[id].fd);
+            }
         }
         _pollfds[id].revents = 0;
     }
@@ -233,84 +201,163 @@ Server::poll(void) {
     int res = ::poll(_pollfds.data(), _pollfds.size(), 100000);
 
     if (res < 0) {
-        if (isWorking()) {
+        if (working()) {
             Log.syserr() << "Server::poll" << Log.endl;
         }
     }
     return res;
 }
 
+
 static int
 isFree(struct pollfd pfd) {
     return (pfd.fd == -1);
 }
 
-size_t
-Server::addSocket(struct pollfd pfd, HTTP::AClient *client) {
+void
+Server::queuePollFd(int fd, int events) {
 
-    iter_pfd it = std::find_if(_pollfds.begin(), _pollfds.end(), isFree);
-    if (it == _pollfds.end()) {
-        it = _pollfds.insert(_pollfds.end(), pfd);
-        _clients.insert(_clients.end(), NULL);
-    } else {
-        *it = pfd;
-    }
-
-    size_t id = std::distance(_pollfds.begin(), it);
-    _clients[id] = client;
-
-    return id;
+    struct pollfd tmp = { fd, events, 0 };
+    _waitingFds.push_back(tmp);
 }
 
-// void
-// Server::createClient() {
-//     socket + connect(); + ClientProxy();
-// }
+std::size_t
+Server::addPollFd(void) {
+
+    do {
+        struct pollfd tmp;
+        try {
+            tmp = _waitingFds.pop_front();
+        } catch (Pool<struct pollfd>::Empty &e) {
+            return 0;
+        }
+
+        iter_pfd it = std::find_if(_pollfds.begin(), _pollfds.end(), isFree);
+        if (it == _pollfds.end()) {
+            it = _pollfds.insert(_pollfds.end(), tmp);
+        } else {
+            *it = tmp;
+        }
+    } while (!_waitingFds.empty());
+
+    return 0;
+}
 
 void
-Server::connectClient(size_t servid) {
+Server::rmPollFd(int fd) {
+
+    Log.debug() << "rmPollfd " << fd << Log.endl;
+    if (fd < 0) {
+        return ;
+    }
+
+    for (iter_pfd it = _pollfds.begin(); it != _pollfds.end(); ++it) {
+        if (it->fd == fd) {
+            it->fd = -1;
+            it->events = 0;
+            it->revents = 0;
+            break ;
+        }   
+    }
+}
+
+void
+Server::addClient(int fd, HTTP::Client *client) {
+    _clients[fd] = client;
+}
+
+void
+Server::checkTimeout(void) {
+
+    std::time_t cur = std::time(0);
+
+    
+    for (ClientsMap::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+
+        std::time_t t_client = it->second->getClientTimeout();
+        std::time_t t_target = it->second->getTargetTimeout();
+
+        if (t_client != 0 && cur - t_client > MAX_CLIENT_TIMEOUT) {
+            Log.debug() << "Server:: [" << it->second->getClientSock()->getFd() << "] client timeout exceeded" << Log.endl;
+            disconnect(it->second->getClientSock()->getFd());
+        }
+
+        if (t_target != 0 && cur - t_target > MAX_TARGET_TIMEOUT) {
+            Log.debug() << "Server:: [" << it->second->getTargetSock()->getFd() << "] target timeout exceeded" << Log.endl;
+            // need to kill child process
+            // close target socket
+            // remove all links
+        }
+    }
+}
+
+void
+Server::connect(std::size_t servid, int servfd) {
 
     struct sockaddr_in servData;
     socklen_t servLen = sizeof(servData);
-    if (getsockname(_pollfds[servid].fd, (struct sockaddr *)&servData, &servLen) < 0) {
-        Log.syserr() << "Server::getsockname [" << _pollfds[servid].fd << "]" << Log.endl;
+    if (getsockname(servfd, (struct sockaddr *)&servData, &servLen) < 0) {
+        Log.syserr() << "Server::getsockname [" << servfd << "]" << Log.endl;
         return ;
     }
 
     struct sockaddr_in clientData;
     socklen_t clientLen = sizeof(clientData);
-    int fd = accept(_pollfds[servid].fd, (struct sockaddr *)&clientData, &clientLen);
+    int fd = accept(servfd, (struct sockaddr *)&clientData, &clientLen);
 
     if (fd < 0) {
         Log.syserr() << "Server::accept" << Log.endl;
         return ;
     }
 
-    fcntl(fd, F_SETFL, O_NONBLOCK);
-
     HTTP::Client *client = new HTTP::Client();
-    client->setReadFd(fd);
-    client->setWriteFd(fd);
-    client->setPort(ntohs(clientData.sin_port));
-    client->setIpAddr(inet_ntoa(clientData.sin_addr));
-    client->setServerPort(ntohs(servData.sin_port));
-    client->setServerIpAddr(inet_ntoa(servData.sin_addr));
+    if (client == NULL) {
+        Log.syserr() << "Server::Cannot allocate memory for Client" << Log.endl;
+        close(fd);
+        return ;
+    }
 
-    addSocket((struct pollfd){ fd, POLLIN | POLLOUT, 0 }, client);
+    client->setServerSock(_sockets[servid]);
+    client->getClientSock()->setFd(fd);
+    client->getClientSock()->nonblock();
+    client->getClientSock()->setAddr(inet_ntoa(clientData.sin_addr));
+    client->getClientSock()->setPort(ntohs(clientData.sin_port));
+
+    queuePollFd(fd, POLLIN | POLLOUT);
+
+    _clients[fd] = client;
 
     Log.debug() << "Server::connect [" << fd << "] -> " << client->getHostname() << Log.endl;
 }
 
 void
-Server::disconnectClient(size_t id) {
-    const int fd = _pollfds[id].fd;
+Server::disconnect(int fd) {
 
-    close(fd);
-    delete _clients[id];
-    _clients[id] = NULL;
-    _pollfds[id].fd      = -1;
-    _pollfds[id].events  = 0;
-    _pollfds[id].revents = 0;
+    if (fd < 0) {
+        return ;
+    }
+
+    ClientsMap::iterator it = _clients.find(fd);
+    if (it == _clients.end()) {
+        return ;
+    }
+
+    HTTP::Client *client = it->second;
+    _clients.erase(it);
     
-    Log.debug() << "Server::disconnect [" << fd << "]" << Log.endl;
+    int clientFd = client->getClientSock()->getFd();
+    int targetFd = client->getTargetSock()->getFd();
+
+    rmPollFd(clientFd);
+    rmPollFd(targetFd);
+
+    for (ClientsMap::iterator beg = _clients.begin(); beg != _clients.end(); ++beg) {
+        if (beg->first == clientFd || beg->first == targetFd) {
+            beg->second = NULL;
+        }
+    }
+
+    delete client;
+    
+    Log.debug() << "Server::disconnect [" << clientFd << "]" << Log.endl;
 }
