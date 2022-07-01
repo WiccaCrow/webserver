@@ -27,10 +27,10 @@ private:
     std::string _execpath;
     std::string _filepath;
     bool        _compiled;
-    char      **_env;
 
-    Request    *_req;
-    Response   *_res;
+    // Exec vars
+    char      **_env;
+    int         _childPID;
 
 public:
     CGI(void);
@@ -39,16 +39,15 @@ public:
     CGI(const CGI &);
     CGI &operator=(const CGI &);
 
-    int  exec(void);
+    int  exec(Response *);
     void compiled(bool);
     bool compiled(void);
 
-    void link(Request *req, Response *res);
     bool setScriptPath(const std::string);
 
     bool initEnv(void);
-    bool setEnv(void);
-    bool setFullEnv(void);
+    bool setEnv(Request *);
+    bool setFullEnv(Request *);
 
     void setExecPath(const std::string);
     const std::string getExecPath(void) const;
