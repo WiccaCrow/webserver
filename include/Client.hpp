@@ -9,60 +9,73 @@
 #include "Logger.hpp"
 #include "Status.hpp"
 #include "Globals.hpp"
-#include "AClient.hpp"
+#include "Pool.hpp"
+#include "Socket.hpp"
 
 namespace HTTP {
 
-class Client : public AClient { 
+class Client { 
 
 private:
-    size_t      _clientPort;
-    std::string _clientIpAddr;
-    bool _headSent;
-    bool _bodySent;
+    Socket      *_clientSock;
+    Socket      *_serverSock;
+    Socket      *_targetSock;
 
-    Request *_req;
-    std::deque<HTTP::Response *> _responses;
+    bool        _headSent;
+    bool        _bodySent;
+    bool        _shouldBeClosed;
+
+    std::size_t      _nbRequests;
+    std::size_t      _maxRequests;
+    std::time_t      _clientTimeout;
+    std::time_t      _targetTimeout;
+    std::time_t      _maxTimeout;
+
+    std::list<Request *>  _requests;
+    std::list<Response *> _responses;
 
 public:
     Client(void);
-    Client(const Client &client);
-    ~Client();
+    ~Client(void);
 
-    Client &operator=(const Client &client);
-
-    const std::string getHostname(void) const;
-
-    Request *    getRequest(void);
-    void         setRequest(Request *);
-    Response *   getResponse(void);
-
-    virtual void pollin(void);
-    virtual void pollout(void);
-    virtual void pollhup(void);
-    virtual void pollerr(void);
-
-    virtual void receive(void);
-    virtual void reply(void);
-
-    void setPort(size_t port);
-    size_t  getPort(void) const;
-
-    void               setIpAddr(const std::string &);
-    const std::string &getIpAddr(void) const;
-
-    void checkIfFailed(void);
-    void addRequest(void);
-    void addResponse(Response *);
-    void removeResponse(void);
-
-    bool validSocket(void);
-    bool requestReady(void);
-    bool replyReady(void);
     bool replyDone(void);
     void replyDone(bool);
 
-    // HTTP::ServerBlock *matchServerBlock(const std::string &host, size_t port) const;
+    bool shouldBeClosed(void) const;
+    void shouldBeClosed(bool);
+
+    const std::string getHostname(void);
+
+    time_t getClientTimeout(void) const;
+    time_t getTargetTimeout(void) const;
+
+    void setClientTimeout(time_t);
+    void setTargetTimeout(time_t);
+
+    Socket *getClientSock(void);
+    Socket *getServerSock(void);
+    Socket *getTargetSock(void);
+    void setClientSock(Socket *);
+    void setServerSock(Socket *);
+    void setTargetSock(Socket *);
+
+    void checkIfFailed(void);
+    void addRequest(void);
+    void addResponse(void);
+    void removeRequest(void);
+    void removeResponse(void);
+
+    void pollin(int fd);
+    void pollout(int fd);
+    void pollhup(int fd);
+    void pollerr(int fd);
+
+    void receive(Request *);
+    void receive(Response *);
+    void reply(Request *);
+    void reply(Response *);
+
+    // HTTP::ServerBlock *matchServerBlock(const std::string &host, std::size_t port) const;
 };
 
 }

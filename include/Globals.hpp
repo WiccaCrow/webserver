@@ -7,6 +7,18 @@
     # define SOMAXCONN 128
 #endif
 
+#ifndef MAX_REQUESTS
+    # define MAX_REQUESTS 100
+#endif
+
+#ifndef MAX_CLIENT_TIMEOUT
+    # define MAX_CLIENT_TIMEOUT 100
+#endif
+
+#ifndef MAX_TARGET_TIMEOUT
+    # define MAX_TARGET_TIMEOUT 100
+#endif
+
 #ifndef CHUNK_SIZE
     # define CHUNK_SIZE 40960
 #endif

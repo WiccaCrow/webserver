@@ -3,110 +3,109 @@
 
 namespace HTTP {
 
-Client::Client() 
-    : AClient()
+Client::Client(void)
+    : _clientSock(NULL)
+    , _serverSock(NULL)
+    , _targetSock(NULL)
     , _headSent(false)
-    , _bodySent(false) {}
+    , _bodySent(false)
+    , _shouldBeClosed(false)
+    , _nbRequests(0)
+    , _maxRequests(MAX_REQUESTS)
+    , _clientTimeout(0) 
+    , _targetTimeout(0) {
 
-Client::~Client() {
-    for (size_t i = 0; i < _responses.size(); i++) {
-        if (_responses[i] != NULL) {
-            delete _responses[i];
+    _clientSock = new Socket();
+    _targetSock = new Socket();
+
+    if (_clientSock == NULL || _targetSock == NULL) {
+        Log.syserr() << "Client::Cannot allocate memory for Sockets" << Log.endl;
+    }
+}
+
+Client::~Client(void) {
+    typedef std::list<Request *> PoolReq;
+    typedef std::list<Response *> PoolRes;
+
+    for (PoolReq::iterator it = _requests.begin(); it != _requests.end(); ++it) {
+        if (*it != NULL) {
+            delete *it;
+        }
+    }
+
+    for (PoolRes::iterator it = _responses.begin(); it != _responses.end(); ++it) {
+        if (*it != NULL) {
+            delete *it;
         }
     }
 }
 
-Client::Client(const Client &other) : AClient(other) {
-    *this = other;
+void
+Client::shouldBeClosed(bool flag) {
+    _shouldBeClosed = flag;
 }
 
-Client &
-Client::operator=(const Client &other) {
-    if (this != &other) {
-        _responses      = other._responses;
-        _clientIpAddr   = other._clientIpAddr;
-        _clientPort     = other._clientPort;
-    }
-    return *this;
+bool
+Client::shouldBeClosed(void) const {
+    return _shouldBeClosed;
+}
+
+time_t
+Client::getClientTimeout(void) const {
+    return _clientTimeout;
+}
+
+time_t
+Client::getTargetTimeout(void) const {
+    return _targetTimeout;
 }
 
 void
-Client::setIpAddr(const std::string &ipaddr) {
-    _clientIpAddr = ipaddr;
-}
-
-const std::string &
-Client::getIpAddr(void) const {
-    return _clientIpAddr;
+Client::setClientTimeout(time_t time) {
+    _clientTimeout = time;
 }
 
 void
-Client::setPort(size_t port) {
-    _clientPort = port;
+Client::setTargetTimeout(time_t time) {
+    _targetTimeout = time;
 }
 
-size_t
-Client::getPort(void) const {
-    return _clientPort;
+Socket *
+Client::getClientSock(void) {
+    return _clientSock;
+}
+
+Socket *
+Client::getServerSock(void) {
+    return _serverSock;
+}
+
+Socket *
+Client::getTargetSock(void) {
+    return _targetSock;
+}
+
+void
+Client::setClientSock(Socket *sock) {
+    _clientSock = sock;
+}
+
+void
+Client::setServerSock(Socket *sock) {
+    _serverSock = sock;
+}
+
+void
+Client::setTargetSock(Socket *sock) {
+    _targetSock = sock;
 }
 
 const std::string
-Client::getHostname() const {
-    return (_clientPort != 0 ? _clientIpAddr + ":" + sztos(_clientPort) : _clientIpAddr);
-}
+Client::getHostname(void) {
+    const std::size_t port = getClientSock()->getPort();
+    const std::string &addr = getClientSock()->getAddr();
 
-Request *
-Client::getRequest() {
-    return _req;
-}
-
-void
-Client::setRequest(Request *req) {
-    _req = req;
-}
-
-
-Response *
-Client::getResponse() {
-    return _responses.front();
-}
-
-void
-Client::addRequest(void) {
-
-    _req = new Request(this);
-    if (_req == NULL) {
-        Log.syserr() << "Cannot allocate memory for Request" << Log.endl;
-        shouldBeClosed(true);
-    }
-    Log.debug() << "----------------------" << Log.endl;
-}
-
-void
-Client::addResponse(Response *res) {
-    _responses.push_back(res);
-    Log.debug() << "Client::addResponse " << res->getRequest()->getUriRef()._path << Log.endl;
-}
-
-void
-Client::removeResponse(void) {
-    delete _responses.front();
-    _responses.pop_front();
-}
-
-bool
-Client::validSocket(void) {
-    return getWriteFd() != -1 && getReadFd() != -1 && !shouldBeClosed();
-}
-
-bool
-Client::requestReady(void) {
-    return validSocket() && getRequest() && getRequest()->isFormed();
-}
-
-bool
-Client::replyReady(void) {
-    return validSocket() && _responses.size() && getResponse()->isFormed();
+    return (port != 0 ? addr + ":" + sztos(port) : addr);
 }
 
 bool
@@ -121,105 +120,206 @@ Client::replyDone(bool val) {
 }
 
 void
-Client::pollin(void) {
+Client::addRequest(void) {
 
-    if (!getRequest()) {
-        addRequest();
+    Request *req = new Request(this);
+    if (req == NULL) {
+        Log.syserr() << "Cannot allocate memory for Request" << Log.endl;
+        shouldBeClosed(true);
+        return ;
     }
+    _requests.push_back(req);
+    Log.debug() << "----------------------" << Log.endl;
+}
 
-    if (!requestReady()) {
-        receive();
-    }
+void
+Client::addResponse(void) {
 
-    if (requestReady()) {
-        g_server->requests.push_back(getRequest());
-        setRequest(NULL);
+    Request *req = _requests.back();
+    Response *res = new Response(req);
+    _responses.push_back(res);
+
+    Log.debug() << "Client::addResponse " << res->getRequest()->getUriRef()._path << Log.endl;
+}
+
+void
+Client::removeRequest(void) {
+    if (_requests.size() > 0) {
+        Request *req = _requests.front();
+        _requests.pop_front();
+        delete req;
     }
 }
 
 void
-Client::pollout(void) {
-
-    if (replyReady() && !replyDone()) {
-        reply();
+Client::removeResponse(void) {
+    if (_responses.size() > 0) {
+        Response *res = _responses.front();
+        _responses.pop_front();
+        delete res;
     }
-    
-    if (replyDone()) {
-        removeResponse();
-        replyDone(false);
-    }
-
 }
 
 void
-Client::pollhup(void) {
-    shouldBeClosed(true);
-    Log.syserr() << "Client::pollhup " << getReadFd() << Log.endl;
-}
+Client::pollin(int fd) {
 
+    if (fd == getClientSock()->getFd()) {
 
-void
-Client::pollerr(void) {
-    shouldBeClosed(true);
-    Log.syserr() << "Client::pollerr " << getReadFd() << Log.endl;
-}
-
-void
-Client::reply(void) {
-
-    signal(SIGPIPE, SIG_IGN);
-
-    Response *rsp = getResponse();
-
-    if (!_headSent) {
-        if (!getDataPos()) {
-            setData(rsp->getHead().c_str());
-            setDataSize(rsp->getHead().length());
+        if (_requests.size() == _responses.size()) {
+            addRequest();
         }
-        _headSent = sendData();
 
-    } else if (!_bodySent) {
-        if (!getDataPos()) {
-            setData(rsp->getBody().c_str());
-            setDataSize(rsp->getBody().length());
+        if (_requests.size() > _responses.size()) {
+            setClientTimeout(std::time(0));
+            receive(_requests.back());
+            
+            if (_requests.back()->formed()) {
+                _nbRequests++;
+                addResponse();
+                g_server->responses.push_back(_responses.back());
+            }
         }
-        _bodySent = sendData();
+    } 
+    else if (fd == getTargetSock()->getFd()) {
+        receive(_responses.front());
     }
+ 
+}
 
-    if (replyDone()) {
-        setData(NULL);
-        setDataPos(0);
-        setDataSize(0);
+void
+Client::pollout(int fd) {
+    (void)fd;
+
+    if (fd == getClientSock()->getFd()) {
+
+        if (_responses.empty()) {
+            return ;
+        }
+
+        if (_responses.front()->formed() && !replyDone()) {
+            reply(_responses.front());
+        }
+        
+        if (replyDone()) {
+            if (_nbRequests >= _maxRequests) {
+                shouldBeClosed(true);
+            }
+
+            removeResponse();
+            removeRequest();
+            getClientSock()->clear();
+            replyDone(false);
+        }
     }
-
-    // if (shouldBeClosed()) {
-    //     Log.debug() << "Client::shouldBeClosed" << Log.endl;
-    //     setReadFd(-1);
-    //     setWriteFd(-1);
+    // else if (fd == getTargetSock()->getFd()) {
+    //     reply(_requests.front());
     // }
 }
 
 void
-Client::receive(void) {
+Client::pollhup(int fd) {
+    Log.syserr() << "Client::pollhup " << fd << Log.endl;
+    shouldBeClosed(true);
+}
 
-    if (getReadFd() < 0) {
-        return;
+
+void
+Client::pollerr(int fd) {
+    Log.syserr() << "Client::pollerr " << fd << Log.endl;
+    shouldBeClosed(true);
+}
+
+void
+Client::reply(Response *res) {
+
+    signal(SIGPIPE, SIG_IGN);
+
+    if (!_headSent) {
+        if (!getClientSock()->getDataPos()) {
+            getClientSock()->setData(res->getHead().c_str());
+            getClientSock()->setDataSize(res->getHead().length());
+        }
+        _headSent = getClientSock()->write();
+
+    } else if (!_bodySent) {
+        if (!getClientSock()->getDataPos()) {
+            getClientSock()->setData(res->getBody().c_str());
+            getClientSock()->setDataSize(res->getBody().length());
+        }
+        _bodySent = getClientSock()->write();
     }
+}
 
-    if (!readSocket()) {
+void
+Client::reply(Request *req) {
+
+    signal(SIGPIPE, SIG_IGN);
+
+    // Not send SL and headers if cgi
+    // if (isCGI) _headSent = true;
+    // or make head empty (easier)
+
+    if (!_headSent) {
+        if (!getTargetSock()->getDataPos()) {
+            getTargetSock()->setData(req->getHead().c_str());
+            getTargetSock()->setDataSize(req->getHead().length());
+        }
+        _headSent = getTargetSock()->write();
+
+    } else if (!_bodySent) {
+        if (!getTargetSock()->getDataPos()) {
+            getTargetSock()->setData(req->getBody().c_str());
+            getTargetSock()->setDataSize(req->getBody().length());
+        }
+        _bodySent = getTargetSock()->write();
+    }
+}
+
+void
+Client::receive(Request *req) {
+
+    Log.debug() << "Client:: [" << getClientSock()->getFd() << "] receive request" << Log.endl;
+    
+    if (!getClientSock()->read()) {
+        Log.debug() << "Client:: [" << getClientSock()->getFd() << "] peer closed connection" << Log.endl;
+        g_server->rmPollFd(getClientSock()->getFd());
+        g_server->rmPollFd(getTargetSock()->getFd());
         shouldBeClosed(true);
         return ;
     }
 
-    Log.debug() << "Client::receive [" << getReadFd() << "]" << Log.endl;
-
-    while (!getRequest()->isFormed()) {
+    while (!req->formed()) {
         std::string line;
 
-        if (!getline(line, getRequest()->getBodySize())) {
+        if (!getClientSock()->getline(line, req->getBodySize())) {
             return ;
-        } 
-        getRequest()->parseLine(line);
+        }
+        req->parseLine(line);
+    }
+}
+
+void
+Client::receive(Response *res) {
+
+    Log.debug() << "Client:: [" << getTargetSock()->getFd() << "] receive response" << Log.endl;
+    
+    if (!getTargetSock()->read()) {
+        if (res->isCGI()) {
+            g_server->rmPollFd(getTargetSock()->getFd());
+        }
+
+        if (res->isProxy()) {
+            g_server->rmPollFd(getTargetSock()->getFd());
+        }
+    }
+
+    while (!res->formed()) {
+        std::string line;
+
+        if (!getTargetSock()->getline(line, res->getBodySize())) {
+            return ;
+        }
+        res->parseLine(line);
     }
 }
 
