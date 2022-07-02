@@ -233,20 +233,17 @@ CGI::exec(Response *res) {
         return 0;
     }
 
-    int fdr = io->rdFd();
-    int fdw = io->wrFd();
-
     int childPID = fork();
     if (childPID < 0) {
         Log.syserr() << "CGI::fork: " << Log.endl;
         return 0;
 
     } else if (childPID == 0) {
-        if (dup2(fdr, fileno(stdin)) < 0) {
+        if (dup2(io->rdFd(), fileno(stdin)) < 0) {
             Log.syserr() << "CGI::dup2::stdin" << Log.endl;
             exit(123);
         }
-        if (dup2(fdw, fileno(stdout)) < 0) {
+        if (dup2(io->wrFd(), fileno(stdout)) < 0) {
             Log.syserr() << "CGI::dup2::stdout" << Log.endl;
             exit(124);
         }
@@ -257,99 +254,22 @@ CGI::exec(Response *res) {
 
     const std::string &body = res->getRequest()->getBody();
     if (!body.empty()) {
-        if (write(fdw, body.c_str(), body.length()) == -1) {
+        if (write(io->wrFd(), body.c_str(), body.length()) == -1) {
             Log.syserr() << "CGI::write: " << Log.endl;
             kill(childPID, SIGKILL);
             return 0;
         }
     }
-    close(fdw);
+    close(io->wrFd()); // ?
 
     client->setTargetIO(io);
     client->setTargetTimeout(time(0));
 
-    g_server->queuePollFd(fdr, POLLIN);
-    g_server->addClient(fdr, client);
+    g_server->queuePollFd(io->rdFd(), POLLIN);
+    g_server->addClient(io->rdFd(), client);
 
     return 1;
 }
-
-
-// int
-// CGI::exec(Response *res) {
-
-//     const char *args[3] = { 0 };
-    
-//     if (compiled()) {
-//         if (!isExecutableFile(_filepath)) {
-//             Log.error() << _filepath << " is not executable" << Log.endl;
-//             return 0;
-//         }
-//         args[0] = _filepath.c_str();
-//         args[1] = "";
-//     } else {
-//         if (!isExecutableFile(_execpath)) {
-//             Log.error() << _execpath << " is not executable" << Log.endl;
-//             return 0;
-//         }
-//         args[0] = _execpath.c_str();
-//         args[1] = _filepath.c_str();
-//     }
-
-//     if (!setEnv(res->getRequest())) {
-//         Log.error() << "CGI::setEnv" << Log.endl;
-//         return 0;
-//     }
-
-//     if (res->getClient()->getTargetIO()->create(AF_UNIX) < 0) {
-//         Log.syserr() << "CGI::failed to create unix-socket" << Log.endl;
-//         return 0;
-//     }
-
-//     int fd = res->getClient()->getTargetIO()->getFd();
-
-//     int childPID = fork();
-//     if (childPID < 0) {
-//         close(fd);
-//         Log.syserr() << "CGI::fork" << Log.endl;
-//         return 0;
-
-//     } else if (childPID == 0) {
-//         if (dup2(fd, fileno(stdin)) < 0) {
-//             close(fd);
-//             Log.syserr() << "CGI::dup2::stdin" << Log.endl;
-//             exit(124);
-//         }
-//         if (dup2(fd, fileno(stdout)) < 0) {
-//             close(fd); // or twice ?
-//             Log.syserr() << "CGI::dup2::stdout" << Log.endl;
-//             exit(125);
-//         }
-//         if (execve(args[0], const_cast<char * const *>(args), _env) < 0) {
-//             exit(126);
-//         }
-//     }
-
-//     _childPID = childPID;
-
-//     const std::string &body = res->getRequest()->getBody();
-//     if (!body.empty()) {
-//         if (write(fd, body.c_str(), body.length()) == -1) {
-//             Log.syserr() << "CGI::write: " << Log.endl;
-//             // A server should take cgi's start time and kill child process if timeout reached.
-//             kill(childPID, SIGKILL); 
-//             return 0;
-//         }
-//     }
-
-//     res->getClient()->setTargetTimeout(time(0));
-
-//     g_server->queuePollFd(fd, POLLIN);
-//     g_server->addClient(fd, res->getClient());
-
-//     return 1;
-// }
-
 
 bool
 CGI::initEnv(void) {
