@@ -387,14 +387,19 @@ Server::disconnect(int fd) {
         return ;
     }
 
+    IO *cio = client->getClientIO();
+    IO *tio = client->getTargetIO();
+
     Log.debug() << "Server:: [" << client->getClientIO()->rdFd() << "] disconnect" << Log.endl;
     
-    rmPollFd(client->getClientIO()->rdFd());
-    rmPollFd(client->getTargetIO()->rdFd());
+    if (cio) {
+        rmPollFd(cio->rdFd());
+        _clients.erase(cio->rdFd());
+    }
+    if (tio) {
+        rmPollFd(tio->rdFd());
+        _clients.erase(tio->rdFd());
+    }
 
-    _clients.erase(client->getClientIO()->rdFd());
-    _clients.erase(client->getTargetIO()->rdFd());
-
-    delete client;
-    
+    delete client;    
 }
