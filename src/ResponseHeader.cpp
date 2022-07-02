@@ -166,7 +166,7 @@ ResponseHeader::KeepAlive(Response &res) {
     (void)res;
     
     if (res.headers.value(CONNECTION) != "close") {
-        value = "timeout=55, max=1000";
+        value = "timeout=" + sztos(MAX_CLIENT_TIMEOUT) + ", max=" + sztos(MAX_REQUESTS);
     }
 }
 

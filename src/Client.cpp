@@ -38,6 +38,14 @@ Client::~Client(void) {
             delete *it;
         }
     }
+
+    if (_targetSock) {
+        delete _targetSock;
+    }
+
+    if (_clientSock) {
+        delete _clientSock;
+    }
 }
 
 void
@@ -305,6 +313,7 @@ Client::receive(Response *res) {
     
     if (!getTargetSock()->read()) {
         if (res->isCGI()) {
+            setTargetTimeout(0);
             g_server->rmPollFd(getTargetSock()->getFd());
         }
 

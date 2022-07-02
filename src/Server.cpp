@@ -281,7 +281,7 @@ Server::addPollFd(void) {
 void
 Server::rmPollFd(int fd) {
 
-    Log.debug() << "rmPollfd " << fd << Log.endl;
+    Log.debug() << "Server:: [" << fd << "]" << " rmPollfd" << Log.endl;
     if (fd < 0) {
         return ;
     }
@@ -308,19 +308,24 @@ Server::checkTimeout(void) {
 
     for (ClientsMap::iterator it = _clients.begin(); it != _clients.end(); ++it) {
 
+        if (it->second->shouldBeClosed()) {
+            continue ;
+        }
+
         std::time_t t_client = it->second->getClientTimeout();
         std::time_t t_target = it->second->getTargetTimeout();
 
         if (t_client != 0 && cur - t_client > MAX_CLIENT_TIMEOUT) {
             Log.debug() << "Server:: [" << it->second->getClientSock()->getFd() << "] client timeout exceeded" << Log.endl;
-            disconnect(it->second->getClientSock()->getFd());
+            it->second->shouldBeClosed(true);
         }
 
         if (t_target != 0 && cur - t_target > MAX_TARGET_TIMEOUT) {
             Log.debug() << "Server:: [" << it->second->getTargetSock()->getFd() << "] target timeout exceeded" << Log.endl;
             // need to kill child process
-            // close target socket
-            // remove all links
+            // close TARGET socket
+            // remove TARGET link
+            // set response status to gateway timeout
         }
     }
 }
@@ -352,6 +357,7 @@ Server::connect(std::size_t servid, int servfd) {
     }
 
     client->setServerSock(_sockets[servid]);
+    client->setClientTimeout(std::time(0));
     client->getClientSock()->setFd(fd);
     client->getClientSock()->nonblock();
     client->getClientSock()->setAddr(inet_ntoa(clientData.sin_addr));
@@ -377,21 +383,18 @@ Server::disconnect(int fd) {
     }
 
     HTTP::Client *client = it->second;
-    _clients.erase(it);
-    
-    int clientFd = client->getClientSock()->getFd();
-    int targetFd = client->getTargetSock()->getFd();
-
-    rmPollFd(clientFd);
-    rmPollFd(targetFd);
-
-    for (ClientsMap::iterator beg = _clients.begin(); beg != _clients.end(); ++beg) {
-        if (beg->first == clientFd || beg->first == targetFd) {
-            beg->second = NULL;
-        }
+    if (client == NULL) {
+        return ;
     }
+
+    Log.debug() << "Server:: [" << client->getClientSock()->getFd() << "] disconnect" << Log.endl;
+    
+    rmPollFd(client->getClientSock()->getFd());
+    rmPollFd(client->getTargetSock()->getFd());
+
+    _clients.erase(client->getClientSock()->getFd());
+    _clients.erase(client->getTargetSock()->getFd());
 
     delete client;
     
-    Log.debug() << "Server::disconnect [" << clientFd << "]" << Log.endl;
 }
