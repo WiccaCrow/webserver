@@ -9,8 +9,9 @@
 #include "Logger.hpp"
 #include "Globals.hpp"
 
-class Socket {
-    int         _fd;
+class IO {
+    int         _fdr;
+    int         _fdw;
 
     int         _af;
     std::string _addr;
@@ -23,9 +24,11 @@ class Socket {
     std::size_t _dataPos;
 
 public:
-    Socket(void);
-    ~Socket(void);
+    IO(void);
+    ~IO(void);
 
+    void rdFd(int);
+    void wrFd(int);
     void setFd(int);
     void setPort(std::size_t);
     void setDataPos(std::size_t);
@@ -33,7 +36,8 @@ public:
     void setData(const char *);
     void setAddr(const std::string &);
 
-    int getFd(void) const;
+    int rdFd(void) const;
+    int wrFd(void) const;
     std::size_t getPort(void) const;
     std::size_t getDataPos(void) const;
     std::size_t getDataSize(void) const;
@@ -44,6 +48,8 @@ public:
     int write(void);
     int nonblock(void);
     int getline(std::string &, std::size_t);
+
+    int pipe(void);
 
     int create(int = AF_INET);
     int connect(const sockaddr *, socklen_t);
