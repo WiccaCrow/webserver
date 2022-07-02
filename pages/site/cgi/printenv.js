@@ -1,15 +1,15 @@
 let headers = [];
 let body;
 
-body = "<html>\n";
+body = "<html>";
 body += "<title>Server-provided Environment variables</title>";
-body += "<body>\n";
-body += "<table>\n";
-body += "<th><td colspan=2 align=center>Environment Variables</td></th>\n";
+body += "<body>";
+body += "<table>";
+body += "<th><td colspan=2 align=center>Environment Variables</td></th>";
 for (let key in process.env) {
-    body += `<tr><td>${key}</td><td>${process.env[key]}</td></tr>\n`;
+    body += `<tr><td>${key}</td><td>${process.env[key]}</td></tr>`;
 }
-body += "</table></body></html>\n";
+body += "</table></body></html>";
 
 headers.push("Content-Type: text/html");
 headers.push(`Content-Length: ${body.length}`);

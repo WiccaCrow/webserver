@@ -35,7 +35,7 @@ public:
     typedef std::vector<struct pollfd> PollFdVec;
     typedef PollFdVec::iterator iter_pfd;
 
-    typedef std::vector<Socket *> SocketsVec;
+    typedef std::vector<IO *> SocketsVec;
     typedef SocketsVec::iterator iter_sv;
 
     typedef std::map<int, HTTP::Client *> ClientsMap;

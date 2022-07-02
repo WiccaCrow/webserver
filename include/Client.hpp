@@ -10,26 +10,26 @@
 #include "Status.hpp"
 #include "Globals.hpp"
 #include "Pool.hpp"
-#include "Socket.hpp"
+#include "IO.hpp"
 
 namespace HTTP {
 
 class Client { 
 
 private:
-    Socket      *_clientSock;
-    Socket      *_serverSock;
-    Socket      *_targetSock;
+    IO *  _clientIO;
+    IO *  _serverIO;
+    IO *  _targetIO;
 
-    bool        _headSent;
-    bool        _bodySent;
-    bool        _shouldBeClosed;
+    bool  _headSent;
+    bool  _bodySent;
+    bool  _shouldBeClosed;
 
-    std::size_t      _nbRequests;
-    std::size_t      _maxRequests;
-    std::time_t      _clientTimeout;
-    std::time_t      _targetTimeout;
-    std::time_t      _maxTimeout;
+    std::size_t  _nbRequests;
+    std::size_t  _maxRequests;
+    std::time_t  _clientTimeout;
+    std::time_t  _targetTimeout;
+    std::time_t  _maxTimeout;
 
     std::list<Request *>  _requests;
     std::list<Response *> _responses;
@@ -52,12 +52,12 @@ public:
     void setClientTimeout(time_t);
     void setTargetTimeout(time_t);
 
-    Socket *getClientSock(void);
-    Socket *getServerSock(void);
-    Socket *getTargetSock(void);
-    void setClientSock(Socket *);
-    void setServerSock(Socket *);
-    void setTargetSock(Socket *);
+    IO *getClientIO(void);
+    IO *getServerIO(void);
+    IO *getTargetIO(void);
+    void setClientIO(IO *);
+    void setServerIO(IO *);
+    void setTargetIO(IO *);
 
     void checkIfFailed(void);
     void addRequest(void);

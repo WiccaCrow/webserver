@@ -39,7 +39,9 @@ Proxy::pass(void) {
 int
 Proxy::setConnection(struct addrinfo *lst) {
 
-    Socket *sock = _res->getClient()->getTargetSock();
+    IO *sock = new IO();
+
+    // IO *sock = _res->getClient()->getTargetIO();
     int fd = sock->create();
 
     if (fd < 0) {
@@ -65,6 +67,7 @@ Proxy::setConnection(struct addrinfo *lst) {
     struct sockaddr_in *addr = (struct sockaddr_in *)lst->ai_addr;
     Log.info() << "Proxy:: Established [" << fd << "] -> " << inet_ntoa(addr->sin_addr) << std::endl;
 
+    _res->getClient()->setTargetIO(sock);
     g_server->queuePollFd(fd, POLLIN | POLLOUT);
     g_server->addClient(fd, _res->getClient());
 

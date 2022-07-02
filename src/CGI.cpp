@@ -81,7 +81,7 @@ CGI::setFullEnv(Request *req) {
     setenv("PATH_TRANSLATED", req->getResolvedPath().c_str(), 1); // ?
 
     setenv("REMOTE_HOST", req->headers.value(HOST).c_str(), 1);
-    setenv("REMOTE_ADDR", req->getClient()->getClientSock()->getAddr().c_str(), 1);
+    setenv("REMOTE_ADDR", req->getClient()->getClientIO()->getAddr().c_str(), 1);
     setenv("REMOTE_USER", "", 1);
     setenv("REMOTE_IDENT", "", 1);
 
@@ -120,7 +120,7 @@ CGI::setEnv(Request *req) {
     setValue(_env[2], req->getHostRef()._host.c_str()); // host, maybe should be without port
     
     // REMOTE_ADDR
-    setValue(_env[3], req->getClient()->getClientSock()->getAddr()); // ipv4 addr
+    setValue(_env[3], req->getClient()->getClientIO()->getAddr()); // ipv4 addr
     
     // REMOTE_USER
     setValue(_env[4], "");
@@ -193,203 +193,162 @@ CGI::setScriptPath(const std::string path) {
     return true;
 }
 
-// int
-// CGI::exec(Response *res) {
-
-//     if ((compiled() && !isExecutableFile(_filepath)) || !isExecutableFile(_execpath)) {
-//         Log.error() << _filepath << " is not executable" << Log.endl;
-//         return 0;
-//     }
-
-//     if (!setEnv(res->getRequest())) {
-//         Log.error() << "CGI::setEnv " << Log.endl;
-//         return 0;
-//     }
-
-//     int in[2]  = { -1 };
-//     int out[2] = { -1 };
-
-//     if (pipe(in) != 0) {
-//         Log.syserr() << "CGI::pipe::in: " << Log.endl;
-//         return 0;
-//     }
-
-//     if (pipe(out) != 0) {
-//         Log.syserr() << "CGI::pipe::out: " << Log.endl;
-//         close_pipe(in[0], in[1]);
-//         return 0;
-//     }
-
-//     int tmp[2] = { -1 };
-
-//     tmp[0] = dup(fileno(stdin));
-//     if (tmp[0] == -1) {
-//         Log.syserr() << "CGI::backup::in: " << Log.endl;
-//         close_pipe(tmp[0], tmp[1]);
-//         close_pipe(in[0], in[1]);
-//         close_pipe(out[0], out[1]);
-//         return 0;
-//     }
-
-//     tmp[1] = dup(fileno(stdout));
-//     if (tmp[1] == -1) {
-//         Log.syserr() << "CGI::backup::out: " << Log.endl;
-//         close_pipe(tmp[0], tmp[1]);
-//         close_pipe(in[0], in[1]);
-//         close_pipe(out[0], out[1]);
-//         return 0;
-//     }
-
-//     // Redirect for child process
-//     if (dup2(in[0], fileno(stdin)) == -1) {
-//         Log.syserr() << "CGI::redirect::in: " << Log.endl;
-//         close_pipe(tmp[0], tmp[1]);
-//         close_pipe(in[0], in[1]);
-//         close_pipe(out[0], out[1]);
-//         return 0;
-//     }
-
-//     if (dup2(out[1], fileno(stdout)) == -1) {
-//         Log.syserr() << "CGI::redirect::out: " << Log.endl;
-//         restore_std(tmp[0], -1);
-//         close_pipe(tmp[0], tmp[1]);
-//         close_pipe(in[0], in[1]);
-//         close_pipe(out[0], out[1]);
-//         return 0;
-//     }
-
-//     const char *args[3] = { 0 };
-//     if (compiled()) {
-//         args[0] = _filepath.c_str();
-//         args[1] = "";
-//     } else {
-//         args[0] = _execpath.c_str();
-//         args[1] = _filepath.c_str();
-//     }
-
-//     int childPID = fork();
-//     if (childPID < 0) {
-//         Log.syserr() << "CGI::fork: " << Log.endl;
-//         restore_std(tmp[0], tmp[1]);
-//         close_pipe(tmp[0], tmp[1]);
-//         close_pipe(in[0], in[1]);
-//         close_pipe(out[0], out[1]);
-//         return 0;
-
-//     } else if (childPID == 0) {
-//         close_pipe(in[1], out[0]);
-//         if (execve(args[0], const_cast<char * const *>(args), _env) == -1) {
-//             exit(125);
-//         }
-//     }
-
-
-//     const std::string &body = res->getRequest()->getBody();
-//     if (!body.empty()) {
-//         if (write(in[1], body.c_str(), body.length()) == -1) {
-//             Log.syserr() << "CGI::write: " << Log.endl;
-//             restore_std(tmp[0], tmp[1]);
-//             close_pipe(tmp[0], tmp[1]);
-//             close_pipe(in[0], in[1]);
-//             close_pipe(out[0], out[1]);
-//             kill(childPID, SIGKILL);
-//             return 0;
-//         }
-//     }
-
-//     restore_std(tmp[0], tmp[1]);
-//     close_pipe(tmp[0], tmp[1]);
-//     // Not close this then
-//     close_pipe(in[0], in[1]);
-//     close_pipe(-1, out[1]);
-
-//     res->getRequest()->setHead("");
-
-//     fcntl(out[0], F_SETFL, O_NONBLOCK);
-//     res->getClient()->setServerFd(out[0]);
-    
-//     std::size_t id = g_server->addPollfd(out[0], POLLIN);
-
-//     g_server->addClient(id, res->getClient());
-
-//     return 1;
-// }
-
-
 int
 CGI::exec(Response *res) {
 
+    if ((compiled() && !isExecutableFile(_filepath)) || !isExecutableFile(_execpath)) {
+        Log.error() << _filepath << " is not executable" << Log.endl;
+        return 0;
+    }
+
+    if (!setEnv(res->getRequest())) {
+        Log.error() << "CGI::setEnv " << Log.endl;
+        return 0;
+    }
+
     const char *args[3] = { 0 };
-    
     if (compiled()) {
-        if (!isExecutableFile(_filepath)) {
-            Log.error() << _filepath << " is not executable" << Log.endl;
-            return 0;
-        }
         args[0] = _filepath.c_str();
         args[1] = "";
     } else {
-        if (!isExecutableFile(_execpath)) {
-            Log.error() << _execpath << " is not executable" << Log.endl;
-            return 0;
-        }
         args[0] = _execpath.c_str();
         args[1] = _filepath.c_str();
     }
 
-    if (!setEnv(res->getRequest())) {
-        Log.error() << "CGI::setEnv" << Log.endl;
+    Client *client = res->getClient();
+
+    IO *sock = new IO();
+    if (sock == NULL) {
+        Log.error() << "CGI:: Cannot allocate memory for IO" << Log.endl;
         return 0;
     }
 
-    if (res->getClient()->getTargetSock()->create(AF_UNIX) < 0) {
-        Log.syserr() << "CGI::failed to create unix-socket" << Log.endl;
+    if (sock->pipe() < 0) {
+        Log.error() << "CGI:: pipe failed" << Log.endl;
+        return 0;
+    }
+    
+    if (sock->nonblock() < 0) {
+        Log.error() << "CGI:: nonblock failed" << Log.endl;
         return 0;
     }
 
-    int fd = res->getClient()->getTargetSock()->getFd();
+    int fdr = sock->rdFd();
+    int fdw = sock->wrFd();
 
     int childPID = fork();
     if (childPID < 0) {
-        close(fd);
-        Log.syserr() << "CGI::fork" << Log.endl;
+        Log.syserr() << "CGI::fork: " << Log.endl;
         return 0;
 
     } else if (childPID == 0) {
-        if (dup2(fd, fileno(stdin)) < 0) {
-            close(fd);
+        if (dup2(fdr, fileno(stdin)) < 0) {
             Log.syserr() << "CGI::dup2::stdin" << Log.endl;
+            exit(123);
+        }
+        if (dup2(fdw, fileno(stdout)) < 0) {
+            Log.syserr() << "CGI::dup2::stdout" << Log.endl;
             exit(124);
         }
-        if (dup2(fd, fileno(stdout)) < 0) {
-            close(fd); // or twice ?
-            Log.syserr() << "CGI::dup2::stdout" << Log.endl;
+        if (execve(args[0], const_cast<char * const *>(args), _env) == -1) {
             exit(125);
         }
-        if (execve(args[0], const_cast<char * const *>(args), _env) < 0) {
-            exit(126);
-        }
     }
-
-    _childPID = childPID;
 
     const std::string &body = res->getRequest()->getBody();
     if (!body.empty()) {
-        if (write(fd, body.c_str(), body.length()) == -1) {
+        if (write(fdw, body.c_str(), body.length()) == -1) {
             Log.syserr() << "CGI::write: " << Log.endl;
-            // A server should take cgi's start time and kill child process if timeout reached.
-            kill(childPID, SIGKILL); 
+            kill(childPID, SIGKILL);
             return 0;
         }
     }
+    close(fdw);
 
-    res->getClient()->setTargetTimeout(time(0));
+    client->setTargetIO(sock);
+    client->setTargetTimeout(time(0));
 
-    g_server->queuePollFd(fd, POLLIN);
-    g_server->addClient(fd, res->getClient());
+    g_server->queuePollFd(fdr, POLLIN);
+    g_server->addClient(fdr, client);
 
     return 1;
 }
+
+
+// int
+// CGI::exec(Response *res) {
+
+//     const char *args[3] = { 0 };
+    
+//     if (compiled()) {
+//         if (!isExecutableFile(_filepath)) {
+//             Log.error() << _filepath << " is not executable" << Log.endl;
+//             return 0;
+//         }
+//         args[0] = _filepath.c_str();
+//         args[1] = "";
+//     } else {
+//         if (!isExecutableFile(_execpath)) {
+//             Log.error() << _execpath << " is not executable" << Log.endl;
+//             return 0;
+//         }
+//         args[0] = _execpath.c_str();
+//         args[1] = _filepath.c_str();
+//     }
+
+//     if (!setEnv(res->getRequest())) {
+//         Log.error() << "CGI::setEnv" << Log.endl;
+//         return 0;
+//     }
+
+//     if (res->getClient()->getTargetIO()->create(AF_UNIX) < 0) {
+//         Log.syserr() << "CGI::failed to create unix-socket" << Log.endl;
+//         return 0;
+//     }
+
+//     int fd = res->getClient()->getTargetIO()->getFd();
+
+//     int childPID = fork();
+//     if (childPID < 0) {
+//         close(fd);
+//         Log.syserr() << "CGI::fork" << Log.endl;
+//         return 0;
+
+//     } else if (childPID == 0) {
+//         if (dup2(fd, fileno(stdin)) < 0) {
+//             close(fd);
+//             Log.syserr() << "CGI::dup2::stdin" << Log.endl;
+//             exit(124);
+//         }
+//         if (dup2(fd, fileno(stdout)) < 0) {
+//             close(fd); // or twice ?
+//             Log.syserr() << "CGI::dup2::stdout" << Log.endl;
+//             exit(125);
+//         }
+//         if (execve(args[0], const_cast<char * const *>(args), _env) < 0) {
+//             exit(126);
+//         }
+//     }
+
+//     _childPID = childPID;
+
+//     const std::string &body = res->getRequest()->getBody();
+//     if (!body.empty()) {
+//         if (write(fd, body.c_str(), body.length()) == -1) {
+//             Log.syserr() << "CGI::write: " << Log.endl;
+//             // A server should take cgi's start time and kill child process if timeout reached.
+//             kill(childPID, SIGKILL); 
+//             return 0;
+//         }
+//     }
+
+//     res->getClient()->setTargetTimeout(time(0));
+
+//     g_server->queuePollFd(fd, POLLIN);
+//     g_server->addClient(fd, res->getClient());
+
+//     return 1;
+// }
 
 
 bool

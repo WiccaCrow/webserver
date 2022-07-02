@@ -402,7 +402,7 @@ Request::parseLine(std::string &line) {
     if (getStatus() != CONTINUE) {
         if (!_servBlock) {
             Log.debug() << "Serverblock is not set after parsing. Default matching" << Log.endl;
-            setServerBlock(matchServerBlock(_host._host, getClient()->getServerSock()->getPort(), getClient()->getServerSock()->getAddr()));
+            setServerBlock(matchServerBlock(_host._host, getClient()->getServerIO()->getPort(), getClient()->getServerIO()->getAddr()));
         }
         if (!_location) {
             Log.debug() << "Location is not set after parsing. Default matching" << Log.endl;
@@ -501,7 +501,7 @@ Request::checkHeaders(void) {
     // }
 
     if (!_servBlock) {
-        setServerBlock(matchServerBlock(_uri._host, getClient()->getServerSock()->getPort(), getClient()->getServerSock()->getAddr()));
+        setServerBlock(matchServerBlock(_uri._host, getClient()->getServerIO()->getPort(), getClient()->getServerIO()->getAddr()));
     }
     if (!_location) {
         setLocation(getServerBlock()->matchLocation(_uri._path));

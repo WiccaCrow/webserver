@@ -12,7 +12,7 @@
 #endif
 
 #ifndef MAX_CLIENT_TIMEOUT
-    # define MAX_CLIENT_TIMEOUT 10
+    # define MAX_CLIENT_TIMEOUT 100
 #endif
 
 #ifndef MAX_TARGET_TIMEOUT

@@ -125,9 +125,9 @@ Server::start(void) {
 int 
 Server::addListenSocket(const std::string &addr, std::size_t port) {
 
-    Socket *sock = new Socket();
+    IO *sock = new IO();
     if (sock == NULL) {
-        Log.syserr() << "Server:: Cannot allocate memory for Socket" << Log.endl;
+        Log.syserr() << "Server:: Cannot allocate memory for IO" << Log.endl;
         return -1;
     }
 
@@ -141,7 +141,7 @@ Server::addListenSocket(const std::string &addr, std::size_t port) {
         return -1;
     }
 
-    queuePollFd(sock->getFd(), POLLIN);
+    queuePollFd(sock->rdFd(), POLLIN);
     _sockets.push_back(sock);
 
     return 0;
@@ -316,12 +316,12 @@ Server::checkTimeout(void) {
         std::time_t t_target = it->second->getTargetTimeout();
 
         if (t_client != 0 && cur - t_client > MAX_CLIENT_TIMEOUT) {
-            Log.debug() << "Server:: [" << it->second->getClientSock()->getFd() << "] client timeout exceeded" << Log.endl;
+            Log.debug() << "Server:: [" << it->second->getClientIO()->rdFd() << "] client timeout exceeded" << Log.endl;
             it->second->shouldBeClosed(true);
         }
 
         if (t_target != 0 && cur - t_target > MAX_TARGET_TIMEOUT) {
-            Log.debug() << "Server:: [" << it->second->getTargetSock()->getFd() << "] target timeout exceeded" << Log.endl;
+            Log.debug() << "Server:: [" << it->second->getTargetIO()->rdFd() << "] target timeout exceeded" << Log.endl;
             // need to kill child process
             // close TARGET socket
             // remove TARGET link
@@ -356,12 +356,12 @@ Server::connect(std::size_t servid, int servfd) {
         return ;
     }
 
-    client->setServerSock(_sockets[servid]);
+    client->setServerIO(_sockets[servid]);
     client->setClientTimeout(std::time(0));
-    client->getClientSock()->setFd(fd);
-    client->getClientSock()->nonblock();
-    client->getClientSock()->setAddr(inet_ntoa(clientData.sin_addr));
-    client->getClientSock()->setPort(ntohs(clientData.sin_port));
+    client->getClientIO()->setFd(fd);
+    client->getClientIO()->nonblock();
+    client->getClientIO()->setAddr(inet_ntoa(clientData.sin_addr));
+    client->getClientIO()->setPort(ntohs(clientData.sin_port));
 
     queuePollFd(fd, POLLIN | POLLOUT);
 
@@ -387,13 +387,13 @@ Server::disconnect(int fd) {
         return ;
     }
 
-    Log.debug() << "Server:: [" << client->getClientSock()->getFd() << "] disconnect" << Log.endl;
+    Log.debug() << "Server:: [" << client->getClientIO()->rdFd() << "] disconnect" << Log.endl;
     
-    rmPollFd(client->getClientSock()->getFd());
-    rmPollFd(client->getTargetSock()->getFd());
+    rmPollFd(client->getClientIO()->rdFd());
+    rmPollFd(client->getTargetIO()->rdFd());
 
-    _clients.erase(client->getClientSock()->getFd());
-    _clients.erase(client->getTargetSock()->getFd());
+    _clients.erase(client->getClientIO()->rdFd());
+    _clients.erase(client->getTargetIO()->rdFd());
 
     delete client;
     

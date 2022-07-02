@@ -4,9 +4,9 @@
 namespace HTTP {
 
 Client::Client(void)
-    : _clientSock(NULL)
-    , _serverSock(NULL)
-    , _targetSock(NULL)
+    : _clientIO(NULL)
+    , _serverIO(NULL)
+    , _targetIO(NULL)
     , _headSent(false)
     , _bodySent(false)
     , _shouldBeClosed(false)
@@ -15,11 +15,9 @@ Client::Client(void)
     , _clientTimeout(0) 
     , _targetTimeout(0) {
 
-    _clientSock = new Socket();
-    _targetSock = new Socket();
-
-    if (_clientSock == NULL || _targetSock == NULL) {
-        Log.syserr() << "Client::Cannot allocate memory for Sockets" << Log.endl;
+    _clientIO = new IO();
+    if (_clientIO == NULL) {
+        Log.syserr() << "Client:: Cannot allocate memory for socket" << Log.endl;
     }
 }
 
@@ -39,12 +37,12 @@ Client::~Client(void) {
         }
     }
 
-    if (_targetSock) {
-        delete _targetSock;
+    if (_targetIO) {
+        delete _targetIO;
     }
 
-    if (_clientSock) {
-        delete _clientSock;
+    if (_clientIO) {
+        delete _clientIO;
     }
 }
 
@@ -78,40 +76,40 @@ Client::setTargetTimeout(time_t time) {
     _targetTimeout = time;
 }
 
-Socket *
-Client::getClientSock(void) {
-    return _clientSock;
+IO *
+Client::getClientIO(void) {
+    return _clientIO;
 }
 
-Socket *
-Client::getServerSock(void) {
-    return _serverSock;
+IO *
+Client::getServerIO(void) {
+    return _serverIO;
 }
 
-Socket *
-Client::getTargetSock(void) {
-    return _targetSock;
-}
-
-void
-Client::setClientSock(Socket *sock) {
-    _clientSock = sock;
+IO *
+Client::getTargetIO(void) {
+    return _targetIO;
 }
 
 void
-Client::setServerSock(Socket *sock) {
-    _serverSock = sock;
+Client::setClientIO(IO *sock) {
+    _clientIO = sock;
 }
 
 void
-Client::setTargetSock(Socket *sock) {
-    _targetSock = sock;
+Client::setServerIO(IO *sock) {
+    _serverIO = sock;
+}
+
+void
+Client::setTargetIO(IO *sock) {
+    _targetIO = sock;
 }
 
 const std::string
 Client::getHostname(void) {
-    const std::size_t port = getClientSock()->getPort();
-    const std::string &addr = getClientSock()->getAddr();
+    const std::size_t port = getClientIO()->getPort();
+    const std::string &addr = getClientIO()->getAddr();
 
     return (port != 0 ? addr + ":" + sztos(port) : addr);
 }
@@ -171,7 +169,7 @@ Client::removeResponse(void) {
 void
 Client::pollin(int fd) {
 
-    if (fd == getClientSock()->getFd()) {
+    if (fd == getClientIO()->rdFd()) {
 
         if (_requests.size() == _responses.size()) {
             addRequest();
@@ -188,8 +186,10 @@ Client::pollin(int fd) {
             }
         }
     } 
-    else if (fd == getTargetSock()->getFd()) {
-        receive(_responses.front());
+    else if (fd == getTargetIO()->rdFd()) {
+        if (_responses.size() > 0) {
+            receive(_responses.front());
+        }
     }
  
 }
@@ -198,7 +198,7 @@ void
 Client::pollout(int fd) {
     (void)fd;
 
-    if (fd == getClientSock()->getFd()) {
+    if (fd == getClientIO()->wrFd()) {
 
         if (_responses.empty()) {
             return ;
@@ -215,11 +215,17 @@ Client::pollout(int fd) {
 
             removeResponse();
             removeRequest();
-            getClientSock()->clear();
+            getClientIO()->clear();
+
+            if (getTargetIO()) {
+                g_server->rmPollFd(getTargetIO()->rdFd());
+                delete getTargetIO();
+                setTargetIO(NULL);
+            }
             replyDone(false);
         }
     }
-    // else if (fd == getTargetSock()->getFd()) {
+    // else if (fd == getTargetIO()->wrFd()) {
     //     reply(_requests.front());
     // }
 }
@@ -243,18 +249,18 @@ Client::reply(Response *res) {
     signal(SIGPIPE, SIG_IGN);
 
     if (!_headSent) {
-        if (!getClientSock()->getDataPos()) {
-            getClientSock()->setData(res->getHead().c_str());
-            getClientSock()->setDataSize(res->getHead().length());
+        if (!getClientIO()->getDataPos()) {
+            getClientIO()->setData(res->getHead().c_str());
+            getClientIO()->setDataSize(res->getHead().length());
         }
-        _headSent = getClientSock()->write();
+        _headSent = getClientIO()->write();
 
     } else if (!_bodySent) {
-        if (!getClientSock()->getDataPos()) {
-            getClientSock()->setData(res->getBody().c_str());
-            getClientSock()->setDataSize(res->getBody().length());
+        if (!getClientIO()->getDataPos()) {
+            getClientIO()->setData(res->getBody().c_str());
+            getClientIO()->setDataSize(res->getBody().length());
         }
-        _bodySent = getClientSock()->write();
+        _bodySent = getClientIO()->write();
     }
 }
 
@@ -268,30 +274,30 @@ Client::reply(Request *req) {
     // or make head empty (easier)
 
     if (!_headSent) {
-        if (!getTargetSock()->getDataPos()) {
-            getTargetSock()->setData(req->getHead().c_str());
-            getTargetSock()->setDataSize(req->getHead().length());
+        if (!getTargetIO()->getDataPos()) {
+            getTargetIO()->setData(req->getHead().c_str());
+            getTargetIO()->setDataSize(req->getHead().length());
         }
-        _headSent = getTargetSock()->write();
+        _headSent = getTargetIO()->write();
 
     } else if (!_bodySent) {
-        if (!getTargetSock()->getDataPos()) {
-            getTargetSock()->setData(req->getBody().c_str());
-            getTargetSock()->setDataSize(req->getBody().length());
+        if (!getTargetIO()->getDataPos()) {
+            getTargetIO()->setData(req->getBody().c_str());
+            getTargetIO()->setDataSize(req->getBody().length());
         }
-        _bodySent = getTargetSock()->write();
+        _bodySent = getTargetIO()->write();
     }
 }
 
 void
 Client::receive(Request *req) {
 
-    Log.debug() << "Client:: [" << getClientSock()->getFd() << "] receive request" << Log.endl;
+    Log.debug() << "Client:: [" << getClientIO()->rdFd() << "] receive request" << Log.endl;
     
-    if (!getClientSock()->read()) {
-        Log.debug() << "Client:: [" << getClientSock()->getFd() << "] peer closed connection" << Log.endl;
-        // g_server->rmPollFd(getClientSock()->getFd());
-        // g_server->rmPollFd(getTargetSock()->getFd());
+    if (!getClientIO()->read()) {
+        Log.debug() << "Client:: [" << getClientIO()->rdFd() << "] peer closed connection" << Log.endl;
+        // g_server->rmPollFd(getClientIO()->getFd());
+        // g_server->rmPollFd(getTargetIO()->getFd());
         shouldBeClosed(true);
         return ;
     }
@@ -299,7 +305,7 @@ Client::receive(Request *req) {
     while (!req->formed()) {
         std::string line;
 
-        if (!getClientSock()->getline(line, req->getBodySize())) {
+        if (!getClientIO()->getline(line, req->getBodySize())) {
             return ;
         }
         req->parseLine(line);
@@ -309,26 +315,31 @@ Client::receive(Request *req) {
 void
 Client::receive(Response *res) {
 
-    Log.debug() << "Client:: [" << getTargetSock()->getFd() << "] receive response" << Log.endl;
     
-    if (!getTargetSock()->read()) {
+    int bytes = getTargetIO()->read();
+    if (bytes < 0) {
+        Log.debug() << "Client:: [" << getTargetIO()->rdFd() << "] receive -1 response" << Log.endl;
+        return ;
+    } else if (bytes == 0) {
+        Log.debug() << "Client:: [" << getTargetIO()->rdFd() << "] receive 0 response" << Log.endl;
+
         if (res->isCGI()) {
             setTargetTimeout(0);
-            g_server->rmPollFd(getTargetSock()->getFd());
+            g_server->rmPollFd(getTargetIO()->rdFd());
         }
 
         if (res->isProxy()) {
-            g_server->rmPollFd(getTargetSock()->getFd());
+            g_server->rmPollFd(getTargetIO()->rdFd());
         }
     }
 
     while (!res->formed()) {
         std::string line;
 
-        if (!getTargetSock()->getline(line, res->getBodySize())) {
+        if (!getTargetIO()->getline(line, res->getBodySize())) {
             return ;
         }
-        res->parseLine(line);
+        res->parseLine(line);    
     }
 }
 

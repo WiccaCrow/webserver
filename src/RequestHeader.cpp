@@ -226,7 +226,7 @@ RequestHeader::Host(Request &req) {
         return BAD_REQUEST;
     }
     
-    if (req.getClient()->getServerSock()->getPort() != host._port) {
+    if (req.getClient()->getServerIO()->getPort() != host._port) {
         Log.error() << "Host: Port mismatch " << host._port_s << Log.endl;
         return BAD_REQUEST;
     }

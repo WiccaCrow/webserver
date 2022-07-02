@@ -723,6 +723,7 @@ Response::matchCGI(const std::string &filepath) {
 bool
 Response::parseLine(std::string &line) {
 
+    // Log.debug() << line << Log.endl;
     if (!_isCGI && !flagSet(PARSED_SL)) {
         rtrim(line, CRLF);
         setStatus(!line.empty() ? parseSL(line) : CONTINUE);
@@ -730,7 +731,7 @@ Response::parseLine(std::string &line) {
         rtrim(line, CRLF);
         setStatus(!line.empty() ? parseHeader(line) : checkHeaders());
     } else if (!flagSet(PARSED_BODY)) {
-        setStatus(parseBody(line));
+        setStatus(!line.empty() ? parseBody(line) : PROCESSING);
     } else {
         setStatus(INTERNAL_SERVER_ERROR);
         Log.error() << "Somehow we ended up here" << Log.endl;
@@ -759,8 +760,6 @@ Response::parseLine(std::string &line) {
 
 StatusCode
 Response::parseSL(const std::string &line) {
-
-    Log.debug() << line << Log.endl;
 
     std::size_t pos = 0;
     setProtocol(getWord(line, " ", pos));
@@ -834,10 +833,13 @@ Response::checkHeaders(void) {
     if (headers.has(CONTENT_LENGTH)) {
         std::string &len_s = headers.value(CONTENT_LENGTH);
         long long num;
-        if (stoll(num, len_s.c_str())) {
+        if (!stoll(num, len_s.c_str())) {
+            Log.debug() << "Response::ParsedHeaders::Bad length " << num << Log.endl;
             return BAD_GATEWAY;
         }
         setBodySize(num);
+    } else {
+        setBodySize(SIZE_T_MAX);
     }
 
     headers.erase(CONNECTION);
@@ -850,7 +852,7 @@ Response::checkHeaders(void) {
 
 StatusCode
 Response::writeBody(const std::string &body) {
-    Log.debug() << "Response::writeBody " << body << Log.endl;
+    Log.debug() << "Response::writeBody " << Log.endl;
 
     if (body.length() > getBodySize()) {
         Log.error() << "Response: Body length is too long " << Log.endl;
@@ -865,7 +867,7 @@ Response::writeBody(const std::string &body) {
 
 StatusCode
 Response::parseBody(const std::string &line) {
-    Log.debug() << "Response::parseBody " << line << Log.endl;
+    Log.debug() << "Response::parseBody " << Log.endl;
     if (headers.has(TRANSFER_ENCODING)) {
         Log.debug() << "Response::parseChunk" << Log.endl;
         return parseChunk(line);
@@ -875,7 +877,6 @@ Response::parseBody(const std::string &line) {
     } else {
         setBody(getBody() + line);
         return CONTINUE;
-        // _body += line;
     }
     return PROCESSING;
 }
