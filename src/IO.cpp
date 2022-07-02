@@ -235,6 +235,7 @@ IO::getline(std::string &line, std::size_t size) {
 
     } else {
         if (_rem.length() < size) {
+            Log.debug() << _rem.length() << " " << size << Log.endl;
             return 0;
         }
         pos = size;

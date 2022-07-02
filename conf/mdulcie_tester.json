@@ -1,7 +1,6 @@
 {
     "servers": {
         "http": {
-            "port": 8080,
             "server_names": [ "localhost" ],
             "CGI": {
                 ".bla": "./tests/ubuntu_cgi_tester"

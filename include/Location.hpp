@@ -6,6 +6,7 @@
 
 #include "CGI.hpp"
 #include "Auth.hpp"
+#include "Proxy.hpp"
 #include "Redirect.hpp"
 
 namespace HTTP {
@@ -16,7 +17,6 @@ public:
     typedef std::vector<std::string>    IndicesVec;
     typedef std::vector<std::string>    MethodsVec;
     typedef std::map<std::string, CGI>  CGIsMap;
-    typedef std::vector<std::string>    DomainsVec;
     typedef std::map<int, std::string>  ErrorPagesMap;
 
 private:
@@ -28,10 +28,10 @@ private:
     int           _post_max_body;
     MethodsVec    _allowedMethods;
     CGIsMap       _CGIs;
-    DomainsVec    _domains;
     Redirect      _redirect;
     Auth          _auth;
     ErrorPagesMap _errorPages;
+    Proxy         _proxy;
 
 public:
     Location(void);
@@ -47,8 +47,10 @@ public:
     IndicesVec    &getIndexRef(void);
     MethodsVec    &getAllowedMethodsRef(void);
     CGIsMap       &getCGIsRef(void);
-    DomainsVec    &getDomainsRef(void);
     ErrorPagesMap &getErrorPagesRef(void);
+    Proxy         &getProxyRef(void);
+    const Proxy   &getProxy(void) const;
+
 };
 
 }

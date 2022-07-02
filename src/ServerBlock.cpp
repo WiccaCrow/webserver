@@ -4,33 +4,33 @@ namespace HTTP {
 
 ServerBlock::ServerBlock() {}
 
-ServerBlock::ServerBlock(const ServerBlock &obj) {
-    operator=(obj);
+ServerBlock::ServerBlock(const ServerBlock &other) {
+    operator=(other);
 }
 
 ServerBlock::~ServerBlock() { }
 
 ServerBlock &
-ServerBlock::operator=(const ServerBlock &obj) {
-    if (this != &obj) {
-        _addr            = obj._addr;
-        _port            = obj._port;
-        _blockname       = obj._blockname;
-        _server_names    = obj._server_names;
-        _locationBase    = obj._locationBase;
-        _locations       = obj._locations;
+ServerBlock::operator=(const ServerBlock &other) {
+    if (this != &other) {
+        _addr            = other._addr;
+        _port            = other._port;
+        _blockname       = other._blockname;
+        _server_names    = other._server_names;
+        _locationBase    = other._locationBase;
+        _locations       = other._locations;
     }
     return (*this);
 }
 
 void
-ServerBlock::setAddr(const std::string &ipaddr) {
-    this->_addr = ipaddr;
+ServerBlock::setAddr(const std::string &addr) {
+    this->_addr = addr;
 }
 
 void
-ServerBlock::setBlockname(const std::string &blockname) {
-    this->_blockname = blockname;
+ServerBlock::setBlockname(const std::string &name) {
+    this->_blockname = name;
 }
 
 const std::string &

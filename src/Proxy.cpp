@@ -1,47 +1,53 @@
 #include "Proxy.hpp"
 #include "Server.hpp"
+#include "Response.hpp"
 
 namespace HTTP {
 
 Proxy::Proxy(void) {}
 Proxy::~Proxy(void) {}
 
-Proxy::Proxy(const Proxy &other) {
-    *this = other;
+Proxy::DomainsVec &
+Proxy::getDomainsRef(void) {
+    return _domains;
 }
 
-Proxy &
-Proxy::operator=(const Proxy &other) {
-    if (this != &other) {
-        // Rewrite
-    }
-    return *this;
+const Proxy::DomainsVec &
+Proxy::getDomainsRef(void) const {
+    return _domains;
+}
+
+URI &
+Proxy::getPassRef(void) {
+    return _pass;
 }
 
 int
-Proxy::pass(void) {
+Proxy::pass(Response *res) {
+    _res = res;
 
-    int res = 0;
+    const std::string &host = res->getRequest()->getUriRef()._host;
+    const std::string &port = res->getRequest()->getUriRef()._port_s;
+
     struct addrinfo *addrlst = NULL;
-    if (getaddrinfo(_host.c_str(), _port.c_str(), NULL, &addrlst)) {
-        Log.error() << "Proxy::getaddrinfo -> " << _host << ":" << _port << std::endl;
-        res = 0;
+    if (getaddrinfo(host.c_str(), port.c_str(), NULL, &addrlst)) {
+        Log.error() << "Proxy::getaddrinfo -> " << host << ":" << port << std::endl;
+        return 0;
     }
  
     if (!setConnection(addrlst)) {
-        res = 0;
+        freeaddrinfo(addrlst);
+        return 0;
     }
 
     freeaddrinfo(addrlst);
-    return res;
+    return 1;
 }
 
 int
 Proxy::setConnection(struct addrinfo *lst) {
 
     IO *sock = new IO();
-
-    // IO *sock = _res->getClient()->getTargetIO();
     int fd = sock->create();
 
     if (fd < 0) {
@@ -67,11 +73,53 @@ Proxy::setConnection(struct addrinfo *lst) {
     struct sockaddr_in *addr = (struct sockaddr_in *)lst->ai_addr;
     Log.info() << "Proxy:: Established [" << fd << "] -> " << inet_ntoa(addr->sin_addr) << std::endl;
 
+    std::string toWrite;
+    toWrite.reserve(512);
+    toWrite = makeStartLine() + CRLF;
+    Headers<RequestHeader>::iterator it = _res->getRequest()->headers.begin();
+    for (; it != _res->getRequest()->headers.end(); ++it) {
+        if (it->first == CONNECTION || it->first == KEEP_ALIVE) {
+            continue ;
+        }
+        toWrite += it->second.key + ':' + it->second.value + CRLF;
+    }
+    toWrite += CRLF;
+    _res->getRequest()->setHead(toWrite);
+
+    writeToSocket(fd, _res->getRequest()->getHead());
+    writeToSocket(fd, _res->getRequest()->getBody());
+
     _res->getClient()->setTargetIO(sock);
-    g_server->queuePollFd(fd, POLLIN | POLLOUT);
+    g_server->queuePollFd(fd, POLLIN);
     g_server->addClient(fd, _res->getClient());
 
     return 1;
+}
+
+int
+Proxy::writeToSocket(int fd, std::string toWrite) {
+    toWrite += CRLF;
+    if (write(fd, toWrite.c_str(), toWrite.length()) == -1) {
+        Log.syserr() << "Proxy::write: " << Log.endl;
+        return 0;
+    }
+    return 1;
+}
+
+std::string
+Proxy::makeStartLine(void) {
+    Request *req = _res->getRequest();
+    URI &uri = req->getUriRef();
+
+    if (uri._path.empty()) {
+        if (req->getMethod() == "OPTIONS") {
+            uri._path = "*";
+        } else {
+            uri._path = "/";
+        }
+    }
+    req->headers[HOST].value = uri._host + ":" + uri._port_s;
+    return req->getMethod() + " " + uri._path + " " + SERVER_PROTOCOL;
 }
 
 }

@@ -1,7 +1,5 @@
 {
     "servers": {
-        "http": {
-            "port": 7676
-        }
+        "http": {}
     }
 }

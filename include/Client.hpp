@@ -75,7 +75,7 @@ public:
     void reply(Request *);
     void reply(Response *);
 
-    // HTTP::ServerBlock *matchServerBlock(const std::string &host, std::size_t port) const;
+    ServerBlock *matchServerBlock(const std::string &host);
 };
 
 }

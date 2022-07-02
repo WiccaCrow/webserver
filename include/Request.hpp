@@ -9,7 +9,6 @@
 
 #include "CRC.hpp"
 #include "Globals.hpp"
-#include "Location.hpp"
 #include "Logger.hpp"
 #include "RequestHeader.hpp"
 #include "ServerBlock.hpp"
@@ -26,8 +25,6 @@
 
 namespace HTTP {
 
-class Client;
-
 class ARequest {
 
 private:
@@ -38,18 +35,19 @@ private:
     std::string       _body;
     std::string       _head;
 
-    
     // Parsing
     bool              _isChunkSize;
-    std::size_t            _bodySize;
-    std::size_t            _chunkSize;
-    std::size_t            _parseFlags;
+    std::size_t       _bodySize;
+    std::size_t       _chunkSize;
+    std::size_t       _parseFlags;
 
     bool              _formed;
     bool              _chunked;
 
     // Internal status
     StatusCode        _status;
+
+    bool              _isProxy;
 
 public:
     ARequest(void);
@@ -79,7 +77,7 @@ public:
     
     StatusCode parseChunk(const std::string &);
     StatusCode writeChunkSize(const std::string &);
-    StatusCode writeChuck(const std::string &);
+    StatusCode writeChunk(const std::string &);
 
     virtual bool parseLine(std::string &) = 0;
     virtual StatusCode parseSL(const std::string &) = 0;
@@ -97,41 +95,45 @@ public:
     bool isChunkSize(void) const;
     void isChunkSize(bool);
 
+    bool isProxy(void);
+    void isProxy(bool isProxy);
+
 };
 
 
 
 
-
+class ServerBlock;
+class Location;
+class Client;
 
 class Request : public ARequest {
 
 private:
-    std::string                       _method;
-    std::string                       _rawURI;
+    std::string    _method;
+    std::string    _rawURI;
 
-    URI                               _uri;
-    URI                               _host;
-    URI                               _referrer;
+    URI            _uri;
+    URI            _host;
+    URI            _referrer;
 
-    RangeList                         _ranges;
+    RangeList      _ranges;
 
-    std::string                       _resolvedPath;
+    std::string    _resolvedPath;
     
-    ServerBlock *                     _servBlock;
-    Location    *                     _location;
-    Client      *                     _client;
+    ServerBlock *  _servBlock;
+    Location    *  _location;
+    Client      *  _client;
 
 
     // why here?
-    uint32_t                          _storedHash; 
-    bool                              _authorized;
-
+    uint32_t       _storedHash; 
+    bool           _authorized;
 
     std::map<std::string, std::string> _cookie; // ?
 
 public:
-    Headers<RequestHeader>            headers;
+    Headers<RequestHeader>  headers;
 
     Request(void);
     Request(Client *);
@@ -183,6 +185,9 @@ public:
 
     const std::map<std::string, std::string> &getCookie(void);
     void                                      setCookie(std::map<std::string, std::string> cookie);
+
+    void proxyLookUp(void);
+
 };
 
 } // namespace HTTP

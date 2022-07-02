@@ -60,7 +60,7 @@ processChunk(void) {
 }
 
 static void
-copyChuck(uint32_t *W, const uint8_t *str) {
+copyChunk(uint32_t *W, const uint8_t *str) {
     std::size_t i = 0;
     for (std::size_t j = 0; j < 16; j++) {    
         unsigned char tmp = str[i] ? str[i] : 0x80;
@@ -84,15 +84,15 @@ SHA1(const std::string &msg) {
     const uint8_t *str = reinterpret_cast<const uint8_t *>(msg.c_str());
 
     std::size_t i = 0;
-    const std::size_t chucksCount = (msg.length() / 64) + 1;
-    for (std::size_t index = 1; index < chucksCount; index++) {
-        copyChuck(W, (str + i));
+    const std::size_t chunksCount = (msg.length() / 64) + 1;
+    for (std::size_t index = 1; index < chunksCount; index++) {
+        copyChunk(W, (str + i));
         i += 64;
         processChunk();
     }
 
     memset((void *)W, 0, 64);
-    copyChuck(W, (str + i));
+    copyChunk(W, (str + i));
     W[14] = static_cast<uint32_t>((bits >> 32));
     W[15] = static_cast<uint32_t>((bits << 32) >> 32);    
     processChunk();

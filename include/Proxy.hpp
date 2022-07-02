@@ -9,14 +9,21 @@
 #include "Logger.hpp"
 #include "URI.hpp"
 #include "Status.hpp"
-#include "Response.hpp"
+#include "Header.hpp"
 
 namespace HTTP {
 
+class Response;
+
 class Proxy {
 
+public:
+    typedef std::vector<std::string>    DomainsVec;
+
 private:
-    Response    *_res;
+    DomainsVec    _domains;
+    URI           _pass;
+    Response    * _res;
 
     std::string  _host;
     std::string  _port;
@@ -25,11 +32,18 @@ public:
     Proxy(void);
     ~Proxy(void);
 
-    Proxy(const Proxy &);
-    Proxy &operator=(const Proxy &);
-
-    int pass(void);
+    int pass(Response *);
     int setConnection(struct addrinfo *);
+
+    int writeToSocket(int fd, std::string toWrite);
+
+    std::string makeStartLine(void);
+
+    DomainsVec          &getDomainsRef(void);
+    const DomainsVec    &getDomainsRef(void) const;
+
+    URI           &getPassRef(void);
+
 };
 
 }

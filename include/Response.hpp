@@ -21,6 +21,7 @@
 #include "ResponseHeader.hpp"
 #include "HTML.hpp"
 #include "ErrorResponses.hpp"
+// #include "Proxy.hpp"
 
 namespace HTTP {
 
@@ -70,6 +71,7 @@ public:
     void TRACE(void);
 
     void        makeResponseForMethod(void);
+    void        makeResponseForProxy(void);
     void        makeResponseForError(void);
     void        makeResponseForNonAuth(void);
     int         makeResponseForDir(void);
@@ -107,13 +109,16 @@ public:
     bool pending(void) const;
     void pending(bool);
 
+    bool isProxy(void) const;
+    void isProxy(bool);
+
     std::string getEtagFile(const std::string &filename);
 
     void *getFileAddr(void);
     int64_t getFileSize(void);
 
     bool isCGI(void) const;
-    bool isProxy(void) const;
+    void isCGI(bool);
 
     const std::string getContentRangeValue(RangeSet &);
 

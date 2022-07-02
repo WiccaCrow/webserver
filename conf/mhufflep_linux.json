@@ -1,8 +1,6 @@
 {
     "servers": {
         "http": {
-            "addr": "127.0.0.1",
-            "port": 8080,
             "server_names": [ "localhost" ],
             "error_pages": {
                 "400": "./pages/error_pages/400.html",
@@ -60,8 +58,7 @@
             }
         },
         "http2": {
-            "addr": "172.20.10.3",
-            "port": 8080,
+            "listen": "172.20.10.3:8080",
             "server_names": [ "webserv.com" ],
             "methods_allowed": [ "GET", "PUT", "POST" ],
             "post_max_body": 100,

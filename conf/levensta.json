@@ -1,7 +1,6 @@
 {
     "servers": {
         "httpBlock": {
-            "port": 8080,
             "server_names": ["localhost"],
             "error_pages": {
                 "400": "./pages/error_pages/400.html",

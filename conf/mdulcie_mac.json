@@ -1,7 +1,7 @@
 {
     "servers": {
         "http": {
-            "port": 8080,
+            "listen": "127.0.0.1:7575",
             "server_names": [ "localhost" ],
             "error_pages": {
                 "400": "./pages/error_pages/400.html",
@@ -23,6 +23,13 @@
             "post_max_body": 100,
             "autoindex": true,
             "index": [ "index.html" ],
+            "proxy": { 
+                "pass": "192.168.0.2:9000",
+                "domains": [ 
+                    "www.google.com", 
+                    "www.vk.com" 
+                ]
+            },
             "locations": {
                 "/about": {
                     "root": "./pages",

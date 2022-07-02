@@ -217,24 +217,24 @@ CGI::exec(Response *res) {
 
     Client *client = res->getClient();
 
-    IO *sock = new IO();
-    if (sock == NULL) {
+    IO *io = new IO();
+    if (io == NULL) {
         Log.error() << "CGI:: Cannot allocate memory for IO" << Log.endl;
         return 0;
     }
 
-    if (sock->pipe() < 0) {
+    if (io->pipe() < 0) {
         Log.error() << "CGI:: pipe failed" << Log.endl;
         return 0;
     }
     
-    if (sock->nonblock() < 0) {
+    if (io->nonblock() < 0) {
         Log.error() << "CGI:: nonblock failed" << Log.endl;
         return 0;
     }
 
-    int fdr = sock->rdFd();
-    int fdw = sock->wrFd();
+    int fdr = io->rdFd();
+    int fdw = io->wrFd();
 
     int childPID = fork();
     if (childPID < 0) {
@@ -265,7 +265,7 @@ CGI::exec(Response *res) {
     }
     close(fdw);
 
-    client->setTargetIO(sock);
+    client->setTargetIO(io);
     client->setTargetTimeout(time(0));
 
     g_server->queuePollFd(fdr, POLLIN);

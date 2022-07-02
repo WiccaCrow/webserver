@@ -1,8 +1,7 @@
 {
     "servers": {
         "http": {
-            "addr": "127.0.0.1",
-            "port": 8080,
+            "listen": "127.0.0.1:8080",
             "server_names": [ "localhost" ],
             "error_pages": {
                 "400": "./pages/error_pages/400.html",
@@ -44,7 +43,14 @@
                     },
                     "index": [ "index.html" ],
                     "post_max_body": 200,
-                    "methods_allowed": [ "GET", "POST" ]                 
+                    "methods_allowed": [ "GET", "POST" ],
+                    "proxy": { 
+                        "pass": "192.168.0.2:9000",
+                        "domains": [ 
+                            "www.google.com", 
+                            "www.vk.com" 
+                        ]
+                    }       
                 },
                 "/feedback": {
                     "alias": "/Users/mhufflep/Desktop/serv/pages/site",
@@ -64,8 +70,7 @@
             }
         },
         "http2": {
-            "addr": "172.20.10.2",
-            "port": 8080,
+            "listen": "172.20.10.2:8080",
             "server_names": [ "webserv.com" ],
             "cgi": {
                 ".pl": "/usr/bin/perl",

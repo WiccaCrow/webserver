@@ -269,10 +269,6 @@ Client::reply(Request *req) {
 
     signal(SIGPIPE, SIG_IGN);
 
-    // Not send SL and headers if cgi
-    // if (isCGI) _headSent = true;
-    // or make head empty (easier)
-
     if (!_headSent) {
         if (!getTargetIO()->getDataPos()) {
             getTargetIO()->setData(req->getHead().c_str());
@@ -296,8 +292,6 @@ Client::receive(Request *req) {
     
     if (!getClientIO()->read()) {
         Log.debug() << "Client:: [" << getClientIO()->rdFd() << "] peer closed connection" << Log.endl;
-        // g_server->rmPollFd(getClientIO()->getFd());
-        // g_server->rmPollFd(getTargetIO()->getFd());
         shouldBeClosed(true);
         return ;
     }
@@ -342,5 +336,33 @@ Client::receive(Response *res) {
         res->parseLine(line);    
     }
 }
+
+ServerBlock *
+Client::matchServerBlock(const std::string &host) {
+    typedef std::list<HTTP::ServerBlock>::iterator iter_l;
+    typedef std::list<HTTP::ServerBlock> bslist;
+
+    bool searchByName = !isValidIpv4(host) ? true : false;
+
+    bslist &blocks = g_server->operator[](getServerIO()->getPort());
+    iter_l found = blocks.end();
+    for (iter_l block = blocks.begin(); block != blocks.end(); ++block) {
+        if (block->hasAddr(getServerIO()->getAddr())) {
+            if (found == blocks.end()) {
+                found = block;
+                if (!searchByName) {
+                    break ;
+                }
+            }
+            if (searchByName && block->hasName(host)) {
+                found = block;
+                break ;
+            }
+        }
+    }
+    Log.debug() << "Client:: servBlock " << found->getBlockName() << " for " << host << ":" << getServerIO()->getPort() << Log.endl;
+    return &(*found);
+}
+
 
 }

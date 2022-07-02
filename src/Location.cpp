@@ -55,14 +55,19 @@ Location::getCGIsRef(void) {
     return _CGIs;
 }
 
-Location::DomainsVec &
-Location::getDomainsRef(void) {
-    return _domains;
-}
-
 Location::ErrorPagesMap &
 Location::getErrorPagesRef(void) {
     return _errorPages;
+}
+
+Proxy &
+Location::getProxyRef(void) {
+    return _proxy;
+}
+
+const Proxy &
+Location::getProxy(void) const {
+    return _proxy;
 }
 
 }

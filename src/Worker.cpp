@@ -67,8 +67,26 @@ Worker::_cycle(void *ptr) {
             usleep(WORKER_TIMEOUT);
             continue ;
         }
+        // // lock
+        // if (g_server->responses.size() == 0) {
+        //     // unlock
+        //     usleep(WORKER_TIMEOUT);
+        //     continue ;
+        // } else {
+        //     res = g_server->responses.front();
+        //     g_server->responses.pop_front();
+        //     // unlock
+        // }
 
-        const std::string &path = res->getRequest()->getUriRef()._path;
+        if (res == NULL) {
+            Log.debug() << "Worker::cycle: res == NULL" << Log.endl;
+        }
+
+        if (res->getRequest() == NULL) {
+            Log.debug() << "Worker::cycle: req == NULL" << Log.endl;
+        }
+
+        const std::string path = res->getRequest()->getUriRef()._path;
         Log.debug() << "Worker:: [" << w->id() << "] -> " << path << " started" << Log.endl; 
         res->handle();
         Log.debug() << "Worker:: [" << w->id() << "] -> " << path << " finished" << Log.endl;

@@ -2,7 +2,7 @@
 
 #include "Parser.hpp"
 #include "Server.hpp"
-#include "ServerBlock.hpp"
+#include "Utils.hpp"
 
 using namespace JSON;
 using namespace HTTP;
@@ -24,8 +24,7 @@ enum ConfStatus {
 #ifndef CONFIG_KEYWORDS
     # define CONFIG_KEYWORDS
     # define KW_SERVERS          "servers"
-    # define KW_ADDR             "addr"
-    # define KW_PORT             "port"
+    # define KW_LISTEN           "listen"
     # define KW_SERVER_NAMES     "server_names"
     # define KW_ERROR_PAGES      "error_pages"
     # define KW_LOCATIONS        "locations"
@@ -42,6 +41,9 @@ enum ConfStatus {
     # define KW_USER_FILE        "user_file"
     # define KW_CODE             "code" 
     # define KW_URL              "url"
+    # define KW_PROXY            "proxy"
+    # define KW_PASS             "pass"
+    # define KW_DOMAINS          "domains"
 #endif
 
 int isInteger(double &num);

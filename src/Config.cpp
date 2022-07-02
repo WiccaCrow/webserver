@@ -228,20 +228,24 @@ getDefaultAllowedMethods() {
 }
 
 const char * validKeywords[] = {
-    KW_ADDR, KW_PORT, KW_SERVER_NAMES, KW_ERROR_PAGES,
+    KW_LISTEN, KW_SERVER_NAMES, KW_ERROR_PAGES, KW_PROXY,
     KW_LOCATIONS, KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, 
     KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, NULL
 };
 
 const char * validServerBlockKeywords[] = {
-    KW_ADDR, KW_PORT, KW_SERVER_NAMES, KW_ERROR_PAGES,
-    KW_LOCATIONS, KW_CGI, KW_ROOT, KW_INDEX, KW_AUTOINDEX, 
+    KW_LISTEN, KW_SERVER_NAMES, KW_ERROR_PAGES,
+    KW_LOCATIONS, KW_CGI, KW_ROOT, KW_INDEX, KW_AUTOINDEX, KW_PROXY,
     KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, NULL
 };
 
 const char * validLocationKeywords[] = {
-    KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, KW_ERROR_PAGES,
+    KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, KW_ERROR_PAGES, KW_PROXY,
     KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, NULL
+};
+
+const char * validProxyKeywords[] = {
+    KW_DOMAINS, KW_PASS, NULL
 };
 
 const char * validRedirectKeywords[] = {
@@ -422,6 +426,59 @@ isValidRedirect(Redirect &res) {
 }
 
 int
+parseProxy(Object *src, Proxy &res) {
+    Proxy def;
+
+    ConfStatus status = basicCheck(src, KW_PROXY, OBJECT, res, def);
+    if (status != SET) {
+        return status;
+    }
+
+    Object *obj = src->get(KW_PROXY)->toObj();
+
+    if (!getArray(obj, KW_DOMAINS, res.getDomainsRef())) {
+        return NONE_OR_INV;
+    }
+
+    std::string pass;
+    if (!getString(obj, KW_PASS, pass)) {
+        return NONE_OR_INV;
+    }
+    res.getPassRef().parse(pass);
+
+    return SET;
+}
+
+int
+isValidProxy(Proxy &res) {
+
+    Proxy::DomainsVec &domains = res.getDomainsRef();
+    for (size_t i = 0; i < domains.size(); ++i) {
+        if (!isValidHost(domains[i])) {
+            Log.error() << KW_DOMAINS << " " << domains[i] << " is invalid" << Log.endl;
+            return 0;
+        }
+    }
+
+    const std::string &host = res.getPassRef()._host;
+    const std::string &port= res.getPassRef()._port_s;
+
+    if (host.empty()) {
+        if (!port.empty()) {
+            Log.error() << KW_PASS << " contains only port" << Log.endl;
+            return 0;
+        }
+    } else if (!isValidHost(host)) {
+        Log.error() << KW_PASS << " has invalid host" << Log.endl;
+        return 0;
+    } else if (!isValidPort(port)) {
+        Log.error() << KW_PASS << " has invalid port" << Log.endl;
+        return 0;
+    }
+    return 1;
+}
+
+int
 parseAuth(Object *src, Auth &res) {
 
     ConfStatus status = basicCheck(src, KW_AUTH_BASIC, OBJECT, res, res);
@@ -532,6 +589,14 @@ parseLocation(Object *src, Location &dst, Location &def) {
         return NONE_OR_INV;
     }
 
+    if (!parseProxy(src, dst.getProxyRef())) {
+        Log.error() << KW_PROXY << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } else if (!isValidProxy(dst.getProxyRef())) {
+        Log.error() << KW_PROXY << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    }
+
     if (!parseErrorPages(src, dst.getErrorPagesRef())) {
         Log.error() << KW_ERROR_PAGES << " parsing failed" << Log.endl;
         return NONE_OR_INV;
@@ -607,12 +672,12 @@ parseLocations(Object *src, ServerBlock::LocationsMap &res, Location &base) {
 bool
 isValidPort(int port) {
     if (port > 65535) {
-        Log.error() << KW_PORT << " upper bound in 65535" << Log.endl;
+        Log.error() << "port's upper bound is 65535" << Log.endl;
         return false;
     } else if (port > 49151) {
-        Log.info() << KW_PORT << " 49151-65535 reserved for client apps" << Log.endl;
+        Log.info() << "ports 49151-65535 reserved for client apps" << Log.endl;
     } else if (port < 1024 && getuid() != 0) {
-        Log.error() << KW_PORT << " 0-1023 reserved for OS-daemons in unix (use sudo)" << Log.endl;
+        Log.error() << "ports 0-1023 reserved for OS-daemons in unix (use sudo)" << Log.endl;
         return false;
     }
     return true;
@@ -630,20 +695,22 @@ parseServerBlock(Object *src, ServerBlock &dst) {
         return NONE_OR_INV;
     }
 
-    if (!getString(src, KW_ADDR, dst.getAddrRef(), "0.0.0.0")) {
-        Log.error() << KW_ADDR << " parsing failed" << Log.endl;
+    std::string listen;
+    if (!getString(src, KW_LISTEN, listen, "0.0.0.0:8080")) {
+        Log.error() << KW_LISTEN << " parsing failed" << Log.endl;
         return NONE_OR_INV;
-    } else if (!isValidIpv4(dst.getAddrRef())) {
-        Log.error() << KW_ADDR << " is invalid or not in ipv4 format" << Log.endl;
+    } 
+    URI uri;
+    uri.parse(listen);
+    if (!isValidIpv4(uri._host)) {
+        Log.error() << KW_LISTEN << " is invalid or not in ipv4 format" << Log.endl;
+        return NONE_OR_INV;
+    } else if (!isValidPort(uri._port)) {
+        Log.error() << KW_LISTEN << " is invalid port" << Log.endl;
         return NONE_OR_INV;
     }
-
-    if (!getUInteger(src, KW_PORT, dst.getPortRef())) {
-        Log.error() << KW_PORT << " parsing failed" << Log.endl;
-        return NONE_OR_INV;
-    } else if (!isValidPort(dst.getPortRef())) {
-        return NONE_OR_INV;
-    }
+    dst.getAddrRef() = uri._host;
+    dst.getPortRef() = uri._port;
 
     // char resolvedPath[256] = {0};
     // realpath("./", resolvedPath);

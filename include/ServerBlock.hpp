@@ -12,8 +12,8 @@ namespace HTTP {
 class ServerBlock {
 
 public:
-    typedef std::map<std::string, HTTP::Location> LocationsMap;
-    typedef std::vector<std::string>              ServerNamesVec;
+    typedef std::map<std::string, Location>  LocationsMap;
+    typedef std::vector<std::string>         ServerNamesVec;
 
 private:
     std::string     _blockname;

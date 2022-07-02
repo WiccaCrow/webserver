@@ -1,6 +1,7 @@
 #include "Request.hpp"
 #include "Client.hpp"
 #include "Server.hpp"
+#include "Location.hpp"
 
 namespace HTTP {
 
@@ -12,7 +13,8 @@ ARequest::ARequest(void)
     , _chunkSize(0)
     , _parseFlags(PARSED_NONE)
     , _formed(false)
-    , _status(OK) {}
+    , _status(OK)
+    , _isProxy(false) {}
 
 ARequest::~ARequest(void) {}
 ARequest::ARequest(const ARequest &other) {
@@ -139,6 +141,16 @@ ARequest::isChunkSize(bool flag) {
     _isChunkSize = flag;
 }
 
+bool
+ARequest::isProxy(void) {
+    return _isProxy;
+}
+
+void
+ARequest::isProxy(bool isProxy) {
+    _isProxy = isProxy;
+}
+
 std::size_t
 ARequest::getBodySize(void) const {
     return _bodySize;
@@ -155,7 +167,7 @@ ARequest::setStatus(StatusCode status) {
 }
 
 StatusCode
-ARequest::writeChuck(const std::string &chunk) {
+ARequest::writeChunk(const std::string &chunk) {
 
     if (_chunkSize >= chunk.length()) {
         _body += chunk;
@@ -164,7 +176,7 @@ ARequest::writeChuck(const std::string &chunk) {
     } else {
         if (chunk[_chunkSize] != '\r' || 
             chunk[_chunkSize + 1] != '\n') {
-            Log.error() << "ARequest:: Invalid chuck length" << Log.endl;
+            Log.error() << "ARequest:: Invalid chunk length" << Log.endl;
             return BAD_REQUEST;
         }
         _body += chunk.substr(0, chunk.length() - 2);
@@ -177,7 +189,7 @@ ARequest::writeChuck(const std::string &chunk) {
 
 StatusCode
 ARequest::parseChunk(const std::string &line) {    
-    return (isChunkSize() ? writeChunkSize(line) : writeChuck(line));
+    return (isChunkSize() ? writeChunkSize(line) : writeChunk(line));
 }
 
 StatusCode
@@ -355,35 +367,6 @@ Request::authorized(bool flag) {
     _authorized = flag;
 }
 
-
-// Maybe should be moved back to Client?
-HTTP::ServerBlock *
-matchServerBlock(const std::string &host, std::size_t port, const std::string &ip) {
-    typedef std::list<HTTP::ServerBlock>::iterator iter_l;
-    typedef std::list<HTTP::ServerBlock> bslist;
-
-    bool searchByName = !isValidIpv4(host) ? true : false;
-
-    bslist &blocks = g_server->operator[](port);
-    iter_l found = blocks.end();
-    for (iter_l block = blocks.begin(); block != blocks.end(); ++block) {
-        if (block->hasAddr(ip)) {
-            if (found == blocks.end()) {
-                found = block;
-                if (!searchByName) {
-                    break ;
-                }
-            }
-            if (searchByName && block->hasName(host)) {
-                found = block;
-                break ;
-            }
-        }
-    }
-    Log.debug() << "Client:: servBlock " << found->getBlockName() << " for " << host << ":" << port << Log.endl;
-    return &(*found);
-}
-
 bool
 Request::parseLine(std::string &line) {
 
@@ -402,7 +385,7 @@ Request::parseLine(std::string &line) {
     if (getStatus() != CONTINUE) {
         if (!_servBlock) {
             Log.debug() << "Serverblock is not set after parsing. Default matching" << Log.endl;
-            setServerBlock(matchServerBlock(_host._host, getClient()->getServerIO()->getPort(), getClient()->getServerIO()->getAddr()));
+            setServerBlock(getClient()->matchServerBlock(_host._host));
         }
         if (!_location) {
             Log.debug() << "Location is not set after parsing. Default matching" << Log.endl;
@@ -424,7 +407,7 @@ Request::parseSL(const std::string &line) {
     Log.debug() << line << Log.endl;
 
     std::size_t pos = 0;
-    _method    = getWord(line, " ", pos);
+    _method = getWord(line, " ", pos);
 
     skipSpaces(line, pos);
     _rawURI = getWord(line, " ", pos);
@@ -489,6 +472,22 @@ Request::resolvePath(void) {
     Log.debug() << "Request::resolvePath: " << _resolvedPath << Log.endl;
 }
 
+void
+Request::proxyLookUp(void) {
+    typedef Proxy::DomainsVec Domains;
+    typedef Domains::const_iterator c_iter;
+
+    Log.debug() << "Request::proxyLookUp for " << _uri._host << Log.endl;
+    const Domains &domains = getLocation()->getProxy().getDomainsRef();
+    for (c_iter it = domains.begin(); it != domains.end(); ++it) {
+        Log.debug() << "Request::proxyLookUp: " << *it << Log.endl;
+        if (*it == _uri._host) {
+            isProxy(true);
+            return ;
+        }
+    }
+}
+
 StatusCode
 Request::checkHeaders(void) {
 
@@ -501,10 +500,11 @@ Request::checkHeaders(void) {
     // }
 
     if (!_servBlock) {
-        setServerBlock(matchServerBlock(_uri._host, getClient()->getServerIO()->getPort(), getClient()->getServerIO()->getAddr()));
+        setServerBlock(getClient()->matchServerBlock(_uri._host));
     }
     if (!_location) {
         setLocation(getServerBlock()->matchLocation(_uri._path));
+        proxyLookUp();
         resolvePath();
     }
 
@@ -517,7 +517,7 @@ Request::checkHeaders(void) {
         }
     }
 
-    std::vector<std::string> &allowed = getLocation()->getAllowedMethodsRef();
+    Location::MethodsVec &allowed = getLocation()->getAllowedMethodsRef();
     if (std::find(allowed.begin(), allowed.end(), _method) == allowed.end()) {
         Log.debug() << "Request:: Method " << _method << " is not allowed" << Log.endl;
         return METHOD_NOT_ALLOWED;

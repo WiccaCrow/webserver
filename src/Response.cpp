@@ -86,7 +86,7 @@ Response::makeResponseForMethod(void) {
 
     const std::string &method = getRequest()->getMethod();
     
-           if (method == "GET") {
+    if (method == "GET") {
         GET();
     } else if (method == "PUT") {
         PUT();
@@ -108,6 +108,16 @@ Response::makeResponseForMethod(void) {
 }
 
 void
+Response::makeResponseForProxy() {
+    if (!getRequest()->getLocation()->getProxyRef().pass(this)) {
+        setStatus(BAD_GATEWAY);
+    } else {
+        isProxy(true);
+        pending(true);
+    }
+}
+
+void
 Response::handle(void) {
 
     if (getStatus() < BAD_REQUEST) {
@@ -117,6 +127,8 @@ Response::handle(void) {
             makeResponseForNonAuth();
         } else if (rdr.set()) {
             makeResponseForRedirect(rdr.getCodeRef(), rdr.getURIRef());
+        } else if (getRequest()->isProxy()) {
+            makeResponseForProxy();
         } else {
             makeResponseForMethod();
         }
@@ -606,7 +618,7 @@ Response::addHeader(uint32_t hash, const std::string &value) {
 
 int
 Response::makeResponseForCGI(void) {
-    _isCGI = true;
+    isCGI(true);
     if (!_cgi->exec(this)) {
         setStatus(BAD_GATEWAY);
         return 0;
@@ -686,6 +698,16 @@ Response::pending(bool pending) {
     _pending = pending;
 }
 
+bool
+Response::isProxy(void) const {
+    return _isProxy;
+}
+
+void
+Response::isProxy(bool isProxy) {
+    _isProxy = isProxy;
+}
+
 void *
 Response::getFileAddr(void) {
     return _fileaddr;
@@ -701,9 +723,9 @@ Response::isCGI(void) const {
     return _isCGI;
 }
 
-bool
-Response::isProxy(void) const {
-    return _isProxy;
+void
+Response::isCGI(bool flag) {
+    _isCGI = flag;
 }
 
 void
@@ -723,8 +745,8 @@ Response::matchCGI(const std::string &filepath) {
 bool
 Response::parseLine(std::string &line) {
 
-    // Log.debug() << line << Log.endl;
-    if (!_isCGI && !flagSet(PARSED_SL)) {
+    Log.debug() << line << Log.endl;
+    if (!isCGI() && !flagSet(PARSED_SL)) {
         rtrim(line, CRLF);
         setStatus(!line.empty() ? parseSL(line) : CONTINUE);
     } else if (!flagSet(PARSED_HEADERS)) {
@@ -738,7 +760,7 @@ Response::parseLine(std::string &line) {
     }
     
     if (getStatus() == PROCESSING) {
-        if (_isCGI && getBody().empty()) {
+        if (isCGI() && getBody().empty()) {
             setStatus(NO_CONTENT);
         } else {
             setStatus(OK);
@@ -817,8 +839,9 @@ Response::parseHeader(const std::string &line) {
 
     // dublicate header
     if (headers.has(header.hash)) {
-        Log.debug() << "Response:: Dublicated header " << header.key << " " << header.hash << Log.endl;
-        return BAD_REQUEST;
+        headers[header.hash].value += ", " + header.value; 
+        // Log.debug() << "Response:: Dublicated header " << header.key << " " << header.hash << Log.endl;
+        // return BAD_REQUEST;
     }
 
     headers.insert(header);
@@ -838,6 +861,8 @@ Response::checkHeaders(void) {
             return BAD_GATEWAY;
         }
         setBodySize(num);
+    } else if (headers.has(TRANSFER_ENCODING)) {
+        setBodySize(0);
     } else {
         setBodySize(SIZE_T_MAX);
     }
