@@ -44,6 +44,7 @@ enum ConfStatus {
     # define KW_PROXY            "proxy"
     # define KW_PASS             "pass"
     # define KW_DOMAINS          "domains"
+    # define KW_ADD_HEADERS      "add_headers"
 #endif
 
 int isInteger(double &num);

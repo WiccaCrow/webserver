@@ -228,20 +228,20 @@ getDefaultAllowedMethods() {
 }
 
 const char * validKeywords[] = {
-    KW_LISTEN, KW_SERVER_NAMES, KW_ERROR_PAGES, KW_PROXY,
+    KW_LISTEN, KW_SERVER_NAMES, KW_ERROR_PAGES, KW_PROXY, KW_ADD_HEADERS,
     KW_LOCATIONS, KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, 
     KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, NULL
 };
 
 const char * validServerBlockKeywords[] = {
-    KW_LISTEN, KW_SERVER_NAMES, KW_ERROR_PAGES,
+    KW_LISTEN, KW_SERVER_NAMES, KW_ERROR_PAGES, KW_ADD_HEADERS, 
     KW_LOCATIONS, KW_CGI, KW_ROOT, KW_INDEX, KW_AUTOINDEX, KW_PROXY,
     KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, NULL
 };
 
 const char * validLocationKeywords[] = {
     KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, KW_ERROR_PAGES, KW_PROXY,
-    KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, NULL
+    KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, KW_ADD_HEADERS, NULL
 };
 
 const char * validProxyKeywords[] = {
@@ -335,6 +335,27 @@ isValidCGI(Location::CGIsMap &res) {
         }
     }
     return true;
+}
+
+int
+parseHeaders(Object *src, Headers<ResponseHeader> &res) {
+    std::vector<std::string> headers;
+
+    if (!getArray(src, KW_ADD_HEADERS, headers, headers)) {
+        return NONE_OR_INV;
+    }
+
+    for (size_t i = 0; i < headers.size(); i++) {
+        ResponseHeader header;
+
+        if (!header.parse(headers[i])) {
+            Log.error() << "Invalid header: " << headers[i] << Log.endl; 
+            return NONE_OR_INV;
+        }
+        res.insert(header);
+    }
+
+    return SET;
 }
 
 int
@@ -625,6 +646,11 @@ parseLocation(Object *src, Location &dst, Location &def) {
         return NONE_OR_INV;
     } else if (!isSubset(getDefaultAllowedMethods(), dst.getAllowedMethodsRef())) {
         Log.error() << KW_METHODS_ALLOWED << " has unrecognized value" << Log.endl;
+        return NONE_OR_INV;
+    }
+     
+    if (!parseHeaders(src, dst.getHeaders())) {
+        Log.error() << KW_ADD_HEADERS << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     }
 

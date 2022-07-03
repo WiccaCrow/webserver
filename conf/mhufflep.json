@@ -34,6 +34,9 @@
                     "www.vk.com" 
                 ]
             },
+            "add_headers": [
+                "Set-cookie: key1=val1; "
+            ],
             "methods_allowed": [ "GET", "PUT", "POST", "CONNECT" ],
             "post_max_body": 100,
             "autoindex": true,

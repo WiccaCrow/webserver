@@ -70,4 +70,10 @@ Location::getProxy(void) const {
     return _proxy;
 }
 
+Headers<ResponseHeader> &
+Location::getHeaders(void) {
+    return _headers;
+}
+
+
 }

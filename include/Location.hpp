@@ -32,6 +32,7 @@ private:
     Auth          _auth;
     ErrorPagesMap _errorPages;
     Proxy         _proxy;
+    Headers<ResponseHeader> _headers;
 
 public:
     Location(void);
@@ -51,6 +52,7 @@ public:
     Proxy         &getProxyRef(void);
     const Proxy   &getProxy(void) const;
 
+    Headers<ResponseHeader>   &getHeaders(void);
 };
 
 }

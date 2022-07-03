@@ -557,6 +557,14 @@ void Response::makeHead(void) {
         }
     }
 
+    Headers<ResponseHeader> &add_headers = getRequest()->getLocation()->getHeaders();
+    Headers<ResponseHeader>::iterator it_addh;
+    for (it_addh = add_headers.begin(); it_addh != add_headers.end(); ++it_addh) {
+        if (!it_addh->second.value.empty()) {
+            head += headerNames[it_addh->second.hash] + ": " + it_addh->second.value + CRLF;
+        }
+    }
+
     head += CRLF;
     setHead(head);
 }
