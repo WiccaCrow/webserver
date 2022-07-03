@@ -26,6 +26,13 @@
                 ".js": "/usr/local/bin/node",
                 ".cgi": ""
             },
+            "proxy": { 
+                "pass": "192.168.0.2:9000",
+                "domains": [ 
+                    "www.google.com", 
+                    "www.vk.com" 
+                ]
+            },
             "methods_allowed": [ "GET", "PUT", "POST" ],
             "post_max_body": 100,
             "autoindex": true,

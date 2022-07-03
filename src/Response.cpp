@@ -796,6 +796,8 @@ Response::checkHeaders(void) {
         }
         setBodySize(num);
     } else if (headers.has(TRANSFER_ENCODING)) {
+        // need to add check for chunked responses
+        isChunkSize(true);
         setBodySize(0);
     } else {
         setBodySize(ULLONG_MAX);
