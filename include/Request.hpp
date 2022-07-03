@@ -151,6 +151,7 @@ public:
     Client *getClient(void);
     void    setClient(Client *);
 
+    bool tunnelGuard(bool value);
 
     virtual bool parseLine(std::string &);
 

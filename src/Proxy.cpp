@@ -22,6 +22,26 @@ URI &Proxy::getPassRef(void) {
     return _pass;
 }
 
+void Proxy::prepare(void) {
+    IO *io = _res->getClient()->getTargetIO();
+
+    std::string toWrite;
+    toWrite.reserve(512);
+    toWrite = makeStartLine() + CRLF;
+    Headers<RequestHeader>::iterator it = _res->getRequest()->headers.begin();
+    for (; it != _res->getRequest()->headers.end(); ++it) {
+        if (it->first == CONNECTION || it->first == KEEP_ALIVE) {
+            continue;
+        }
+        toWrite += it->second.key + ':' + it->second.value + CRLF;
+    }
+    toWrite += CRLF;
+    _res->getRequest()->setHead(toWrite);
+
+    writeToSocket(io->wrFd(), _res->getRequest()->getHead());
+    writeToSocket(io->wrFd(), _res->getRequest()->getBody());
+}
+
 int Proxy::pass(Response *res) {
     _res = res;
 
@@ -70,22 +90,6 @@ int Proxy::setConnection(struct addrinfo *lst) {
     struct sockaddr_in *addr = (struct sockaddr_in *)lst->ai_addr;
     Log.info() << "Proxy:: Established [" << fd << "] -> " << inet_ntoa(addr->sin_addr) << std::endl;
 
-    std::string toWrite;
-    toWrite.reserve(512);
-    toWrite = makeStartLine() + CRLF;
-    Headers<RequestHeader>::iterator it = _res->getRequest()->headers.begin();
-    for (; it != _res->getRequest()->headers.end(); ++it) {
-        if (it->first == CONNECTION || it->first == KEEP_ALIVE) {
-            continue;
-        }
-        toWrite += it->second.key + ':' + it->second.value + CRLF;
-    }
-    toWrite += CRLF;
-    _res->getRequest()->setHead(toWrite);
-
-    writeToSocket(fd, _res->getRequest()->getHead());
-    writeToSocket(fd, _res->getRequest()->getBody());
-
     _res->getClient()->setTargetIO(sock);
     g_server->addToQueue((struct pollfd){fd, POLLIN, 0});
     g_server->addClient(fd, _res->getClient());
@@ -94,7 +98,7 @@ int Proxy::setConnection(struct addrinfo *lst) {
 }
 
 int Proxy::writeToSocket(int fd, std::string toWrite) {
-    toWrite += CRLF;
+
     if (write(fd, toWrite.c_str(), toWrite.length()) == -1) {
         Log.syserr() << "Proxy::write: " << Log.endl;
         return 0;

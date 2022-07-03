@@ -7,6 +7,10 @@
     # define SOMAXCONN 128
 #endif
 
+#ifndef BLIND_PROXY
+    # define BLIND_PROXY true
+#endif
+
 #ifndef MAX_REQUESTS
     # define MAX_REQUESTS 100
 #endif

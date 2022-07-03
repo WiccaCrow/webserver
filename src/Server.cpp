@@ -73,9 +73,9 @@ void Server::finish(void) {
 
 static void
 sigint_handler(int) {
-    g_server->finish();
     Log << std::endl;
     Log.info() << "Server is stopping..." << Log.endl;
+    g_server->finish();
 }
 
 void Server::daemon(void) {

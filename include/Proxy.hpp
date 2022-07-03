@@ -33,6 +33,7 @@ public:
     ~Proxy(void);
 
     int pass(Response *);
+    void prepare(void);
     int setConnection(struct addrinfo *);
 
     int writeToSocket(int fd, std::string toWrite);

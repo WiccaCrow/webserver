@@ -401,6 +401,14 @@ Request::parseLine(std::string &line) {
     return formed();
 }
 
+bool
+Request::tunnelGuard(bool value) {
+    if (getClient()->isTunnel() && BLIND_PROXY) {
+        return false;
+    }
+    return value;
+}
+
 StatusCode
 Request::parseSL(const std::string &line) {
 
@@ -417,17 +425,17 @@ Request::parseSL(const std::string &line) {
     setProtocol(getWord(line, " ", pos));
 
     skipSpaces(line, pos);
-    if (line[pos]) {
+
+    if (tunnelGuard(line[pos])) {
         Log.debug() << "Forbidden symbols at the end of the SL: " << Log.endl;
         return BAD_REQUEST;
     }
-
     return checkSL();
 }
 
 StatusCode
 Request::checkSL(void) {
-    if (!isValidMethod(_method)) {
+    if (tunnelGuard(!isValidMethod(_method))) {
         Log.debug() << "Request::parseSL: Method " << _method << " is not implemented" << Log.endl;
         return BAD_REQUEST;
     }
@@ -437,16 +445,16 @@ Request::checkSL(void) {
     //     return BAD_REQUEST;
     // }
 
-    if (!isValidProtocol(getProtocol())) {
+    if (tunnelGuard(!isValidProtocol(getProtocol()))) {
         Log.debug() << "Request::checkSL: protocol " << getProtocol() << " is not valid" << Log.endl;
         return BAD_REQUEST;
     } 
     setMajor(getProtocol()[5] - '0');
     setMinor(getProtocol()[7] - '0');
-    if (getMajor() > 1) {
+    if (tunnelGuard(getMajor() > 1)) {
         Log.debug() << "Request::checkSL: protocol " << getProtocol() << " is not supported" << Log.endl;
         return HTTP_VERSION_NOT_SUPPORTED;
-    } else if (getMajor() != 1 || getMinor() != 1) {
+    } else if (tunnelGuard(getMajor() != 1 || getMinor() != 1)) {
         Log.debug() << "Request::checkSL: protocol " << _method << " is not implemented" << Log.endl;
         return BAD_REQUEST;
     }
@@ -504,28 +512,30 @@ Request::checkHeaders(void) {
     }
     if (!_location) {
         setLocation(getServerBlock()->matchLocation(_uri._path));
-        proxyLookUp();
+        if (!getClient()->isTunnel()) {
+            proxyLookUp();
+        }
         resolvePath();
     }
 
     // Call each header handler
-    Headers<RequestHeader>::iterator it;
-    for (it = headers.begin(); it != headers.end(); ++it) {
+    for (Headers<RequestHeader>::iterator it = headers.begin(); it != headers.end(); ++it) {
         StatusCode status = it->second.handle(*this);
-        if (status != CONTINUE) {
+        if (tunnelGuard(status != CONTINUE)) {
             return status;
         }
     }
 
     Location::MethodsVec &allowed = getLocation()->getAllowedMethodsRef();
-    if (std::find(allowed.begin(), allowed.end(), _method) == allowed.end()) {
+    Location::MethodsVec::iterator it_method = std::find(allowed.begin(), allowed.end(), _method);
+    if (tunnelGuard(it_method == allowed.end())) {
         Log.debug() << "Request:: Method " << _method << " is not allowed" << Log.endl;
         return METHOD_NOT_ALLOWED;
     }
 
     if (!headers.has(TRANSFER_ENCODING) && !headers.has(CONTENT_LENGTH)) {
         // PUT or POST or PATCH
-        if (_method[0] == 'P') {
+        if (tunnelGuard(_method[0] == 'P')) {
             Log.error() << "Request::Transfer-Encoding/Content-Length is missing in request" << Log.endl;
             return LENGTH_REQUIRED;
         } else {
@@ -539,15 +549,17 @@ Request::checkHeaders(void) {
 
 StatusCode
 Request::parseHeader(const std::string &line) {
+    Log.debug() << line << Log.endl;
+
     RequestHeader header;
 
-    if (!header.parse(line)) {
+    if (tunnelGuard(!header.parse(line))) {
         Log.debug() << "ARequest:: Invalid header " << line << Log.endl;
         return BAD_REQUEST;
     }
 
     // dublicate header
-    if (headers.has(header.hash)) {
+    if (tunnelGuard(headers.has(header.hash))) {
         Log.debug() << "ARequest:: Dublicated header" << Log.endl;
         return BAD_REQUEST;
     }
@@ -560,7 +572,7 @@ StatusCode
 Request::writeBody(const std::string &body) {
     Log.debug() << "Request::writeBody " << body << Log.endl;
 
-    if (body.length() > getBodySize()) {
+    if (tunnelGuard(body.length() > getBodySize())) {
         Log.error() << "Request: Body length is too long" << Log.endl;
         return BAD_REQUEST;
     }

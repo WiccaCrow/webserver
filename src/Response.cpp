@@ -6,10 +6,10 @@
 namespace HTTP {
 
 Response::Response(void)
-    : ARequest(), _req(NULL), _cgi(NULL), _pending(false), _fileaddr(NULL), _filefd(-1), _isProxy(false), _isCGI(false) {}
+    : ARequest(), _req(NULL), _cgi(NULL), _proxy(NULL), _fileaddr(NULL), _filefd(-1), _isProxy(false), _isCGI(false) {}
 
 Response::Response(Request *req)
-    : ARequest(), _req(req), _cgi(NULL), _pending(false), _fileaddr(NULL), _filefd(-1), _isProxy(false), _isCGI(false) {
+    : ARequest(), _req(req), _cgi(NULL), _proxy(NULL), _fileaddr(NULL), _filefd(-1), _isProxy(false), _isCGI(false) {
     setStatus(getRequest()->getStatus());
 }
 
@@ -21,7 +21,7 @@ Response &Response::operator=(const Response &other) {
     if (this != &other) {
         _req = other._req;
         _cgi = other._cgi;
-        _pending = other._pending;
+        _proxy = other._proxy;
         _fileaddr = other._fileaddr;
         _filefd = other._filefd;
         _isProxy = other._isProxy;
@@ -35,6 +35,9 @@ Response &Response::operator=(const Response &other) {
 Response::~Response(void) {
     if (_cgi != NULL) {
         delete _cgi;
+    }
+    if (_proxy != NULL) {
+        delete _proxy;
     }
     if (_filefd != -1) {
         close(_filefd);
@@ -88,12 +91,17 @@ void Response::makeResponseForMethod(void) {
 }
 
 void Response::makeResponseForProxy() {
-    if (!getRequest()->getLocation()->getProxyRef().pass(this)) {
-        setStatus(BAD_GATEWAY);
-    } else {
-        isProxy(true);
-        pending(true);
+
+    _proxy = new Proxy(getRequest()->getLocation()->getProxyRef());
+
+    if (!getClient()->isTunnel()) {
+        if (!_proxy->pass(this)) {
+            setStatus(BAD_GATEWAY);
+        }
     }
+
+    _proxy->prepare();
+    isProxy(true);
 }
 
 void Response::assembleError(void) {
@@ -110,7 +118,7 @@ void Response::handle(void) {
             makeResponseForNonAuth();
         } else if (rdr.set()) {
             makeResponseForRedirect(rdr.getCodeRef(), rdr.getURIRef());
-        } else if (getRequest()->isProxy()) {
+        } else if (getClient()->isTunnel() || getRequest()->isProxy()) {
             makeResponseForProxy();
         } else {
             makeResponseForMethod();
@@ -123,7 +131,6 @@ void Response::handle(void) {
     }
 
     if (isCGI() || isProxy()) {
-        headers.clear();
         return ;
     }
 
@@ -173,7 +180,13 @@ void Response::OPTIONS(void) {
 }
 
 void Response::CONNECT(void) {
-    setStatus(NOT_IMPLEMENTED);
+    _proxy = new Proxy(getRequest()->getLocation()->getProxyRef());
+
+    if (!_proxy->pass(this)) {
+        setStatus(BAD_GATEWAY);
+    } else {
+        getClient()->isTunnel(true);
+    }
 }
 
 void Response::TRACE(void) {
@@ -555,12 +568,11 @@ void Response::addHeader(uint32_t hash, const std::string &value) {
 }
 
 int Response::makeResponseForCGI(void) {
-    isCGI(true);
     if (!_cgi->exec(this)) {
         setStatus(BAD_GATEWAY);
         return 0;
     } else {
-        pending(true);
+        isCGI(true);
         return 1;
     }
 }
@@ -620,14 +632,6 @@ Response::getRequest(void) {
 Client *
 Response::getClient(void) {
     return getRequest()->getClient();
-}
-
-bool Response::pending(void) const {
-    return _pending;
-}
-
-void Response::pending(bool pending) {
-    _pending = pending;
 }
 
 bool Response::isProxy(void) const {
@@ -712,7 +716,6 @@ bool Response::parseLine(std::string &line) {
         }
         makeHead();
         formed(true);
-        pending(false);
     }
 
     return formed();
@@ -727,12 +730,12 @@ Response::parseSL(const std::string &line) {
     _rawStatus = getWord(line, " ", pos);
     skipSpaces(line, pos);
 
-    getWord(line, " ", pos);
-    skipSpaces(line, pos);
-    if (line[pos]) {
-        Log.debug() << "Forbidden symbols at the end of the SL: " << Log.endl;
-        return BAD_GATEWAY;
-    }
+    // getWord(line, " ", pos);
+    // skipSpaces(line, pos);
+    // if (line[pos]) {
+    //     Log.debug() << "Forbidden symbols at the end of the SL: " << Log.endl;
+    //     return BAD_GATEWAY;
+    // }
 
     return checkSL();
 }

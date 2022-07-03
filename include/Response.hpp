@@ -33,7 +33,7 @@ class Response : public ARequest {
 
     Request    *_req;
     CGI        *_cgi;
-    bool        _pending;
+    Proxy      *_proxy;
 
     char        *_fileaddr;
     int         _filefd;
@@ -111,9 +111,6 @@ public:
 
     Request *getRequest(void);
     Client *getClient(void);
-
-    bool pending(void) const;
-    void pending(bool);
 
     bool isProxy(void) const;
     void isProxy(bool);

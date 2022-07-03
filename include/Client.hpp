@@ -24,6 +24,7 @@ class Client {
     bool _bodySent;
     bool _shouldBeClosed;
     bool _shouldBeRemoved;
+    bool _isTunnel;
 
     std::size_t _nbRequests;
     std::size_t _maxRequests;
@@ -33,6 +34,7 @@ class Client {
 
     std::list<Request *>  _requests;
     std::list<Response *> _responses;
+
 
     public:
     Client(void);
@@ -46,6 +48,9 @@ class Client {
 
     bool shouldBeRemoved(void) const;
     void shouldBeRemoved(bool);
+
+    bool isTunnel(void) const;
+    void isTunnel(bool);
 
     const std::string getHostname(void);
 

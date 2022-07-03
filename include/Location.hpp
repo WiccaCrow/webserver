@@ -14,8 +14,8 @@ namespace HTTP {
 class Location {
 
 public:
-    typedef std::vector<std::string>    IndicesVec;
     typedef std::vector<std::string>    MethodsVec;
+    typedef std::vector<std::string>    IndicesVec;
     typedef std::map<std::string, CGI>  CGIsMap;
     typedef std::map<int, std::string>  ErrorPagesMap;
 

@@ -5,7 +5,7 @@
 namespace HTTP {
 
 Client::Client(void)
-    : _clientIO(NULL), _serverIO(NULL), _targetIO(NULL), _headSent(false), _bodySent(false), _shouldBeClosed(false), _shouldBeRemoved(false), _nbRequests(0), _maxRequests(MAX_REQUESTS), _clientTimeout(0), _targetTimeout(0) {
+    : _clientIO(NULL), _serverIO(NULL), _targetIO(NULL), _headSent(false), _bodySent(false), _shouldBeClosed(false), _shouldBeRemoved(false), _isTunnel(false), _nbRequests(0), _maxRequests(MAX_REQUESTS), _clientTimeout(0), _targetTimeout(0) {
     _clientIO = new IO();
     if (_clientIO == NULL) {
         Log.syserr() << "Client:: Cannot allocate memory for socket" << Log.endl;
@@ -51,6 +51,14 @@ void Client::shouldBeRemoved(bool flag) {
 
 bool Client::shouldBeRemoved(void) const {
     return _shouldBeRemoved;
+}
+
+bool Client::isTunnel(void) const {
+    return _isTunnel;
+}
+
+void Client::isTunnel(bool value) {
+    _isTunnel = value;
 }
 
 time_t
@@ -223,6 +231,7 @@ void Client::reply(Response *res) {
 
     if (!_headSent) {
         if (!getClientIO()->getDataPos()) {
+            Log.debug() << res->getHead() << Log.endl;
             getClientIO()->setData(res->getHead().c_str());
             getClientIO()->setDataSize(res->getHead().length());
         }
