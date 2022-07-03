@@ -1,6 +1,7 @@
 {
     "servers": {
         "http": {
+            "listen": "127.0.0.1:8080",
             "server_names": [ "localhost" ],
             "error_pages": {
                 "400": "./pages/error_pages/400.html",
@@ -18,7 +19,7 @@
                 "504": "./pages/error_pages/504.html",
                 "505": "./pages/error_pages/505.html"
             },
-            "CGI": {
+            "cgi": {
                 ".pl": "/usr/bin/perl",
                 ".py": "/usr/bin/python3.8",
                 ".js": "/usr/local/bin/node",
@@ -32,7 +33,7 @@
                 "/try.about": {
                     "alias": "/home/mhufflep/Downloads",
                     "autoindex": true,
-                    "CGI": {
+                    "cgi": {
                         ".js": "/usr/local/bin/node",
                         ".py": "/usr/bin/python3.8"
                     },
@@ -42,7 +43,7 @@
                 },
                 "/feedback": {
                     "alias": "./pages/site",
-                    "CGI": {
+                    "cgi": {
                         ".py": "/usr/bin/python3.8",
                         ".js": "/usr/local/bin/node"
                     },
