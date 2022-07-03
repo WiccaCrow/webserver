@@ -43,6 +43,9 @@ public:
     void compiled(bool);
     bool compiled(void);
 
+    int getPID(void) const;
+    void setPID(int);
+
     bool setScriptPath(const std::string);
 
     bool initEnv(void);

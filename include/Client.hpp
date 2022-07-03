@@ -23,6 +23,7 @@ class Client {
     bool _headSent;
     bool _bodySent;
     bool _shouldBeClosed;
+    bool _shouldBeRemoved;
 
     std::size_t _nbRequests;
     std::size_t _maxRequests;
@@ -42,6 +43,9 @@ class Client {
 
     bool shouldBeClosed(void) const;
     void shouldBeClosed(bool);
+
+    bool shouldBeRemoved(void) const;
+    void shouldBeRemoved(bool);
 
     const std::string getHostname(void);
 

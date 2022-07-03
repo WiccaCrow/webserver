@@ -36,25 +36,13 @@ CGI &CGI::operator=(const CGI &other) {
     return *this;
 }
 
-// static void
-// restore_std(int in, int out) {
-//     if (in != -1 && dup2(in, fileno(stdin)) == -1) {
-//         Log.syserr() << "CGI::restore::in: " << Log.endl;
-//     }
-//     if (out != -1 && dup2(out, fileno(stdout)) == -1) {
-//         Log.syserr() << "CGI::restore::out: " << Log.endl;
-//     }
-// }
+int CGI::getPID(void) const {
+    return _childPID;
+}
 
-// static void
-// close_pipe(int in, int out) {
-//     if (in != -1) {
-//         close(in);
-//     }
-//     if (out != -1) {
-//         close(out);
-//     }
-// }
+void CGI::setPID(int pid) {
+    _childPID = pid;
+}
 
 static void
 setValue(char *const env, const std::string &value) {
@@ -240,6 +228,8 @@ int CGI::exec(Response *res) {
         }
     }
 
+    setPID(childPID);
+
     const std::string &body = res->getRequest()->getBody();
     if (!body.empty()) {
         if (write(io->wrFd(), body.c_str(), body.length()) == -1) {
@@ -253,8 +243,8 @@ int CGI::exec(Response *res) {
     client->setTargetIO(io);
     client->setTargetTimeout(time(0));
 
-    g_server->addToQueue((struct pollfd){io->rdFd(), POLLIN, 0});
     g_server->addClient(io->rdFd(), client);
+    g_server->addToQueue((struct pollfd){io->rdFd(), POLLIN, 0});
 
     return 1;
 }

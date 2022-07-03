@@ -54,6 +54,9 @@ public:
     Response(const Response &other);
     Response &operator=(const Response &other);
 
+    CGI *getCGI(void) const;
+    void setCGI(CGI *);
+
     void handle(void);
 
     //  for errors
@@ -70,6 +73,7 @@ public:
     void PATCH(void);
     void TRACE(void);
 
+    void        assembleError(void);
     void        makeResponseForMethod(void);
     void        makeResponseForProxy(void);
     void        makeResponseForError(void);
@@ -94,6 +98,8 @@ public:
     void        addHeader(uint32_t, const std::string & = "");
 
     void        matchCGI(const std::string &filepath);
+
+    void  checkCGIFail(void);
     
     void  makeChunk();
 

@@ -96,6 +96,13 @@ void Response::makeResponseForProxy() {
     }
 }
 
+void Response::assembleError(void) {
+    makeResponseForError();
+    shouldBeClosedIf();
+    makeHead();
+    formed(true);
+}
+
 void Response::handle(void) {
     if (getStatus() < BAD_REQUEST) {
         Redirect &rdr = getRequest()->getLocation()->getRedirectRef();
@@ -111,23 +118,17 @@ void Response::handle(void) {
     }
 
     if (getStatus() >= BAD_REQUEST) {
-        makeResponseForError();
-        shouldBeClosedIf();
+        assembleError();
+        return ;
     }
 
-    if (!pending()) {
-        addHeader(DATE);
-        addHeader(SERVER);
-        addHeader(KEEP_ALIVE);
-        addHeader(CONNECTION);
-        addHeader(CONTENT_TYPE);
-        addHeader(CONTENT_LENGTH);
-        addHeader(ACCEPT_RANGES);
-        makeHead();
-        formed(true);
-    } else {
+    if (isCGI() || isProxy()) {
         headers.clear();
+        return ;
     }
+
+    makeHead();
+    formed(true);
 }
 
 void Response::makeResponseForNonAuth(void) {
@@ -519,6 +520,16 @@ Response::getContentType(const std::string &resourcePath) {
 }
 
 void Response::makeHead(void) {
+
+    // Mandatory headers
+    addHeader(DATE);
+    addHeader(SERVER);
+    addHeader(KEEP_ALIVE);
+    addHeader(CONNECTION);
+    addHeader(CONTENT_TYPE);
+    addHeader(CONTENT_LENGTH);
+    addHeader(ACCEPT_RANGES);
+
     std::string head;
     head.reserve(512);
     head = SERVER_PROTOCOL SP + statusLines[getStatus()] + CRLF;
@@ -645,6 +656,14 @@ void Response::isCGI(bool flag) {
     _isCGI = flag;
 }
 
+CGI *Response::getCGI(void) const {
+    return _cgi;
+}
+
+void Response::setCGI(CGI *cgi) {
+    _cgi = cgi;
+}
+
 void Response::matchCGI(const std::string &filepath) {
     typedef std::map<std::string, CGI> cgisMap;
     typedef cgisMap::iterator          iter;
@@ -652,8 +671,20 @@ void Response::matchCGI(const std::string &filepath) {
     cgisMap &cgis = getRequest()->getLocation()->getCGIsRef();
     for (iter it = cgis.begin(); it != cgis.end(); it++) {
         if (endsWith(filepath, it->first)) {
-            _cgi = new CGI(it->second);
-            _cgi->setScriptPath(filepath);
+            setCGI(new CGI(it->second));
+            if (getCGI() == NULL) {
+                Log.syserr() << "Cannot allocate memory for CGI" << Log.endl;
+            }
+            getCGI()->setScriptPath(filepath);
+        }
+    }
+}
+
+void Response::checkCGIFail(void) {
+    int status;
+    if (waitpid(getCGI()->getPID(), &status, WNOHANG) > 0) {
+        if (WEXITSTATUS(status) != 0) {
+            setStatus(BAD_GATEWAY);
         }
     }
 }
@@ -679,13 +710,6 @@ bool Response::parseLine(std::string &line) {
         } else {
             setStatus(OK);
         }
-        makeHead();
-        formed(true);
-        pending(false);
-    }
-
-    if (getStatus() >= BAD_REQUEST) {
-        makeResponseForError();
         makeHead();
         formed(true);
         pending(false);

@@ -12,12 +12,11 @@ Server::Server()
 }
 
 Server::~Server() {
-    for (std::size_t i = 0; i < _pollfds.size(); i++) {
-        if (_pollfds[i].fd != -1) {
-            close(_pollfds[i].fd);
-            _pollfds[i].fd = -1;
-        }
-    }
+    // for (std::size_t i = 0; i < _pollfds.size(); i++) {
+    //     if (_pollfds[i].fd != -1) {
+    //         _pollfds[i].fd = -1;
+    //     }
+    // }
 
     for (size_t i = 0; i < _sockets.size(); ++i) {
         delete _sockets[i];
@@ -219,7 +218,7 @@ void Server::process(void) {
                 _clients[fd]->pollerr(fd);
             }
 
-            if (_clients[fd]->shouldBeClosed()) {
+            if (_clients[fd]->shouldBeRemoved()) {
                 disconnect(fd);
             }
         }
@@ -245,6 +244,7 @@ isFree(struct pollfd pfd) {
 
 void Server::addToQueue(struct pollfd pfd) {
     pthread_mutex_lock(&_fds_lock);
+    Log.debug() << "Server::addToQueue pfd " << pfd.fd << Log.endl;
     _pendingFds.push(pfd);
     pthread_mutex_unlock(&_fds_lock);
 }
@@ -253,6 +253,7 @@ void Server::emptyFdsQueue(void) {
     pthread_mutex_lock(&_fds_lock);
 
     while (_pendingFds.size() > 0) {
+
         struct pollfd tmp = _pendingFds.front();
         _pendingFds.pop();
 
@@ -262,6 +263,8 @@ void Server::emptyFdsQueue(void) {
         } else {
             *it = tmp;
         }
+
+        Log.debug() << "Server::emptyFdsQueue pfd " << tmp.fd << Log.endl;
     }
 
     pthread_mutex_unlock(&_fds_lock);
@@ -306,6 +309,7 @@ HTTP::Response *Server::rmFromQueue(void) {
 }
 
 void Server::addClient(int fd, HTTP::Client *client) {
+    Log.debug() << "Server::addClient " << fd << " " << client << Log.endl;
     _clients[fd] = client;
 }
 
@@ -322,7 +326,7 @@ void Server::checkTimeout(void) {
 
         if (t_client != 0 && cur - t_client > MAX_CLIENT_TIMEOUT) {
             Log.debug() << "Server:: [" << it->second->getClientIO()->rdFd() << "] client timeout exceeded" << Log.endl;
-            it->second->shouldBeClosed(true);
+            it->second->shouldBeRemoved(true);
         }
 
         if (t_target != 0 && cur - t_target > MAX_TARGET_TIMEOUT) {
@@ -367,8 +371,7 @@ void Server::connect(std::size_t servid, int servfd) {
     client->getClientIO()->setPort(ntohs(clientData.sin_port));
 
     addToQueue((struct pollfd){fd, POLLIN | POLLOUT, 0});
-
-    _clients[fd] = client;
+    addClient(fd, client);
 
     Log.debug() << "Server::connect [" << fd << "] -> " << client->getHostname() << Log.endl;
 }

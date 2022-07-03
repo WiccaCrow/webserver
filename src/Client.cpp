@@ -5,7 +5,7 @@
 namespace HTTP {
 
 Client::Client(void)
-    : _clientIO(NULL), _serverIO(NULL), _targetIO(NULL), _headSent(false), _bodySent(false), _shouldBeClosed(false), _nbRequests(0), _maxRequests(MAX_REQUESTS), _clientTimeout(0), _targetTimeout(0) {
+    : _clientIO(NULL), _serverIO(NULL), _targetIO(NULL), _headSent(false), _bodySent(false), _shouldBeClosed(false), _shouldBeRemoved(false), _nbRequests(0), _maxRequests(MAX_REQUESTS), _clientTimeout(0), _targetTimeout(0) {
     _clientIO = new IO();
     if (_clientIO == NULL) {
         Log.syserr() << "Client:: Cannot allocate memory for socket" << Log.endl;
@@ -43,6 +43,14 @@ void Client::shouldBeClosed(bool flag) {
 
 bool Client::shouldBeClosed(void) const {
     return _shouldBeClosed;
+}
+
+void Client::shouldBeRemoved(bool flag) {
+    _shouldBeRemoved = flag;
+}
+
+bool Client::shouldBeRemoved(void) const {
+    return _shouldBeRemoved;
 }
 
 time_t
@@ -189,6 +197,10 @@ void Client::pollout(int fd) {
                 setTargetIO(NULL);
             }
             replyDone(false);
+
+            if (shouldBeClosed()) {
+                shouldBeRemoved(true);
+            }
         }
     }
     // else if (fd == getTargetIO()->wrFd()) {
@@ -249,7 +261,7 @@ void Client::receive(Request *req) {
 
     if (!getClientIO()->read()) {
         Log.debug() << "Client:: [" << getClientIO()->rdFd() << "] peer closed connection" << Log.endl;
-        shouldBeClosed(true);
+        shouldBeRemoved(true);
         return;
     }
 
@@ -272,17 +284,23 @@ void Client::receive(Response *res) {
         Log.debug() << "Client:: [" << getTargetIO()->rdFd() << "] receive 0 response" << Log.endl;
 
         if (res->isCGI()) {
+            res->checkCGIFail();
             setTargetTimeout(0);
             g_server->rmPollFd(getTargetIO()->rdFd());
         }
 
         if (res->isProxy()) {
+            setTargetTimeout(0);
             g_server->rmPollFd(getTargetIO()->rdFd());
         }
     }
 
     while (!res->formed()) {
         std::string line;
+
+        if (res->getStatus() >= BAD_REQUEST) {
+            res->assembleError();
+        }
 
         if (!getTargetIO()->getline(line, res->getBodySize())) {
             return;

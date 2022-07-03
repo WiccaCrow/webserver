@@ -81,9 +81,9 @@ class Server {
 
     HTTP::Response *rmFromQueue(void);
 
+    void disconnect(int fd);
     private:
     void connect(std::size_t servid, int servfd);
-    void disconnect(int fd);
 
     void daemon(void);
     int  poll(void);
