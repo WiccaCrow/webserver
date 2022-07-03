@@ -45,7 +45,7 @@ void CGI::setPID(int pid) {
 }
 
 static void
-setValue(char *const env, const std::string &value) {
+setValue(char *const env, const std::string value) {
     char *ptr = strchr(env, '=');
     if (ptr == NULL) {
         return;

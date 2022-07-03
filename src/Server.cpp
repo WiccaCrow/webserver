@@ -23,11 +23,14 @@ Server::~Server() {
         _sockets[i] = NULL;
     }
 
+    std::set<HTTP::Client *> uniqueClients;
     for (iter_cm it = _clients.begin(); it != _clients.end(); ++it) {
-        if (it->second != NULL) {
-            delete it->second;
-            it->second = NULL;
-        }
+        uniqueClients.insert(it->second);
+    }
+
+    std::set<HTTP::Client *>::iterator it = uniqueClients.begin();
+    for (; it != uniqueClients.end(); ++it) {
+        delete *it;
     }
 
     pthread_mutex_destroy(&_fds_lock);
@@ -253,7 +256,6 @@ void Server::emptyFdsQueue(void) {
     pthread_mutex_lock(&_fds_lock);
 
     while (_pendingFds.size() > 0) {
-
         struct pollfd tmp = _pendingFds.front();
         _pendingFds.pop();
 

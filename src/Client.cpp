@@ -218,7 +218,11 @@ void Client::pollout(int fd) {
 
 void Client::pollhup(int fd) {
     Log.syserr() << "Client::pollhup " << fd << Log.endl;
-    shouldBeClosed(true);
+    if (fd == getClientIO()->rdFd()) {
+        shouldBeRemoved(true);
+    } else {
+        g_server->rmPollFd(getTargetIO()->rdFd());
+    }
 }
 
 void Client::pollerr(int fd) {
