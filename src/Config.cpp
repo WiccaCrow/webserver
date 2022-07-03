@@ -352,6 +352,10 @@ parseHeaders(Object *src, Headers<ResponseHeader> &res) {
             Log.error() << "Invalid header: " << headers[i] << Log.endl; 
             return NONE_OR_INV;
         }
+        if (validResHeaders.find(header.hash) == validResHeaders.end()) {
+            Log.error() << "Non-HTTP header detected: " << headers[i] << Log.endl; 
+            return NONE_OR_INV;
+        }
         res.insert(header);
     }
 
