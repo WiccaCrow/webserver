@@ -1,6 +1,7 @@
 #include "Proxy.hpp"
-#include "Server.hpp"
+
 #include "Response.hpp"
+#include "Server.hpp"
 
 namespace HTTP {
 
@@ -17,13 +18,11 @@ Proxy::getDomainsRef(void) const {
     return _domains;
 }
 
-URI &
-Proxy::getPassRef(void) {
+URI &Proxy::getPassRef(void) {
     return _pass;
 }
 
-int
-Proxy::pass(Response *res) {
+int Proxy::pass(Response *res) {
     _res = res;
 
     const std::string &host = res->getRequest()->getUriRef()._host;
@@ -34,7 +33,7 @@ Proxy::pass(Response *res) {
         Log.error() << "Proxy::getaddrinfo -> " << host << ":" << port << std::endl;
         return 0;
     }
- 
+
     if (!setConnection(addrlst)) {
         freeaddrinfo(addrlst);
         return 0;
@@ -44,9 +43,7 @@ Proxy::pass(Response *res) {
     return 1;
 }
 
-int
-Proxy::setConnection(struct addrinfo *lst) {
-
+int Proxy::setConnection(struct addrinfo *lst) {
     IO *sock = new IO();
     int fd = sock->create();
 
@@ -57,11 +54,11 @@ Proxy::setConnection(struct addrinfo *lst) {
 
     for (; lst; lst = lst->ai_next) {
         if (lst->ai_socktype != SOCK_STREAM) {
-            continue ;
+            continue;
         }
 
         if (sock->connect(lst->ai_addr, lst->ai_addrlen)) {
-            break ;
+            break;
         }
     }
 
@@ -79,7 +76,7 @@ Proxy::setConnection(struct addrinfo *lst) {
     Headers<RequestHeader>::iterator it = _res->getRequest()->headers.begin();
     for (; it != _res->getRequest()->headers.end(); ++it) {
         if (it->first == CONNECTION || it->first == KEEP_ALIVE) {
-            continue ;
+            continue;
         }
         toWrite += it->second.key + ':' + it->second.value + CRLF;
     }
@@ -90,14 +87,13 @@ Proxy::setConnection(struct addrinfo *lst) {
     writeToSocket(fd, _res->getRequest()->getBody());
 
     _res->getClient()->setTargetIO(sock);
-    g_server->queuePollFd(fd, POLLIN);
+    g_server->addToQueue((struct pollfd){fd, POLLIN, 0});
     g_server->addClient(fd, _res->getClient());
 
     return 1;
 }
 
-int
-Proxy::writeToSocket(int fd, std::string toWrite) {
+int Proxy::writeToSocket(int fd, std::string toWrite) {
     toWrite += CRLF;
     if (write(fd, toWrite.c_str(), toWrite.length()) == -1) {
         Log.syserr() << "Proxy::write: " << Log.endl;
@@ -109,7 +105,7 @@ Proxy::writeToSocket(int fd, std::string toWrite) {
 std::string
 Proxy::makeStartLine(void) {
     Request *req = _res->getRequest();
-    URI &uri = req->getUriRef();
+    URI     &uri = req->getUriRef();
 
     if (uri._path.empty()) {
         if (req->getMethod() == "OPTIONS") {
@@ -122,4 +118,4 @@ Proxy::makeStartLine(void) {
     return req->getMethod() + " " + uri._path + " " + SERVER_PROTOCOL;
 }
 
-}
+} // namespace HTTP

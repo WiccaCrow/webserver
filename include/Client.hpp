@@ -1,40 +1,39 @@
 #pragma once
 
-#include <string>
 #include <unistd.h>
-#include <deque>
 
+#include <deque>
+#include <string>
+
+#include "Globals.hpp"
+#include "IO.hpp"
+#include "Logger.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
-#include "Logger.hpp"
 #include "Status.hpp"
-#include "Globals.hpp"
-#include "Pool.hpp"
-#include "IO.hpp"
 
 namespace HTTP {
 
-class Client { 
+class Client {
+    private:
+    IO *_clientIO;
+    IO *_serverIO;
+    IO *_targetIO;
 
-private:
-    IO *  _clientIO;
-    IO *  _serverIO;
-    IO *  _targetIO;
+    bool _headSent;
+    bool _bodySent;
+    bool _shouldBeClosed;
 
-    bool  _headSent;
-    bool  _bodySent;
-    bool  _shouldBeClosed;
-
-    std::size_t  _nbRequests;
-    std::size_t  _maxRequests;
-    std::time_t  _clientTimeout;
-    std::time_t  _targetTimeout;
-    std::time_t  _maxTimeout;
+    std::size_t _nbRequests;
+    std::size_t _maxRequests;
+    std::time_t _clientTimeout;
+    std::time_t _targetTimeout;
+    std::time_t _maxTimeout;
 
     std::list<Request *>  _requests;
     std::list<Response *> _responses;
 
-public:
+    public:
     Client(void);
     ~Client(void);
 
@@ -52,9 +51,9 @@ public:
     void setClientTimeout(time_t);
     void setTargetTimeout(time_t);
 
-    IO *getClientIO(void);
-    IO *getServerIO(void);
-    IO *getTargetIO(void);
+    IO  *getClientIO(void);
+    IO  *getServerIO(void);
+    IO  *getTargetIO(void);
     void setClientIO(IO *);
     void setServerIO(IO *);
     void setTargetIO(IO *);
@@ -78,4 +77,4 @@ public:
     ServerBlock *matchServerBlock(const std::string &host);
 };
 
-}
+} // namespace HTTP

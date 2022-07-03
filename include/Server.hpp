@@ -1,60 +1,64 @@
 #pragma once
 
-#include <poll.h>
+#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <vector>
+#include <netdb.h>
+#include <poll.h>
+#include <sys/resource.h>
+#include <unistd.h>
+
+#include <algorithm>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
-#include <netdb.h>
 #include <iostream>
-#include <unistd.h>
-#include <algorithm>
-#include <arpa/inet.h>
-#include <sys/resource.h>
 #include <list>
+#include <queue>
+#include <vector>
 
-#include "Utils.hpp"
 #include "Client.hpp"
 #include "Logger.hpp"
-#include "Worker.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
 #include "ServerBlock.hpp"
+#include "Utils.hpp"
+#include "Worker.hpp"
 
 class Server {
-
-public:
+    public:
     typedef std::list<HTTP::ServerBlock> ServersList;
-    typedef ServersList::iterator iter_sl;
-    
+    typedef ServersList::iterator        iter_sl;
+
     typedef std::map<std::size_t, ServersList> ServersMap;
-    typedef ServersMap::iterator iter_sm;
+    typedef ServersMap::iterator               iter_sm;
 
     typedef std::vector<struct pollfd> PollFdVec;
-    typedef PollFdVec::iterator iter_pfd;
+    typedef PollFdVec::iterator        iter_pfd;
 
-    typedef std::vector<IO *> SocketsVec;
+    typedef std::vector<IO *>    SocketsVec;
     typedef SocketsVec::iterator iter_sv;
 
     typedef std::map<int, HTTP::Client *> ClientsMap;
-    typedef ClientsMap::iterator iter_cm;
+    typedef ClientsMap::iterator          iter_cm;
 
-private:
-    ServersMap    _servers;
-    SocketsVec    _sockets;
-    ClientsMap    _clients;
-    PollFdVec     _pollfds;
-    
-    bool          _working;
-    Worker        _workers[WORKERS];
+    private:
+    ServersMap _servers;
+    SocketsVec _sockets;
+    ClientsMap _clients;
+    PollFdVec  _pollfds;
 
-    Pool<struct pollfd>  _waitingFds;
+    bool   _working;
+    Worker _workers[WORKERS];
 
-public:
+    pthread_mutex_t _fds_lock;
+    pthread_mutex_t _res_lock;
+
+    std::queue<struct pollfd>    _pendingFds;
+    std::queue<HTTP::Response *> _pendingResps;
+
+    public:
     bool isDaemon;
-    Pool<HTTP::Response *> responses;
 
     Server(void);
     Server(const Server &);
@@ -62,22 +66,25 @@ public:
     Server &operator=(const Server &);
 
     ServersList &operator[](std::size_t port);
-    ServersMap &getServerBlocks(void);
-    
+    ServersMap  &getServerBlocks(void);
+
     bool working(void);
     void start(void);
     void finish(void);
 
     void addClient(int fd, HTTP::Client * = NULL);
-    
-    void queuePollFd(int fd, int events);
-    void addPollFd(void);
-    void rmPollFd(int fd);
 
-private:
+    void rmPollFd(int fd);
+    void emptyFdsQueue(void);
+    void addToQueue(struct pollfd);
+    void addToQueue(HTTP::Response *);
+
+    HTTP::Response *rmFromQueue(void);
+
+    private:
     void connect(std::size_t servid, int servfd);
     void disconnect(int fd);
-   
+
     void daemon(void);
     int  poll(void);
     void process(void);

@@ -2,10 +2,13 @@
 
 const std::size_t reservedClients = 64;
 
-Server::Server() 
+Server::Server()
     : _working(true), isDaemon(false) {
     _pollfds.reserve(reservedClients);
     // _clients.reserve(reservedClients);
+
+    pthread_mutex_init(&_fds_lock, NULL);
+    pthread_mutex_init(&_res_lock, NULL);
 }
 
 Server::~Server() {
@@ -16,11 +19,20 @@ Server::~Server() {
         }
     }
 
-    // for (std::size_t i = 0; i < _clients.size(); i++) {
-    //     if (_clients[i] != NULL) {
-    //         delete _clients[i];
-    //     }
-    // }
+    for (size_t i = 0; i < _sockets.size(); ++i) {
+        delete _sockets[i];
+        _sockets[i] = NULL;
+    }
+
+    for (iter_cm it = _clients.begin(); it != _clients.end(); ++it) {
+        if (it->second != NULL) {
+            delete it->second;
+            it->second = NULL;
+        }
+    }
+
+    pthread_mutex_destroy(&_fds_lock);
+    pthread_mutex_destroy(&_res_lock);
 }
 
 // Could be used for re-reading config:
@@ -34,16 +46,15 @@ Server::Server(const Server &other) {
 Server &
 Server::operator=(const Server &other) {
     if (this != &other) {
-        _servers    = other._servers;
-        _pollfds    = other._pollfds;
-        _clients    = other._clients;
-        _sockets    = other._sockets;
+        _servers = other._servers;
+        _pollfds = other._pollfds;
+        _clients = other._clients;
+        _sockets = other._sockets;
     }
     return (*this);
 }
 
-bool
-Server::working(void) {
+bool Server::working(void) {
     return _working;
 }
 
@@ -57,8 +68,7 @@ Server::getServerBlocks(void) {
     return _servers;
 }
 
-void
-Server::finish(void) {
+void Server::finish(void) {
     _working = false;
 }
 
@@ -69,10 +79,9 @@ sigint_handler(int) {
     Log.info() << "Server is stopping..." << Log.endl;
 }
 
-void
-Server::daemon(void) {
+void Server::daemon(void) {
     pid_t pid, sid;
-        
+
     pid = fork();
     if (pid < 0) {
         Log.syserr() << "Daemon:: fork failed" << Log.endl;
@@ -84,8 +93,8 @@ Server::daemon(void) {
         exit(EXIT_SUCCESS);
     }
 
-    umask(0);       
-   
+    umask(0);
+
     sid = setsid();
     if (sid < 0) {
         Log.syserr() << "Daemon::SID creation failed" << Log.endl;
@@ -98,8 +107,7 @@ Server::daemon(void) {
     close(STDERR_FILENO);
 }
 
-void
-Server::start(void) {
+void Server::start(void) {
     if (isDaemon) {
         daemon();
     }
@@ -108,12 +116,12 @@ Server::start(void) {
 
     createSockets();
     if (!working()) {
-        return ;
+        return;
     }
-    
+
     startWorkers();
     while (working()) {
-        addPollFd();
+        emptyFdsQueue();
         if (poll() > 0) {
             process();
         }
@@ -122,9 +130,7 @@ Server::start(void) {
     stopWorkers();
 }
 
-int 
-Server::addListenSocket(const std::string &addr, std::size_t port) {
-
+int Server::addListenSocket(const std::string &addr, std::size_t port) {
     IO *sock = new IO();
     if (sock == NULL) {
         Log.syserr() << "Server:: Cannot allocate memory for IO" << Log.endl;
@@ -140,30 +146,27 @@ Server::addListenSocket(const std::string &addr, std::size_t port) {
         delete sock;
         return -1;
     }
-
-    queuePollFd(sock->rdFd(), POLLIN);
+    addToQueue((struct pollfd){sock->rdFd(), POLLIN, 0});
     _sockets.push_back(sock);
 
     return 0;
 }
 
-void
-Server::createSockets(void) {
-
+void Server::createSockets(void) {
     typedef std::set<std::string> uniqueAddr;
-    typedef uniqueAddr::iterator iter_ua;
+    typedef uniqueAddr::iterator  iter_ua;
 
     typedef std::map<std::size_t, uniqueAddr> uniqueValMap;
-    typedef uniqueValMap::iterator iter_uvm;
+    typedef uniqueValMap::iterator            iter_uvm;
 
     if (!working()) {
-        return ;
+        return;
     }
 
     uniqueValMap uniqueAddrs;
     for (iter_sm it = _servers.begin(); it != _servers.end(); ++it) {
         for (iter_sl sb = it->second.begin(); sb != it->second.end(); ++sb) {
-            const std::size_t port = it->first;
+            const std::size_t  port = it->first;
             const std::string &addr = sb->getAddrRef();
             uniqueAddrs[port].insert(addr);
         }
@@ -171,39 +174,34 @@ Server::createSockets(void) {
 
     for (iter_uvm it = uniqueAddrs.begin(); it != uniqueAddrs.end(); ++it) {
         for (iter_ua ua = it->second.begin(); ua != it->second.end(); ++ua) {
-            const std::size_t port = it->first;
+            const std::size_t  port = it->first;
             const std::string &addr = *ua;
             if (addListenSocket(addr, port) < 0) {
                 finish();
-                return ;
+                return;
             }
         }
     }
 }
 
-void
-Server::startWorkers(void) {
-
+void Server::startWorkers(void) {
     for (std::size_t i = 0; i < Worker::count; i++) {
         _workers[i].create();
     }
 }
 
-void
-Server::stopWorkers(void) {
-
+void Server::stopWorkers(void) {
     for (std::size_t i = 0; i < Worker::count; i++) {
         _workers[i].join();
     }
 }
 
-void
-Server::process(void) {
+void Server::process(void) {
     for (std::size_t id = 0; id < _pollfds.size(); id++) {
         const int fd = _pollfds[id].fd;
 
         if (fd < 0 || _pollfds[id].revents & POLLNVAL) {
-            continue ;
+            continue;
         }
 
         if (id < _sockets.size()) {
@@ -211,7 +209,6 @@ Server::process(void) {
                 connect(id, fd);
             }
         } else {
-
             if (_pollfds[id].revents & POLLIN) {
                 _clients[fd]->pollin(fd);
             } else if (_pollfds[id].revents & POLLHUP) {
@@ -230,9 +227,7 @@ Server::process(void) {
     }
 }
 
-int
-Server::poll(void) {
-
+int Server::poll(void) {
     int res = ::poll(_pollfds.data(), _pollfds.size(), 100000);
 
     if (res < 0) {
@@ -243,29 +238,23 @@ Server::poll(void) {
     return res;
 }
 
-
 static int
 isFree(struct pollfd pfd) {
     return (pfd.fd == -1);
 }
 
-void
-Server::queuePollFd(int fd, int events) {
-
-    struct pollfd tmp = { fd, events, 0 };
-    _waitingFds.push_back(tmp);
+void Server::addToQueue(struct pollfd pfd) {
+    pthread_mutex_lock(&_fds_lock);
+    _pendingFds.push(pfd);
+    pthread_mutex_unlock(&_fds_lock);
 }
 
-void
-Server::addPollFd(void) {
+void Server::emptyFdsQueue(void) {
+    pthread_mutex_lock(&_fds_lock);
 
-    do {
-        struct pollfd tmp;
-        try {
-            tmp = _waitingFds.pop_front();
-        } catch (Pool<struct pollfd>::Empty &e) {
-            return ;
-        }
+    while (_pendingFds.size() > 0) {
+        struct pollfd tmp = _pendingFds.front();
+        _pendingFds.pop();
 
         iter_pfd it = std::find_if(_pollfds.begin(), _pollfds.end(), isFree);
         if (it == _pollfds.end()) {
@@ -273,17 +262,16 @@ Server::addPollFd(void) {
         } else {
             *it = tmp;
         }
-    } while (!_waitingFds.empty());
+    }
 
-    return ;
+    pthread_mutex_unlock(&_fds_lock);
 }
 
-void
-Server::rmPollFd(int fd) {
-
-    Log.debug() << "Server:: [" << fd << "]" << " rmPollfd" << Log.endl;
+void Server::rmPollFd(int fd) {
+    Log.debug() << "Server:: [" << fd << "]"
+                << " rmPollfd" << Log.endl;
     if (fd < 0) {
-        return ;
+        return;
     }
 
     for (iter_pfd it = _pollfds.begin(); it != _pollfds.end(); ++it) {
@@ -291,25 +279,42 @@ Server::rmPollFd(int fd) {
             it->fd = -1;
             it->events = 0;
             it->revents = 0;
-            break ;
-        }   
+            break;
+        }
     }
 }
 
-void
-Server::addClient(int fd, HTTP::Client *client) {
+void Server::addToQueue(HTTP::Response *res) {
+    pthread_mutex_lock(&_res_lock);
+    _pendingResps.push(res);
+    pthread_mutex_unlock(&_res_lock);
+}
+
+HTTP::Response *Server::rmFromQueue(void) {
+    HTTP::Response *res = NULL;
+
+    pthread_mutex_lock(&_res_lock);
+
+    if (_pendingResps.size() > 0) {
+        res = _pendingResps.front();
+        _pendingResps.pop();
+    }
+
+    pthread_mutex_unlock(&_res_lock);
+
+    return res;
+}
+
+void Server::addClient(int fd, HTTP::Client *client) {
     _clients[fd] = client;
 }
 
-void
-Server::checkTimeout(void) {
-
+void Server::checkTimeout(void) {
     std::time_t cur = std::time(0);
 
     for (ClientsMap::iterator it = _clients.begin(); it != _clients.end(); ++it) {
-
         if (it->second->shouldBeClosed()) {
-            continue ;
+            continue;
         }
 
         std::time_t t_client = it->second->getClientTimeout();
@@ -330,30 +335,28 @@ Server::checkTimeout(void) {
     }
 }
 
-void
-Server::connect(std::size_t servid, int servfd) {
-
+void Server::connect(std::size_t servid, int servfd) {
     struct sockaddr_in servData;
-    socklen_t servLen = sizeof(servData);
+    socklen_t          servLen = sizeof(servData);
     if (getsockname(servfd, (struct sockaddr *)&servData, &servLen) < 0) {
         Log.syserr() << "Server::getsockname [" << servfd << "]" << Log.endl;
-        return ;
+        return;
     }
 
     struct sockaddr_in clientData;
-    socklen_t clientLen = sizeof(clientData);
-    int fd = accept(servfd, (struct sockaddr *)&clientData, &clientLen);
+    socklen_t          clientLen = sizeof(clientData);
+    int                fd = accept(servfd, (struct sockaddr *)&clientData, &clientLen);
 
     if (fd < 0) {
         Log.syserr() << "Server::accept" << Log.endl;
-        return ;
+        return;
     }
 
     HTTP::Client *client = new HTTP::Client();
     if (client == NULL) {
         Log.syserr() << "Server::Cannot allocate memory for Client" << Log.endl;
         close(fd);
-        return ;
+        return;
     }
 
     client->setServerIO(_sockets[servid]);
@@ -363,35 +366,33 @@ Server::connect(std::size_t servid, int servfd) {
     client->getClientIO()->setAddr(inet_ntoa(clientData.sin_addr));
     client->getClientIO()->setPort(ntohs(clientData.sin_port));
 
-    queuePollFd(fd, POLLIN | POLLOUT);
+    addToQueue((struct pollfd){fd, POLLIN | POLLOUT, 0});
 
     _clients[fd] = client;
 
     Log.debug() << "Server::connect [" << fd << "] -> " << client->getHostname() << Log.endl;
 }
 
-void
-Server::disconnect(int fd) {
-
+void Server::disconnect(int fd) {
     if (fd < 0) {
-        return ;
+        return;
     }
 
     ClientsMap::iterator it = _clients.find(fd);
     if (it == _clients.end()) {
-        return ;
+        return;
     }
 
     HTTP::Client *client = it->second;
     if (client == NULL) {
-        return ;
+        return;
     }
 
     IO *cio = client->getClientIO();
     IO *tio = client->getTargetIO();
 
     Log.debug() << "Server:: [" << client->getClientIO()->rdFd() << "] disconnect" << Log.endl;
-    
+
     if (cio) {
         rmPollFd(cio->rdFd());
         _clients.erase(cio->rdFd());
@@ -401,5 +402,5 @@ Server::disconnect(int fd) {
         _clients.erase(tio->rdFd());
     }
 
-    delete client;    
+    delete client;
 }

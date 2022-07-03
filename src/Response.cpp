@@ -1,29 +1,15 @@
 #include "Response.hpp"
+
 #include "CGI.hpp"
 #include "Client.hpp"
 
 namespace HTTP {
 
-Response::Response(void) 
-    : ARequest()
-    , _req(NULL)
-    , _cgi(NULL)
-    , _pending(false)
-    , _fileaddr(NULL) 
-    , _filefd(-1)
-    , _isProxy(false)
-    , _isCGI(false) {}
+Response::Response(void)
+    : ARequest(), _req(NULL), _cgi(NULL), _pending(false), _fileaddr(NULL), _filefd(-1), _isProxy(false), _isCGI(false) {}
 
-Response::Response(Request *req) 
-    : ARequest()
-    , _req(req)
-    , _cgi(NULL)
-    , _pending(false)
-    , _fileaddr(NULL)
-    , _filefd(-1)
-    , _isProxy(false)
-    , _isCGI(false)
-{
+Response::Response(Request *req)
+    : ARequest(), _req(req), _cgi(NULL), _pending(false), _fileaddr(NULL), _filefd(-1), _isProxy(false), _isCGI(false) {
     setStatus(getRequest()->getStatus());
 }
 
@@ -32,7 +18,6 @@ Response::Response(const Response &other) {
 }
 
 Response &Response::operator=(const Response &other) {
-
     if (this != &other) {
         _req = other._req;
         _cgi = other._cgi;
@@ -47,7 +32,7 @@ Response &Response::operator=(const Response &other) {
     return *this;
 }
 
-Response::~Response(void) { 
+Response::~Response(void) {
     if (_cgi != NULL) {
         delete _cgi;
     }
@@ -59,33 +44,28 @@ Response::~Response(void) {
     }
 }
 
-void
-Response::shouldBeClosedIf(void) {
-
+void Response::shouldBeClosedIf(void) {
     static const std::size_t size = 5;
-    static const StatusCode failedStatuses[size] = {
-        BAD_REQUEST,
-        REQUEST_TIMEOUT,
-        INTERNAL_SERVER_ERROR,
-        PAYLOAD_TOO_LARGE,
-        UNAUTHORIZED
-    };
+    static const StatusCode  failedStatuses[size] = {
+         BAD_REQUEST,
+         REQUEST_TIMEOUT,
+         INTERNAL_SERVER_ERROR,
+         PAYLOAD_TOO_LARGE,
+         UNAUTHORIZED};
 
     for (std::size_t i = 0; i < size; i++) {
         if (getStatus() == failedStatuses[i]) {
             Log.debug() << "Response::shouldBeClosedIf" << Log.endl;
             getClient()->shouldBeClosed(true);
             addHeader(CONNECTION, "close");
-            break ;
+            break;
         }
     }
 }
 
-void
-Response::makeResponseForMethod(void) {
-
+void Response::makeResponseForMethod(void) {
     const std::string &method = getRequest()->getMethod();
-    
+
     if (method == "GET") {
         GET();
     } else if (method == "PUT") {
@@ -107,8 +87,7 @@ Response::makeResponseForMethod(void) {
     }
 }
 
-void
-Response::makeResponseForProxy() {
+void Response::makeResponseForProxy() {
     if (!getRequest()->getLocation()->getProxyRef().pass(this)) {
         setStatus(BAD_GATEWAY);
     } else {
@@ -117,11 +96,8 @@ Response::makeResponseForProxy() {
     }
 }
 
-void
-Response::handle(void) {
-
+void Response::handle(void) {
     if (getStatus() < BAD_REQUEST) {
-    
         Redirect &rdr = getRequest()->getLocation()->getRedirectRef();
         if (!getRequest()->authorized()) {
             makeResponseForNonAuth();
@@ -154,16 +130,14 @@ Response::handle(void) {
     }
 }
 
-void
-Response::makeResponseForNonAuth(void) {
+void Response::makeResponseForNonAuth(void) {
     Log.debug() << "Response:: Unauthorized" << Log.endl;
     setStatus(UNAUTHORIZED);
     addHeader(DATE, Time::gmt());
     addHeader(WWW_AUTHENTICATE);
 }
 
-void
-Response::DELETE(void) {
+void Response::DELETE(void) {
     std::string resourcePath = _req->getResolvedPath();
 
     if (!resourceExists(resourcePath)) {
@@ -180,44 +154,36 @@ Response::DELETE(void) {
     }
     setStatus(OK);
     addHeader(CONTENT_TYPE);
-    setBody(HTML_BEG BODY_BEG H1_BEG
-            "File deleted."
-            H1_END BODY_END HTML_END);
+    setBody(HTML_BEG BODY_BEG               H1_BEG
+            "File deleted." H1_END BODY_END HTML_END);
 }
 
-void
-Response::HEAD(void) {
+void Response::HEAD(void) {
     contentForGetHead();
     setBody("");
 }
 
-void
-Response::GET(void) {
+void Response::GET(void) {
     contentForGetHead();
 }
 
-void
-Response::OPTIONS(void) {
+void Response::OPTIONS(void) {
     addHeader(ALLOW);
 }
 
-void
-Response::CONNECT(void) {
+void Response::CONNECT(void) {
     setStatus(NOT_IMPLEMENTED);
 }
 
-void
-Response::TRACE(void) {
+void Response::TRACE(void) {
     setStatus(NOT_IMPLEMENTED);
 }
 
-void
-Response::PATCH(void) {
+void Response::PATCH(void) {
     setStatus(NOT_IMPLEMENTED);
 }
 
-void
-Response::POST(void) {
+void Response::POST(void) {
     matchCGI(_req->getResolvedPath());
     if (_cgi != NULL) {
         makeResponseForCGI();
@@ -226,17 +192,16 @@ Response::POST(void) {
     }
 }
 
-void
-Response::PUT(void) {
+void Response::PUT(void) {
     const std::string &resourcePath = _req->getResolvedPath();
-    
+
     if (isDirectory(resourcePath)) {
         setStatus(FORBIDDEN);
-        return ;
+        return;
     } else if (isFile(resourcePath)) {
         if (!isWritableFile(resourcePath)) {
             setStatus(FORBIDDEN);
-            return ;
+            return;
         } else {
             writeFile(resourcePath, getRequest()->getBody());
             setBody(DEF_PAGE_BEG "File is overwritten." DEF_PAGE_END);
@@ -248,8 +213,7 @@ Response::PUT(void) {
     addHeader(CONTENT_TYPE);
 }
 
-int
-Response::makeResponseForDir(void) {
+int Response::makeResponseForDir(void) {
     const std::string &resourcePath = getRequest()->getResolvedPath();
 
     if (!endsWith(resourcePath, "/")) {
@@ -266,8 +230,7 @@ Response::makeResponseForDir(void) {
     return 1;
 }
 
-int
-Response::contentForGetHead(void) {
+int Response::contentForGetHead(void) {
     const std::string &resourcePath = _req->getResolvedPath();
 
     if (!resourceExists(resourcePath)) {
@@ -285,9 +248,7 @@ Response::contentForGetHead(void) {
     }
 }
 
-int
-Response::makeResponseForRedirect(StatusCode code, const std::string &url) {
-
+int Response::makeResponseForRedirect(StatusCode code, const std::string &url) {
     setStatus(code);
     addHeader(LOCATION, url);
     addHeader(CONTENT_TYPE);
@@ -297,8 +258,7 @@ Response::makeResponseForRedirect(StatusCode code, const std::string &url) {
     return 1;
 }
 
-bool
-Response::indexFileExists(const std::string &resourcePath) {
+bool Response::indexFileExists(const std::string &resourcePath) {
     const std::vector<std::string> &indexes = _req->getLocation()->getIndexRef();
     for (std::size_t i = 0; i < indexes.size(); ++i) {
         std::string path = resourcePath + indexes[i];
@@ -312,7 +272,6 @@ Response::indexFileExists(const std::string &resourcePath) {
 
 std::string
 Response::getEtagFile(const std::string &filename) {
-
     struct stat st;
     if (stat(filename.c_str(), &st) < 0) {
         return "";
@@ -321,9 +280,7 @@ Response::getEtagFile(const std::string &filename) {
     return SHA1(Time::gmt(st.st_mtime));
 }
 
-int
-Response::makeResponseForFile(void) {
-
+int Response::makeResponseForFile(void) {
     const std::string &resourcePath = _req->getResolvedPath();
 
     matchCGI(resourcePath);
@@ -346,11 +303,11 @@ Response::makeResponseForFile(void) {
         //     addHeader(TRANSFER_ENCODING, "chunked");
         // }
     }
-    
+
     addHeader(CONTENT_TYPE, getContentType(resourcePath));
     addHeader(ETAG, getEtagFile(resourcePath));
-    addHeader(LAST_MODIFIED, Time::gmt(getModifiedTime(resourcePath))); 
-  
+    addHeader(LAST_MODIFIED, Time::gmt(getModifiedTime(resourcePath)));
+
     return 1;
 }
 
@@ -361,10 +318,9 @@ Response::getContentRangeValue(RangeSet &range) {
     return ss.str();
 }
 
-void
-Response::makeResponseForMultipartRange(void) {
+void Response::makeResponseForMultipartRange(void) {
     const std::string &path = getRequest()->getResolvedPath();
-    RangeList &ranges = getRequest()->getRangeList();
+    RangeList         &ranges = getRequest()->getRangeList();
 
     std::stringstream ss;
 
@@ -389,12 +345,10 @@ Response::makeResponseForMultipartRange(void) {
 
     setStatus(PARTIAL_CONTENT);
     addHeader(CONTENT_TYPE, "multipart/byteranges; boundary=" + boundary);
-    setBody(ss.str());    
+    setBody(ss.str());
 }
 
-void
-Response::makeResponseForRange(void) {
-
+void Response::makeResponseForRange(void) {
     RangeSet &range = getRequest()->getRangeList()[0];
 
     // MAX_RANGE is about 2MB now
@@ -408,9 +362,7 @@ Response::makeResponseForRange(void) {
     setBody(std::string(_fileaddr + range.beg, range.size()));
 }
 
-int
-Response::openFileToResponse(const std::string &resourcePath) {
-
+int Response::openFileToResponse(const std::string &resourcePath) {
     _filefd = open(resourcePath.c_str(), O_RDONLY);
     if (_filefd < 0) {
         setStatus(FORBIDDEN);
@@ -435,10 +387,9 @@ Response::openFileToResponse(const std::string &resourcePath) {
 
 std::string
 cutFileName(const std::string &file) {
-
     int maxFilenameLen = 30;
     int u8BytesCount = 2;
-    
+
     std::string line;
     line.reserve(maxFilenameLen * u8BytesCount);
 
@@ -450,7 +401,7 @@ cutFileName(const std::string &file) {
         maxFilenameLen *= u8BytesCount;
     }
     line = file.substr(0, maxFilenameLen);
-    
+
     if (curFilenameLenU8 > maxFilenameLen) {
         line[line.length() - 1] = '.';
         line[line.length() - 2] = '.';
@@ -460,9 +411,7 @@ cutFileName(const std::string &file) {
     return line;
 }
 
-int
-Response::fillFileStat(const std::string &filename, struct stat *st) {
-
+int Response::fillFileStat(const std::string &filename, struct stat *st) {
     const std::string &fullname = getRequest()->getResolvedPath() + '/' + filename;
 
     if (stat(fullname.c_str(), st) < 0) {
@@ -477,27 +426,26 @@ getHumanSize(long long bytes, bool si = true) {
     static const char *suffixes = " kMGTPE";
 
     const char *end = (!si && bytes > 1024) ? "iB" : "B";
-    int base = si ? 1000 : 1024;
+    int         base = si ? 1000 : 1024;
 
     if (bytes < base) {
         return lltos(bytes) + suffixes[0] + end;
     }
 
-    int index = static_cast<int>(log(bytes) / log(base));
+    int    index = static_cast<int>(log(bytes) / log(base));
     double humanSize = static_cast<double>(bytes / pow(base, index));
-    char buf[10] = {0};
+    char   buf[10] = {0};
     snprintf(buf, 10, "%.1f%c%s", humanSize, suffixes[index], end);
     return buf;
 }
 
-static inline std::string 
+static inline std::string
 createLinkLine(const std::string &file) {
     return "<a href=\"" + file + "\">" + cutFileName(file) + "</a>";
 }
 
 std::string
 Response::createTableLine(const std::string &filename) {
-    
     std::string line;
     line.reserve(512);
 
@@ -515,24 +463,9 @@ Response::createTableLine(const std::string &filename) {
     return line;
 }
 
-int
-Response::listing(const std::string &resourcePath) {
-
-    std::string body = 
-        HTML_BEG HEAD_BEG TITLE_BEG + _req->getPath() + TITLE_END
-        META_UTF8 DEFAULT_CSS HEAD_END BODY_BEG
-        H1_BEG "Index on " + _req->getPath() + H1_END HR
-        TABLE_BEG 
-            TR_BEG 
-                TH_BEG "Filename" TH_END 
-                TH_BEG "Last modified" TH_END
-                TH_BEG "Size" TH_END
-            TR_END
-            TR_BEG 
-                TD_BEG "<a href=\"..\">../</a>" TD_END
-                TD_BEG TD_END
-                TD_BEG TD_END
-            TR_END;
+int Response::listing(const std::string &resourcePath) {
+    std::string           body =
+        HTML_BEG HEAD_BEG TITLE_BEG + _req->getPath() + TITLE_END META_UTF8 DEFAULT_CSS HEAD_END BODY_BEG H1_BEG "Index on " + _req->getPath() + H1_END HR TABLE_BEG TR_BEG TH_BEG "Filename" TH_END TH_BEG "Last modified" TH_END TH_BEG "Size" TH_END TR_END TR_BEG TD_BEG "<a href=\"..\">../</a>" TD_END TD_BEG TD_END TD_BEG TD_END TR_END;
 
     std::deque<std::string> filenames;
     if (!fillDirContent(filenames, resourcePath)) {
@@ -542,11 +475,10 @@ Response::listing(const std::string &resourcePath) {
     std::sort(filenames.begin(), filenames.end());
     std::deque<std::string>::iterator it;
     for (it = filenames.begin(); it != filenames.end(); ++it) {
-
         if (*it == "." || *it == "..") {
-            continue ;
+            continue;
         }
-        body += createTableLine(*it); 
+        body += createTableLine(*it);
     }
     body += TABLE_END HR BODY_END HTML_END;
 
@@ -556,9 +488,7 @@ Response::listing(const std::string &resourcePath) {
     return 1;
 }
 
-int
-Response::fillDirContent(std::deque<std::string> &filenames, const std::string &dirName) {
-
+int Response::fillDirContent(std::deque<std::string> &filenames, const std::string &dirName) {
     DIR *dir = opendir(dirName.c_str());
     if (!dir) {
         setStatus(INTERNAL_SERVER_ERROR);
@@ -588,9 +518,7 @@ Response::getContentType(const std::string &resourcePath) {
     return "text/plain";
 }
 
-void
-Response::makeHead(void) {
-
+void Response::makeHead(void) {
     std::string head;
     head.reserve(512);
     head = SERVER_PROTOCOL SP + statusLines[getStatus()] + CRLF;
@@ -609,15 +537,13 @@ Response::makeHead(void) {
     setHead(head);
 }
 
-void
-Response::addHeader(uint32_t hash, const std::string &value) {
+void Response::addHeader(uint32_t hash, const std::string &value) {
     if (headers[hash].value.empty()) {
         headers[hash].value = value;
     }
 }
 
-int
-Response::makeResponseForCGI(void) {
+int Response::makeResponseForCGI(void) {
     isCGI(true);
     if (!_cgi->exec(this)) {
         setStatus(BAD_GATEWAY);
@@ -628,25 +554,22 @@ Response::makeResponseForCGI(void) {
     }
 }
 
-void
-Response::makeResponseForError(void) {
-
+void Response::makeResponseForError(void) {
     if (getRequest()->getLocation() != NULL) {
-
-        std::map<int, std::string> &pages = getRequest()->getLocation()->getErrorPagesRef();
+        std::map<int, std::string>          &pages = getRequest()->getLocation()->getErrorPagesRef();
         std::map<int, std::string>::iterator it = pages.find(getStatus());
 
         if (it != pages.end()) {
             setBody(readFile(it->second));
             if (!getBody().empty()) {
-                return ;
+                return;
             }
         }
     }
 
     if (!errorResponses.has(getStatus())) {
         Log.error() << "Unknown response code: " << static_cast<int>(getStatus()) << Log.endl;
-        setStatus(UNKNOWN_ERROR);   
+        setStatus(UNKNOWN_ERROR);
     }
     setBody(errorResponses[getStatus()]);
 }
@@ -688,23 +611,19 @@ Response::getClient(void) {
     return getRequest()->getClient();
 }
 
-bool
-Response::pending(void) const {
+bool Response::pending(void) const {
     return _pending;
 }
 
-void
-Response::pending(bool pending) {
+void Response::pending(bool pending) {
     _pending = pending;
 }
 
-bool
-Response::isProxy(void) const {
+bool Response::isProxy(void) const {
     return _isProxy;
 }
 
-void
-Response::isProxy(bool isProxy) {
+void Response::isProxy(bool isProxy) {
     _isProxy = isProxy;
 }
 
@@ -718,20 +637,17 @@ Response::getFileSize(void) {
     return _filestat.st_size;
 }
 
-bool
-Response::isCGI(void) const {
+bool Response::isCGI(void) const {
     return _isCGI;
 }
 
-void
-Response::isCGI(bool flag) {
+void Response::isCGI(bool flag) {
     _isCGI = flag;
 }
 
-void
-Response::matchCGI(const std::string &filepath) {
+void Response::matchCGI(const std::string &filepath) {
     typedef std::map<std::string, CGI> cgisMap;
-    typedef cgisMap::iterator iter;
+    typedef cgisMap::iterator          iter;
 
     cgisMap &cgis = getRequest()->getLocation()->getCGIsRef();
     for (iter it = cgis.begin(); it != cgis.end(); it++) {
@@ -742,9 +658,7 @@ Response::matchCGI(const std::string &filepath) {
     }
 }
 
-bool
-Response::parseLine(std::string &line) {
-
+bool Response::parseLine(std::string &line) {
     Log.debug() << line << Log.endl;
     if (!isCGI() && !flagSet(PARSED_SL)) {
         rtrim(line, CRLF);
@@ -758,7 +672,7 @@ Response::parseLine(std::string &line) {
         setStatus(INTERNAL_SERVER_ERROR);
         Log.error() << "Somehow we ended up here" << Log.endl;
     }
-    
+
     if (getStatus() == PROCESSING) {
         if (isCGI() && getBody().empty()) {
             setStatus(NO_CONTENT);
@@ -782,14 +696,13 @@ Response::parseLine(std::string &line) {
 
 StatusCode
 Response::parseSL(const std::string &line) {
-
     std::size_t pos = 0;
     setProtocol(getWord(line, " ", pos));
     skipSpaces(line, pos);
 
     _rawStatus = getWord(line, " ", pos);
     skipSpaces(line, pos);
-   
+
     getWord(line, " ", pos);
     skipSpaces(line, pos);
     if (line[pos]) {
@@ -802,7 +715,6 @@ Response::parseSL(const std::string &line) {
 
 StatusCode
 Response::checkSL(void) {
-
     if (!isValidProtocol(getProtocol())) {
         Log.debug() << "Response::checkSL: protocol " << getProtocol() << " is not valid" << Log.endl;
         return BAD_GATEWAY;
@@ -812,7 +724,7 @@ Response::checkSL(void) {
     if (getMajor() != _req->getMajor()) {
         Log.debug() << "Response::checkSL: protocol " << getProtocol() << " is not supported" << Log.endl;
         return BAD_GATEWAY;
-    } 
+    }
 
     long long status;
     stoll(status, _rawStatus.c_str());
@@ -827,7 +739,6 @@ Response::checkSL(void) {
     return CONTINUE;
 }
 
-
 StatusCode
 Response::parseHeader(const std::string &line) {
     ResponseHeader header;
@@ -839,7 +750,7 @@ Response::parseHeader(const std::string &line) {
 
     // dublicate header
     if (headers.has(header.hash)) {
-        headers[header.hash].value += ", " + header.value; 
+        headers[header.hash].value += ", " + header.value;
         // Log.debug() << "Response:: Dublicated header " << header.key << " " << header.hash << Log.endl;
         // return BAD_REQUEST;
     }
@@ -850,12 +761,11 @@ Response::parseHeader(const std::string &line) {
 
 StatusCode
 Response::checkHeaders(void) {
-
     setFlag(PARSED_HEADERS);
 
     if (headers.has(CONTENT_LENGTH)) {
         std::string &len_s = headers.value(CONTENT_LENGTH);
-        long long num;
+        long long    num;
         if (!stoll(num, len_s.c_str())) {
             Log.debug() << "Response::ParsedHeaders::Bad length " << num << Log.endl;
             return BAD_GATEWAY;
@@ -864,7 +774,7 @@ Response::checkHeaders(void) {
     } else if (headers.has(TRANSFER_ENCODING)) {
         setBodySize(0);
     } else {
-        setBodySize(SIZE_T_MAX);
+        setBodySize(ULLONG_MAX);
     }
 
     headers.erase(CONNECTION);
@@ -873,7 +783,6 @@ Response::checkHeaders(void) {
     Log.debug() << "Response::ParsedHeaders::Continue" << Log.endl;
     return CONTINUE;
 }
-
 
 StatusCode
 Response::writeBody(const std::string &body) {
@@ -905,8 +814,5 @@ Response::parseBody(const std::string &line) {
     }
     return PROCESSING;
 }
-
-
-
 
 } // namespace HTTP

@@ -1,20 +1,11 @@
 #include "Client.hpp"
+
 #include "Server.hpp"
 
 namespace HTTP {
 
 Client::Client(void)
-    : _clientIO(NULL)
-    , _serverIO(NULL)
-    , _targetIO(NULL)
-    , _headSent(false)
-    , _bodySent(false)
-    , _shouldBeClosed(false)
-    , _nbRequests(0)
-    , _maxRequests(MAX_REQUESTS)
-    , _clientTimeout(0) 
-    , _targetTimeout(0) {
-
+    : _clientIO(NULL), _serverIO(NULL), _targetIO(NULL), _headSent(false), _bodySent(false), _shouldBeClosed(false), _nbRequests(0), _maxRequests(MAX_REQUESTS), _clientTimeout(0), _targetTimeout(0) {
     _clientIO = new IO();
     if (_clientIO == NULL) {
         Log.syserr() << "Client:: Cannot allocate memory for socket" << Log.endl;
@@ -22,7 +13,7 @@ Client::Client(void)
 }
 
 Client::~Client(void) {
-    typedef std::list<Request *> PoolReq;
+    typedef std::list<Request *>  PoolReq;
     typedef std::list<Response *> PoolRes;
 
     for (PoolReq::iterator it = _requests.begin(); it != _requests.end(); ++it) {
@@ -46,13 +37,11 @@ Client::~Client(void) {
     }
 }
 
-void
-Client::shouldBeClosed(bool flag) {
+void Client::shouldBeClosed(bool flag) {
     _shouldBeClosed = flag;
 }
 
-bool
-Client::shouldBeClosed(void) const {
+bool Client::shouldBeClosed(void) const {
     return _shouldBeClosed;
 }
 
@@ -66,90 +55,75 @@ Client::getTargetTimeout(void) const {
     return _targetTimeout;
 }
 
-void
-Client::setClientTimeout(time_t time) {
+void Client::setClientTimeout(time_t time) {
     _clientTimeout = time;
 }
 
-void
-Client::setTargetTimeout(time_t time) {
+void Client::setTargetTimeout(time_t time) {
     _targetTimeout = time;
 }
 
-IO *
-Client::getClientIO(void) {
+IO *Client::getClientIO(void) {
     return _clientIO;
 }
 
-IO *
-Client::getServerIO(void) {
+IO *Client::getServerIO(void) {
     return _serverIO;
 }
 
-IO *
-Client::getTargetIO(void) {
+IO *Client::getTargetIO(void) {
     return _targetIO;
 }
 
-void
-Client::setClientIO(IO *sock) {
+void Client::setClientIO(IO *sock) {
     _clientIO = sock;
 }
 
-void
-Client::setServerIO(IO *sock) {
+void Client::setServerIO(IO *sock) {
     _serverIO = sock;
 }
 
-void
-Client::setTargetIO(IO *sock) {
+void Client::setTargetIO(IO *sock) {
     _targetIO = sock;
 }
 
 const std::string
 Client::getHostname(void) {
-    const std::size_t port = getClientIO()->getPort();
+    const std::size_t  port = getClientIO()->getPort();
     const std::string &addr = getClientIO()->getAddr();
 
     return (port != 0 ? addr + ":" + sztos(port) : addr);
 }
 
-bool
-Client::replyDone(void) {
+bool Client::replyDone(void) {
     return _headSent && _bodySent;
 }
 
-void
-Client::replyDone(bool val) {
+void Client::replyDone(bool val) {
     _headSent = val;
     _bodySent = val;
 }
 
-void
-Client::addRequest(void) {
-
+void Client::addRequest(void) {
     Request *req = new Request(this);
     if (req == NULL) {
         Log.syserr() << "Cannot allocate memory for Request" << Log.endl;
         shouldBeClosed(true);
-        return ;
+        return;
     }
     _requests.push_back(req);
     Log.debug() << "----------------------" << Log.endl;
 }
 
-void
-Client::addResponse(void) {
-
-    Request *req = _requests.back();
+void Client::addResponse(void) {
+    Request  *req = _requests.back();
     Response *res = new Response(req);
     _responses.push_back(res);
 
     Log.debug() << "Client::addResponse " << res->getRequest()->getUriRef()._path << Log.endl;
 }
 
-void
-Client::removeRequest(void) {
+void Client::removeRequest(void) {
     if (_requests.size() > 0) {
         Request *req = _requests.front();
         _requests.pop_front();
@@ -157,8 +131,7 @@ Client::removeRequest(void) {
     }
 }
 
-void
-Client::removeResponse(void) {
+void Client::removeResponse(void) {
     if (_responses.size() > 0) {
         Response *res = _responses.front();
         _responses.pop_front();
@@ -166,11 +139,8 @@ Client::removeResponse(void) {
     }
 }
 
-void
-Client::pollin(int fd) {
-
+void Client::pollin(int fd) {
     if (fd == getClientIO()->rdFd()) {
-
         if (_requests.size() == _responses.size()) {
             addRequest();
         }
@@ -178,36 +148,32 @@ Client::pollin(int fd) {
         if (_requests.size() > _responses.size()) {
             setClientTimeout(std::time(0));
             receive(_requests.back());
-            
+
             if (_requests.back()->formed()) {
                 _nbRequests++;
                 addResponse();
-                g_server->responses.push_back(_responses.back());
+                g_server->addToQueue(_responses.back());
             }
         }
-    } 
-    else if (fd == getTargetIO()->rdFd()) {
+    } else if (fd == getTargetIO()->rdFd()) {
         if (_responses.size() > 0) {
             receive(_responses.front());
         }
     }
- 
 }
 
-void
-Client::pollout(int fd) {
+void Client::pollout(int fd) {
     (void)fd;
 
     if (fd == getClientIO()->wrFd()) {
-
         if (_responses.empty()) {
-            return ;
+            return;
         }
 
         if (_responses.front()->formed() && !replyDone()) {
             reply(_responses.front());
         }
-        
+
         if (replyDone()) {
             if (_nbRequests >= _maxRequests) {
                 shouldBeClosed(true);
@@ -230,22 +196,17 @@ Client::pollout(int fd) {
     // }
 }
 
-void
-Client::pollhup(int fd) {
+void Client::pollhup(int fd) {
     Log.syserr() << "Client::pollhup " << fd << Log.endl;
     shouldBeClosed(true);
 }
 
-
-void
-Client::pollerr(int fd) {
+void Client::pollerr(int fd) {
     Log.syserr() << "Client::pollerr " << fd << Log.endl;
     shouldBeClosed(true);
 }
 
-void
-Client::reply(Response *res) {
-
+void Client::reply(Response *res) {
     signal(SIGPIPE, SIG_IGN);
 
     if (!_headSent) {
@@ -264,9 +225,7 @@ Client::reply(Response *res) {
     }
 }
 
-void
-Client::reply(Request *req) {
-
+void Client::reply(Request *req) {
     signal(SIGPIPE, SIG_IGN);
 
     if (!_headSent) {
@@ -285,35 +244,30 @@ Client::reply(Request *req) {
     }
 }
 
-void
-Client::receive(Request *req) {
-
+void Client::receive(Request *req) {
     Log.debug() << "Client:: [" << getClientIO()->rdFd() << "] receive request" << Log.endl;
-    
+
     if (!getClientIO()->read()) {
         Log.debug() << "Client:: [" << getClientIO()->rdFd() << "] peer closed connection" << Log.endl;
         shouldBeClosed(true);
-        return ;
+        return;
     }
 
     while (!req->formed()) {
         std::string line;
 
         if (!getClientIO()->getline(line, req->getBodySize())) {
-            return ;
+            return;
         }
         req->parseLine(line);
     }
 }
 
-void
-Client::receive(Response *res) {
-
-    
+void Client::receive(Response *res) {
     int bytes = getTargetIO()->read();
     if (bytes < 0) {
         Log.debug() << "Client:: [" << getTargetIO()->rdFd() << "] receive -1 response" << Log.endl;
-        return ;
+        return;
     } else if (bytes == 0) {
         Log.debug() << "Client:: [" << getTargetIO()->rdFd() << "] receive 0 response" << Log.endl;
 
@@ -331,32 +285,32 @@ Client::receive(Response *res) {
         std::string line;
 
         if (!getTargetIO()->getline(line, res->getBodySize())) {
-            return ;
+            return;
         }
-        res->parseLine(line);    
+        res->parseLine(line);
     }
 }
 
 ServerBlock *
 Client::matchServerBlock(const std::string &host) {
     typedef std::list<HTTP::ServerBlock>::iterator iter_l;
-    typedef std::list<HTTP::ServerBlock> bslist;
+    typedef std::list<HTTP::ServerBlock>           bslist;
 
     bool searchByName = !isValidIpv4(host) ? true : false;
 
     bslist &blocks = g_server->operator[](getServerIO()->getPort());
-    iter_l found = blocks.end();
+    iter_l                     found = blocks.end();
     for (iter_l block = blocks.begin(); block != blocks.end(); ++block) {
         if (block->hasAddr(getServerIO()->getAddr())) {
             if (found == blocks.end()) {
                 found = block;
                 if (!searchByName) {
-                    break ;
+                    break;
                 }
             }
             if (searchByName && block->hasName(host)) {
                 found = block;
-                break ;
+                break;
             }
         }
     }
@@ -364,5 +318,4 @@ Client::matchServerBlock(const std::string &host) {
     return &(*found);
 }
 
-
-}
+} // namespace HTTP

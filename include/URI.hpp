@@ -1,12 +1,11 @@
 #pragma once
 
-#include <string>
 #include <algorithm>
+#include <string>
 
 namespace HTTP {
 
 struct URI {
-
     typedef std::string::iterator iter_t;
 
     std::string _scheme;
@@ -17,13 +16,14 @@ struct URI {
     std::string _fragment;
     std::size_t _port;
 
-    void parse(std::string uri);
+    URI(void);
+    ~URI(void);
+
+    void               parse(std::string uri);
     static std::string URLencode(const std::string &);
     static std::string URLdecode(const std::string &);
-    std::string getAuthority(void) const;
-    void clear(void);
-
+    std::string        getAuthority(void) const;
+    void               clear(void);
 };
 
-}
-
+} // namespace HTTP
