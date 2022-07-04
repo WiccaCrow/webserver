@@ -1,21 +1,27 @@
 #include "SHA1.hpp"
 
-static uint32_t H[5] = {
-    0x67452301,
-    0xEFCDAB89,
-    0x98BADCFE,
-    0x10325476,
-    0xC3D2E1F0
-};
+SHA1::SHA1(void) {
+    memset(H, 0, 5);
+    memset(W, 0, 80);
+}
 
-static uint32_t K[4] = {
+SHA1::~SHA1(void) {}
+
+uint32_t SHA1::K[4] = {
     0x5A827999,
     0x6ED9EBA1,
     0x8F1BBCDC,
     0xCA62C1D6
 };
 
-static uint32_t W[80] = { 0 };
+void
+SHA1::initH(void) {
+    H[0] = 0x67452301;
+    H[1] = 0xEFCDAB89;
+    H[2] = 0x98BADCFE;
+    H[3] = 0x10325476;
+    H[4] = 0xC3D2E1F0;
+}
 
 static inline uint32_t
 shift(int n, uint32_t x) {
@@ -23,7 +29,7 @@ shift(int n, uint32_t x) {
 }
 
 static uint32_t
-f(std::size_t t, uint32_t B, uint32_t C, uint32_t D) {
+f(size_t t, uint32_t B, uint32_t C, uint32_t D) {
     if (t < 20) {
         return (B & C) | (~B & D);
     } else if (t < 40) {
@@ -35,15 +41,15 @@ f(std::size_t t, uint32_t B, uint32_t C, uint32_t D) {
     }
 }
 
-static void
-processChunk(void) {
-    for (std::size_t t = 16; t < 80; t++) {
+void
+SHA1::processChunk(void) {
+    for (size_t t = 16; t < 80; t++) {
         W[t] = shift(1, W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16]);
     }
 
     uint32_t A = H[0], B = H[1], C = H[2], D = H[3], E = H[4];
 
-    for (std::size_t t = 0; t < 80; t++) {
+    for (size_t t = 0; t < 80; t++) {
         uint32_t tmp = shift(5, A) + f(t, B, C, D) + E + W[t] + K[t / 20];
         E = D;
         D = C;
@@ -59,10 +65,10 @@ processChunk(void) {
     H[4] += E;
 }
 
-static void
-copyChunk(uint32_t *W, const uint8_t *str) {
-    std::size_t i = 0;
-    for (std::size_t j = 0; j < 16; j++) {    
+void
+SHA1::copyChunk(const uint8_t *str) {
+    size_t i = 0;
+    for (size_t j = 0; j < 16; j++) {    
         unsigned char tmp = str[i] ? str[i] : 0x80;
         W[j] = tmp;
         tmp = (tmp == 0x80) ? 0x0 : str[i + 1] ? str[i + 1] : 0x80;
@@ -79,20 +85,22 @@ copyChunk(uint32_t *W, const uint8_t *str) {
 }
 
 std::string
-SHA1(const std::string &msg) {
+SHA1::hash(const std::string &msg) {
+
+    initH();
     uint64_t bits = static_cast<uint64_t>(msg.length() * 8);
     const uint8_t *str = reinterpret_cast<const uint8_t *>(msg.c_str());
 
-    std::size_t i = 0;
-    const std::size_t chunksCount = (msg.length() / 64) + 1;
-    for (std::size_t index = 1; index < chunksCount; index++) {
-        copyChunk(W, (str + i));
+    size_t i = 0;
+    const size_t chunksCount = (msg.length() / 64) + 1;
+    for (size_t index = 1; index < chunksCount; index++) {
+        copyChunk((str + i));
         i += 64;
         processChunk();
     }
 
     memset((void *)W, 0, 64);
-    copyChunk(W, (str + i));
+    copyChunk((str + i));
     W[14] = static_cast<uint32_t>((bits >> 32));
     W[15] = static_cast<uint32_t>((bits << 32) >> 32);    
     processChunk();

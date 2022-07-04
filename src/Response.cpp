@@ -291,7 +291,12 @@ Response::getEtagFile(const std::string &filename) {
         return "";
     }
 
-    return SHA1(Time::gmt(st.st_mtime));
+    SHA1 sha;
+    // std::string time = Time::gmt(st.st_mtime);
+    // std::string hash = sha.hash(time);
+    // Log.debug() << time << " " << hash << Log.endl;
+
+    return sha.hash(Time::gmt(st.st_mtime));
 }
 
 int Response::makeResponseForFile(void) {
