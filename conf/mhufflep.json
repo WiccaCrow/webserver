@@ -35,7 +35,9 @@
                 ]
             },
             "add_headers": [
-                "Set-cookie: key1=val1; "
+                "Set-cookie: key1=val1; ",
+                "Set-cookie: key2=val2; ",
+                "Set-cookie: key3=val3; "
             ],
             "methods_allowed": [ "GET", "PUT", "POST", "CONNECT" ],
             "post_max_body": 100,

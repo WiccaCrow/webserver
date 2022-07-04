@@ -179,7 +179,6 @@ void Client::pollin(int fd) {
 }
 
 void Client::pollout(int fd) {
-    (void)fd;
 
     if (fd == getClientIO()->wrFd()) {
         if (_responses.empty()) {
@@ -235,7 +234,6 @@ void Client::reply(Response *res) {
 
     if (!_headSent) {
         if (!getClientIO()->getDataPos()) {
-            Log.debug() << res->getHead() << Log.endl;
             getClientIO()->setData(res->getHead().c_str());
             getClientIO()->setDataSize(res->getHead().length());
         }

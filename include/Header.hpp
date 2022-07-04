@@ -38,20 +38,20 @@ class Header {
 template<typename T>
 class Headers {
 public:
-    typedef typename std::map<uint32_t, T>::key_type key_type;  
+    typedef typename std::multimap<uint32_t, T>::key_type key_type;  
 
-    typedef typename std::map<key_type, T>::pointer pointer;
-    typedef typename std::map<key_type, T>::const_pointer const_pointer;
-    typedef typename std::map<key_type, T>::reference reference;
-    typedef typename std::map<key_type, T>::const_reference const_reference;
+    typedef typename std::multimap<key_type, T>::pointer pointer;
+    typedef typename std::multimap<key_type, T>::const_pointer const_pointer;
+    typedef typename std::multimap<key_type, T>::reference reference;
+    typedef typename std::multimap<key_type, T>::const_reference const_reference;
 
-    typedef typename std::map<key_type, T>::iterator iterator;
-    typedef typename std::map<key_type, T>::const_iterator const_iterator;
-    typedef typename std::map<key_type, T>::reverse_iterator reverse_iterator;
-    typedef typename std::map<key_type, T>::const_reverse_iterator const_reverse_iterator;
+    typedef typename std::multimap<key_type, T>::iterator iterator;
+    typedef typename std::multimap<key_type, T>::const_iterator const_iterator;
+    typedef typename std::multimap<key_type, T>::reverse_iterator reverse_iterator;
+    typedef typename std::multimap<key_type, T>::const_reverse_iterator const_reverse_iterator;
 
 private:
-    std::map<key_type, T> _c;
+    std::multimap<key_type, T> _c;
     
 public:
     iterator begin(void) {
@@ -104,9 +104,13 @@ public:
     }
 
     T &operator[](key_type key) {
-        T & ref = _c[key];
-        ref.hash = key;
-        return ref;
+        iterator it = _c.find(key);
+        if (it == _c.end()) {
+            iterator ins = _c.insert(std::make_pair(key, T()));
+            ins->second.hash = key;
+            return ins->second;
+        }
+        return it->second;
     }
 
     T &operator[](HeaderCode key) {
