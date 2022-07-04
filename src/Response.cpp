@@ -784,10 +784,13 @@ Response::parseHeader(const std::string &line) {
     }
 
     // dublicate header
-    if (headers.has(header.hash)) {
-        headers[header.hash].value += ", " + header.value;
-        // Log.debug() << "Response:: Dublicated header " << header.key << " " << header.hash << Log.endl;
-        // return BAD_REQUEST;
+    if (header.hash != SET_COOKIE) {
+        if (headers.has(header.hash)) {
+            headers[header.hash].value += ", " + header.value;
+            // Log.debug() << "Response:: Dublicated header " << header.key << " " << header.hash << Log.endl;
+            // return BAD_REQUEST;
+            return CONTINUE;
+        }
     }
 
     headers.insert(header);
