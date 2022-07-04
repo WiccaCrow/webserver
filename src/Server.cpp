@@ -9,6 +9,7 @@ Server::Server()
 
     pthread_mutex_init(&_fds_lock, NULL);
     pthread_mutex_init(&_res_lock, NULL);
+    pthread_mutex_init(&_cln_lock, NULL);
 }
 
 Server::~Server() {
@@ -35,6 +36,7 @@ Server::~Server() {
 
     pthread_mutex_destroy(&_fds_lock);
     pthread_mutex_destroy(&_res_lock);
+    pthread_mutex_destroy(&_cln_lock);
 }
 
 // Could be used for re-reading config:
@@ -311,13 +313,16 @@ HTTP::Response *Server::rmFromQueue(void) {
 }
 
 void Server::addClient(int fd, HTTP::Client *client) {
+    pthread_mutex_lock(&_cln_lock);
     Log.debug() << "Server::addClient " << fd << " " << client << Log.endl;
     _clients[fd] = client;
+    pthread_mutex_unlock(&_cln_lock);
 }
 
 void Server::checkTimeout(void) {
     std::time_t cur = std::time(0);
 
+    pthread_mutex_lock(&_cln_lock);
     for (ClientsMap::iterator it = _clients.begin(); it != _clients.end(); ++it) {
         if (it->second->shouldBeClosed()) {
             continue;
@@ -339,6 +344,7 @@ void Server::checkTimeout(void) {
             // set response status to gateway timeout
         }
     }
+    pthread_mutex_unlock(&_cln_lock);
 }
 
 void Server::connect(std::size_t servid, int servfd) {

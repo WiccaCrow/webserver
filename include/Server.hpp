@@ -53,6 +53,7 @@ class Server {
 
     pthread_mutex_t _fds_lock;
     pthread_mutex_t _res_lock;
+    pthread_mutex_t _cln_lock;
 
     std::queue<struct pollfd>    _pendingFds;
     std::queue<HTTP::Response *> _pendingResps;

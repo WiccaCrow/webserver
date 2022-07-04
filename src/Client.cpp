@@ -296,6 +296,7 @@ void Client::receive(Response *res) {
 
         if (res->isCGI()) {
             res->checkCGIFail();
+            // res->setBodySize(getTargetIO()->getRem().length());
             setTargetTimeout(0);
             g_server->rmPollFd(getTargetIO()->rdFd());
         }
@@ -305,7 +306,7 @@ void Client::receive(Response *res) {
             g_server->rmPollFd(getTargetIO()->rdFd());
         }
     }
-
+    
     while (!res->formed()) {
         std::string line;
 
