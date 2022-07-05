@@ -88,6 +88,11 @@ int Proxy::setConnection(struct addrinfo *lst, Response *res) {
         return 0;
     }
 
+    if (sock->nonblock() < 0) {
+        Log.error() << "Proxy:: nonblock failed" << Log.endl;
+        return 0;
+    }
+
     // struct sockaddr_in *addr = (struct sockaddr_in *)lst->ai_addr;
     Log.info() << "Proxy:: Established [" << fd << "]" << Log.endl;
 

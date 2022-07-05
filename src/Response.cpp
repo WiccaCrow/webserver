@@ -6,10 +6,10 @@
 namespace HTTP {
 
 Response::Response(void)
-    : ARequest(), _req(NULL), _cgi(NULL), _proxy(NULL), _fileaddr(NULL), _filefd(-1), _isProxy(false), _isCGI(false) {}
+    : ARequest(), _parsedStatus(OK), _req(NULL), _cgi(NULL), _proxy(NULL), _fileaddr(NULL), _filefd(-1), _isProxy(false), _isCGI(false) {}
 
 Response::Response(Request *req)
-    : ARequest(), _req(req), _cgi(NULL), _proxy(NULL), _fileaddr(NULL), _filefd(-1), _isProxy(false), _isCGI(false) {
+    : ARequest(), _parsedStatus(OK), _req(req), _cgi(NULL), _proxy(NULL), _fileaddr(NULL), _filefd(-1), _isProxy(false), _isCGI(false) {
     setStatus(getRequest()->getStatus());
 }
 
@@ -723,9 +723,12 @@ bool Response::parseLine(std::string &line) {
     if (getStatus() == PROCESSING) {
         if (isCGI() && getBody().empty()) {
             setStatus(NO_CONTENT);
+        } else if (isProxy()) {
+            setStatus(_parsedStatus);
         } else {
             setStatus(OK);
         }
+
         makeHead();
         formed(true);
     }
@@ -782,7 +785,7 @@ Response::checkSL(void) {
         Log.debug() << "Response::checkSL: status code " << status << " is invalid" << Log.endl;
         return BAD_GATEWAY;
     }
-    setStatus(static_cast<StatusCode>(status));
+    _parsedStatus = static_cast<StatusCode>(status);
 
     setFlag(PARSED_SL);
     return CONTINUE;

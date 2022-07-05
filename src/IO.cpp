@@ -191,12 +191,12 @@ int IO::read(void) {
  
     if (bytes > 0) {
         buf[bytes] = '\0';    
-        _rem += buf;
+        _rem.append(buf, bytes);
     } 
 
-    if (_rem.find("\x06") != std::string::npos) {
-        return 0;
-    }
+    // if (_rem.find("\x06") != std::string::npos) {
+    //     return 0;
+    // }
 
     return bytes;
 }
@@ -235,7 +235,7 @@ IO::getline(std::string &line, std::size_t size) {
 
     } else {
         if (_rem.length() < size) {
-            Log.debug() << _rem.length() << " " << size << Log.endl;
+            // Log.debug() << _rem.length() << " " << size << Log.endl;
             return 0;
         }
         pos = size;

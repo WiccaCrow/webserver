@@ -40,10 +40,6 @@
                 "Set-cookie: key2=val2; ",
                 "Set-cookie: key3=val3; "
             ],
-            "auth_basic": {
-                "realm": "eternity",
-                "user_file": ".htpasswd"
-            },
             "methods_allowed": [ "GET", "PUT", "POST", "CONNECT" ],
             "post_max_body": 100,
             "autoindex": true,

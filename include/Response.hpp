@@ -30,6 +30,7 @@ class Client;
 class Response : public ARequest {
 
     std::string _rawStatus;
+    StatusCode  _parsedStatus;
 
     Request    *_req;
     CGI        *_cgi;
