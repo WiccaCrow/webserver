@@ -406,6 +406,8 @@ Request::tunnelGuard(bool value) {
 StatusCode
 Request::parseSL(const std::string &line) {
 
+    Log.debug() << line << Log.endl;
+
     std::size_t pos = 0;
     _method = getWord(line, " ", pos);
 

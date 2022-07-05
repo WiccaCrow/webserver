@@ -83,7 +83,7 @@ int Proxy::setConnection(struct addrinfo *lst, Response *res) {
         Log.debug() << "Proxy:: Try connect [" << fd << "] -> " << inet_ntoa(addr->sin_addr) << Log.endl;
     }
 
-    if (lst == NULL) {
+    if (!connected && lst == NULL) {
         Log.error() << "Proxy:: Failed [" << fd << "] -> " << _host << ":" << _port << Log.endl;
         return 0;
     }

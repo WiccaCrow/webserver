@@ -234,7 +234,7 @@ void Client::reply(Response *res) {
 
     if (!_headSent) {
         if (!getClientIO()->getDataPos()) {
-            // Log.debug() << res->getHead() << Log.endl;
+            Log.debug() << res->getHead() << Log.endl;
             getClientIO()->setData(res->getHead().c_str());
             getClientIO()->setDataSize(res->getHead().length());
         }
