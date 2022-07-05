@@ -156,7 +156,7 @@ void Client::removeResponse(void) {
 }
 
 void Client::pollin(int fd) {
-    if (fd == getClientIO()->rdFd()) {
+    if (getClientIO() && fd == getClientIO()->rdFd()) {
         if (_requests.size() == _responses.size()) {
             addRequest();
         }
@@ -171,7 +171,7 @@ void Client::pollin(int fd) {
                 g_server->addToQueue(_responses.back());
             }
         }
-    } else if (fd == getTargetIO()->rdFd()) {
+    } else if (getTargetIO() && fd == getTargetIO()->rdFd()) {
         if (_responses.size() > 0) {
             receive(_responses.front());
         }

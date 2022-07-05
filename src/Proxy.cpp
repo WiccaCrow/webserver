@@ -97,8 +97,8 @@ int Proxy::setConnection(struct addrinfo *lst, Response *res) {
     Log.info() << "Proxy:: Established [" << fd << "]" << Log.endl;
 
     res->getClient()->setTargetIO(sock);
-    g_server->addToQueue((struct pollfd){fd, POLLIN, 0});
     g_server->addClient(fd, res->getClient());
+    g_server->addToQueue((struct pollfd){fd, POLLIN, 0});
 
     return 1;
 }
