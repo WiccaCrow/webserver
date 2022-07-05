@@ -15,7 +15,6 @@ Header::Header(uint32_t hash, const std::string &value) : hash(hash), value(valu
 bool
 Header::parse(const std::string &line, bool trimKey) {
     
-    // Log.debug() << line << Log.endl;
     std::size_t colonPos = line.find(':');
     if (colonPos == std::string::npos) {
         return false;
@@ -28,7 +27,7 @@ Header::parse(const std::string &line, bool trimKey) {
     toLowerCase(key);
     value = line.substr(colonPos + 1);
     trim(value, SP HTAB CR LF);
-
+    
     hash = crc(key.c_str(), key.length());
     return true;
 }

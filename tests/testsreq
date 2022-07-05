@@ -45,3 +45,10 @@ PUT /testdel HTTP/1.1
 host: localhost:8080
 Authorization: Basic bWh1ZmZsZXA6cXdlcXdlcXdl
 Content-length:
+
+CONNECT www.google.com:80 HTTP/1.1
+host: www.google.com:80
+Authorization: Basic bWh1ZmZsZXA6cXdlcXdlcXdl
+
+GET / HTTP/1.1
+host: www.google.com:80

@@ -125,6 +125,8 @@ public:
 
     const std::string getContentRangeValue(RangeSet &);
 
+    bool tunnelGuard(bool value);
+
     virtual bool parseLine(std::string &);
     virtual StatusCode parseSL(const std::string &);
     virtual StatusCode checkSL(void);

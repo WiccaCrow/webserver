@@ -23,7 +23,6 @@ public:
 private:
     DomainsVec    _domains;
     URI           _pass;
-    Response    * _res;
 
     std::string  _host;
     std::string  _port;
@@ -33,12 +32,12 @@ public:
     ~Proxy(void);
 
     int pass(Response *);
-    void prepare(void);
-    int setConnection(struct addrinfo *);
+    void prepare(Response *);
+    int setConnection(struct addrinfo *, Response *);
 
     int writeToSocket(int fd, std::string toWrite);
 
-    std::string makeStartLine(void);
+    std::string makeStartLine(Response *);
 
     DomainsVec          &getDomainsRef(void);
     const DomainsVec    &getDomainsRef(void) const;

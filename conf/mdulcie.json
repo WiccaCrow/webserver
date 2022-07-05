@@ -6,14 +6,10 @@
                 "404": "./pages/error_pages/404.html",
                 "400": "./pages/error_pages/400.html"
             },
-            "CGI": {
+            "cgi": {
                 ".py": "/usr/bin/python3.9"
             },
-            "auth_basic": {
-                "realm": "eternity",
-                "user_file": ".htpasswd"
-            },
-            "methods_allowed": [ "GET", "POST" ],
+            "methods_allowed": [ "GET", "POST", "CONNECT" ],
             "post_max_body": 100,
             "autoindex": true,
             "index": [ "index.html" ],
@@ -33,7 +29,7 @@
                     "methods_allowed": [ "GET", "POST" ]                 
                 },
                 "/feedback": {
-                    "CGI": {
+                    "cgi": {
                         ".py": "/usr/bin/python3.9"
                     },
                     "autoindex": false,

@@ -198,7 +198,7 @@ void Client::pollout(int fd) {
             removeRequest();
             getClientIO()->clear();
 
-            if (getTargetIO()) {
+            if (!isTunnel() && getTargetIO()) {
                 g_server->rmPollFd(getTargetIO()->rdFd());
                 delete getTargetIO();
                 setTargetIO(NULL);
@@ -234,6 +234,7 @@ void Client::reply(Response *res) {
 
     if (!_headSent) {
         if (!getClientIO()->getDataPos()) {
+            // Log.debug() << res->getHead() << Log.endl;
             getClientIO()->setData(res->getHead().c_str());
             getClientIO()->setDataSize(res->getHead().length());
         }
@@ -277,7 +278,7 @@ void Client::receive(Request *req) {
     }
 
     while (!req->formed()) {
-        std::string line;
+        std::string line = "";
 
         if (!getClientIO()->getline(line, req->getBodySize())) {
             return;

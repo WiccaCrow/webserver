@@ -100,7 +100,7 @@ void Response::makeResponseForProxy() {
         }
     }
 
-    _proxy->prepare();
+    _proxy->prepare(this);
     isProxy(true);
 }
 
@@ -707,7 +707,6 @@ void Response::checkCGIFail(void) {
 }
 
 bool Response::parseLine(std::string &line) {
-    Log.debug() << line << Log.endl;
     if (!isCGI() && !flagSet(PARSED_SL)) {
         rtrim(line, CRLF);
         setStatus(!line.empty() ? parseSL(line) : CONTINUE);
@@ -734,6 +733,14 @@ bool Response::parseLine(std::string &line) {
     return formed();
 }
 
+bool
+Response::tunnelGuard(bool value) {
+    if (getClient()->isTunnel() && BLIND_PROXY) {
+        return false;
+    }
+    return value;
+}
+
 StatusCode
 Response::parseSL(const std::string &line) {
     std::size_t pos = 0;
@@ -755,22 +762,24 @@ Response::parseSL(const std::string &line) {
 
 StatusCode
 Response::checkSL(void) {
-    if (!isValidProtocol(getProtocol())) {
+    if (tunnelGuard(!isValidProtocol(getProtocol()))) {
         Log.debug() << "Response::checkSL: protocol " << getProtocol() << " is not valid" << Log.endl;
         return BAD_GATEWAY;
     }
-    setMajor(getProtocol()[5] - '0');
-    setMinor(getProtocol()[7] - '0');
-    if (getMajor() != _req->getMajor()) {
-        Log.debug() << "Response::checkSL: protocol " << getProtocol() << " is not supported" << Log.endl;
+    if (tunnelGuard(!getProtocol().empty())) {
+        setMajor(getProtocol()[5] - '0');
+        setMinor(getProtocol()[7] - '0');
+    }
+    if (tunnelGuard(getMajor() != _req->getMajor())) {
+        Log.debug() << "Response::checkSL: protocol " << getProtocol() << " mismatch" << Log.endl;
         return BAD_GATEWAY;
     }
 
     long long status;
     stoll(status, _rawStatus.c_str());
 
-    if (status < 200 || status > 599) {
-        Log.debug() << "Response::checkSL: protocol " << getProtocol() << " is not supported" << Log.endl;
+    if (tunnelGuard(status < 200 || status > 599)) {
+        Log.debug() << "Response::checkSL: status code " << status << " is invalid" << Log.endl;
         return BAD_GATEWAY;
     }
     setStatus(static_cast<StatusCode>(status));
@@ -783,13 +792,13 @@ StatusCode
 Response::parseHeader(const std::string &line) {
     ResponseHeader header;
 
-    if (!header.parse(line, _isProxy)) {
+    if (tunnelGuard(!header.parse(line, _isProxy))) {
         Log.debug() << "Response:: Invalid header " << line << Log.endl;
         return BAD_REQUEST;
     }
 
     // dublicate header
-    if (header.hash != SET_COOKIE) {
+    if (tunnelGuard(header.hash != SET_COOKIE)) {
         if (headers.has(header.hash)) {
             headers[header.hash].value += ", " + header.value;
             // Log.debug() << "Response:: Dublicated header " << header.key << " " << header.hash << Log.endl;

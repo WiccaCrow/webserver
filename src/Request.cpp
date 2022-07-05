@@ -242,13 +242,14 @@ Request::Request(Client *client)
 
 Request::~Request() {}
 
-Request::Request(const Request &other) {
+Request::Request(const Request &other) : ARequest(other) {
     *this = other;
 }
 
 Request &
 Request::operator=(const Request &other) {
     if (this != &other) {
+        ARequest::operator=(other);
         _method       = other._method;
         _uri          = other._uri;
         _rawURI       = other._rawURI;
@@ -259,8 +260,7 @@ Request::operator=(const Request &other) {
         _cookie       = other._cookie;
         _client       = other._client;
         _host         = other._host;
-        _storedHash   = other._storedHash;
-       
+        _storedHash   = other._storedHash;  
         headers      = other.headers;
     }
     return *this;
@@ -275,8 +275,6 @@ const std::string &
 Request::getPath() const {
     return _uri._path;
 }
-
-
 
 ServerBlock *
 Request::getServerBlock(void) const {
@@ -308,7 +306,6 @@ Request::setClient(Client *client) {
     _client = client;
 }
 
-
 URI &
 Request::getUriRef() {
     return _uri;
@@ -323,7 +320,6 @@ URI &
 Request::getReferrerRef() {
     return _host;
 }
-
 
 const std::string &
 Request::getRawUri() const {
@@ -344,8 +340,6 @@ void
 Request::setStoredHash(uint32_t hash) {
     _storedHash = hash;
 }
-
-
 
 const std::string &
 Request::getResolvedPath() const {
@@ -412,8 +406,6 @@ Request::tunnelGuard(bool value) {
 StatusCode
 Request::parseSL(const std::string &line) {
 
-    Log.debug() << line << Log.endl;
-
     std::size_t pos = 0;
     _method = getWord(line, " ", pos);
 
@@ -436,7 +428,7 @@ Request::parseSL(const std::string &line) {
 StatusCode
 Request::checkSL(void) {
     if (tunnelGuard(!isValidMethod(_method))) {
-        Log.debug() << "Request::parseSL: Method " << _method << " is not implemented" << Log.endl;
+        Log.debug() << "Request::parseSL: Method " << getMethod() << " is not implemented" << Log.endl;
         return BAD_REQUEST;
     }
 
@@ -448,14 +440,16 @@ Request::checkSL(void) {
     if (tunnelGuard(!isValidProtocol(getProtocol()))) {
         Log.debug() << "Request::checkSL: protocol " << getProtocol() << " is not valid" << Log.endl;
         return BAD_REQUEST;
-    } 
-    setMajor(getProtocol()[5] - '0');
-    setMinor(getProtocol()[7] - '0');
+    }
+    if (tunnelGuard(!getProtocol().empty())) {
+        setMajor(getProtocol()[5] - '0');
+        setMinor(getProtocol()[7] - '0');
+    }
     if (tunnelGuard(getMajor() > 1)) {
         Log.debug() << "Request::checkSL: protocol " << getProtocol() << " is not supported" << Log.endl;
         return HTTP_VERSION_NOT_SUPPORTED;
     } else if (tunnelGuard(getMajor() != 1 || getMinor() != 1)) {
-        Log.debug() << "Request::checkSL: protocol " << _method << " is not implemented" << Log.endl;
+        Log.debug() << "Request::checkSL: protocol " << getProtocol() << " is not implemented" << Log.endl;
         return BAD_REQUEST;
     }
 
@@ -529,7 +523,7 @@ Request::checkHeaders(void) {
     Location::MethodsVec &allowed = getLocation()->getAllowedMethodsRef();
     Location::MethodsVec::iterator it_method = std::find(allowed.begin(), allowed.end(), _method);
     if (tunnelGuard(it_method == allowed.end())) {
-        Log.debug() << "Request:: Method " << _method << " is not allowed" << Log.endl;
+        Log.debug() << "Request:: Method " << getMethod() << " is not allowed" << Log.endl;
         return METHOD_NOT_ALLOWED;
     }
 
@@ -549,7 +543,6 @@ Request::checkHeaders(void) {
 
 StatusCode
 Request::parseHeader(const std::string &line) {
-    Log.debug() << line << Log.endl;
 
     RequestHeader header;
 

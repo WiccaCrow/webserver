@@ -22,39 +22,38 @@ URI &Proxy::getPassRef(void) {
     return _pass;
 }
 
-void Proxy::prepare(void) {
-    IO *io = _res->getClient()->getTargetIO();
+void Proxy::prepare(Response *res) {
+    IO *io = res->getClient()->getTargetIO();
 
     std::string toWrite;
     toWrite.reserve(512);
-    toWrite = makeStartLine() + CRLF;
-    Headers<RequestHeader>::iterator it = _res->getRequest()->headers.begin();
-    for (; it != _res->getRequest()->headers.end(); ++it) {
+    toWrite = makeStartLine(res) + CRLF;
+    Headers<RequestHeader>::iterator it = res->getRequest()->headers.begin();
+    for (; it != res->getRequest()->headers.end(); ++it) {
         if (it->first == CONNECTION || it->first == KEEP_ALIVE) {
             continue;
         }
-        toWrite += it->second.key + ':' + it->second.value + CRLF;
+        toWrite += it->second.toString() + CRLF;
     }
     toWrite += CRLF;
-    _res->getRequest()->setHead(toWrite);
-
-    writeToSocket(io->wrFd(), _res->getRequest()->getHead());
-    writeToSocket(io->wrFd(), _res->getRequest()->getBody());
+    res->getRequest()->setHead(toWrite);
+    writeToSocket(io->wrFd(), res->getRequest()->getHead());
+    writeToSocket(io->wrFd(), res->getRequest()->getBody());
 }
 
 int Proxy::pass(Response *res) {
-    _res = res;
 
     const std::string &host = res->getRequest()->getUriRef()._host;
     const std::string &port = res->getRequest()->getUriRef()._port_s;
 
     struct addrinfo *addrlst = NULL;
+    Log.error() << "Proxy::pass for " << host << ":" << port << Log.endl;
     if (getaddrinfo(host.c_str(), port.c_str(), NULL, &addrlst)) {
-        Log.error() << "Proxy::getaddrinfo -> " << host << ":" << port << std::endl;
+        Log.error() << "Proxy::getaddrinfo -> " << host << ":" << port << Log.endl;
         return 0;
     }
 
-    if (!setConnection(addrlst)) {
+    if (!setConnection(addrlst, res)) {
         freeaddrinfo(addrlst);
         return 0;
     }
@@ -63,7 +62,7 @@ int Proxy::pass(Response *res) {
     return 1;
 }
 
-int Proxy::setConnection(struct addrinfo *lst) {
+int Proxy::setConnection(struct addrinfo *lst, Response *res) {
     IO *sock = new IO();
     int fd = sock->create();
 
@@ -72,27 +71,29 @@ int Proxy::setConnection(struct addrinfo *lst) {
         return 0;
     }
 
-    for (; lst; lst = lst->ai_next) {
+    int connected = 0;
+    for (; lst && !connected; lst = lst->ai_next) {
         if (lst->ai_socktype != SOCK_STREAM) {
             continue;
         }
 
-        if (sock->connect(lst->ai_addr, lst->ai_addrlen)) {
-            break;
-        }
+        connected = sock->connect(lst->ai_addr, lst->ai_addrlen);
+
+        struct sockaddr_in *addr = (struct sockaddr_in *)lst->ai_addr;
+        Log.debug() << "Proxy:: Try connect [" << fd << "] -> " << inet_ntoa(addr->sin_addr) << Log.endl;
     }
 
     if (lst == NULL) {
-        Log.error() << "Proxy:: Failed [" << fd << "] -> " << _host << ":" << _port << std::endl;
+        Log.error() << "Proxy:: Failed [" << fd << "] -> " << _host << ":" << _port << Log.endl;
         return 0;
     }
 
-    struct sockaddr_in *addr = (struct sockaddr_in *)lst->ai_addr;
-    Log.info() << "Proxy:: Established [" << fd << "] -> " << inet_ntoa(addr->sin_addr) << std::endl;
+    // struct sockaddr_in *addr = (struct sockaddr_in *)lst->ai_addr;
+    Log.info() << "Proxy:: Established [" << fd << "]" << Log.endl;
 
-    _res->getClient()->setTargetIO(sock);
+    res->getClient()->setTargetIO(sock);
     g_server->addToQueue((struct pollfd){fd, POLLIN, 0});
-    g_server->addClient(fd, _res->getClient());
+    g_server->addClient(fd, res->getClient());
 
     return 1;
 }
@@ -107,8 +108,8 @@ int Proxy::writeToSocket(int fd, std::string toWrite) {
 }
 
 std::string
-Proxy::makeStartLine(void) {
-    Request *req = _res->getRequest();
+Proxy::makeStartLine(Response *res) {
+    Request *req = res->getRequest();
     URI     &uri = req->getUriRef();
 
     if (uri._path.empty()) {
@@ -118,7 +119,9 @@ Proxy::makeStartLine(void) {
             uri._path = "/";
         }
     }
-    req->headers[HOST].value = uri._host + ":" + uri._port_s;
+    if (!uri._host.empty()) {
+        req->headers[HOST].value = uri._host + ":" + uri._port_s;
+    }
     return req->getMethod() + " " + uri._path + " " + SERVER_PROTOCOL;
 }
 
