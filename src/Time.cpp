@@ -58,4 +58,9 @@ namespace Time {
         return std::localtime(&t);
     }
 
+    time_t
+    now(void) {
+        return std::time(NULL);
+    }
+
 }
