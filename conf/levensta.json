@@ -29,12 +29,15 @@
                         "user_file": ".htpasswd"
                     },
                     "alias": "./pages/site",
-                    "CGI": {
+                    "cgi": {
                         ".pl": "/usr/bin/perl",
-                        ".py": "/usr/bin/python",
-                        ".js": "/usr/local/bin/node",
+                        ".py": "/usr/bin/python3",
+                        ".js": "/usr/bin/node",
                         ".cgi": ""
                     },
+                    "add_headers": [
+                        "Set-cookie: visit=9de70f6546b2452f6e7b98b46ac36070; Max-Age=86400; SameSite=strict; Path=/about"
+                    ],
                     "autoindex": true,
                     "index": ["index.html"],
                     "post_max_body": 200,
@@ -42,9 +45,9 @@
                 },
                 "/feedback": {
                     "root": "./pages/site",
-                    "CGI": {
-                        ".py": "/usr/bin/python",
-                        ".js": "/usr/local/bin/node"
+                    "cgi": {
+                        ".py": "/usr/bin/python3",
+                        ".js": "/usr/bin/node"
                     },
                     "autoindex": false,
                     "index": ["index.html", "index.php"],

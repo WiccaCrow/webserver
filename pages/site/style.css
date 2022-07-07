@@ -78,3 +78,38 @@ a:visited {
 a:hover {
     color: #0e9be8;
 }
+
+article {
+    width: 100%;
+    height: 70px;
+    position: fixed;
+    display: flex;
+    align-items: center;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    font-family: 'Roboto Flex', sans-serif;
+    font-size: 20px;
+}
+
+.ticker-wrapper {
+    transform: translate(100%, 0);
+    animation: ticker 20s infinite linear forwards;
+}
+
+@keyframes ticker {
+    0% {
+      transform: translate(100%, 0);
+    }
+  
+    50% {
+      transform: translate(0, 0);
+    }
+  
+    100% {
+      transform: translate(-100%, 0);
+    }
+  }
