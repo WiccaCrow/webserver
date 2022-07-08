@@ -5,8 +5,6 @@ const std::size_t reservedClients = 64;
 Server::Server()
     : _working(true), isDaemon(false) {
     _pollfds.reserve(reservedClients);
-    // _clients.reserve(reservedClients);
-
 
     pthread_mutex_init(&_m_new_resp, NULL);
     pthread_mutex_init(&_m_new_pfds, NULL);
@@ -126,10 +124,12 @@ void Server::start(void) {
     while (working()) {
         emptyNewClientQ();
         emptyNewFdsQ();
+    
         if (poll() > 0) {
             process();
         }
         checkTimeout();
+    
         emptyDelFdsQ();
         emptyDelClientQ();
     }
@@ -336,8 +336,10 @@ void Server::addToNewFdsQ(int fd) {
 void Server::addToDelFdsQ(int fd) {
     pthread_mutex_lock(&_m_del_pfds);
     if (fd >= 0) {
-        Log.debug() << "Server::addToDelFdsQ [" << fd << "]" << Log.endl;
-        _q_delPfds.push(fd);
+        std::pair<std::set<int>::iterator, bool> p = _q_delPfds.insert(fd);
+        if (p.second) {
+            Log.debug() << "Server::addToDelFdsQ [" << fd << "]" << Log.endl;
+        }
     }
     pthread_mutex_unlock(&_m_del_pfds);
 }
@@ -351,8 +353,12 @@ void Server::addToNewClientQ(int fd, HTTP::Client *client) {
 
 void Server::addToDelClientQ(HTTP::Client *client) {
     pthread_mutex_lock(&_m_del_clnt);
-    Log.debug() << "Server::addToDelClientQ [" << client->getClientIO()->rdFd() << "]" << Log.endl;
-    _q_delClients.push(client);
+    if (client != NULL) {
+        std::pair<std::set<HTTP::Client *>::iterator, bool> p = _q_delClients.insert(client);
+        if (p.second) {
+            Log.debug() << "Server::addToDelClientQ [" << client->getClientIO()->rdFd() << "]" << Log.endl;
+        }
+    }
     pthread_mutex_unlock(&_m_del_clnt);
 }
 
@@ -382,8 +388,10 @@ void Server::emptyDelFdsQ(void) {
     pthread_mutex_lock(&_m_del_pfds);
 
     while (_q_delPfds.size() > 0) {
-        int tmpfd = _q_delPfds.front();
-        _q_delPfds.pop();
+
+        std::set<int>::iterator beg = _q_delPfds.begin();
+        int tmpfd = *beg;
+        _q_delPfds.erase(beg);
 
         struct pollfd tmp = { -1, 0, 0 };
 
@@ -427,8 +435,9 @@ void Server::emptyDelClientQ(void) {
 
     while (_q_delClients.size() > 0) {
 
-        HTTP::Client *tmp = _q_delClients.front();
-        _q_delClients.pop();
+        std::set<HTTP::Client *>::iterator beg = _q_delClients.begin();
+        HTTP::Client *tmp = *beg;
+        _q_delClients.erase(beg);
 
         pthread_mutex_lock(&_m_new_resp);
         

@@ -62,10 +62,10 @@ class Server {
     std::list<HTTP::Response *> _q_newResponses;
 
     std::queue<std::pair<int, HTTP::Client *> >  _q_newClients;
-    std::queue<HTTP::Client *>  _q_delClients;
+    std::queue<int>                              _q_newPfds;
 
-    std::queue<int> _q_newPfds;
-    std::queue<int> _q_delPfds;
+    std::set<HTTP::Client *>  _q_delClients;
+    std::set<int>             _q_delPfds;
 
     public:
     bool isDaemon;
