@@ -46,7 +46,7 @@ public:
     int getPID(void) const;
     void setPID(int);
 
-    bool setScriptPath(const std::string);
+    void setScriptPath(const std::string &);
 
     bool initEnv(void);
     bool setEnv(Request *);

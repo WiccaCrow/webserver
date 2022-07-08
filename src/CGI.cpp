@@ -64,7 +64,7 @@ bool CGI::setFullEnv(Request *req) {
     setenv("PATH_INFO", "", 1);
     setenv("PATH_TRANSLATED", req->getResolvedPath().c_str(), 1); // ?
 
-    setenv("REMOTE_HOST", req->headers.value(HOST).c_str(), 1);
+    setenv("REMOTE_HOST", req->headers[HOST].value.c_str(), 1);
     setenv("REMOTE_ADDR", req->getClient()->getClientIO()->getAddr().c_str(), 1);
     setenv("REMOTE_USER", "", 1);
     setenv("REMOTE_IDENT", "", 1);
@@ -74,7 +74,7 @@ bool CGI::setFullEnv(Request *req) {
     setenv("REQUEST_METHOD", req->getMethod().c_str(), 1);
     setenv("SCRIPT_NAME", req->getResolvedPath().c_str(), 1);
     setenv("CONTENT_LENGTH", sztos(req->getBody().length()).c_str(), 1);
-    setenv("CONTENT_TYPE", req->headers.value(CONTENT_TYPE).c_str(), 1);
+    setenv("CONTENT_TYPE", req->headers[CONTENT_TYPE].value.c_str(), 1);
 
     setenv("GATEWAY_INTERFACE", GATEWAY_INTERFACE, 1);
     setenv("SERVER_NAME", req->getUriRef().getAuthority().c_str(), 1);
@@ -126,7 +126,7 @@ bool CGI::setEnv(Request *req) {
     setValue(_env[10], sztos(req->getBody().length()));
 
     // CONTENT_TYPE
-    setValue(_env[11], req->headers.value(CONTENT_TYPE));
+    setValue(_env[11], req->headers[CONTENT_TYPE].value) ;
 
     // GATEWAY_INTERFACE
     setValue(_env[12], GATEWAY_INTERFACE);
@@ -166,12 +166,13 @@ CGI::getExecPath(void) const {
     return _execpath;
 }
 
-bool CGI::setScriptPath(const std::string path) {
+void
+CGI::setScriptPath(const std::string &path) {
     _filepath = path;
-    return true;
 }
 
-int CGI::exec(Response *res) {
+int
+CGI::exec(Response *res) {
     if ((compiled() && !isExecutableFile(_filepath)) || !isExecutableFile(_execpath)) {
         Log.error() << _filepath << " is not executable" << Log.endl;
         return 0;
@@ -192,77 +193,68 @@ int CGI::exec(Response *res) {
     }
 
     Client *client = res->getClient();
-
-    IO *io = new IO();
-    if (io == NULL) {
-        Log.error() << "CGI:: Cannot allocate memory for IO" << Log.endl;
-        return 0;
-    }
+    IO *io = client->getGatewayIO();
 
     if (io->pipe() < 0) {
-        Log.error() << "CGI:: pipe failed" << Log.endl;
+        Log.error() << "CGI::exec: pipe failed" << Log.endl;
         return 0;
     }
 
     if (io->nonblock() < 0) {
-        Log.error() << "CGI:: nonblock failed" << Log.endl;
+        Log.error() << "CGI::exec: nonblock failed" << Log.endl;
         return 0;
     }
 
     int childPID = fork();
     if (childPID < 0) {
-        Log.syserr() << "CGI::fork: " << Log.endl;
+        Log.syserr() << "CGI::exec: fork failed" << Log.endl;
         return 0;
 
     } else if (childPID == 0) {
+
         if (dup2(io->rdFd(), fileno(stdin)) < 0) {
-            Log.syserr() << "CGI::dup2::stdin" << Log.endl;
+            Log.syserr() << "CGI::exec: dup2 failed for stdin" << Log.endl;
             exit(123);
         }
+    
         if (dup2(io->wrFd(), fileno(stdout)) < 0) {
-            Log.syserr() << "CGI::dup2::stdout" << Log.endl;
+            Log.syserr() << "CGI::exec: dup2 failed for stdout" << Log.endl;
             exit(124);
         }
-        if (execve(args[0], const_cast<char *const *>(args), _env) == -1) {
+    
+        if (execve(args[0], const_cast<char * const *>(args), _env) == -1) {
+            Log.syserr() << "CGI::exec: execve failed for " << args[0] << Log.endl;
             exit(125);
         }
     }
 
     setPID(childPID);
 
-    const std::string &body = res->getRequest()->getBody();
-    if (!body.empty()) {
-        if (write(io->wrFd(), body.c_str(), body.length()) == -1) {
-            Log.syserr() << "CGI::write: " << Log.endl;
-            kill(childPID, SIGKILL);
-            return 0;
-        }
-    }
-    close(io->wrFd()); // ?
-
-    client->setTargetIO(io);
-    client->setTargetTimeout(time(0));
-
-    g_server->addClient(io->rdFd(), client);
-    g_server->addToQueue((struct pollfd){io->rdFd(), POLLIN, 0});
+    res->getRequest()->isCGI(true);
+    g_server->addToNewClientQ(io->rdFd(), client);
+    g_server->addToNewFdsQ(io->rdFd());
 
     return 1;
 }
 
 bool CGI::initEnv(void) {
+
     _env = new char *[envCount + 1];
     if (_env == NULL) {
         return false;
     }
+
     for (std::size_t i = 0; i < envCount; i++) {
         _env[i] = NULL;
     }
+
     for (std::size_t i = 0; i < envCount; i++) {
         _env[i] = new char[envVarLen];
         if (_env[i] == NULL) {
             return false;
         }
     }
+
     strcpy(_env[0], "PATH_INFO=");
     strcpy(_env[1], "PATH_TRANSLATED=");
     strcpy(_env[2], "REMOTE_HOST=");

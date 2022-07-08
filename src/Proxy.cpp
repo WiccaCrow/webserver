@@ -23,7 +23,7 @@ URI &Proxy::getPassRef(void) {
 }
 
 void Proxy::prepare(Response *res) {
-    IO *io = res->getClient()->getTargetIO();
+    // IO *io = res->getClient()->getGatewayIO();
 
     std::string toWrite;
     toWrite.reserve(512);
@@ -37,8 +37,8 @@ void Proxy::prepare(Response *res) {
     }
     toWrite += CRLF;
     res->getRequest()->setHead(toWrite);
-    writeToSocket(io->wrFd(), res->getRequest()->getHead());
-    writeToSocket(io->wrFd(), res->getRequest()->getBody());
+    // writeToSocket(io->wrFd(), res->getRequest()->getHead());
+    // writeToSocket(io->wrFd(), res->getRequest()->getBody());
 }
 
 int Proxy::pass(Response *res) {
@@ -63,9 +63,10 @@ int Proxy::pass(Response *res) {
 }
 
 int Proxy::setConnection(struct addrinfo *lst, Response *res) {
-    IO *sock = new IO();
-    int fd = sock->create();
 
+    IO *sock = res->getClient()->getGatewayIO();
+    
+    int fd = sock->create();
     if (fd < 0) {
         Log.error() << "Proxy:: Cannot create socket" << Log.endl;
         return 0;
@@ -93,12 +94,10 @@ int Proxy::setConnection(struct addrinfo *lst, Response *res) {
         return 0;
     }
 
-    // struct sockaddr_in *addr = (struct sockaddr_in *)lst->ai_addr;
     Log.info() << "Proxy:: Established [" << fd << "]" << Log.endl;
 
-    res->getClient()->setTargetIO(sock);
-    g_server->addClient(fd, res->getClient());
-    g_server->addToQueue((struct pollfd){fd, POLLIN, 0});
+    g_server->addToNewClientQ(fd, res->getClient());
+    g_server->addToNewFdsQ(fd);
 
     return 1;
 }
