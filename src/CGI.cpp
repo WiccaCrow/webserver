@@ -72,7 +72,7 @@ bool CGI::setFullEnv(Request *req) {
     setenv("AUTH_TYPE", req->getLocation()->getAuthRef().getType().c_str(), 1);
     setenv("QUERY_STRING", req->getUriRef()._query.c_str(), 1);
     setenv("REQUEST_METHOD", req->getMethod().c_str(), 1);
-    setenv("SCRIPT_NAME", req->getResolvedPath().c_str(), 1);
+    setenv("SCRIPT_NAME", req->getUriRef()._path.c_str(), 1);
     setenv("CONTENT_LENGTH", sztos(req->getBody().length()).c_str(), 1);
     setenv("CONTENT_TYPE", req->headers[CONTENT_TYPE].value.c_str(), 1);
 
@@ -99,7 +99,7 @@ bool CGI::setEnv(Request *req) {
     setValue(_env[1], req->getResolvedPath()); // Definitely not like that
 
     // REMOTE_HOST
-    setValue(_env[2], req->getHostRef()._host.c_str()); // host, maybe should be without port
+    setValue(_env[2], req->getHostRef()._host); // host, maybe should be without port
 
     // REMOTE_ADDR
     setValue(_env[3], req->getClient()->getClientIO()->getAddr()); // ipv4 addr
@@ -120,7 +120,7 @@ bool CGI::setEnv(Request *req) {
     setValue(_env[8], req->getMethod());
 
     // SCRIPT_NAME
-    setValue(_env[9], req->getResolvedPath());
+    setValue(_env[9], req->getUriRef()._path);
 
     // CONTENT_LENGTH
     setValue(_env[10], sztos(req->getBody().length()));

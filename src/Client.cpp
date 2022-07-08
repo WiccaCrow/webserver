@@ -257,7 +257,7 @@ void Client::reply(Response *res) {
 
     if (!res->headSent()) {
         if (!getClientIO()->getDataPos()) {
-            // Log.debug() << res->getHead() << Log.endl;
+            Log.debug() << res->getHead() << Log.endl;
             getClientIO()->setData(res->getHead().c_str());
             getClientIO()->setDataSize(res->getHead().length());
         }
@@ -317,9 +317,10 @@ void Client::reply(Request *req) {
     
     if (bytes == 0) {
         // Log.debug() << "Gateway::write 0" << Log.endl;
-        
-        g_server->addToDelFdsQ(getGatewayIO()->wrFd());
-        getGatewayIO()->closeWrFd();
+        if (req->isCGI()) {
+            g_server->addToDelFdsQ(getGatewayIO()->wrFd());
+            getGatewayIO()->closeWrFd();
+        }
 
         // set response status as BAD_GATEWAY
         // if CGI close pipe (standard action)
@@ -384,9 +385,9 @@ void Client::receive(Response *res) {
         
         g_server->addToDelFdsQ(getGatewayIO()->rdFd());
         getGatewayIO()->closeRdFd();
+
     } else {
         Log.debug() << "Client::receive [" << getGatewayIO()->rdFd() << "] resp reading" << Log.endl;
-
         setGatewayTimeout(0);
     }
     

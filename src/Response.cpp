@@ -197,11 +197,24 @@ void Response::PATCH(void) {
 }
 
 void Response::POST(void) {
-    matchCGI(_req->getResolvedPath());
-    if (_cgi != NULL) {
-        makeResponseForCGI();
+
+    // Parse path_info
+    const std::string &resourcePath = _req->getResolvedPath(); 
+
+    if (isDirectory(resourcePath)) {
+        // create unique resource name
+        // write to file
+        return ;
+    } else if (isFile(resourcePath)) {
+        matchCGI(_req->getResolvedPath());
+        if (_cgi != NULL) {
+            makeResponseForCGI();
+        } else {
+            setStatus(BAD_GATEWAY);
+        }
     } else {
-        setStatus(NO_CONTENT);
+        setStatus(FORBIDDEN);
+        return ; 
     }
 }
 
