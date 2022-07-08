@@ -51,12 +51,21 @@ class Server {
     bool   _working;
     Worker _workers[WORKERS];
 
-    pthread_mutex_t _fds_lock;
-    pthread_mutex_t _res_lock;
-    pthread_mutex_t _cln_lock;
+    pthread_mutex_t _m_new_resp;
 
-    std::queue<struct pollfd>    _pendingFds;
-    std::queue<HTTP::Response *> _pendingResps;
+    pthread_mutex_t _m_new_pfds;
+    pthread_mutex_t _m_new_clnt;
+
+    pthread_mutex_t _m_del_pfds;
+    pthread_mutex_t _m_del_clnt;
+
+    std::list<HTTP::Response *> _q_newResponses;
+
+    std::queue<std::pair<int, HTTP::Client *> >  _q_newClients;
+    std::queue<HTTP::Client *>  _q_delClients;
+
+    std::queue<int> _q_newPfds;
+    std::queue<int> _q_delPfds;
 
     public:
     bool isDaemon;
@@ -73,20 +82,19 @@ class Server {
     void start(void);
     void finish(void);
 
-    void addClient(int fd, HTTP::Client * = NULL);
+    // void disconnect(int fd);
+    void addToNewFdsQ(int);
+    void addToNewClientQ(int fd, HTTP::Client *);
+    void addToDelFdsQ(int);
+    void addToDelClientQ(HTTP::Client *);
 
-    void rmPollFd(int fd);
-    void emptyFdsQueue(void);
-    void addToQueue(struct pollfd);
-    void addToQueue(HTTP::Response *);
+    void addToRespQ(HTTP::Response *);
+    HTTP::Response *rmFromRespQ(void);
 
-    HTTP::Response *rmFromQueue(void);
-
-    void disconnect(int fd);
     private:
     void connect(std::size_t servid, int servfd);
 
-    void daemon(void);
+    void daemonMode(void);
     int  poll(void);
     void process(void);
     void checkTimeout(void);
@@ -96,4 +104,9 @@ class Server {
     void stopWorkers(void);
 
     int addListenSocket(const std::string &addr, std::size_t port);
+
+    void emptyNewFdsQ(void);
+    void emptyDelFdsQ(void);
+    void emptyNewClientQ(void);
+    void emptyDelClientQ(void);
 };

@@ -52,9 +52,9 @@ void *
 Worker::_cycle(void *ptr) {
     Worker *w = reinterpret_cast<Worker *>(ptr);
 
-    Log.debug() << "Worker:: [" << w->id() << "] started" << Log.endl;
+    Log.debug() << "Worker " << w->id() << "::cycle started" << Log.endl;
     while (g_server->working()) {
-        HTTP::Response *res = g_server->rmFromQueue();
+        HTTP::Response *res = g_server->rmFromRespQ();
 
         if (res == NULL) {
             usleep(WORKER_TIMEOUT);
@@ -62,19 +62,19 @@ Worker::_cycle(void *ptr) {
         }
 
         if (res == NULL) {
-            Log.debug() << "Worker::cycle: res == NULL" << Log.endl;
+            Log.debug() << "Worker " << w->id() << "::cycle: resp is NULL" << Log.endl;
         }
 
         if (res->getRequest() == NULL) {
-            Log.debug() << "Worker::cycle: req == NULL" << Log.endl;
+            Log.debug() << "Worker " << w->id() << "::cycle: req is NULL" << Log.endl;
         }
 
         const std::string path = res->getRequest()->getUriRef()._path;
-        Log.debug() << "Worker:: [" << w->id() << "] -> " << path << " started" << Log.endl;
+        Log.debug() << "Worker " << w->id() << "::cycle: " << path << " started" << Log.endl;
         res->handle();
-        Log.debug() << "Worker:: [" << w->id() << "] -> " << path << " finished" << Log.endl;
+        Log.debug() << "Worker " << w->id() << "::cycle: " << path << " finished" << Log.endl;
     }
 
-    Log.debug() << "Worker:: [" << w->id() << "] stopped" << Log.endl;
+    Log.debug() << "Worker " << w->id() << "::cycle stopped" << Log.endl;
     return NULL;
 }

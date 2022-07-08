@@ -18,10 +18,8 @@ class Client {
     private:
     IO *_clientIO;
     IO *_serverIO;
-    IO *_targetIO;
+    IO *_gatewayIO;
 
-    bool _headSent;
-    bool _bodySent;
     bool _shouldBeClosed;
     bool _shouldBeRemoved;
     bool _isTunnel;
@@ -29,7 +27,7 @@ class Client {
     std::size_t _nbRequests;
     std::size_t _maxRequests;
     std::time_t _clientTimeout;
-    std::time_t _targetTimeout;
+    std::time_t _gatewayTimeout;
     std::time_t _maxTimeout;
 
     std::list<Request *>  _requests;
@@ -39,9 +37,6 @@ class Client {
     public:
     Client(void);
     ~Client(void);
-
-    bool replyDone(void);
-    void replyDone(bool);
 
     bool shouldBeClosed(void) const;
     void shouldBeClosed(bool);
@@ -55,17 +50,17 @@ class Client {
     const std::string getHostname(void);
 
     time_t getClientTimeout(void) const;
-    time_t getTargetTimeout(void) const;
+    time_t getGatewayTimeout(void) const;
 
     void setClientTimeout(time_t);
-    void setTargetTimeout(time_t);
+    void setGatewayTimeout(time_t);
 
     IO  *getClientIO(void);
     IO  *getServerIO(void);
-    IO  *getTargetIO(void);
+    IO  *getGatewayIO(void);
     void setClientIO(IO *);
     void setServerIO(IO *);
-    void setTargetIO(IO *);
+    void setGatewayIO(IO *);
 
     void checkIfFailed(void);
     void addRequest(void);
