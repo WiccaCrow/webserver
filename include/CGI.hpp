@@ -39,7 +39,7 @@ public:
     CGI(const CGI &);
     CGI &operator=(const CGI &);
 
-    int  exec(Response *);
+    int  exec(Request *);
     void compiled(bool);
     bool compiled(void);
 

@@ -172,13 +172,13 @@ CGI::setScriptPath(const std::string &path) {
 }
 
 int
-CGI::exec(Response *res) {
+CGI::exec(Request *req) {
     if ((compiled() && !isExecutableFile(_filepath)) || !isExecutableFile(_execpath)) {
         Log.error() << _filepath << " is not executable" << Log.endl;
         return 0;
     }
 
-    if (!setEnv(res->getRequest())) {
+    if (!setEnv(req)) {
         Log.error() << "CGI::setEnv " << Log.endl;
         return 0;
     }
@@ -192,16 +192,11 @@ CGI::exec(Response *res) {
         args[1] = _filepath.c_str();
     }
 
-    Client *client = res->getClient();
+    Client *client = req->getClient();
     IO *io = client->getGatewayIO();
 
     if (io->pipe() < 0) {
         Log.error() << "CGI::exec: pipe failed" << Log.endl;
-        return 0;
-    }
-
-    if (io->nonblock() < 0) {
-        Log.error() << "CGI::exec: nonblock failed" << Log.endl;
         return 0;
     }
 
@@ -230,8 +225,10 @@ CGI::exec(Response *res) {
 
     setPID(childPID);
 
-    res->getRequest()->isCGI(true);
+    req->isCGI(true);
+    g_server->addToNewClientQ(io->wrFd(), client);
     g_server->addToNewClientQ(io->rdFd(), client);
+    g_server->addToNewFdsQ(io->wrFd());
     g_server->addToNewFdsQ(io->rdFd());
 
     return 1;

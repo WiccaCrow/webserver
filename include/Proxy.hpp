@@ -13,7 +13,7 @@
 
 namespace HTTP {
 
-class Response;
+class Request;
 
 class Proxy {
 
@@ -31,13 +31,13 @@ public:
     Proxy(void);
     ~Proxy(void);
 
-    int pass(Response *);
-    void prepare(Response *);
-    int setConnection(struct addrinfo *, Response *);
+    int pass(Request *);
+    void prepare(Request *);
+    int setConnection(struct addrinfo *, Request *);
 
     int writeToSocket(int fd, std::string toWrite);
 
-    std::string makeStartLine(Response *);
+    std::string makeStartLine(Request *);
 
     DomainsVec          &getDomainsRef(void);
     const DomainsVec    &getDomainsRef(void) const;

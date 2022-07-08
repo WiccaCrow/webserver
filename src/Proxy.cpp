@@ -22,29 +22,29 @@ URI &Proxy::getPassRef(void) {
     return _pass;
 }
 
-void Proxy::prepare(Response *res) {
+void Proxy::prepare(Request *req) {
     // IO *io = res->getClient()->getGatewayIO();
 
     std::string toWrite;
     toWrite.reserve(512);
-    toWrite = makeStartLine(res) + CRLF;
-    Headers<RequestHeader>::iterator it = res->getRequest()->headers.begin();
-    for (; it != res->getRequest()->headers.end(); ++it) {
+    toWrite = makeStartLine(req) + CRLF;
+    Headers<RequestHeader>::iterator it = req->headers.begin();
+    for (; it != req->headers.end(); ++it) {
         if (it->first == CONNECTION || it->first == KEEP_ALIVE) {
             continue;
         }
         toWrite += it->second.toString() + CRLF;
     }
     toWrite += CRLF;
-    res->getRequest()->setHead(toWrite);
+    req->setHead(toWrite);
     // writeToSocket(io->wrFd(), res->getRequest()->getHead());
     // writeToSocket(io->wrFd(), res->getRequest()->getBody());
 }
 
-int Proxy::pass(Response *res) {
+int Proxy::pass(Request *req) {
 
-    const std::string &host = res->getRequest()->getUriRef()._host;
-    const std::string &port = res->getRequest()->getUriRef()._port_s;
+    const std::string &host = req->getUriRef()._host;
+    const std::string &port = req->getUriRef()._port_s;
 
     struct addrinfo *addrlst = NULL;
     Log.error() << "Proxy::pass for " << host << ":" << port << Log.endl;
@@ -53,7 +53,7 @@ int Proxy::pass(Response *res) {
         return 0;
     }
 
-    if (!setConnection(addrlst, res)) {
+    if (!setConnection(addrlst, req)) {
         freeaddrinfo(addrlst);
         return 0;
     }
@@ -62,9 +62,9 @@ int Proxy::pass(Response *res) {
     return 1;
 }
 
-int Proxy::setConnection(struct addrinfo *lst, Response *res) {
+int Proxy::setConnection(struct addrinfo *lst, Request *req) {
 
-    IO *sock = res->getClient()->getGatewayIO();
+    IO *sock = req->getClient()->getGatewayIO();
     
     int fd = sock->create();
     if (fd < 0) {
@@ -96,7 +96,7 @@ int Proxy::setConnection(struct addrinfo *lst, Response *res) {
 
     Log.info() << "Proxy:: Established [" << fd << "]" << Log.endl;
 
-    g_server->addToNewClientQ(fd, res->getClient());
+    g_server->addToNewClientQ(fd, req->getClient());
     g_server->addToNewFdsQ(fd);
 
     return 1;
@@ -112,8 +112,8 @@ int Proxy::writeToSocket(int fd, std::string toWrite) {
 }
 
 std::string
-Proxy::makeStartLine(Response *res) {
-    Request *req = res->getRequest();
+Proxy::makeStartLine(Request *req) {
+
     URI     &uri = req->getUriRef();
 
     if (uri._path.empty()) {

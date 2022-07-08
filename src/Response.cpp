@@ -95,12 +95,12 @@ void Response::makeResponseForProxy() {
     _proxy = new Proxy(getRequest()->getLocation()->getProxyRef());
 
     if (!getClient()->isTunnel()) {
-        if (!_proxy->pass(this)) {
+        if (!_proxy->pass(getRequest())) {
             setStatus(BAD_GATEWAY);
         }
     }
 
-    _proxy->prepare(this);
+    _proxy->prepare(getRequest());
     isProxy(true);
 }
 
@@ -181,7 +181,7 @@ void Response::OPTIONS(void) {
 void Response::CONNECT(void) {
     _proxy = new Proxy(getRequest()->getLocation()->getProxyRef());
 
-    if (!_proxy->pass(this)) {
+    if (!_proxy->pass(getRequest())) {
         setStatus(BAD_GATEWAY);
     } else {
         getClient()->isTunnel(true);
@@ -580,7 +580,7 @@ void Response::addHeader(uint32_t hash, const std::string &value) {
 }
 
 int Response::makeResponseForCGI(void) {
-    if (!_cgi->exec(this)) {
+    if (!_cgi->exec(getRequest())) {
         setStatus(BAD_GATEWAY);
         return 0;
     } else {
