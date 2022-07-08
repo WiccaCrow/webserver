@@ -281,9 +281,10 @@ void Client::reply(Response *res) {
         return ;
     }
 
-    if (bytes >= getGatewayIO()->getDataSize()) {
+    if (static_cast<std::size_t>(bytes) >= getClientIO()->getDataSize()) {
         if (!res->headSent()) {
             res->headSent(true);
+
         } else if (!res->bodySent()) {
             res->bodySent(true);
         }
@@ -321,7 +322,7 @@ void Client::reply(Request *req) {
         return ;
     }
 
-    if (bytes >= getGatewayIO()->getDataSize()) {
+    if (static_cast<std::size_t>(bytes) >= getGatewayIO()->getDataSize()) {
         if (!req->headSent()) {
             req->headSent(true);
         } else if (!req->bodySent()) {
