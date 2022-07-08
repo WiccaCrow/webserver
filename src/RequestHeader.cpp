@@ -141,11 +141,12 @@ RequestHeader::CacheControl(Request &req) {
 // In the current version, the list of 'hop-by-hop' directives (if exists in value) are deleted and ignored
 StatusCode
 RequestHeader::Connection(Request &req) {
+    (void)req;
+
     toLowerCase(value);
     if (value.find("close") != std::string::npos) {
         value = "close";
     }
-    (void)req;
     return CONTINUE;
 }
 

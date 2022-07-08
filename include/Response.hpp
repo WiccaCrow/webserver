@@ -55,9 +55,6 @@ public:
     Response(const Response &other);
     Response &operator=(const Response &other);
 
-    CGI *getCGI(void) const;
-    void setCGI(CGI *);
-
     void handle(void);
 
     //  for errors
@@ -100,9 +97,11 @@ public:
 
     void        matchCGI(const std::string &filepath);
 
-    void  checkCGIFail(void);
+    void        checkCGIFail(void);
     
-    void  makeChunk();
+    void  makeChunk(void);
+
+    virtual bool tunnelGuard(bool);
 
     // setters, getters
     // to send response
@@ -110,23 +109,18 @@ public:
 
     const std::string &getStatusLine(void);
 
+    void setCGI(CGI *);
+    CGI *getCGI(void) const;
+
     Request *getRequest(void);
     Client *getClient(void);
-
-    bool isProxy(void) const;
-    void isProxy(bool);
 
     std::string getEtagFile(const std::string &filename);
 
     void *getFileAddr(void);
     int64_t getFileSize(void);
 
-    bool isCGI(void) const;
-    void isCGI(bool);
-
     const std::string getContentRangeValue(RangeSet &);
-
-    bool tunnelGuard(bool value);
 
     virtual bool parseLine(std::string &);
     virtual StatusCode parseSL(const std::string &);

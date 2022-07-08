@@ -70,7 +70,7 @@ ResponseHeader::Connection(Response &res) {
         return ;
     }
 
-    if (res.getRequest()->headers.value(CONNECTION) == "close") {
+    if (res.getRequest()->headers[CONNECTION].value == "close") {
         Log.debug() << "ResponseHeader::Connection close detected" << Log.endl;
         res.getClient()->shouldBeClosed(true);
         value = "close";
@@ -165,7 +165,7 @@ void
 ResponseHeader::KeepAlive(Response &res) {
     (void)res;
     
-    if (res.headers.value(CONNECTION) != "close") {
+    if (res.headers[CONNECTION].value != "close") {
         value = "timeout=" + sztos(MAX_CLIENT_TIMEOUT) + ", max=" + sztos(MAX_REQUESTS);
     }
 }

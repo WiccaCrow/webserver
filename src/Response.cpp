@@ -162,8 +162,7 @@ void Response::DELETE(void) {
     }
     setStatus(OK);
     addHeader(CONTENT_TYPE);
-    setBody(HTML_BEG BODY_BEG               H1_BEG
-            "File deleted." H1_END BODY_END HTML_END);
+    setBody(DEF_PAGE_BEG "File deleted." DEF_PAGE_END);
 }
 
 void Response::HEAD(void) {
@@ -647,13 +646,13 @@ Response::getClient(void) {
     return getRequest()->getClient();
 }
 
-bool Response::isProxy(void) const {
-    return _isProxy;
-}
+// bool Response::isProxy(void) const {
+//     return _isProxy;
+// }
 
-void Response::isProxy(bool isProxy) {
-    _isProxy = isProxy;
-}
+// void Response::isProxy(bool isProxy) {
+//     _isProxy = isProxy;
+// }
 
 void *
 Response::getFileAddr(void) {
@@ -663,14 +662,6 @@ Response::getFileAddr(void) {
 int64_t
 Response::getFileSize(void) {
     return _filestat.st_size;
-}
-
-bool Response::isCGI(void) const {
-    return _isCGI;
-}
-
-void Response::isCGI(bool flag) {
-    _isCGI = flag;
 }
 
 CGI *Response::getCGI(void) const {
@@ -819,7 +810,7 @@ Response::checkHeaders(void) {
     setFlag(PARSED_HEADERS);
 
     if (headers.has(CONTENT_LENGTH)) {
-        std::string &len_s = headers.value(CONTENT_LENGTH);
+        std::string &len_s = headers[CONTENT_LENGTH].value;
         long long    num;
         if (!stoll(num, len_s.c_str())) {
             Log.debug() << "Response::ParsedHeaders::Bad length " << num << Log.endl;

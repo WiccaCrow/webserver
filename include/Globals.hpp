@@ -19,8 +19,12 @@
     # define MAX_CLIENT_TIMEOUT 100
 #endif
 
-#ifndef MAX_TARGET_TIMEOUT
-    # define MAX_TARGET_TIMEOUT 100
+#ifndef MAX_GATEWAY_TIMEOUT
+    # define MAX_GATEWAY_TIMEOUT 100
+#endif
+
+#ifndef SESSION_LIFETIME
+    # define SESSION_LIFETIME 1000
 #endif
 
 #ifndef CHUNK_SIZE
