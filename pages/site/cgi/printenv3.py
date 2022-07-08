@@ -1,5 +1,6 @@
 import os
 import fileinput
+import sys
 
 headers = []
 body = """<html>
@@ -15,8 +16,11 @@ for param in os.environ.keys():
 body += "</table><br>"
 
 body +="<label>Request Body: </label><p>"
-for line in fileinput.input():
-    body += line
+
+bytesN = int(os.environ["CONTENT_LENGTH"])
+if (bytesN != 0):
+    body += sys.stdin.read(bytesN)
+
 body += "</p></body></html>"
 
 headers.append("Content-Type: text/html")
