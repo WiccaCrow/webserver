@@ -17,91 +17,9 @@
 #include "Utils.hpp"
 #include "Time.hpp"
 #include "Range.hpp"
-
-#define PARSED_NONE    0
-#define PARSED_SL      1
-#define PARSED_HEADERS 2
-#define PARSED_BODY    4
+#include "ARequest.hpp"
 
 namespace HTTP {
-
-class ARequest {
-
-private:
-    std::string       _protocol;
-    int               _major : 4;
-    int               _minor : 4;
-
-    std::string       _body;
-    std::string       _head;
-
-    // Parsing
-    bool              _isChunkSize;
-    std::size_t       _bodySize;
-    std::size_t       _chunkSize;
-    std::size_t       _parseFlags;
-
-    bool              _formed;
-    bool              _chunked;
-
-    // Internal status
-    StatusCode        _status;
-
-    bool              _isProxy;
-
-public:
-    ARequest(void);
-    virtual ~ARequest(void);
-
-    ARequest(const ARequest &);
-    ARequest &operator=(const ARequest &);
-    
-    void setProtocol(const std::string &protocol);
-    void setMajor(int major);
-    void setMinor(int minor);
-    void setFlag(std::size_t);
-    void setBody(const std::string &);
-    void setHead(const std::string &);
-    void setBodySize(std::size_t);
-    void setStatus(StatusCode);
-
-    bool flagSet(std::size_t) const;
-    std::size_t getFlags(void) const;
-    std::size_t getBodySize(void) const;
-    StatusCode getStatus(void) const;
-    const std::string &getBody(void) const;
-    const std::string &getHead(void) const;
-    const std::string &getProtocol(void) const;
-    int getMajor(void);
-    int getMinor(void);
-    
-    StatusCode parseChunk(const std::string &);
-    StatusCode writeChunkSize(const std::string &);
-    StatusCode writeChunk(const std::string &);
-
-    virtual bool parseLine(std::string &) = 0;
-    virtual StatusCode parseSL(const std::string &) = 0;
-    virtual StatusCode checkSL(void) = 0;
-    virtual StatusCode parseHeader(const std::string &) = 0;
-    virtual StatusCode checkHeaders(void) = 0;    
-    virtual StatusCode parseBody(const std::string &) = 0;
-    virtual StatusCode writeBody(const std::string &) = 0;
-
-    bool formed(void) const;
-    void formed(bool);
-
-    bool chunked(void) const;
-    void chunked(bool);
-    bool isChunkSize(void) const;
-    void isChunkSize(bool);
-
-    bool isProxy(void);
-    void isProxy(bool isProxy);
-
-};
-
-
-
 
 class ServerBlock;
 class Location;
@@ -125,12 +43,11 @@ private:
     Location    *  _location;
     Client      *  _client;
 
-
     // why here?
     uint32_t       _storedHash; 
     bool           _authorized;
 
-    std::map<std::string, std::string> _cookie; // ?
+    std::map<std::string, std::string> _cookie;
 
 public:
     Headers<RequestHeader>  headers;
@@ -142,7 +59,7 @@ public:
     Request(const Request &other);
     Request &operator=(const Request &other);
 
-    ServerBlock *getServerBlock() const;
+    ServerBlock *getServerBlock(void) const;
     void         setServerBlock(ServerBlock *);
 
     Location *getLocation(void) const;
@@ -151,7 +68,7 @@ public:
     Client *getClient(void);
     void    setClient(Client *);
 
-    bool tunnelGuard(bool value);
+    virtual bool tunnelGuard(bool);
 
     virtual bool parseLine(std::string &);
 
@@ -164,24 +81,25 @@ public:
     virtual StatusCode parseBody(const std::string &);
     virtual StatusCode writeBody(const std::string &);
 
-    const std::string    &getPath(void) const;
-    const std::string    &getMethod(void) const;
-    const std::string    &getRawUri(void) const;
+    const std::string &getPath(void) const;
+    const std::string &getMethod(void) const;
+    const std::string &getRawUri(void) const;
     
-    URI                  &getUriRef(void);
-    URI                  &getHostRef(void);
-    URI                  &getReferrerRef(void);
+    URI &getUriRef(void);
+    URI &getHostRef(void);
+    URI &getReferrerRef(void);
 
-    RangeList            &getRangeList(void);
+    RangeList &getRangeList(void);
 
-    const std::string    &getResolvedPath(void) const;
+    const std::string &getResolvedPath(void) const;
     void setResolvedPath(const std::string &);
+
     void resolvePath(void);
     
     bool authorized(void) const;
     void authorized(bool);
 
-    uint32_t getStoredHash() const;
+    uint32_t getStoredHash(void) const;
     void     setStoredHash(uint32_t);
 
     const std::map<std::string, std::string> &getCookie(void);
