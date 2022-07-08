@@ -12,16 +12,7 @@ IO::IO(void)
     , _dataPos(0) {}
 
 IO::~IO(void) {
-    if (_fdw != _fdr) {
-        if (_fdw != -1) {
-            close(_fdw);
-        }
-        if (_fdr != -1) {
-            close(_fdr);
-        }
-    } else {
-        close(_fdr);
-    }
+    
 }
 
 int
@@ -107,6 +98,36 @@ IO::clear(void) {
     setDataSize(0);
 }
 
+void
+IO::closeRdFd(void) {
+    if (_fdr != -1) {
+        close(_fdr);
+        rdFd(-1);
+    }
+}
+
+void
+IO::closeWrFd(void) {
+    if (_fdw != -1) {
+        close(_fdw);
+        wrFd(-1);
+    }
+}
+
+void
+IO::closeFd(void) {
+    if (_fdw != _fdr) {
+        Log.error() << "IO::closeFd mismatch: " << _fdr << " " << _fdw << Log.endl;
+        return ;
+    }
+
+    if (_fdr != -1) {
+        close(_fdr);
+        rdFd(-1);
+        wrFd(-1);
+    }
+}
+
 int
 IO::pipe(void) {
     int tmp[2] = { -1 };
@@ -167,15 +188,15 @@ IO::listen(const std::string &addr, std::size_t port) {
     setAddr(addr);
     setPort(port);
     if (::setsockopt(_fdr, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int)) < 0) {
-        Log.syserr() << "IO::setsockopt ->" << _addr << ":" << _port << Log.endl;
+        Log.syserr() << "IO::setsockopt [" << _fdr << "] ->" << _addr << ":" << _port << Log.endl;
         return -1;
     }
     if (::bind(_fdr, (struct sockaddr *)&data, sizeof(data)) < 0) {
-        Log.syserr() << "IO::bind ->" << _addr << ":" << _port << Log.endl;
+        Log.syserr() << "IO::bind [" << _fdr << "] ->" << _addr << ":" << _port << Log.endl;
         return -1;
     }
     if (::listen(_fdr, SOMAXCONN) < 0) {
-        Log.syserr() << "IO::listen ->" << _addr << ":" << _port << Log.endl;
+        Log.syserr() << "IO::listen [" << _fdr << "] ->" << _addr << ":" << _port << Log.endl;
         return -1;
     }
 
@@ -204,23 +225,18 @@ int IO::read(void) {
 int
 IO::write(void) {
 
-    long sent = 0;
-
-    do {
-        sent = ::write(_fdw,  _data + _dataPos, _dataSize - _dataPos);
-        if (sent <= 0) {
-            break ;
+    long bytes = ::write(_fdw,  _data + _dataPos, _dataSize - _dataPos);
+    
+    if (bytes > 0) {
+        _dataPos += bytes;
+        Log.debug() << "IO::write [" << _fdw << "]: " << _dataPos << "/" << _dataSize << " bytes" << Log.endl;
+    
+        if (_dataPos >= _dataSize) {
+            clear();
         }
-        _dataPos += sent;
-    } while (_dataPos < _dataSize);
-
-    if (_dataPos < _dataSize) {
-        return false;
     }
 
-    Log.debug() << "IO::write [" << _fdw << "]: " << _dataPos << "/" << _dataSize << " bytes" << Log.endl;
-    _dataPos = 0;
-    return true;
+    return bytes;
 }
 
 int
