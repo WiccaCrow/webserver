@@ -226,9 +226,14 @@ CGI::exec(Request *req) {
     setPID(childPID);
 
     req->isCGI(true);
-    g_server->addToNewClientQ(io->wrFd(), client);
+    
+    if (!req->getBody().empty()) {
+        g_server->addToNewClientQ(io->wrFd(), client);
+        g_server->addToNewFdsQ(io->wrFd());
+    } else {
+        io->closeWrFd();
+    }
     g_server->addToNewClientQ(io->rdFd(), client);
-    g_server->addToNewFdsQ(io->wrFd());
     g_server->addToNewFdsQ(io->rdFd());
 
     return 1;

@@ -311,16 +311,23 @@ void Client::reply(Request *req) {
     int bytes = getGatewayIO()->write();
     
     if (bytes < 0) {
+        // Log.debug() << "Gateway::write -1" << Log.endl;
         return ;
     }
     
     if (bytes == 0) {
+        // Log.debug() << "Gateway::write 0" << Log.endl;
+        
+        g_server->addToDelFdsQ(getGatewayIO()->wrFd());
+        getGatewayIO()->closeWrFd();
+
         // set response status as BAD_GATEWAY
         // if CGI close pipe (standard action)
         // if Proxy-req close only GATEWAY socket
         // if Proxy-tunnel close Client and Gateway sockets
         return ;
     }
+    // Log.debug() << "Gateway::write " << bytes << Log.endl;
 
     if (static_cast<std::size_t>(bytes) >= getGatewayIO()->getDataSize()) {
         if (!req->headSent()) {
@@ -377,9 +384,12 @@ void Client::receive(Response *res) {
         
         g_server->addToDelFdsQ(getGatewayIO()->rdFd());
         getGatewayIO()->closeRdFd();
+    } else {
+        Log.debug() << "Client::receive [" << getGatewayIO()->rdFd() << "] resp reading" << Log.endl;
+
+        setGatewayTimeout(0);
     }
     
-    setGatewayTimeout(0);
     while (!res->formed()) {
         std::string line;
 
