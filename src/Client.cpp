@@ -118,6 +118,16 @@ Client::getHostname(void) {
     return (port != 0 ? addr + ":" + sztos(port) : addr);
 }
 
+const std::string &
+Client::getDomainName(void) const {
+    return _domain;
+}
+
+void
+Client::setDomainName(const std::string &name) {
+    _domain = name;
+}
+
 void Client::addRequest(void) {
     Request *req = new Request(this);
     if (req == NULL) {
@@ -257,7 +267,7 @@ void Client::reply(Response *res) {
 
     if (!res->headSent()) {
         if (!getClientIO()->getDataPos()) {
-            Log.debug() << res->getHead() << Log.endl;
+            Log.debug() << std::endl << res->getHead() << Log.endl;
             getClientIO()->setData(res->getHead().c_str());
             getClientIO()->setDataSize(res->getHead().length());
         }

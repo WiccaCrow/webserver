@@ -38,6 +38,7 @@ private:
     RangeList      _ranges;
 
     std::string    _resolvedPath;
+    std::string    _remoteUser;
     
     ServerBlock *  _servBlock;
     Location    *  _location;
@@ -67,6 +68,9 @@ public:
 
     Client *getClient(void);
     void    setClient(Client *);
+
+    const std::string &getRemoteUser(void) const;
+    void    setRemoteUser(const std::string &);
 
     virtual bool tunnelGuard(bool);
 

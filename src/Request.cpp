@@ -87,6 +87,16 @@ Request::setClient(Client *client) {
     _client = client;
 }
 
+const std::string &
+Request::getRemoteUser(void) const {
+    return _remoteUser;
+}
+
+void
+Request::setRemoteUser(const std::string &user) {
+    _remoteUser = user;
+}
+
 URI &
 Request::getUriRef() {
     return _uri;

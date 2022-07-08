@@ -1,4 +1,5 @@
 #include "Auth.hpp"
+#include "Request.hpp"
 
 namespace HTTP {
 
@@ -79,7 +80,7 @@ Auth::setRealm(const std::string &realm) {
 }
 
 bool 
-Auth::isAuthorized(const std::string line) const {
+Auth::isAuthorized(const std::string line, Request *req) const {
     char salt[2] = { 0 };
     std::vector<std::string> crds = split(line, ":");
     if (crds.size() < 2) {
@@ -102,6 +103,7 @@ Auth::isAuthorized(const std::string line) const {
         Log.debug() << "encrypted: " + encrypted << Log.endl;
         return false;
     }
+    req->setRemoteUser(crds[0]);
     return true;
 }
 

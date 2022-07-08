@@ -309,6 +309,12 @@ void Server::connect(std::size_t servid, int servfd) {
         return ;
     }
 
+    struct hostent *he = NULL;
+    he = gethostbyaddr(&clientData.sin_addr, sizeof(clientData.sin_addr), AF_INET);
+    if (he != NULL && he->h_name != NULL) {
+        client->setDomainName(he->h_name);
+    }
+
     client->setServerIO(_sockets[servid]);
     client->setClientTimeout(Time::now());
     client->getClientIO()->setFd(fd);
@@ -393,6 +399,10 @@ void Server::emptyDelFdsQ(void) {
         int tmpfd = *beg;
         _q_delPfds.erase(beg);
 
+        if (tmpfd == -1) {
+            continue;
+        }
+ 
         struct pollfd tmp = { -1, 0, 0 };
 
         for (size_t i = 0; i < _pollfds.size(); ++i) {
@@ -402,12 +412,12 @@ void Server::emptyDelFdsQ(void) {
             }
         }
 
-        pthread_mutex_lock(&_m_new_clnt);
-        iter_cm it = _clients.find(tmpfd);
-        if (it != _clients.end()) {
-            addToDelClientQ(it->second);
-        }
-        pthread_mutex_unlock(&_m_new_clnt);
+        // pthread_mutex_lock(&_m_new_clnt);
+        // iter_cm it = _clients.find(tmpfd);
+        // if (it != _clients.end()) {
+        //     addToDelClientQ(it->second);
+        // }
+        // pthread_mutex_unlock(&_m_new_clnt);
 
         Log.debug() << "Server::emptyDelFdsQ [" << tmp.fd << "]" << Log.endl;
     }
@@ -431,6 +441,7 @@ void Server::emptyNewClientQ(void) {
 }
 
 void Server::emptyDelClientQ(void) {
+
     pthread_mutex_lock(&_m_del_clnt);
 
     while (_q_delClients.size() > 0) {

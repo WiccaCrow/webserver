@@ -10,6 +10,8 @@
 
 namespace HTTP {
 
+class Request;
+
 class Auth {
 
     std::string _realm;
@@ -32,7 +34,7 @@ class Auth {
     void setFile(const std::string &);
     void setRealm(const std::string &);
 
-    bool isAuthorized(const std::string) const;
+    bool isAuthorized(const std::string, Request *req) const;
 };
 
 }

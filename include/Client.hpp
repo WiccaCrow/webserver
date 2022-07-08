@@ -30,6 +30,8 @@ class Client {
     std::time_t _gatewayTimeout;
     std::time_t _maxTimeout;
 
+    std::string _domain;
+
     std::list<Request *>  _requests;
     std::list<Response *> _responses;
 
@@ -61,6 +63,9 @@ class Client {
     void setClientIO(IO *);
     void setServerIO(IO *);
     void setGatewayIO(IO *);
+
+    const std::string &getDomainName(void) const;
+    void setDomainName(const std::string &);
 
     void checkIfFailed(void);
     void addRequest(void);

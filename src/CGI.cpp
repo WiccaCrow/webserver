@@ -64,9 +64,11 @@ bool CGI::setFullEnv(Request *req) {
     setenv("PATH_INFO", "", 1);
     setenv("PATH_TRANSLATED", req->getResolvedPath().c_str(), 1); // ?
 
-    setenv("REMOTE_HOST", req->headers[HOST].value.c_str(), 1);
-    setenv("REMOTE_ADDR", req->getClient()->getClientIO()->getAddr().c_str(), 1);
-    setenv("REMOTE_USER", "", 1);
+    const std::string &host = req->getClient()->getDomainName();
+    const std::string &addr = req->getClient()->getClientIO()->getAddr();
+    setenv("REMOTE_HOST", host.empty() ? addr.c_str() : host.c_str(), 1);
+    setenv("REMOTE_ADDR", addr.c_str(), 1);
+    setenv("REMOTE_USER", req->getRemoteUser().c_str(), 1);
     setenv("REMOTE_IDENT", "", 1);
 
     setenv("AUTH_TYPE", req->getLocation()->getAuthRef().getType().c_str(), 1);
@@ -92,20 +94,24 @@ bool CGI::setEnv(Request *req) {
     if (!initEnv()) {
         return false;
     }
+
     // PATH_INFO
-    setValue(_env[0], "");
+    setValue(_env[0], ""); // Someday we will learn how to parse this 
 
     // PATH_TRANSLATED
-    setValue(_env[1], req->getResolvedPath()); // Definitely not like that
+    setValue(_env[1], req->getResolvedPath()); // Definitely not like that!
+
+    const std::string &host = req->getClient()->getDomainName();
+    const std::string &addr = req->getClient()->getClientIO()->getAddr();
 
     // REMOTE_HOST
-    setValue(_env[2], req->getHostRef()._host); // host, maybe should be without port
+    setValue(_env[2], host.empty() ? addr : host);
 
     // REMOTE_ADDR
-    setValue(_env[3], req->getClient()->getClientIO()->getAddr()); // ipv4 addr
+    setValue(_env[3], addr);
 
     // REMOTE_USER
-    setValue(_env[4], "");
+    setValue(_env[4], req->getRemoteUser());
 
     // REMOTE_IDENT
     setValue(_env[5], "");

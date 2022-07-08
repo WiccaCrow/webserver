@@ -120,7 +120,7 @@ RequestHeader::Authorization(Request &req) {
             return UNAUTHORIZED;
         }
 
-        req.authorized(auth.isAuthorized(decoded));
+        req.authorized(auth.isAuthorized(decoded, &req));
         if (req.authorized()) {
             req.setStoredHash(receivedHash);
             Log.debug() << "Authorization::Succeed" << Log.endl;
