@@ -67,7 +67,7 @@ ConfStatus
 basicCheck(Object *src, const std::string &key, ExpectedType type) {
     AType *ptr = src->get(key);
     if (ptr->isNull()) {
-        Log.error() << key << "does not exist." << Log.endl;
+        Log.error() << key << " does not exist." << Log.endl;
         return NONE_OR_INV;
     }
 

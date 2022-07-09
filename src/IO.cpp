@@ -11,9 +11,7 @@ IO::IO(void)
     , _dataSize(0)
     , _dataPos(0) {}
 
-IO::~IO(void) {
-    
-}
+IO::~IO(void) {}
 
 int
 IO::rdFd(void) const { 
@@ -33,12 +31,6 @@ IO::rdFd(int fd) {
 void
 IO::wrFd(int fd) {
     _fdw = fd;
-}
-
-void
-IO::setFd(int fd) {
-    rdFd(fd);
-    wrFd(fd);
 }
 
 void
@@ -100,32 +92,12 @@ IO::clear(void) {
 
 void
 IO::closeRdFd(void) {
-    if (_fdr != -1) {
-        close(_fdr);
-        rdFd(-1);
-    }
+    close(_fdr);
 }
 
 void
 IO::closeWrFd(void) {
-    if (_fdw != -1) {
-        close(_fdw);
-        wrFd(-1);
-    }
-}
-
-void
-IO::closeFd(void) {
-    if (_fdw != _fdr) {
-        Log.error() << "IO::closeFd mismatch: " << _fdr << " " << _fdw << Log.endl;
-        return ;
-    }
-
-    if (_fdr != -1) {
-        close(_fdr);
-        rdFd(-1);
-        wrFd(-1);
-    }
+    close(_fdw);
 }
 
 int
@@ -136,19 +108,21 @@ IO::pipe(void) {
         Log.syserr() << "IO::pipe failed" << Log.endl;
         return -1;
     }
+
     rdFd(tmp[0]);
     wrFd(tmp[1]);
     return 0;
 }
 
 int
-IO::create(int af) {
-    int fd = socket(af, SOCK_STREAM, 0);
+IO::socket(int af) {
+    int fd = ::socket(af, SOCK_STREAM, 0);
     if (fd < 0) {
         Log.syserr() << "IO::socket failed" << Log.endl;
     } else {
         _af = af;
-        setFd(fd);
+        rdFd(fd);
+        wrFd(fd);
     }
     return fd;
 }
@@ -229,9 +203,9 @@ IO::write(void) {
     
     if (bytes > 0) {
         _dataPos += bytes;
-        Log.debug() << "IO::write [" << _fdw << "]: " << _dataPos << "/" << _dataSize << " bytes" << Log.endl;
     
         if (_dataPos >= _dataSize) {
+            Log.debug() << "IO::write [" << _fdw << "]: " << _dataPos << "/" << _dataSize << " bytes" << Log.endl;
             clear();
         }
     }
@@ -251,7 +225,6 @@ IO::getline(std::string &line, std::size_t size) {
 
     } else {
         if (_rem.length() < size) {
-            // Log.debug() << _rem.length() << " " << size << Log.endl;
             return 0;
         }
         pos = size;

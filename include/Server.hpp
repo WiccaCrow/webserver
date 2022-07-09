@@ -90,6 +90,7 @@ class Server {
 
     void addToRespQ(HTTP::Response *);
     HTTP::Response *rmFromRespQ(void);
+    void rmClientFromRespQ(HTTP::Client *client);
 
     private:
     void connect(std::size_t servid, int servfd);
@@ -109,4 +110,9 @@ class Server {
     void emptyDelFdsQ(void);
     void emptyNewClientQ(void);
     void emptyDelClientQ(void);
+
+    void pollin(int fd);
+    void pollhup(int fd);
+    void pollerr(int fd);
+    void pollout(int fd);
 };

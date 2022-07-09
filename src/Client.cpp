@@ -172,6 +172,11 @@ void Client::removeResponse(void) {
 
 void Client::pollin(int fd) {
     if (fd == getClientIO()->rdFd()) {
+
+        // if (getClientIO()->closedRd()) {
+        //     return ;
+        // }
+
         if (_requests.size() == _responses.size()) {
             addRequest();
         }
@@ -181,7 +186,7 @@ void Client::pollin(int fd) {
             receive(_requests.back());
 
             if (_requests.back()->formed()) {
-                if (_nbRequests++ >= _maxRequests) {
+                if (++_nbRequests >= _maxRequests) {
                     shouldBeClosed(true);
                 }
                 addResponse();
@@ -189,6 +194,11 @@ void Client::pollin(int fd) {
             }
         }
     } else if (fd == getGatewayIO()->rdFd()) {
+
+        // if (getGatewayIO()->closedRd()) {
+        //     return ;
+        // }
+
         if (_responses.size() > 0) {
             receive(_responses.front());
         }
@@ -212,12 +222,6 @@ void Client::pollout(int fd) {
             removeRequest();
             removeResponse();
 
-            getClientIO()->clear();
-
-            if (!isTunnel() && getGatewayIO()) {
-                g_server->addToDelFdsQ(getGatewayIO()->rdFd());
-            }
-
             if (shouldBeClosed()) {
                 shouldBeRemoved(true);
             }
@@ -239,13 +243,14 @@ void Client::pollout(int fd) {
 void Client::pollhup(int fd) {
     Log.syserr() << "Client::pollhup [" << fd << "]" << Log.endl;
     if (fd == getClientIO()->rdFd()) {
-        g_server->addToDelFdsQ(getClientIO()->rdFd());
-        g_server->addToDelFdsQ(getGatewayIO()->rdFd());
-        g_server->addToDelFdsQ(getGatewayIO()->wrFd());
+        shouldBeRemoved(true);
 
     } else {
-        g_server->addToDelFdsQ(getGatewayIO()->rdFd());
         g_server->addToDelFdsQ(getGatewayIO()->wrFd());
+        g_server->addToDelFdsQ(getGatewayIO()->rdFd());
+    
+        getGatewayIO()->closeRdFd();
+        getGatewayIO()->closeWrFd();
     }
 }
 
@@ -253,12 +258,14 @@ void Client::pollerr(int fd) {
     Log.syserr() << "Client::pollerr [" << fd << "]" << Log.endl;
 
     if (fd == getClientIO()->rdFd()) {
-        g_server->addToDelFdsQ(getClientIO()->rdFd());
-        g_server->addToDelFdsQ(getGatewayIO()->rdFd());
-        g_server->addToDelFdsQ(getGatewayIO()->wrFd());
+        shouldBeRemoved(true);
+
     } else {
         g_server->addToDelFdsQ(getGatewayIO()->rdFd());
         g_server->addToDelFdsQ(getGatewayIO()->wrFd());
+    
+        getGatewayIO()->closeRdFd();
+        getGatewayIO()->closeWrFd();
     }
 }
 
@@ -267,7 +274,7 @@ void Client::reply(Response *res) {
 
     if (!res->headSent()) {
         if (!getClientIO()->getDataPos()) {
-            Log.debug() << std::endl << res->getHead() << Log.endl;
+            // Log.debug() << std::endl << res->getHead() << Log.endl;
             getClientIO()->setData(res->getHead().c_str());
             getClientIO()->setDataSize(res->getHead().length());
         }
@@ -287,7 +294,7 @@ void Client::reply(Response *res) {
     }
     
     if (bytes == 0) {
-        // if Proxy-tunnel close Client and Gateway sockets
+        shouldBeRemoved(true);
         return ;
     }
 
@@ -327,17 +334,24 @@ void Client::reply(Request *req) {
     
     if (bytes == 0) {
         // Log.debug() << "Gateway::write 0" << Log.endl;
-        if (req->isCGI()) {
-            g_server->addToDelFdsQ(getGatewayIO()->wrFd());
-            getGatewayIO()->closeWrFd();
-        }
 
-        // set response status as BAD_GATEWAY
-        // if CGI close pipe (standard action)
-        // if Proxy-req close only GATEWAY socket
+
+        // check if request with empty body!
         // if Proxy-tunnel close Client and Gateway sockets
+        // if (isTunnel()) {
+        //     shouldBeRemoved(true);
+        // } else {
+        //     // CGI pipe was closed (why?);
+        //     // BAD_GATEWAY should be sent to the client ( responses.front().setStatus(BAD_GATEWAY) )
+            
+        //     g_server->addToDelFdsQ(getGatewayIO()->wrFd());
+        //     g_server->addToDelFdsQ(getGatewayIO()->rdFd());
+        //     getGatewayIO()->closeWrFd();
+        //     getGatewayIO()->closeRdFd();
+        // }
         return ;
     }
+
     // Log.debug() << "Gateway::write " << bytes << Log.endl;
 
     if (static_cast<std::size_t>(bytes) >= getGatewayIO()->getDataSize()) {
@@ -358,7 +372,7 @@ void Client::receive(Request *req) {
     int bytes = getClientIO()->read();
 
     if (bytes < 0) {
-        Log.debug() << "Client::receive [" << getClientIO()->rdFd() << "] req not ready" << Log.endl;
+        // Log.debug() << "Client::receive [" << getClientIO()->rdFd() << "] req not ready" << Log.endl;
         return ;
 
     } else if (bytes == 0) {
@@ -376,6 +390,7 @@ void Client::receive(Request *req) {
 
         req->parseLine(line);
     }
+    
 }
 
 void Client::receive(Response *res) {
@@ -383,21 +398,23 @@ void Client::receive(Response *res) {
     int bytes = getGatewayIO()->read();
 
     if (bytes < 0) {
-        Log.debug() << "Client::receive [" << getGatewayIO()->rdFd() << "] resp not ready" << Log.endl;
+        // Log.debug() << "Client::receive [" << getGatewayIO()->rdFd() << "] resp not ready" << Log.endl;
         return ;
 
     } else if (bytes == 0) {
         Log.debug() << "Client::receive [" << getGatewayIO()->rdFd() << "] resp done" << Log.endl;
 
         if (res->isCGI()) {
-            res->checkCGIFail();
+            res->checkCGIFailure();
         }
         
+        g_server->addToDelFdsQ(getGatewayIO()->wrFd());
         g_server->addToDelFdsQ(getGatewayIO()->rdFd());
+        getGatewayIO()->closeWrFd();
         getGatewayIO()->closeRdFd();
 
     } else {
-        Log.debug() << "Client::receive [" << getGatewayIO()->rdFd() << "] resp reading" << Log.endl;
+        // Log.debug() << "Client::receive [" << getGatewayIO()->rdFd() << "] resp reading" << Log.endl;
         setGatewayTimeout(0);
     }
     

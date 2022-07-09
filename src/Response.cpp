@@ -701,7 +701,7 @@ void Response::matchCGI(const std::string &filepath) {
     }
 }
 
-void Response::checkCGIFail(void) {
+void Response::checkCGIFailure(void) {
     int status;
     if (waitpid(getCGI()->getPID(), &status, WNOHANG) > 0) {
         if (WEXITSTATUS(status) != 0) {

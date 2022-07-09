@@ -28,7 +28,7 @@ class Client {
     std::size_t _maxRequests;
     std::time_t _clientTimeout;
     std::time_t _gatewayTimeout;
-    std::time_t _maxTimeout;
+    // std::time_t _maxTimeout;
 
     std::string _domain;
 

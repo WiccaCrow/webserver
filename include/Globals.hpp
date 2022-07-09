@@ -16,7 +16,7 @@
 #endif
 
 #ifndef MAX_CLIENT_TIMEOUT
-    # define MAX_CLIENT_TIMEOUT 100
+    # define MAX_CLIENT_TIMEOUT 10
 #endif
 
 #ifndef MAX_GATEWAY_TIMEOUT

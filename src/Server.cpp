@@ -143,7 +143,7 @@ int Server::addListenSocket(const std::string &addr, std::size_t port) {
         return -1;
     }
 
-    if (sock->create() < 0) {
+    if (sock->socket() < 0) {
         delete sock;
         return -1;
     }
@@ -202,8 +202,49 @@ void Server::stopWorkers(void) {
     }
 }
 
+void
+Server::pollin(int fd) {
+
+}
+
+void
+Server::pollhup(int fd) {
+
+    Log.syserr() << "Server::pollhup [" << fd << "]" << Log.endl;
+
+    HTTP::Client *client = _clients[fd];
+    if (client == NULL) {
+        return ;
+    }
+
+    if (fd == client->getClientIO()->rdFd()) {
+        client->shouldBeRemoved(true);
+
+    } else if (fd == client->getGatewayIO()->wrFd()) {
+        addToDelFdsQ(client->getGatewayIO()->wrFd());
+        client->getGatewayIO()->closeWrFd();
+
+    } else if (fd == client->getGatewayIO()->rdFd()) {
+        addToDelFdsQ(client->getGatewayIO()->rdFd());
+        client->getGatewayIO()->closeRdFd();
+    }    
+}
+
+void
+Server::pollerr(int fd) {
+
+}
+
+void
+Server::pollout(int fd) {
+
+}
+
+
 void Server::process(void) {
+
     for (std::size_t id = 0; id < _pollfds.size(); id++) {
+
         const int fd = _pollfds[id].fd;
 
         if (fd < 0 || _pollfds[id].revents & POLLNVAL) {
@@ -216,13 +257,13 @@ void Server::process(void) {
             }
         } else if (_clients[fd] != NULL) {
             if (_pollfds[id].revents & POLLIN) {
-                _clients[fd]->pollin(fd);
+                pollin(fd);
             } else if (_pollfds[id].revents & POLLHUP) {
-                _clients[fd]->pollhup(fd);
+                pollhup(fd);
             } else if (_pollfds[id].revents & POLLOUT) {
-                _clients[fd]->pollout(fd);
+                pollout(fd);
             } else if (_pollfds[id].revents & POLLERR) {
-                _clients[fd]->pollerr(fd);
+                pollerr(fd);
             }
         }
         _pollfds[id].revents = 0;
@@ -246,42 +287,61 @@ isFree(struct pollfd pfd) {
 }
 
 void Server::checkTimeout(void) {
+
     std::time_t cur = Time::now();
 
     for (ClientsMap::iterator it = _clients.begin(); it != _clients.end(); ++it) {
         HTTP::Client *client = it->second;
 
         if (client == NULL) {
-            continue;
-        }
-
-        if (client->shouldBeRemoved()) {
-            // If client should be closed we MUST wait until reply is done
-            addToDelFdsQ(client->getClientIO()->rdFd());
-            addToDelFdsQ(client->getGatewayIO()->rdFd());
-            addToDelFdsQ(client->getGatewayIO()->wrFd());
             continue ;
         }
 
         std::time_t t_client = client->getClientTimeout();
-        if (t_client != 0 && cur - t_client > MAX_CLIENT_TIMEOUT) {
-            addToDelFdsQ(client->getClientIO()->rdFd());
-            addToDelFdsQ(client->getGatewayIO()->rdFd());
-            addToDelFdsQ(client->getGatewayIO()->wrFd());
-            Log.debug() << "Server:: [" << client->getClientIO()->rdFd() << "] client timeout exceeded" << Log.endl;
+        if (client->shouldBeRemoved() || (t_client != 0 && cur - t_client > MAX_CLIENT_TIMEOUT)) {
+            
+            IO *io = client->getClientIO();
+            if (!io->closedRd()) {
+                Log.debug() << "Server:: [" << io->rdFd() << "] client timeout exceeded" << Log.endl;
+                
+                addToDelFdsQ(io->rdFd());
+                io->closeFd();
+            }
+
+            // 408 Request Timeout
         }
 
         std::time_t t_gateway = client->getGatewayTimeout();
-        if (t_gateway != 0 && cur - t_gateway > MAX_GATEWAY_TIMEOUT) {
-            addToDelFdsQ(client->getGatewayIO()->rdFd());
-            addToDelFdsQ(client->getGatewayIO()->wrFd());
-            Log.debug() << "Server:: [" << client->getGatewayIO()->rdFd() << "] gateway timeout exceeded" << Log.endl;
+        if (client->shouldBeRemoved() || (t_gateway != 0 && cur - t_gateway > MAX_GATEWAY_TIMEOUT)) {
+            
+            IO *io = client->getGatewayIO();
+
+            if (!io->closedRd()) {
+                Log.debug() << "Server:: [" << io->rdFd() << "] gateway timeout exceeded" << Log.endl;
+                addToDelFdsQ(io->rdFd());
+                io->closeRdFd();
+            }
+
+            if (!io->closedWr()) {
+                Log.debug() << "Server:: [" << io->wrFd() << "] gateway timeout exceeded" << Log.endl;
+                addToDelFdsQ(io->wrFd());
+                io->closeWrFd();
+            }
+
             // need to kill child process if CGI
-            // close only GATEWAY socket
-            // set response status to gateway timeout and reply to client
+            // res->terminateCGI();
+            // set response status to GATEWAY_TIMEOUT and reply to client
         }
 
-        // Add comparison with MAX_SESSION_TIMEOUT
+        client->shouldBeRemoved(false);
+
+        if (client->getClientIO()->closedRd() && 
+            client->getGatewayIO()->closedRd() && 
+            client->getGatewayIO()->closedWr()) {
+            addToDelClientQ(client);
+        }
+
+        // Add comparison with SESSION_LIFETIME
     }
 }
 
@@ -317,7 +377,8 @@ void Server::connect(std::size_t servid, int servfd) {
 
     client->setServerIO(_sockets[servid]);
     client->setClientTimeout(Time::now());
-    client->getClientIO()->setFd(fd);
+    client->getClientIO()->rdFd(fd);
+    client->getClientIO()->wrFd(fd);
     client->getClientIO()->nonblock();
     client->getClientIO()->setAddr(inet_ntoa(clientData.sin_addr));
     client->getClientIO()->setPort(ntohs(clientData.sin_port));
@@ -331,47 +392,65 @@ void Server::connect(std::size_t servid, int servfd) {
 // The functions below used to work with different queues
 
 void Server::addToNewFdsQ(int fd) {
-    pthread_mutex_lock(&_m_new_pfds);
-    if (fd >= 0) {
-        Log.debug() << "Server::addToNewFdsQ [" << fd << "]" << Log.endl;
-        _q_newPfds.push(fd);
+
+    if (fd < 0) {
+        return ;
     }
+
+    pthread_mutex_lock(&_m_new_pfds);
+
+    Log.debug() << "Server::addToNewFdsQ [" << fd << "]" << Log.endl;
+    _q_newPfds.push(fd);
+
     pthread_mutex_unlock(&_m_new_pfds);
 }
 
-void Server::addToDelFdsQ(int fd) {
-    pthread_mutex_lock(&_m_del_pfds);
-    if (fd >= 0) {
-        std::pair<std::set<int>::iterator, bool> p = _q_delPfds.insert(fd);
-        if (p.second) {
-            Log.debug() << "Server::addToDelFdsQ [" << fd << "]" << Log.endl;
-        }
-    }
-    pthread_mutex_unlock(&_m_del_pfds);
-}
-
 void Server::addToNewClientQ(int fd, HTTP::Client *client) {
+
     pthread_mutex_lock(&_m_new_clnt);
+
     Log.debug() << "Server::addToNewClientQ [" << fd << "]" << Log.endl;
     _q_newClients.push(std::make_pair(fd, client));
+
     pthread_mutex_unlock(&_m_new_clnt);
 }
 
+void Server::addToDelFdsQ(int fd) {
+
+    if (fd < 0) {
+        return ;
+    }
+
+    pthread_mutex_lock(&_m_del_pfds);
+
+    bool inserted = _q_delPfds.insert(fd).second;
+    if (inserted) {
+        Log.debug() << "Server::addToDelFdsQ [" << fd << "]" << Log.endl;
+    }
+
+    pthread_mutex_unlock(&_m_del_pfds);
+}
+
 void Server::addToDelClientQ(HTTP::Client *client) {
+
     pthread_mutex_lock(&_m_del_clnt);
+
     if (client != NULL) {
-        std::pair<std::set<HTTP::Client *>::iterator, bool> p = _q_delClients.insert(client);
-        if (p.second) {
-            Log.debug() << "Server::addToDelClientQ [" << client->getClientIO()->rdFd() << "]" << Log.endl;
+        bool inserted = _q_delClients.insert(client).second;
+        if (inserted) {
+            Log.debug() << "Server::addToDelClientQ -> " << client << Log.endl;
         }
     }
+
     pthread_mutex_unlock(&_m_del_clnt);
 }
 
 void Server::emptyNewFdsQ(void) {
+
     pthread_mutex_lock(&_m_new_pfds);
 
-    while (_q_newPfds.size() > 0) {
+    while (!_q_newPfds.empty()) {
+
         int tmpfd = _q_newPfds.front();
         _q_newPfds.pop();
 
@@ -393,7 +472,7 @@ void Server::emptyNewFdsQ(void) {
 void Server::emptyDelFdsQ(void) {
     pthread_mutex_lock(&_m_del_pfds);
 
-    while (_q_delPfds.size() > 0) {
+    while (_q_delPfds.begin() != _q_delPfds.end()) {
 
         std::set<int>::iterator beg = _q_delPfds.begin();
         int tmpfd = *beg;
@@ -412,14 +491,7 @@ void Server::emptyDelFdsQ(void) {
             }
         }
 
-        // pthread_mutex_lock(&_m_new_clnt);
-        // iter_cm it = _clients.find(tmpfd);
-        // if (it != _clients.end()) {
-        //     addToDelClientQ(it->second);
-        // }
-        // pthread_mutex_unlock(&_m_new_clnt);
-
-        Log.debug() << "Server::emptyDelFdsQ [" << tmp.fd << "]" << Log.endl;
+        Log.debug() << "Server::emptyDelFdsQ [" << tmpfd << "]" << Log.endl;
     }
 
     pthread_mutex_unlock(&_m_del_pfds);
@@ -428,7 +500,7 @@ void Server::emptyDelFdsQ(void) {
 void Server::emptyNewClientQ(void) {
     pthread_mutex_lock(&_m_new_clnt);
 
-    while (_q_newClients.size() > 0) {
+    while (!_q_newClients.empty()) {
         std::pair<int, HTTP::Client *> tmp = _q_newClients.front();
         _q_newClients.pop();
 
@@ -444,69 +516,68 @@ void Server::emptyDelClientQ(void) {
 
     pthread_mutex_lock(&_m_del_clnt);
 
-    while (_q_delClients.size() > 0) {
+    while (_q_delClients.begin() != _q_delClients.end()) {
 
         std::set<HTTP::Client *>::iterator beg = _q_delClients.begin();
-        HTTP::Client *tmp = *beg;
+        HTTP::Client *client = *beg;
         _q_delClients.erase(beg);
 
-        pthread_mutex_lock(&_m_new_resp);
-        
-        std::list<HTTP::Response *>::iterator it;
-        for (it = _q_newResponses.begin(); it != _q_newResponses.end(); ++it) {
-            if ((*it) != NULL && (*it)->getClient() == tmp) {
-                *it = NULL;
-            }
+        rmClientFromRespQ(client);
+
+        int cio_r = client->getClientIO()->rdFd();
+        int gio_r = client->getGatewayIO()->rdFd();
+        int gio_w = client->getGatewayIO()->wrFd();
+
+        _clients[cio_r] = NULL;
+        _clients[gio_r] = NULL;
+        _clients[gio_w] = NULL;
+
+        close(cio_r);
+        close(gio_r);
+        if (gio_r != gio_w) {
+            close(gio_w);
         }
 
-        pthread_mutex_unlock(&_m_new_resp);
+        Log.debug() << "Server::emptyDelClientQ -> " << client << Log.endl;
 
-        int cio_fd = -1;
-        int tio_fdr = -1;
-        int tio_fdw = -1;
-
-        if (tmp->getClientIO()) {
-            cio_fd = tmp->getClientIO()->rdFd();
-        }
-
-        if (tmp->getGatewayIO()) {
-            tio_fdr = tmp->getGatewayIO()->rdFd();
-            tio_fdw = tmp->getGatewayIO()->wrFd();
-        }
-
-        if (cio_fd != -1) {
-            _clients[cio_fd] = NULL;
-        }
-
-        if (tio_fdr != -1) {
-            _clients[tio_fdr] = NULL;
-        }
-
-        if (tio_fdw != -1 && tio_fdw != tio_fdr) {
-            _clients[tio_fdw] = NULL;
-        }
-
-        delete tmp;
-
-        Log.debug() << "Server::emptyNewClientQ [" << cio_fd << "]" << Log.endl;
+        delete client;
     }
 
     pthread_mutex_unlock(&_m_del_clnt);
 }
 
+void Server::rmClientFromRespQ(HTTP::Client *client) {
+
+    pthread_mutex_lock(&_m_new_resp);
+        
+    std::list<HTTP::Response *>::iterator it;
+    for (it = _q_newResponses.begin(); it != _q_newResponses.end(); ) {
+        if (*it != NULL && (*it)->getClient() == client) {
+            it = _q_newResponses.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    pthread_mutex_unlock(&_m_new_resp);
+}
 
 void Server::addToRespQ(HTTP::Response *res) {
+
     pthread_mutex_lock(&_m_new_resp);
+
     _q_newResponses.push_back(res);
+    
     pthread_mutex_unlock(&_m_new_resp);
 }
 
 HTTP::Response *Server::rmFromRespQ(void) {
+
     HTTP::Response *res = NULL;
 
     pthread_mutex_lock(&_m_new_resp);
 
-    if (_q_newResponses.size() > 0) {
+    if (_q_newResponses.begin() != _q_newResponses.end()) {
         res = _q_newResponses.front();
         _q_newResponses.pop_front();
     }
@@ -515,5 +586,3 @@ HTTP::Response *Server::rmFromRespQ(void) {
 
     return res;
 }
-
-

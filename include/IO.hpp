@@ -29,11 +29,9 @@ public:
 
     void closeRdFd(void);
     void closeWrFd(void);
-    void closeFd(void);
 
     void rdFd(int);
     void wrFd(int);
-    void setFd(int);
     void setPort(std::size_t);
     void setDataPos(std::size_t);
     void setDataSize(std::size_t);
@@ -55,7 +53,7 @@ public:
 
     int pipe(void);
 
-    int create(int = AF_INET);
+    int socket(int = AF_INET);
     int connect(const sockaddr *, socklen_t);
     int listen(const std::string &addr, std::size_t port);
 
