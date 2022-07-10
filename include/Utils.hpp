@@ -39,7 +39,10 @@ void writeFile(const std::string &file, const std::string &content);
 std::string readFile(const std::string &file);
 
 std::string itohs(int nb);
-bool stoi64(int64_t &, const std::string &);
+template <typename T>
+bool stoi64(T &num, const std::string &s);
+template <typename T>
+std::string NumberToString(T &num);
 bool stoll(long long &num, char const *s);
 bool stoll(char const *s);
 

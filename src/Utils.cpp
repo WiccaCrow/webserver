@@ -17,12 +17,21 @@ stoll(long long &num, char const *s) {
     return !(ss.fail() || ss.get(c));
 }
 
+template <typename T>
 bool
-stoi64(int64_t &num, const std::string &s) {
+stoi64(T &num, const std::string &s) {
     char              c;
     std::stringstream ss(s.c_str());
     ss >> num;
     return !(ss.fail() || ss.get(c));
+}
+
+template <typename T>
+std::string
+NumberToString(T &num) {
+    std::ostringstream ss;
+    ss << num;
+    return ss.str();
 }
 
 // Returns true if the conversion of a string to a number is true
