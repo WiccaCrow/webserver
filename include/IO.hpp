@@ -35,7 +35,7 @@ public:
     void setPort(std::size_t);
     void setDataPos(std::size_t);
     void setDataSize(std::size_t);
-    void setData(const char *);
+    void setData(const std::string &);
     void setAddr(const std::string &);
 
     int rdFd(void) const;

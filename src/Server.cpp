@@ -205,6 +205,37 @@ void Server::stopWorkers(void) {
 void
 Server::pollin(int fd) {
 
+    Log.syserr() << "Server::pollin [" << fd << "]" << Log.endl;
+
+    HTTP::Client *client = _clients[fd];
+    if (client == NULL) {
+        return ;
+    }
+
+    if (fd == client->getClientIO()->rdFd()) {
+        client->tryReceiveRequest(fd);
+
+    } else if (fd == client->getGatewayIO()->rdFd()) {
+        client->tryReceiveResponse(fd);
+    }
+}
+
+void
+Server::pollout(int fd) {
+
+    Log.syserr() << "Server::pollout [" << fd << "]" << Log.endl;
+
+    HTTP::Client *client = _clients[fd];
+    if (client == NULL) {
+        return ;
+    }
+
+    if (fd == client->getClientIO()->wrFd()) {
+        client->tryReplyResponse(fd);
+
+    } else if (fd == client->getGatewayIO()->wrFd()) {
+        client->tryReplyRequest(fd); 
+    }
 }
 
 void
@@ -232,13 +263,26 @@ Server::pollhup(int fd) {
 
 void
 Server::pollerr(int fd) {
+    Log.syserr() << "Server::pollerr [" << fd << "]" << Log.endl;
 
+    HTTP::Client *client = _clients[fd];
+    if (client == NULL) {
+        return ;
+    }
+
+    if (fd == client->getClientIO()->rdFd()) {
+        client->shouldBeRemoved(true);
+
+    } else if (fd == client->getGatewayIO()->wrFd()) {
+        addToDelFdsQ(client->getGatewayIO()->wrFd());
+        client->getGatewayIO()->closeWrFd();
+
+    } else if (fd == client->getGatewayIO()->rdFd()) {
+        addToDelFdsQ(client->getGatewayIO()->rdFd());
+        client->getGatewayIO()->closeRdFd();
+    } 
 }
 
-void
-Server::pollout(int fd) {
-
-}
 
 
 void Server::process(void) {
@@ -301,6 +345,7 @@ void Server::checkTimeout(void) {
         if (client->shouldBeRemoved() || (t_client != 0 && cur - t_client > MAX_CLIENT_TIMEOUT)) {
             
             IO *io = client->getClientIO();
+
             if (!io->closedRd()) {
                 Log.debug() << "Server:: [" << io->rdFd() << "] client timeout exceeded" << Log.endl;
                 

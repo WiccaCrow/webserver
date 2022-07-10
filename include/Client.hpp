@@ -35,10 +35,14 @@ class Client {
     std::list<Request *>  _requests;
     std::list<Response *> _responses;
 
-
     public:
     Client(void);
     ~Client(void);
+
+    void tryReplyResponse(int fd);
+    void tryReplyRequest(int fd);
+    void tryReceiveResponse(int fd);
+    void tryReceiveRequest(int fd);
 
     bool shouldBeClosed(void) const;
     void shouldBeClosed(bool);
@@ -72,11 +76,6 @@ class Client {
     void addResponse(void);
     void removeRequest(void);
     void removeResponse(void);
-
-    void pollin(int fd);
-    void pollout(int fd);
-    void pollhup(int fd);
-    void pollerr(int fd);
 
     void receive(Request *);
     void receive(Response *);

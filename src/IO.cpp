@@ -11,7 +11,9 @@ IO::IO(void)
     , _dataSize(0)
     , _dataPos(0) {}
 
-IO::~IO(void) {}
+IO::~IO(void) {
+
+}
 
 int
 IO::rdFd(void) const { 
@@ -54,8 +56,9 @@ IO::getAddr(void) const {
 }
 
 void
-IO::setData(const char *data) {
-    _data = data;
+IO::setData(const std::string &data) {
+    _data = data.c_str();
+    setDataSize(data.length());
 }
 
 void
@@ -187,7 +190,12 @@ int IO::read(void) {
     if (bytes > 0) {
         buf[bytes] = '\0';    
         _rem.append(buf, bytes);
+        return bytes;
     } 
+
+    // if (isBlock || !bytes) {
+    //     // close
+    // }
 
     // if (_rem.find("\x06") != std::string::npos) {
     //     return 0;
