@@ -76,6 +76,8 @@ sigint_handler(int) {
     g_server->finish();
 }
 
+#ifdef WS_DAEMON_MODE
+
 void Server::daemonMode(void) {
     pid_t pid, sid;
 
@@ -104,7 +106,18 @@ void Server::daemonMode(void) {
     close(STDERR_FILENO);
 }
 
+#else
+
+void
+Server::daemonMode(void) {
+    Log.error() << "This version compiled without daemon mode flag." << Log.endl;
+    Log.error() << "To run server as daemon, recompile it with WS_DAEMON_MODE." << Log.endl;
+}
+
+#endif
+
 void Server::start(void) {
+
     if (isDaemon) {
         daemonMode();
     }
