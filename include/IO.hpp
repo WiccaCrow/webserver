@@ -58,4 +58,6 @@ public:
     int listen(const std::string &addr, std::size_t port);
 
     void clear(void);
+
+    void reset(void);
 };

@@ -66,7 +66,7 @@ int Proxy::setConnection(struct addrinfo *lst, Request *req) {
 
     IO *sock = req->getClient()->getGatewayIO();
     
-    int fd = sock->create();
+    int fd = sock->socket();
     if (fd < 0) {
         Log.error() << "Proxy:: Cannot create socket" << Log.endl;
         return 0;
@@ -96,9 +96,7 @@ int Proxy::setConnection(struct addrinfo *lst, Request *req) {
 
     Log.info() << "Proxy:: Established [" << fd << "]" << Log.endl;
 
-    g_server->addToNewClientQ(fd, req->getClient());
-    g_server->addToNewFdsQ(fd);
-
+    g_server->link(sock->rdFd(), req->getClient());
     return 1;
 }
 

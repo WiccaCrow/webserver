@@ -35,9 +35,15 @@ class Client {
     std::list<Request *>  _requests;
     std::list<Response *> _responses;
 
-    public:
+    int _id;
+
+public:
+    std::size_t links;
+
     Client(void);
     ~Client(void);
+
+    void checkTimeout(void);
 
     void tryReplyResponse(int fd);
     void tryReplyRequest(int fd);
@@ -54,6 +60,9 @@ class Client {
     void isTunnel(bool);
 
     const std::string getHostname(void);
+
+    int getId(void) const;
+    void setId(int);
 
     time_t getClientTimeout(void) const;
     time_t getGatewayTimeout(void) const;

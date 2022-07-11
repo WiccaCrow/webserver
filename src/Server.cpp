@@ -15,14 +15,10 @@ Server::Server()
 
 Server::~Server(void) {
 
-    std::set<HTTP::Client *> uniqueClients;
-    for (iter_cm it = _clients.begin(); it != _clients.end(); ++it) {
-        uniqueClients.insert(it->second);
-    }
-
-    std::set<HTTP::Client *>::iterator it;
-    for (it = uniqueClients.begin(); it != uniqueClients.end(); ++it) {
-        delete *it;
+    for (iter_cv it = _clients.begin(); it != _clients.end(); ++it) {
+        if (*it != NULL) {
+            delete *it;
+        }
     }
 
     for (size_t i = 0; i < _sockets.size(); ++i) {
@@ -205,9 +201,16 @@ void Server::stopWorkers(void) {
 void
 Server::pollin(int fd) {
 
-    Log.syserr() << "Server::pollin [" << fd << "]" << Log.endl;
+    // Log.debug() << "Server::pollin [" << fd << "]" << Log.endl;
 
-    HTTP::Client *client = _clients[fd];
+    size_t id = _connector[fd];
+
+    if (id < 0 || id >= _clients.size()) {
+        Log.debug() << "Server::pollin:: invalid id: " << fd << " " << id << Log.endl;
+        return ;
+    }
+
+    HTTP::Client *client = _clients[id];
     if (client == NULL) {
         return ;
     }
@@ -223,9 +226,16 @@ Server::pollin(int fd) {
 void
 Server::pollout(int fd) {
 
-    Log.syserr() << "Server::pollout [" << fd << "]" << Log.endl;
+    // Log.debug() << "Server::pollout [" << fd << "]" << Log.endl;
 
-    HTTP::Client *client = _clients[fd];
+    size_t id = _connector[fd];
+
+    if (id < 0 || id >= _clients.size()) {
+        Log.debug() << "Server::pollout:: invalid id: " << fd << " " << id << Log.endl;
+        return ;
+    }
+
+    HTTP::Client *client = _clients[id];
     if (client == NULL) {
         return ;
     }
@@ -243,21 +253,30 @@ Server::pollhup(int fd) {
 
     Log.syserr() << "Server::pollhup [" << fd << "]" << Log.endl;
 
-    HTTP::Client *client = _clients[fd];
+    size_t id = _connector[fd];
+
+    if (id < 0 || id >= _clients.size()) {
+        Log.debug() << "Server::pollhup:: invalid id: " << id << Log.endl;
+    }
+
+    HTTP::Client *client = _clients[id];
     if (client == NULL) {
         return ;
     }
 
     if (fd == client->getClientIO()->rdFd()) {
-        client->shouldBeRemoved(true);
+        // client->shouldBeRemoved(true);
+        unlink(fd);
 
     } else if (fd == client->getGatewayIO()->wrFd()) {
-        addToDelFdsQ(client->getGatewayIO()->wrFd());
-        client->getGatewayIO()->closeWrFd();
+        unlink(fd);
+        // addToDelFdsQ(client->getGatewayIO()->wrFd());
+        // client->getGatewayIO()->closeWrFd();
 
     } else if (fd == client->getGatewayIO()->rdFd()) {
-        addToDelFdsQ(client->getGatewayIO()->rdFd());
-        client->getGatewayIO()->closeRdFd();
+        unlink(fd);
+        // addToDelFdsQ(client->getGatewayIO()->rdFd());
+        // client->getGatewayIO()->closeRdFd();
     }    
 }
 
@@ -265,21 +284,30 @@ void
 Server::pollerr(int fd) {
     Log.syserr() << "Server::pollerr [" << fd << "]" << Log.endl;
 
-    HTTP::Client *client = _clients[fd];
+    size_t id = _connector[fd];
+
+    if (id < 0 || id >= _clients.size()) {
+        Log.debug() << "Server::pollerr:: invalid id: " << id << Log.endl;
+    }
+
+    HTTP::Client *client = _clients[id];
     if (client == NULL) {
         return ;
     }
 
     if (fd == client->getClientIO()->rdFd()) {
-        client->shouldBeRemoved(true);
+        // client->shouldBeRemoved(true);
+        unlink(fd);
 
     } else if (fd == client->getGatewayIO()->wrFd()) {
-        addToDelFdsQ(client->getGatewayIO()->wrFd());
-        client->getGatewayIO()->closeWrFd();
+        unlink(fd);
+        // addToDelFdsQ(client->getGatewayIO()->wrFd());
+        // client->getGatewayIO()->closeWrFd();
 
     } else if (fd == client->getGatewayIO()->rdFd()) {
-        addToDelFdsQ(client->getGatewayIO()->rdFd());
-        client->getGatewayIO()->closeRdFd();
+        unlink(fd);
+        // addToDelFdsQ(client->getGatewayIO()->rdFd());
+        // client->getGatewayIO()->closeRdFd();
     } 
 }
 
@@ -299,7 +327,7 @@ void Server::process(void) {
             if (_pollfds[id].revents & POLLIN) {
                 connect(id, fd);
             }
-        } else if (_clients[fd] != NULL) {
+        } else {
             if (_pollfds[id].revents & POLLIN) {
                 pollin(fd);
             } else if (_pollfds[id].revents & POLLHUP) {
@@ -326,68 +354,76 @@ int Server::poll(void) {
 }
 
 static int
-isFree(struct pollfd pfd) {
+isFdFree(struct pollfd pfd) {
     return (pfd.fd == -1);
+}
+
+static int
+isClientFree(HTTP::Client *client) {
+    return (client == NULL);
 }
 
 void Server::checkTimeout(void) {
 
-    std::time_t cur = Time::now();
-
-    for (ClientsMap::iterator it = _clients.begin(); it != _clients.end(); ++it) {
-        HTTP::Client *client = it->second;
-
+    for (ClientsVec::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+        
+        HTTP::Client *client = *it;
         if (client == NULL) {
             continue ;
         }
 
-        std::time_t t_client = client->getClientTimeout();
-        if (client->shouldBeRemoved() || (t_client != 0 && cur - t_client > MAX_CLIENT_TIMEOUT)) {
-            
-            IO *io = client->getClientIO();
+        client->checkTimeout();
 
-            if (!io->closedRd()) {
-                Log.debug() << "Server:: [" << io->rdFd() << "] client timeout exceeded" << Log.endl;
-                
-                addToDelFdsQ(io->rdFd());
-                io->closeFd();
-            }
-
-            // 408 Request Timeout
-        }
-
-        std::time_t t_gateway = client->getGatewayTimeout();
-        if (client->shouldBeRemoved() || (t_gateway != 0 && cur - t_gateway > MAX_GATEWAY_TIMEOUT)) {
-            
-            IO *io = client->getGatewayIO();
-
-            if (!io->closedRd()) {
-                Log.debug() << "Server:: [" << io->rdFd() << "] gateway timeout exceeded" << Log.endl;
-                addToDelFdsQ(io->rdFd());
-                io->closeRdFd();
-            }
-
-            if (!io->closedWr()) {
-                Log.debug() << "Server:: [" << io->wrFd() << "] gateway timeout exceeded" << Log.endl;
-                addToDelFdsQ(io->wrFd());
-                io->closeWrFd();
-            }
-
-            // need to kill child process if CGI
-            // res->terminateCGI();
-            // set response status to GATEWAY_TIMEOUT and reply to client
-        }
-
-        client->shouldBeRemoved(false);
-
-        if (client->getClientIO()->closedRd() && 
-            client->getGatewayIO()->closedRd() && 
-            client->getGatewayIO()->closedWr()) {
+        if (client->links == 0) {
+            *it = NULL;
             addToDelClientQ(client);
         }
-
-        // Add comparison with SESSION_LIFETIME
     }
+}
+
+void
+Server::addClient(HTTP::Client *client) {
+
+    iter_cv it = std::find_if(_clients.begin(), _clients.end(), isClientFree);
+    if (it == _clients.end()) {
+        it = _clients.insert(_clients.end(), client);
+    }
+     
+    *it = client;
+
+    size_t id = std::distance(_clients.begin(), it);
+
+    client->setId(id);
+}
+
+void
+Server::link(int fd, HTTP::Client *client) {
+
+    _connector[fd] = client->getId();
+    client->links++;
+    
+    addToNewFdsQ(fd);
+}
+
+void
+Server::unlink(int fd) {
+
+    size_t id = _connector[fd];
+    if (id < 0) {
+        return ;
+    }
+
+    HTTP::Client *client = _clients[id];
+    if (client == NULL) {
+        return ;
+    }
+
+    close(fd);
+
+    _connector[fd] = -1;
+    client->links--;
+
+    addToDelFdsQ(fd);
 }
 
 void Server::connect(std::size_t servid, int servfd) {
@@ -428,8 +464,8 @@ void Server::connect(std::size_t servid, int servfd) {
     client->getClientIO()->setAddr(inet_ntoa(clientData.sin_addr));
     client->getClientIO()->setPort(ntohs(clientData.sin_port));
 
-    addToNewClientQ(fd, client);
-    addToNewFdsQ(fd);
+    addClient(client);
+    link(fd, client);
 
     Log.debug() << "Server::connect [" << fd << "] -> " << client->getHostname() << Log.endl;
 }
@@ -501,7 +537,7 @@ void Server::emptyNewFdsQ(void) {
 
         struct pollfd tmp = { tmpfd, POLLIN | POLLOUT, 0 };
 
-        iter_pfd it = std::find_if(_pollfds.begin(), _pollfds.end(), isFree);
+        iter_pfd it = std::find_if(_pollfds.begin(), _pollfds.end(), isFdFree);
         if (it == _pollfds.end()) {
             _pollfds.push_back(tmp);
         } else {
@@ -573,9 +609,7 @@ void Server::emptyDelClientQ(void) {
         int gio_r = client->getGatewayIO()->rdFd();
         int gio_w = client->getGatewayIO()->wrFd();
 
-        _clients[cio_r] = NULL;
-        _clients[gio_r] = NULL;
-        _clients[gio_w] = NULL;
+        _clients[client->getId()] = NULL;
 
         close(cio_r);
         close(gio_r);

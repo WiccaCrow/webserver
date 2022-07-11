@@ -39,13 +39,17 @@ class Server {
     typedef std::vector<IO *>    SocketsVec;
     typedef SocketsVec::iterator iter_sv;
 
-    typedef std::map<int, HTTP::Client *> ClientsMap;
-    typedef ClientsMap::iterator          iter_cm;
+    typedef std::map<int, int>  FdIdMap;
+    typedef FdIdMap::iterator   iter_fim;
+
+    typedef std::vector<HTTP::Client *> ClientsVec;
+    typedef ClientsVec::iterator          iter_cv;
 
     private:
     ServersMap _servers;
     SocketsVec _sockets;
-    ClientsMap _clients;
+    FdIdMap    _connector;
+    ClientsVec _clients;
     PollFdVec  _pollfds;
 
     bool   _working;
@@ -92,6 +96,9 @@ class Server {
     HTTP::Response *rmFromRespQ(void);
     void rmClientFromRespQ(HTTP::Client *client);
 
+    void link(int fd, HTTP::Client *);
+    void unlink(int fd);
+
     private:
     void connect(std::size_t servid, int servfd);
 
@@ -115,4 +122,7 @@ class Server {
     void pollhup(int fd);
     void pollerr(int fd);
     void pollout(int fd);
+
+    void addClient(HTTP::Client *);
+
 };

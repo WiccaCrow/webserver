@@ -234,14 +234,10 @@ CGI::exec(Request *req) {
     req->isCGI(true);
     
     if (!req->getBody().empty()) {
-        g_server->addToNewClientQ(io->wrFd(), client);
-        g_server->addToNewFdsQ(io->wrFd());
-    } else {
-        io->closeWrFd();
-    }
-    g_server->addToNewClientQ(io->rdFd(), client);
-    g_server->addToNewFdsQ(io->rdFd());
-
+        g_server->link(io->wrFd(), client);
+        close(io->wrFd());
+    } 
+    g_server->link(io->rdFd(), client);
     return 1;
 }
 

@@ -88,9 +88,20 @@ IO::getDataPos(void) const {
 
 void
 IO::clear(void) {
-    setData(NULL);
+    _data = NULL;
     setDataPos(0);
     setDataSize(0);
+}
+
+void
+IO::reset(void) {
+    _af = AF_UNSPEC;
+    rdFd(-1);
+    wrFd(-1);
+    setAddr("");
+    setPort(0);
+    clear();
+    _rem = "";
 }
 
 void
