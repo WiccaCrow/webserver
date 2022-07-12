@@ -239,6 +239,7 @@ void Client::tryReplyRequest(int fd) {
         setGatewayTimeout(Time::now());
 
         if (req->isCGI()) {
+            Log.debug() << "Client:: request sent" << Log.endl; 
             g_server->unlink(fd);
             getGatewayIO()->wrFd(-1);
         }
@@ -367,6 +368,11 @@ void Client::reply(Request *req) {
     IO *io = getGatewayIO();
 
     if (!req->headSent()) {
+        if (req->getHead().empty()) {
+            req->headSent(true);
+            return ;
+        }
+
         if (!io->getDataPos()) {
             io->setData(req->getHead());
         }

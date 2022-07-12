@@ -11,6 +11,7 @@ Server::Server()
     pthread_mutex_init(&_m_new_clnt, NULL);
     pthread_mutex_init(&_m_del_pfds, NULL);
     pthread_mutex_init(&_m_del_clnt, NULL);
+    pthread_mutex_init(&_m_link, NULL);
 }
 
 Server::~Server(void) {
@@ -30,6 +31,7 @@ Server::~Server(void) {
     pthread_mutex_destroy(&_m_new_clnt);
     pthread_mutex_destroy(&_m_del_pfds);
     pthread_mutex_destroy(&_m_del_clnt);
+    pthread_mutex_destroy(&_m_link);
 }
 
 // Could be used for re-reading config:
@@ -412,14 +414,20 @@ Server::addClient(HTTP::Client *client) {
 void
 Server::link(int fd, HTTP::Client *client) {
 
+    pthread_mutex_lock(&_m_link);
+
     _connector[fd] = client->getId();
     client->links++;
     
     addToNewFdsQ(fd);
+
+    pthread_mutex_unlock(&_m_link);
 }
 
 void
 Server::unlink(int fd) {
+
+    pthread_mutex_lock(&_m_link);
 
     size_t id = _connector[fd];
     if (id < 0) {
@@ -439,6 +447,8 @@ Server::unlink(int fd) {
     client->links--;
 
     addToDelFdsQ(fd);
+
+    pthread_mutex_unlock(&_m_link);
 }
 
 void Server::connect(std::size_t servid, int servfd) {

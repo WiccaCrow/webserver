@@ -63,6 +63,8 @@ class Server {
     pthread_mutex_t _m_del_pfds;
     pthread_mutex_t _m_del_clnt;
 
+    pthread_mutex_t _m_link;
+
     std::list<HTTP::Response *> _q_newResponses;
 
     std::queue<std::pair<int, HTTP::Client *> >  _q_newClients;

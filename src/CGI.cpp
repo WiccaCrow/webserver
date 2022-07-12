@@ -129,6 +129,7 @@ bool CGI::setEnv(Request *req) {
     setValue(_env[9], req->getUriRef()._path);
 
     // CONTENT_LENGTH
+    Log.debug() << "CGI: body length: " << req->getBody().length() << Log.endl; 
     setValue(_env[10], sztos(req->getBody().length()));
 
     // CONTENT_TYPE
@@ -235,8 +236,9 @@ CGI::exec(Request *req) {
     
     if (!req->getBody().empty()) {
         g_server->link(io->wrFd(), client);
+    } else {
         close(io->wrFd());
-    } 
+    }
     g_server->link(io->rdFd(), client);
     return 1;
 }
