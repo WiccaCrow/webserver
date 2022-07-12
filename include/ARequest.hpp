@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <limits.h>
+
 #include "Status.hpp"
 #include "Logger.hpp"
 

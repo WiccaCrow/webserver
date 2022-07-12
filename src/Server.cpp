@@ -427,9 +427,13 @@ Server::link(int fd, HTTP::Client *client) {
 void
 Server::unlink(int fd) {
 
+    // Log.debug() << "Server::unlink: fd = " << fd << Log.endl;
+
     pthread_mutex_lock(&_m_link);
 
-    size_t id = _connector[fd];
+    int id = _connector[fd];
+    // Log.debug() << "Server::unlink: id = " << id << Log.endl;
+
     if (id < 0) {
         return ;
     }
@@ -438,6 +442,7 @@ Server::unlink(int fd) {
     if (client == NULL) {
         return ;
     }
+    // Log.debug() << "Server::unlink: client addr = " << client << Log.endl;
 
     if (fd >= 0) {
         close(fd);

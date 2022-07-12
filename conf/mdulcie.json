@@ -1,7 +1,8 @@
 {
     "servers": {
         "http": {
-            "server_names": [ "localhost" ],
+            "listen": "192.168.234.111:8080",
+            "server_names": [ "webserv.com" ],
             "error_pages": {
                 "404": "./pages/error_pages/404.html",
                 "400": "./pages/error_pages/400.html"
