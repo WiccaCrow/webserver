@@ -68,11 +68,12 @@ Cookie::setSameSite(std::string sameSite) {
 }
 
 void
-Cookie::setExpires(int day, int month, int year, int hour, int min, int sec) {
+Cookie::setExpires(int wDay, int mDay, int month, int year, int hour, int min, int sec) {
     struct tm *t = Time::gmtime();
-    t->tm_mday = day;
+    t->tm_wday = wDay - 1;
+    t->tm_mday = mDay;
     t->tm_mon = month - 1;
-    t->tm_year = year;
+    t->tm_year = year - 1900;
     t->tm_hour = hour;
     t->tm_min = min;
     t->tm_sec = sec;
@@ -82,37 +83,31 @@ Cookie::setExpires(int day, int month, int year, int hour, int min, int sec) {
 
 const std::string
 Cookie::toString() const {
-    std::string str = name + "" + value + ";";
+    std::string str = name + "=" + value;
 
     if (!_domain.empty()) {
-        str += " Domain=" + _domain + ";";
+        str += "; Domain=" + _domain;
     }
     if (!_path.empty()) {
-        str += " Path=" + _path + ";";
+        str += "; Path=" + _path;
     }
     if (!_expires.empty()) {
-        str += " Expires=" + _expires + ";";
+        str += "; Expires=" + _expires;
     }
     if (maxAge != 0) {
-        str += " MaxAge=" + NumberToString(maxAge) + ";";
+        str += "; Max-Age=" + NumberToString(maxAge);
     }
     if (!_sameSite.empty()) {
-        str += " SameSite=" + _sameSite + ";";
+        str += "; SameSite=" + _sameSite;
     }
     if (secure) {
-        str += " Secure;";
+        str += "; Secure";
     }
     if (httpOnly) {
-        str += " HttpOnly;";
+        str += "; HttpOnly";
     }
 
     return str;
 }
 
 }
-
-// int main() {
-//     HTTP::Cookie c("id", "1");
-
-//     std::cout << c.toString() << std::endl;
-// }

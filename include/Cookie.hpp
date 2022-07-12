@@ -37,7 +37,7 @@ public:
     void                setDomain(std::string domain);
     void                setPath(std::string path);
     void                setSameSite(std::string sameSite);
-    void                setExpires(int day, int month, int year, int hour, int min, int sec);
+    void                setExpires(int wDay, int day, int month, int year, int hour, int min, int sec);
 
     const std::string   toString(void) const;
     
