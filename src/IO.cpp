@@ -199,7 +199,11 @@ int IO::read(void) {
     int bytes = ::read(_fdr, buf, BUFFER_SIZE);
  
     if (bytes > 0) {
-        buf[bytes] = '\0';    
+        buf[bytes] = '\0';
+        // telnet: ctrl c, ctrl z
+        if (!strcmp(buf, "\xff\xf4\xff\xfd\x06") || !strcmp(buf, "\xff\xed\xff\xfd\x06")) {
+            return 0;
+        }
         _rem.append(buf, bytes);
         return bytes;
     } 
