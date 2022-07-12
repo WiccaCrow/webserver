@@ -372,6 +372,11 @@ void Client::reply(Request *req) {
         }
 
     } else if (!req->bodySent()) {
+        if (req->getBody().empty()) {
+            req->bodySent(true);
+            return ;
+        }
+
         if (!io->getDataPos()) {
             io->setData(req->getBody());
         }

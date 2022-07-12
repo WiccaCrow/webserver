@@ -35,6 +35,10 @@
                     "www.vk.com" 
                 ]
             },
+            "auth_basic": {
+                "realm": "eternity",
+                "user_file": ".htpasswd"
+            },
             "add_headers": [
                 "Set-cookie: key1=val1; ",
                 "Set-cookie: key2=val2; ",

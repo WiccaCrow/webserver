@@ -22,6 +22,10 @@
                         ".js": "/usr/local/bin/node",
                         ".py": "/usr/bin/python"
                     },
+                    "auth_basic": {
+                        "realm": "eternity",
+                        "user_file": ".htpasswd"
+                    },
                     "index": [ "index.html" ],
                     "post_max_body": 200,
                     "methods_allowed": [ "GET", "POST" ]                 

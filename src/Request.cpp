@@ -10,7 +10,7 @@ Request::Request(void)
     , _servBlock(NULL)
     , _location(NULL)
     , _client(NULL)
-    , _storedHash(0)
+    // , _storedHash(0)
     , _authorized(false) {}
 
 Request::Request(Client *client)
@@ -18,7 +18,7 @@ Request::Request(Client *client)
     , _servBlock(NULL)
     , _location(NULL)
     , _client(client)
-    , _storedHash(0) 
+    // , _storedHash(0) 
     , _authorized(false) {}
 
 Request::~Request() {}
@@ -41,7 +41,7 @@ Request::operator=(const Request &other) {
         _cookie       = other._cookie;
         _client       = other._client;
         _host         = other._host;
-        _storedHash   = other._storedHash;  
+        // _storedHash   = other._storedHash;  
         headers      = other.headers;
     }
     return *this;
@@ -117,20 +117,20 @@ Request::getRawUri() const {
     return _rawURI;
 }
 
-uint32_t
-Request::getStoredHash() const {
-    return _storedHash;
-}
+// uint32_t
+// Request::getStoredHash() const {
+//     return _storedHash;
+// }
 
 RangeList &
 Request::getRangeList(void) {
     return _ranges;
 }
 
-void
-Request::setStoredHash(uint32_t hash) {
-    _storedHash = hash;
-}
+// void
+// Request::setStoredHash(uint32_t hash) {
+//     _storedHash = hash;
+// }
 
 const std::string &
 Request::getResolvedPath() const {

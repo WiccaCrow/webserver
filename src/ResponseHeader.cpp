@@ -192,7 +192,8 @@ ResponseHeader::Pragma(Response &res) {
 
 void
 ResponseHeader::ProxyAuthenticate(Response &res) {
-    (void)res;
+
+    value = "Basic realm=\"" + res.getRequest()->getLocation()->getAuthRef().getRealmRef() + "\"";
 }
 
 void

@@ -48,13 +48,14 @@ Response::~Response(void) {
 }
 
 void Response::shouldBeClosedIf(void) {
-    static const std::size_t size = 5;
+    static const std::size_t size = 6;
     static const StatusCode  failedStatuses[size] = {
          BAD_REQUEST,
          REQUEST_TIMEOUT,
          INTERNAL_SERVER_ERROR,
          PAYLOAD_TOO_LARGE,
-         UNAUTHORIZED};
+         UNAUTHORIZED,
+         PROXY_AUTHENTICATION_REQUIRED};
 
     for (std::size_t i = 0; i < size; i++) {
         if (getStatus() == failedStatuses[i]) {
@@ -139,10 +140,18 @@ void Response::handle(void) {
 }
 
 void Response::makeResponseForNonAuth(void) {
-    Log.debug() << "Response:: Unauthorized" << Log.endl;
-    setStatus(UNAUTHORIZED);
+
+    if (getRequest()->isProxy()) {
+        Log.debug() << "Response:: ProxyAuthenticate" << Log.endl;
+        setStatus(PROXY_AUTHENTICATION_REQUIRED);
+        addHeader(PROXY_AUTHENTICATE);
+
+    } else {
+        Log.debug() << "Response:: Unauthorized" << Log.endl;
+        setStatus(UNAUTHORIZED);
+        addHeader(WWW_AUTHENTICATE);
+    }
     addHeader(DATE, Time::gmt());
-    addHeader(WWW_AUTHENTICATE);
 }
 
 void Response::DELETE(void) {
