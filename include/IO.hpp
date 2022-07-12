@@ -27,8 +27,8 @@ public:
     IO(void);
     ~IO(void);
 
-    void closeRdFd(void);
-    void closeWrFd(void);
+    // void closeRdFd(void);
+    // void closeWrFd(void);
 
     void rdFd(int);
     void wrFd(int);

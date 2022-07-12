@@ -431,7 +431,9 @@ Server::unlink(int fd) {
         return ;
     }
 
-    close(fd);
+    if (fd >= 0) {
+        close(fd);
+    }
 
     _connector[fd] = -1;
     client->links--;
@@ -618,17 +620,17 @@ void Server::emptyDelClientQ(void) {
 
         rmClientFromRespQ(client);
 
-        int cio_r = client->getClientIO()->rdFd();
-        int gio_r = client->getGatewayIO()->rdFd();
-        int gio_w = client->getGatewayIO()->wrFd();
+        // int cio_r = client->getClientIO()->rdFd();
+        // int gio_r = client->getGatewayIO()->rdFd();
+        // int gio_w = client->getGatewayIO()->wrFd();
 
         _clients[client->getId()] = NULL;
 
-        close(cio_r);
-        close(gio_r);
-        if (gio_r != gio_w) {
-            close(gio_w);
-        }
+        // close(cio_r);
+        // close(gio_r);
+        // if (gio_r != gio_w) {
+        //     close(gio_w);
+        // }
 
         Log.debug() << "Server::emptyDelClientQ -> " << client << Log.endl;
 

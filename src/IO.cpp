@@ -104,15 +104,15 @@ IO::reset(void) {
     _rem = "";
 }
 
-void
-IO::closeRdFd(void) {
-    close(_fdr);
-}
+// void
+// IO::closeRdFd(void) {
+//     close(_fdr);
+// }
 
-void
-IO::closeWrFd(void) {
-    close(_fdw);
-}
+// void
+// IO::closeWrFd(void) {
+//     close(_fdw);
+// }
 
 int
 IO::pipe(void) {
