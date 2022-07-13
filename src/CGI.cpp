@@ -180,8 +180,12 @@ CGI::setScriptPath(const std::string &path) {
 
 int
 CGI::exec(Request *req) {
-    if ((compiled() && !isExecutableFile(_filepath)) || !isExecutableFile(_execpath)) {
+    if (compiled() && !isExecutableFile(_filepath)) {
         Log.error() << _filepath << " is not executable" << Log.endl;
+        return 0;
+    
+    } else if (!compiled() && !isExecutableFile(_execpath)) {
+        Log.error() << _execpath << " is not executable" << Log.endl;
         return 0;
     }
 

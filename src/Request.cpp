@@ -163,6 +163,10 @@ Request::parseLine(std::string &line) {
         setStatus(!line.empty() ? parseHeader(line) : checkHeaders());
     } else if (!flagSet(PARSED_BODY)) {
         setStatus(parseBody(line));
+
+        if (getBody().length() > static_cast<size_t>(getLocation()->getPostMaxBodyRef())) {
+            setStatus(PAYLOAD_TOO_LARGE);
+        }
     } else {
         setStatus(PROCESSING);
     }
@@ -318,6 +322,17 @@ Request::checkHeaders(void) {
     if (tunnelGuard(it_method == allowed.end())) {
         Log.debug() << "Request:: Method " << getMethod() << " is not allowed" << Log.endl;
         return METHOD_NOT_ALLOWED;
+    }
+
+    if (headers.has(CONTENT_LENGTH)) {
+        int64_t len;
+        bool converted = stoi64(len, headers[CONTENT_LENGTH].value);
+        if (!converted) {
+            return BAD_REQUEST;
+        }
+        if (len > getLocation()->getPostMaxBodyRef()) {
+            return PAYLOAD_TOO_LARGE;
+        }
     }
 
     if (!headers.has(TRANSFER_ENCODING) && !headers.has(CONTENT_LENGTH)) {
