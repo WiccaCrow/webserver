@@ -2,7 +2,7 @@
     "servers": {
         "http": {
             "server_names": [ "localhost" ],
-            "CGI": {
+            "cgi": {
                 ".bla": "./tests/ubuntu_cgi_tester"
             },
             "methods_allowed": [ "GET" ],
@@ -21,7 +21,7 @@
                     "methods_allowed": [ "POST" ]                 
                 },
                 "/directory": {
-                    "root": "./YoupiBanane",
+                    "alias": "./YoupiBanane",
                     "autoindex": false,
                     "index": [ "youpi.bad_extension" ],
                     "methods_allowed": [ "GET" ]

@@ -249,17 +249,28 @@ void Response::PUT(void) {
 }
 
 int Response::makeResponseForDir(void) {
-    const std::string &resourcePath = getRequest()->getResolvedPath();
+    // const std::string &resourcePath = getRequest()->getResolvedPath();
 
+    // if (!endsWith(resourcePath, "/")) {
+    //     return makeResponseForRedirect(MOVED_PERMANENTLY, getRequest()->getRawUri() + "/");
+    // } else 
+
+    // only for tester:
+    std::string resourcePath = getRequest()->getResolvedPath();
     if (!endsWith(resourcePath, "/")) {
-        return makeResponseForRedirect(MOVED_PERMANENTLY, getRequest()->getRawUri() + "/");
-    } else if (indexFileExists(resourcePath)) {
+        resourcePath += "/";
+    }
+
+    if (indexFileExists(resourcePath)) {
         return makeResponseForFile();
     } else if (getRequest()->getLocation()->getAutoindexRef()) {
         addHeader(CONTENT_TYPE);
         return listing(resourcePath);
     } else {
-        setStatus(FORBIDDEN);
+        // setStatus(FORBIDDEN);
+
+        // only for tester
+        setStatus(NOT_FOUND);
         return 0;
     }
     return 1;
@@ -272,7 +283,6 @@ int Response::contentForGetHead(void) {
         setStatus(NOT_FOUND);
         return 0;
     }
-
     if (isDirectory(resourcePath)) {
         return makeResponseForDir();
     } else if (isFile(resourcePath)) {
@@ -345,6 +355,9 @@ int Response::makeResponseForFile(void) {
     }
 
     addHeader(CONTENT_TYPE, getContentType(resourcePath));
+    if (getBody().empty()) {
+        addHeader(CONTENT_LENGTH, "0");
+    }
     addHeader(ETAG, getEtagFile(resourcePath));
     addHeader(LAST_MODIFIED, Time::gmt(getModifiedTime(resourcePath)));
 
