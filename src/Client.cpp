@@ -323,11 +323,21 @@ void Client::reply(Response *res) {
     IO *io = getClientIO();
 
     if (!res->headSent()) {
+        if (res->getHead().empty()) {
+            res->headSent(true);
+            return ;
+        }
+
         if (!io->getDataPos()) {
             io->setData(res->getHead());
         }
 
     } else if (!res->bodySent()) {
+        if (res->getBody().empty()) {
+            res->bodySent(true);
+            return ;
+        }
+
         if (!io->getDataPos()) {
             io->setData(res->getBody());
         }
