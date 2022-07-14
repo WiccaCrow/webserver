@@ -11,7 +11,7 @@ printUsage(void) {
     Log.info() << "Usage: webserv [conf.json] [-flags]" << Log.endl;
     Log.info() << "Config:" << Log.endl;
     Log.info() << HTAB << "path - absolute or relative path to json config" << Log.endl;
-    Log.info() << HTAB << "default config path: " << DEFAULT_CONF_PATH << Log.endl;
+    Log.info() << "\t" << "default config path: " << DEFAULT_CONF_PATH << Log.endl;
     Log.info() << "Config:" << Log.endl;
     Log.info() << "Flags:" << Log.endl;
     Log.info() << " -h : help :)" << Log.endl;

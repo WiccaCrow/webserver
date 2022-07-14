@@ -97,7 +97,7 @@ public:
 
     void        matchCGI(const std::string &filepath);
 
-    void        checkCGIFail(void);
+    void        checkCGIFailure(void);
     
     void  makeChunk(void);
 

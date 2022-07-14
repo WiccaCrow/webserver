@@ -12,7 +12,7 @@ IO::IO(void)
     , _dataPos(0) {}
 
 IO::~IO(void) {
-    
+
 }
 
 int
@@ -36,12 +36,6 @@ IO::wrFd(int fd) {
 }
 
 void
-IO::setFd(int fd) {
-    rdFd(fd);
-    wrFd(fd);
-}
-
-void
 IO::setAddr(const std::string &addr) {
     _addr = addr;
 }
@@ -61,9 +55,15 @@ IO::getAddr(void) const {
     return _addr;
 }
 
+const std::string &
+IO::getRem(void) const {
+    return _rem;
+}
+
 void
-IO::setData(const char *data) {
-    _data = data;
+IO::setData(const std::string &data) {
+    _data = data.c_str();
+    setDataSize(data.length());
 }
 
 void
@@ -93,40 +93,31 @@ IO::getDataPos(void) const {
 
 void
 IO::clear(void) {
-    setData(NULL);
+    _data = NULL;
     setDataPos(0);
     setDataSize(0);
 }
 
 void
-IO::closeRdFd(void) {
-    if (_fdr != -1) {
-        close(_fdr);
-        rdFd(-1);
-    }
+IO::reset(void) {
+    _af = AF_UNSPEC;
+    rdFd(-1);
+    wrFd(-1);
+    setAddr("");
+    setPort(0);
+    clear();
+    _rem = "";
 }
 
-void
-IO::closeWrFd(void) {
-    if (_fdw != -1) {
-        close(_fdw);
-        wrFd(-1);
-    }
-}
+// void
+// IO::closeRdFd(void) {
+//     close(_fdr);
+// }
 
-void
-IO::closeFd(void) {
-    if (_fdw != _fdr) {
-        Log.error() << "IO::closeFd mismatch: " << _fdr << " " << _fdw << Log.endl;
-        return ;
-    }
-
-    if (_fdr != -1) {
-        close(_fdr);
-        rdFd(-1);
-        wrFd(-1);
-    }
-}
+// void
+// IO::closeWrFd(void) {
+//     close(_fdw);
+// }
 
 int
 IO::pipe(void) {
@@ -136,19 +127,21 @@ IO::pipe(void) {
         Log.syserr() << "IO::pipe failed" << Log.endl;
         return -1;
     }
+
     rdFd(tmp[0]);
     wrFd(tmp[1]);
     return 0;
 }
 
 int
-IO::create(int af) {
-    int fd = socket(af, SOCK_STREAM, 0);
+IO::socket(int af) {
+    int fd = ::socket(af, SOCK_STREAM, 0);
     if (fd < 0) {
         Log.syserr() << "IO::socket failed" << Log.endl;
     } else {
         _af = af;
-        setFd(fd);
+        rdFd(fd);
+        wrFd(fd);
     }
     return fd;
 }
@@ -211,9 +204,18 @@ int IO::read(void) {
     int bytes = ::read(_fdr, buf, BUFFER_SIZE);
  
     if (bytes > 0) {
-        buf[bytes] = '\0';    
+        buf[bytes] = '\0';
+        // telnet: ctrl c, ctrl z
+        if (!strcmp(buf, "\xff\xf4\xff\xfd\x06") || !strcmp(buf, "\xff\xed\xff\xfd\x06")) {
+            return 0;
+        }
         _rem.append(buf, bytes);
+        return bytes;
     } 
+
+    // if (isBlock || !bytes) {
+    //     // close
+    // }
 
     // if (_rem.find("\x06") != std::string::npos) {
     //     return 0;
@@ -229,9 +231,9 @@ IO::write(void) {
     
     if (bytes > 0) {
         _dataPos += bytes;
-        Log.debug() << "IO::write [" << _fdw << "]: " << _dataPos << "/" << _dataSize << " bytes" << Log.endl;
     
         if (_dataPos >= _dataSize) {
+            Log.debug() << "IO::write [" << _fdw << "]: " << _dataPos << "/" << _dataSize << " bytes" << Log.endl;
             clear();
         }
     }
@@ -251,7 +253,6 @@ IO::getline(std::string &line, std::size_t size) {
 
     } else {
         if (_rem.length() < size) {
-            // Log.debug() << _rem.length() << " " << size << Log.endl;
             return 0;
         }
         pos = size;

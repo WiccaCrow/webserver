@@ -54,6 +54,7 @@ Worker::_cycle(void *ptr) {
 
     Log.debug() << "Worker " << w->id() << "::cycle started" << Log.endl;
     while (g_server->working()) {
+    
         HTTP::Response *res = g_server->rmFromRespQ();
 
         if (res == NULL) {

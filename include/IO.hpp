@@ -27,17 +27,15 @@ public:
     IO(void);
     ~IO(void);
 
-    void closeRdFd(void);
-    void closeWrFd(void);
-    void closeFd(void);
+    // void closeRdFd(void);
+    // void closeWrFd(void);
 
     void rdFd(int);
     void wrFd(int);
-    void setFd(int);
     void setPort(std::size_t);
     void setDataPos(std::size_t);
     void setDataSize(std::size_t);
-    void setData(const char *);
+    void setData(const std::string &);
     void setAddr(const std::string &);
 
     int rdFd(void) const;
@@ -48,6 +46,8 @@ public:
     const char *getData(void) const;
     const std::string &getAddr(void) const;
 
+    const std::string &getRem(void) const;
+
     int read(void);
     int write(void);
     int nonblock(void);
@@ -55,9 +55,11 @@ public:
 
     int pipe(void);
 
-    int create(int = AF_INET);
+    int socket(int = AF_INET);
     int connect(const sockaddr *, socklen_t);
     int listen(const std::string &addr, std::size_t port);
 
     void clear(void);
+
+    void reset(void);
 };

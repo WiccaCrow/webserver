@@ -10,7 +10,7 @@ Request::Request(void)
     , _servBlock(NULL)
     , _location(NULL)
     , _client(NULL)
-    , _storedHash(0)
+    // , _storedHash(0)
     , _authorized(false) {}
 
 Request::Request(Client *client)
@@ -18,7 +18,7 @@ Request::Request(Client *client)
     , _servBlock(NULL)
     , _location(NULL)
     , _client(client)
-    , _storedHash(0) 
+    // , _storedHash(0) 
     , _authorized(false) {}
 
 Request::~Request() {}
@@ -41,7 +41,7 @@ Request::operator=(const Request &other) {
         _cookie       = other._cookie;
         _client       = other._client;
         _host         = other._host;
-        _storedHash   = other._storedHash;  
+        // _storedHash   = other._storedHash;  
         headers      = other.headers;
     }
     return *this;
@@ -117,20 +117,20 @@ Request::getRawUri() const {
     return _rawURI;
 }
 
-uint32_t
-Request::getStoredHash() const {
-    return _storedHash;
-}
+// uint32_t
+// Request::getStoredHash() const {
+//     return _storedHash;
+// }
 
 RangeList &
 Request::getRangeList(void) {
     return _ranges;
 }
 
-void
-Request::setStoredHash(uint32_t hash) {
-    _storedHash = hash;
-}
+// void
+// Request::setStoredHash(uint32_t hash) {
+//     _storedHash = hash;
+// }
 
 const std::string &
 Request::getResolvedPath() const {
@@ -163,6 +163,10 @@ Request::parseLine(std::string &line) {
         setStatus(!line.empty() ? parseHeader(line) : checkHeaders());
     } else if (!flagSet(PARSED_BODY)) {
         setStatus(parseBody(line));
+
+        if (getBody().length() > static_cast<size_t>(getLocation()->getPostMaxBodyRef())) {
+            setStatus(PAYLOAD_TOO_LARGE);
+        }
     } else {
         setStatus(PROCESSING);
     }
@@ -320,6 +324,17 @@ Request::checkHeaders(void) {
         return METHOD_NOT_ALLOWED;
     }
 
+    if (headers.has(CONTENT_LENGTH)) {
+        int64_t len;
+        bool converted = stoi64(len, headers[CONTENT_LENGTH].value);
+        if (!converted) {
+            return BAD_REQUEST;
+        }
+        if (len > getLocation()->getPostMaxBodyRef()) {
+            return PAYLOAD_TOO_LARGE;
+        }
+    }
+
     if (!headers.has(TRANSFER_ENCODING) && !headers.has(CONTENT_LENGTH)) {
         // PUT or POST or PATCH
         if (tunnelGuard(_method[0] == 'P')) {
@@ -370,7 +385,7 @@ Request::writeBody(const std::string &body) {
 StatusCode
 Request::parseBody(const std::string &line) {
     Log.debug() << "Request::parseBody " << line << Log.endl;
-    if (headers.has(TRANSFER_ENCODING)) {
+    if (headers.has(TRANSFER_ENCODING) && headers.value(TRANSFER_ENCODING) == "chunked") {
         Log.debug() << "Request::parseChunk" << Log.endl;
         return parseChunk(line);
     } else if (headers.has(CONTENT_LENGTH)) {

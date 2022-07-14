@@ -11,18 +11,15 @@ Server::Server()
     pthread_mutex_init(&_m_new_clnt, NULL);
     pthread_mutex_init(&_m_del_pfds, NULL);
     pthread_mutex_init(&_m_del_clnt, NULL);
+    pthread_mutex_init(&_m_link, NULL);
 }
 
 Server::~Server(void) {
 
-    std::set<HTTP::Client *> uniqueClients;
-    for (iter_cm it = _clients.begin(); it != _clients.end(); ++it) {
-        uniqueClients.insert(it->second);
-    }
-
-    std::set<HTTP::Client *>::iterator it;
-    for (it = uniqueClients.begin(); it != uniqueClients.end(); ++it) {
-        delete *it;
+    for (iter_cv it = _clients.begin(); it != _clients.end(); ++it) {
+        if (*it != NULL) {
+            delete *it;
+        }
     }
 
     for (size_t i = 0; i < _sockets.size(); ++i) {
@@ -34,6 +31,7 @@ Server::~Server(void) {
     pthread_mutex_destroy(&_m_new_clnt);
     pthread_mutex_destroy(&_m_del_pfds);
     pthread_mutex_destroy(&_m_del_clnt);
+    pthread_mutex_destroy(&_m_link);
 }
 
 // Could be used for re-reading config:
@@ -80,6 +78,8 @@ sigint_handler(int) {
     g_server->finish();
 }
 
+#ifdef WS_DAEMON_MODE
+
 void Server::daemonMode(void) {
     pid_t pid, sid;
 
@@ -108,7 +108,18 @@ void Server::daemonMode(void) {
     close(STDERR_FILENO);
 }
 
+#else
+
+void
+Server::daemonMode(void) {
+    Log.error() << "This version compiled without daemon mode flag." << Log.endl;
+    Log.error() << "To run server as daemon, recompile it with WS_DAEMON_MODE." << Log.endl;
+}
+
+#endif
+
 void Server::start(void) {
+
     if (isDaemon) {
         daemonMode();
     }
@@ -143,7 +154,7 @@ int Server::addListenSocket(const std::string &addr, std::size_t port) {
         return -1;
     }
 
-    if (sock->create() < 0) {
+    if (sock->socket() < 0) {
         delete sock;
         return -1;
     }
@@ -202,8 +213,125 @@ void Server::stopWorkers(void) {
     }
 }
 
+void
+Server::pollin(int fd) {
+
+    // Log.debug() << "Server::pollin [" << fd << "]" << Log.endl;
+
+    size_t id = _connector[fd];
+
+    if (id < 0 || id >= _clients.size()) {
+        Log.debug() << "Server::pollin:: invalid id: " << fd << " " << id << Log.endl;
+        return ;
+    }
+
+    HTTP::Client *client = _clients[id];
+    if (client == NULL) {
+        return ;
+    }
+
+    if (fd == client->getClientIO()->rdFd()) {
+        client->tryReceiveRequest(fd);
+
+    } else if (fd == client->getGatewayIO()->rdFd()) {
+        client->tryReceiveResponse(fd);
+    }
+}
+
+void
+Server::pollout(int fd) {
+
+    // Log.debug() << "Server::pollout [" << fd << "]" << Log.endl;
+
+    size_t id = _connector[fd];
+
+    if (id < 0 || id >= _clients.size()) {
+        Log.debug() << "Server::pollout:: invalid id: " << fd << " " << id << Log.endl;
+        return ;
+    }
+
+    HTTP::Client *client = _clients[id];
+    if (client == NULL) {
+        return ;
+    }
+
+    if (fd == client->getClientIO()->wrFd()) {
+        client->tryReplyResponse(fd);
+
+    } else if (fd == client->getGatewayIO()->wrFd()) {
+        client->tryReplyRequest(fd); 
+    }
+}
+
+void
+Server::pollhup(int fd) {
+
+    Log.syserr() << "Server::pollhup [" << fd << "]" << Log.endl;
+
+    size_t id = _connector[fd];
+
+    if (id < 0 || id >= _clients.size()) {
+        Log.debug() << "Server::pollhup:: invalid id: " << id << Log.endl;
+    }
+
+    HTTP::Client *client = _clients[id];
+    if (client == NULL) {
+        return ;
+    }
+
+    if (fd == client->getClientIO()->rdFd()) {
+        // client->shouldBeRemoved(true);
+        unlink(fd);
+
+    } else if (fd == client->getGatewayIO()->wrFd()) {
+        unlink(fd);
+        // addToDelFdsQ(client->getGatewayIO()->wrFd());
+        // client->getGatewayIO()->closeWrFd();
+
+    } else if (fd == client->getGatewayIO()->rdFd()) {
+        unlink(fd);
+        // addToDelFdsQ(client->getGatewayIO()->rdFd());
+        // client->getGatewayIO()->closeRdFd();
+    }    
+}
+
+void
+Server::pollerr(int fd) {
+    Log.syserr() << "Server::pollerr [" << fd << "]" << Log.endl;
+
+    size_t id = _connector[fd];
+
+    if (id < 0 || id >= _clients.size()) {
+        Log.debug() << "Server::pollerr:: invalid id: " << id << Log.endl;
+    }
+
+    HTTP::Client *client = _clients[id];
+    if (client == NULL) {
+        return ;
+    }
+
+    if (fd == client->getClientIO()->rdFd()) {
+        // client->shouldBeRemoved(true);
+        unlink(fd);
+
+    } else if (fd == client->getGatewayIO()->wrFd()) {
+        unlink(fd);
+        // addToDelFdsQ(client->getGatewayIO()->wrFd());
+        // client->getGatewayIO()->closeWrFd();
+
+    } else if (fd == client->getGatewayIO()->rdFd()) {
+        unlink(fd);
+        // addToDelFdsQ(client->getGatewayIO()->rdFd());
+        // client->getGatewayIO()->closeRdFd();
+    } 
+}
+
+
+
 void Server::process(void) {
+
     for (std::size_t id = 0; id < _pollfds.size(); id++) {
+
         const int fd = _pollfds[id].fd;
 
         if (fd < 0 || _pollfds[id].revents & POLLNVAL) {
@@ -214,15 +342,15 @@ void Server::process(void) {
             if (_pollfds[id].revents & POLLIN) {
                 connect(id, fd);
             }
-        } else if (_clients[fd] != NULL) {
+        } else {
             if (_pollfds[id].revents & POLLIN) {
-                _clients[fd]->pollin(fd);
+                pollin(fd);
             } else if (_pollfds[id].revents & POLLHUP) {
-                _clients[fd]->pollhup(fd);
+                pollhup(fd);
             } else if (_pollfds[id].revents & POLLOUT) {
-                _clients[fd]->pollout(fd);
+                pollout(fd);
             } else if (_pollfds[id].revents & POLLERR) {
-                _clients[fd]->pollerr(fd);
+                pollerr(fd);
             }
         }
         _pollfds[id].revents = 0;
@@ -241,48 +369,91 @@ int Server::poll(void) {
 }
 
 static int
-isFree(struct pollfd pfd) {
+isFdFree(struct pollfd pfd) {
     return (pfd.fd == -1);
 }
 
+static int
+isClientFree(HTTP::Client *client) {
+    return (client == NULL);
+}
+
 void Server::checkTimeout(void) {
-    std::time_t cur = Time::now();
 
-    for (ClientsMap::iterator it = _clients.begin(); it != _clients.end(); ++it) {
-        HTTP::Client *client = it->second;
-
+    for (ClientsVec::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+        
+        HTTP::Client *client = *it;
         if (client == NULL) {
-            continue;
-        }
-
-        if (client->shouldBeRemoved()) {
-            // If client should be closed we MUST wait until reply is done
-            addToDelFdsQ(client->getClientIO()->rdFd());
-            addToDelFdsQ(client->getGatewayIO()->rdFd());
-            addToDelFdsQ(client->getGatewayIO()->wrFd());
             continue ;
         }
 
-        std::time_t t_client = client->getClientTimeout();
-        if (t_client != 0 && cur - t_client > MAX_CLIENT_TIMEOUT) {
-            addToDelFdsQ(client->getClientIO()->rdFd());
-            addToDelFdsQ(client->getGatewayIO()->rdFd());
-            addToDelFdsQ(client->getGatewayIO()->wrFd());
-            Log.debug() << "Server:: [" << client->getClientIO()->rdFd() << "] client timeout exceeded" << Log.endl;
-        }
+        client->checkTimeout();
 
-        std::time_t t_gateway = client->getGatewayTimeout();
-        if (t_gateway != 0 && cur - t_gateway > MAX_GATEWAY_TIMEOUT) {
-            addToDelFdsQ(client->getGatewayIO()->rdFd());
-            addToDelFdsQ(client->getGatewayIO()->wrFd());
-            Log.debug() << "Server:: [" << client->getGatewayIO()->rdFd() << "] gateway timeout exceeded" << Log.endl;
-            // need to kill child process if CGI
-            // close only GATEWAY socket
-            // set response status to gateway timeout and reply to client
+        if (client->links == 0) {
+            *it = NULL;
+            addToDelClientQ(client);
         }
-
-        // Add comparison with MAX_SESSION_TIMEOUT
     }
+}
+
+void
+Server::addClient(HTTP::Client *client) {
+
+    iter_cv it = std::find_if(_clients.begin(), _clients.end(), isClientFree);
+    if (it == _clients.end()) {
+        it = _clients.insert(_clients.end(), client);
+    }
+     
+    *it = client;
+
+    size_t id = std::distance(_clients.begin(), it);
+
+    client->setId(id);
+}
+
+void
+Server::link(int fd, HTTP::Client *client) {
+
+    pthread_mutex_lock(&_m_link);
+
+    _connector[fd] = client->getId();
+    client->links++;
+    
+    addToNewFdsQ(fd);
+
+    pthread_mutex_unlock(&_m_link);
+}
+
+void
+Server::unlink(int fd) {
+
+    // Log.debug() << "Server::unlink: fd = " << fd << Log.endl;
+
+    pthread_mutex_lock(&_m_link);
+
+    int id = _connector[fd];
+    // Log.debug() << "Server::unlink: id = " << id << Log.endl;
+
+    if (id < 0) {
+        return ;
+    }
+
+    HTTP::Client *client = _clients[id];
+    if (client == NULL) {
+        return ;
+    }
+    // Log.debug() << "Server::unlink: client addr = " << client << Log.endl;
+
+    if (fd >= 0) {
+        close(fd);
+    }
+
+    _connector[fd] = -1;
+    client->links--;
+
+    addToDelFdsQ(fd);
+
+    pthread_mutex_unlock(&_m_link);
 }
 
 void Server::connect(std::size_t servid, int servfd) {
@@ -317,13 +488,14 @@ void Server::connect(std::size_t servid, int servfd) {
 
     client->setServerIO(_sockets[servid]);
     client->setClientTimeout(Time::now());
-    client->getClientIO()->setFd(fd);
+    client->getClientIO()->rdFd(fd);
+    client->getClientIO()->wrFd(fd);
     client->getClientIO()->nonblock();
     client->getClientIO()->setAddr(inet_ntoa(clientData.sin_addr));
     client->getClientIO()->setPort(ntohs(clientData.sin_port));
 
-    addToNewClientQ(fd, client);
-    addToNewFdsQ(fd);
+    addClient(client);
+    link(fd, client);
 
     Log.debug() << "Server::connect [" << fd << "] -> " << client->getHostname() << Log.endl;
 }
@@ -331,53 +503,71 @@ void Server::connect(std::size_t servid, int servfd) {
 // The functions below used to work with different queues
 
 void Server::addToNewFdsQ(int fd) {
-    pthread_mutex_lock(&_m_new_pfds);
-    if (fd >= 0) {
-        Log.debug() << "Server::addToNewFdsQ [" << fd << "]" << Log.endl;
-        _q_newPfds.push(fd);
+
+    if (fd < 0) {
+        return ;
     }
+
+    pthread_mutex_lock(&_m_new_pfds);
+
+    Log.debug() << "Server::addToNewFdsQ [" << fd << "]" << Log.endl;
+    _q_newPfds.push(fd);
+
     pthread_mutex_unlock(&_m_new_pfds);
 }
 
-void Server::addToDelFdsQ(int fd) {
-    pthread_mutex_lock(&_m_del_pfds);
-    if (fd >= 0) {
-        std::pair<std::set<int>::iterator, bool> p = _q_delPfds.insert(fd);
-        if (p.second) {
-            Log.debug() << "Server::addToDelFdsQ [" << fd << "]" << Log.endl;
-        }
-    }
-    pthread_mutex_unlock(&_m_del_pfds);
-}
-
 void Server::addToNewClientQ(int fd, HTTP::Client *client) {
+
     pthread_mutex_lock(&_m_new_clnt);
+
     Log.debug() << "Server::addToNewClientQ [" << fd << "]" << Log.endl;
     _q_newClients.push(std::make_pair(fd, client));
+
     pthread_mutex_unlock(&_m_new_clnt);
 }
 
+void Server::addToDelFdsQ(int fd) {
+
+    if (fd < 0) {
+        return ;
+    }
+
+    pthread_mutex_lock(&_m_del_pfds);
+
+    bool inserted = _q_delPfds.insert(fd).second;
+    if (inserted) {
+        Log.debug() << "Server::addToDelFdsQ [" << fd << "]" << Log.endl;
+    }
+
+    pthread_mutex_unlock(&_m_del_pfds);
+}
+
 void Server::addToDelClientQ(HTTP::Client *client) {
+
     pthread_mutex_lock(&_m_del_clnt);
+
     if (client != NULL) {
-        std::pair<std::set<HTTP::Client *>::iterator, bool> p = _q_delClients.insert(client);
-        if (p.second) {
-            Log.debug() << "Server::addToDelClientQ [" << client->getClientIO()->rdFd() << "]" << Log.endl;
+        bool inserted = _q_delClients.insert(client).second;
+        if (inserted) {
+            Log.debug() << "Server::addToDelClientQ -> " << client << Log.endl;
         }
     }
+
     pthread_mutex_unlock(&_m_del_clnt);
 }
 
 void Server::emptyNewFdsQ(void) {
+
     pthread_mutex_lock(&_m_new_pfds);
 
-    while (_q_newPfds.size() > 0) {
+    while (!_q_newPfds.empty()) {
+
         int tmpfd = _q_newPfds.front();
         _q_newPfds.pop();
 
         struct pollfd tmp = { tmpfd, POLLIN | POLLOUT, 0 };
 
-        iter_pfd it = std::find_if(_pollfds.begin(), _pollfds.end(), isFree);
+        iter_pfd it = std::find_if(_pollfds.begin(), _pollfds.end(), isFdFree);
         if (it == _pollfds.end()) {
             _pollfds.push_back(tmp);
         } else {
@@ -393,7 +583,7 @@ void Server::emptyNewFdsQ(void) {
 void Server::emptyDelFdsQ(void) {
     pthread_mutex_lock(&_m_del_pfds);
 
-    while (_q_delPfds.size() > 0) {
+    while (_q_delPfds.begin() != _q_delPfds.end()) {
 
         std::set<int>::iterator beg = _q_delPfds.begin();
         int tmpfd = *beg;
@@ -412,14 +602,7 @@ void Server::emptyDelFdsQ(void) {
             }
         }
 
-        // pthread_mutex_lock(&_m_new_clnt);
-        // iter_cm it = _clients.find(tmpfd);
-        // if (it != _clients.end()) {
-        //     addToDelClientQ(it->second);
-        // }
-        // pthread_mutex_unlock(&_m_new_clnt);
-
-        Log.debug() << "Server::emptyDelFdsQ [" << tmp.fd << "]" << Log.endl;
+        Log.debug() << "Server::emptyDelFdsQ [" << tmpfd << "]" << Log.endl;
     }
 
     pthread_mutex_unlock(&_m_del_pfds);
@@ -428,7 +611,7 @@ void Server::emptyDelFdsQ(void) {
 void Server::emptyNewClientQ(void) {
     pthread_mutex_lock(&_m_new_clnt);
 
-    while (_q_newClients.size() > 0) {
+    while (!_q_newClients.empty()) {
         std::pair<int, HTTP::Client *> tmp = _q_newClients.front();
         _q_newClients.pop();
 
@@ -444,69 +627,66 @@ void Server::emptyDelClientQ(void) {
 
     pthread_mutex_lock(&_m_del_clnt);
 
-    while (_q_delClients.size() > 0) {
+    while (_q_delClients.begin() != _q_delClients.end()) {
 
         std::set<HTTP::Client *>::iterator beg = _q_delClients.begin();
-        HTTP::Client *tmp = *beg;
+        HTTP::Client *client = *beg;
         _q_delClients.erase(beg);
 
-        pthread_mutex_lock(&_m_new_resp);
-        
-        std::list<HTTP::Response *>::iterator it;
-        for (it = _q_newResponses.begin(); it != _q_newResponses.end(); ++it) {
-            if ((*it) != NULL && (*it)->getClient() == tmp) {
-                *it = NULL;
-            }
-        }
+        rmClientFromRespQ(client);
 
-        pthread_mutex_unlock(&_m_new_resp);
+        // int cio_r = client->getClientIO()->rdFd();
+        // int gio_r = client->getGatewayIO()->rdFd();
+        // int gio_w = client->getGatewayIO()->wrFd();
 
-        int cio_fd = -1;
-        int tio_fdr = -1;
-        int tio_fdw = -1;
+        _clients[client->getId()] = NULL;
 
-        if (tmp->getClientIO()) {
-            cio_fd = tmp->getClientIO()->rdFd();
-        }
+        // close(cio_r);
+        // close(gio_r);
+        // if (gio_r != gio_w) {
+        //     close(gio_w);
+        // }
 
-        if (tmp->getGatewayIO()) {
-            tio_fdr = tmp->getGatewayIO()->rdFd();
-            tio_fdw = tmp->getGatewayIO()->wrFd();
-        }
+        Log.debug() << "Server::emptyDelClientQ -> " << client << Log.endl;
 
-        if (cio_fd != -1) {
-            _clients[cio_fd] = NULL;
-        }
-
-        if (tio_fdr != -1) {
-            _clients[tio_fdr] = NULL;
-        }
-
-        if (tio_fdw != -1 && tio_fdw != tio_fdr) {
-            _clients[tio_fdw] = NULL;
-        }
-
-        delete tmp;
-
-        Log.debug() << "Server::emptyNewClientQ [" << cio_fd << "]" << Log.endl;
+        delete client;
     }
 
     pthread_mutex_unlock(&_m_del_clnt);
 }
 
+void Server::rmClientFromRespQ(HTTP::Client *client) {
+
+    pthread_mutex_lock(&_m_new_resp);
+        
+    std::list<HTTP::Response *>::iterator it;
+    for (it = _q_newResponses.begin(); it != _q_newResponses.end(); ) {
+        if (*it != NULL && (*it)->getClient() == client) {
+            it = _q_newResponses.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    pthread_mutex_unlock(&_m_new_resp);
+}
 
 void Server::addToRespQ(HTTP::Response *res) {
+
     pthread_mutex_lock(&_m_new_resp);
+
     _q_newResponses.push_back(res);
+    
     pthread_mutex_unlock(&_m_new_resp);
 }
 
 HTTP::Response *Server::rmFromRespQ(void) {
+
     HTTP::Response *res = NULL;
 
     pthread_mutex_lock(&_m_new_resp);
 
-    if (_q_newResponses.size() > 0) {
+    if (_q_newResponses.begin() != _q_newResponses.end()) {
         res = _q_newResponses.front();
         _q_newResponses.pop_front();
     }
@@ -515,5 +695,3 @@ HTTP::Response *Server::rmFromRespQ(void) {
 
     return res;
 }
-
-

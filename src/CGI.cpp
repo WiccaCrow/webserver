@@ -129,6 +129,7 @@ bool CGI::setEnv(Request *req) {
     setValue(_env[9], req->getUriRef()._path);
 
     // CONTENT_LENGTH
+    Log.debug() << "CGI: body length: " << req->getBody().length() << Log.endl; 
     setValue(_env[10], sztos(req->getBody().length()));
 
     // CONTENT_TYPE
@@ -179,8 +180,12 @@ CGI::setScriptPath(const std::string &path) {
 
 int
 CGI::exec(Request *req) {
-    if ((compiled() && !isExecutableFile(_filepath)) || !isExecutableFile(_execpath)) {
+    if (compiled() && !isExecutableFile(_filepath)) {
         Log.error() << _filepath << " is not executable" << Log.endl;
+        return 0;
+    
+    } else if (!compiled() && !isExecutableFile(_execpath)) {
+        Log.error() << _execpath << " is not executable" << Log.endl;
         return 0;
     }
 
@@ -234,14 +239,11 @@ CGI::exec(Request *req) {
     req->isCGI(true);
     
     if (!req->getBody().empty()) {
-        g_server->addToNewClientQ(io->wrFd(), client);
-        g_server->addToNewFdsQ(io->wrFd());
+        g_server->link(io->wrFd(), client);
     } else {
-        io->closeWrFd();
+        close(io->wrFd());
     }
-    g_server->addToNewClientQ(io->rdFd(), client);
-    g_server->addToNewFdsQ(io->rdFd());
-
+    g_server->link(io->rdFd(), client);
     return 1;
 }
 

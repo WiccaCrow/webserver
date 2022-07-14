@@ -20,24 +20,16 @@
                 "505": "./pages/error_pages/505.html"
             },
             "cgi": {
-                ".pl": "/usr/bin/perl",
-                ".py": "/usr/bin/python3",
-                ".php": "/opt/homebrew/bin/php-cgi",
-                ".js": "/usr/local/bin/node",
-                ".cgi": ""
+                ".py": "/usr/bin/python3.9"
             },
             "proxy": { 
                 "pass": "192.168.0.2:9000",
-                "domains": [    
+                "domains": [   
                     "webserv.com",
                     "www.youtube.com", 
                     "www.google.com", 
-                    "www.vk.com" 
+                    "www.vk.com"
                 ]
-            },
-            "auth_basic": {
-                "realm": "eternity",
-                "user_file": ".htpasswd"
             },
             "add_headers": [
                 "Set-cookie: key1=val1; ",
@@ -49,41 +41,15 @@
             "autoindex": true,
             "index": [ "index.html" ],
             "locations": {
-                "/try.about": {
-                    "error_pages": {
-                        "404": "/Users/mhufflep/Downloads/dog.jpg"
-                    },
-                    "alias": "/Users/mhufflep/Downloads",
-                    "autoindex": true,
+                "/about": {
+                    "alias": "./pages/site",
                     "cgi": {
-                        ".js": "/usr/local/bin/node",
-                        ".py": "/usr/bin/python"
-                    },
-                    "index": [ "index.html" ],
-                    "post_max_body": 200,
-                    "methods_allowed": [ "GET", "POST" ],
-                    "proxy": { 
-                        "pass": "192.168.0.2:9000",
-                        "domains": [ 
-                            "www.google.com", 
-                            "www.vk.com" 
-                        ]
-                    }       
-                },
-                "/feedback": {
-                    "alias": "/Users/mhufflep/Desktop/serv/pages/site",
-                    "cgi": {
-                        ".py": "/usr/bin/python",
-                        ".js": "/usr/local/bin/node"
+                        ".py": "/usr/bin/python3.9"
                     },
                     "auth_basic": {
                         "realm": "eternity",
                         "user_file": ".htpasswd"
-                    },
-                    "autoindex": false,
-                    "index": [ "index.html", "index.php" ],
-                    "methods_allowed": [ "DELETE", "GET" ],
-                    "post_max_body": 300
+                    }
                 }
             }
         }

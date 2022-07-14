@@ -96,38 +96,46 @@ RequestHeader::AccessControlRequestHeaders(Request &req) {
 
 StatusCode
 RequestHeader::Authorization(Request &req) {
-    (void)req;
-    const Auth &auth = req.getLocation()->getAuthRef();
-    if (auth.isSet()) {
-        Log.debug() << "Authorization::" << value << Log.endl;
-        std::vector<std::string> splitted = split(value, " ");
 
-        if (splitted[0] != "Basic") {
-            Log.debug() << "Authorization::Only Basic supported for now " <<  splitted[0] << Log.endl;
-            return NOT_IMPLEMENTED;
-        }
-
-        uint32_t receivedHash = crc(splitted[1].c_str(), splitted[1].length());
-        if (!splitted[1].empty() && receivedHash == req.getStoredHash()) {
-            Log.debug() << "Authorization::Identical hash detected" << Log.endl;
-            return CONTINUE;
-        }
-
-        std::string decoded = Base64::decode(splitted[1]);
-        Log.debug() << "Authorization::Decoded Base64:" << decoded << Log.endl;
-        if (decoded.empty()) {
-            Log.debug() << "Authorization::Invalid Base64 string" << Log.endl;
-            return UNAUTHORIZED;
-        }
-
-        req.authorized(auth.isAuthorized(decoded, &req));
-        if (req.authorized()) {
-            req.setStoredHash(receivedHash);
-            Log.debug() << "Authorization::Succeed" << Log.endl;
-        } else {
-            Log.debug() << "Authorization::Failed" << Log.endl;
-        }
+    if (req.isProxy()) {
+        return CONTINUE;
     }
+
+    const Auth &auth = req.getLocation()->getAuthRef();
+    if (!auth.isSet()) {
+        return CONTINUE;
+    }
+
+    Log.debug() << "Authorization::" << value << Log.endl;
+    std::vector<std::string> splitted = split(value, " ");
+
+    if (splitted[0] != "Basic") {
+        Log.debug() << "Authorization::Only Basic supported for now " <<  splitted[0] << Log.endl;
+        return NOT_IMPLEMENTED;
+    }
+
+    // Remove (become rudimental part as soon as sessions will be implemeted)
+    // uint32_t receivedHash = crc(splitted[1].c_str(), splitted[1].length());
+    // if (!splitted[1].empty() && receivedHash == req.getStoredHash()) {
+    //     Log.debug() << "Authorization::Identical hash detected" << Log.endl;
+    //     return CONTINUE;
+    // }
+
+    std::string decoded = Base64::decode(splitted[1]);
+    Log.debug() << "Authorization::Decoded Base64:" << decoded << Log.endl;
+    if (decoded.empty()) {
+        Log.debug() << "Authorization::Invalid Base64 string" << Log.endl;
+        return UNAUTHORIZED;
+    }
+
+    req.authorized(auth.isAuthorized(decoded, &req));
+    if (req.authorized()) {
+        // req.setStoredHash(receivedHash);
+        Log.debug() << "Authorization::Succeed" << Log.endl;
+    } else {
+        Log.debug() << "Authorization::Failed" << Log.endl;
+    }
+    
     return CONTINUE;
 }
 
@@ -408,7 +416,48 @@ RequestHeader::Pragma(Request &req) {
 StatusCode
 RequestHeader::ProxyAuthorization(Request &req) {
     (void)req;
-    return CONTINUE;
+
+    if (!req.isProxy()) {
+        Log.debug() << "ProxyAuthorization:: non-proxy server" << Log.endl; 
+        return CONTINUE;
+    }
+
+    const Auth &auth = req.getLocation()->getAuthRef();
+    if (!auth.isSet()) {
+        return CONTINUE;
+    }
+
+    Log.debug() << "ProxyAuthorization::" << value << Log.endl;
+    std::vector<std::string> splitted = split(value, " ");
+
+    if (splitted[0] != "Basic") {
+        Log.debug() << "ProxyAuthorization::Only Basic supported for now " << splitted[0] << Log.endl;
+        return NOT_IMPLEMENTED;
+    }
+
+    // Remove (become rudimental part as soon as sessions will be implemeted)
+    // uint32_t receivedHash = crc(splitted[1].c_str(), splitted[1].length());
+    // if (!splitted[1].empty() && receivedHash == req.getStoredHash()) {
+    //     Log.debug() << "ProxyAuthorization::Identical hash detected" << Log.endl;
+    //     return CONTINUE;
+    // }
+
+    std::string decoded = Base64::decode(splitted[1]);
+    Log.debug() << "ProxyAuthorization::Decoded Base64:" << decoded << Log.endl;
+    if (decoded.empty()) {
+        Log.debug() << "ProxyAuthorization::Invalid Base64 string" << Log.endl;
+        return PROXY_AUTHENTICATION_REQUIRED;
+    }
+
+    req.authorized(auth.isAuthorized(decoded, &req));
+    if (req.authorized()) {
+        // req.setStoredHash(receivedHash);
+        Log.debug() << "ProxyAuthorization::Succeed" << Log.endl;
+    } else {
+        Log.debug() << "ProxyAuthorization::Failed" << Log.endl;
+    }
+    
+    return CONTINUE;    
 }
 
 StatusCode

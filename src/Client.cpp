@@ -5,7 +5,19 @@
 namespace HTTP {
 
 Client::Client(void)
-    : _clientIO(NULL), _serverIO(NULL), _gatewayIO(NULL), _shouldBeClosed(false), _shouldBeRemoved(false), _isTunnel(false), _nbRequests(0), _maxRequests(MAX_REQUESTS), _clientTimeout(0), _gatewayTimeout(0) {
+    : _clientIO(NULL), 
+    _serverIO(NULL),
+    _gatewayIO(NULL),
+    _shouldBeClosed(false),
+    _shouldBeRemoved(false),
+    _isTunnel(false),
+    _nbRequests(0),
+    _maxRequests(MAX_REQUESTS),
+    _clientTimeout(0),
+    _gatewayTimeout(0),
+    _id(-1),
+    links(0) 
+{
     _clientIO = new IO();
     if (_clientIO == NULL) {
         shouldBeRemoved(true);
@@ -52,6 +64,7 @@ bool Client::shouldBeClosed(void) const {
     return _shouldBeClosed;
 }
 
+// Remove
 void Client::shouldBeRemoved(bool flag) {
     _shouldBeRemoved = flag;
 }
@@ -110,14 +123,6 @@ void Client::setGatewayIO(IO *sock) {
     _gatewayIO = sock;
 }
 
-const std::string
-Client::getHostname(void) {
-    const std::size_t  port = getClientIO()->getPort();
-    const std::string &addr = getClientIO()->getAddr();
-
-    return (port != 0 ? addr + ":" + sztos(port) : addr);
-}
-
 const std::string &
 Client::getDomainName(void) const {
     return _domain;
@@ -128,28 +133,54 @@ Client::setDomainName(const std::string &name) {
     _domain = name;
 }
 
+const std::string
+Client::getHostname(void) {
+    const std::size_t  port = getClientIO()->getPort();
+    const std::string &addr = getClientIO()->getAddr();
+
+    return (port != 0 ? addr + ":" + sztos(port) : addr);
+}
+
+int
+Client::getId(void) const {
+    return _id;
+}
+
+void
+Client::setId(int id) {
+    _id = id;
+}
+
 void Client::addRequest(void) {
+
     Request *req = new Request(this);
     if (req == NULL) {
         Log.syserr() << "Cannot allocate memory for Request" << Log.endl;
         shouldBeRemoved(true);
-        return;
+        return ;
     }
     _requests.push_back(req);
+
+    if (++_nbRequests >= _maxRequests) {
+        shouldBeClosed(true);
+    }
 
     Log.debug() << "------------------------------------------" << Log.endl;
 }
 
 void Client::addResponse(void) {
+
     Request  *req = _requests.back();
     Response *res = new Response(req);
 
-    if (req == NULL) {
+    if (res == NULL) {
         Log.syserr() << "Cannot allocate memory for Response" << Log.endl;
         shouldBeRemoved(true);
-        return;
+        return ;
     }
     _responses.push_back(res);
+
+    g_server->addToRespQ(_responses.back());
 
     Log.debug() << "Client::addResponse " << res->getRequest()->getUriRef()._path << Log.endl;
 }
@@ -170,128 +201,166 @@ void Client::removeResponse(void) {
     }
 }
 
-void Client::pollin(int fd) {
-    if (fd == getClientIO()->rdFd()) {
-        if (_requests.size() == _responses.size()) {
-            addRequest();
-        }
+void Client::tryReplyResponse(int fd) {
 
-        if (_requests.size() > _responses.size()) {
-            setClientTimeout(Time::now());
-            receive(_requests.back());
+    if (_responses.empty()) {
+        return ;
+    }
 
-            if (_requests.back()->formed()) {
-                if (_nbRequests++ >= _maxRequests) {
-                    shouldBeClosed(true);
-                }
-                addResponse();
-                g_server->addToRespQ(_responses.back());
-            }
-        }
-    } else if (fd == getGatewayIO()->rdFd()) {
-        if (_responses.size() > 0) {
-            receive(_responses.front());
+    HTTP::Response *res = _responses.front();
+    if (res->formed() && !res->sent()) {
+        reply(res);
+    }
+
+    if (res->formed() && res->sent()) {
+        removeRequest();
+        removeResponse();
+
+        if (shouldBeClosed()) {
+            g_server->unlink(fd);
+            getClientIO()->reset();
         }
     }
 }
 
-void Client::pollout(int fd) {
+void Client::tryReplyRequest(int fd) {
 
-    if (fd == getClientIO()->wrFd()) {
+    if (_requests.empty()) {
+        return ;
+    }
 
-        if (_responses.empty()) {
-            return ;
-        }
+    HTTP::Request *req = _requests.front();
+    if (req->formed() && !req->sent()) {
+        reply(req);
+    }
 
-        HTTP::Response *res = _responses.front();
-        if (res->formed() && !res->sent()) {
-            reply(res);
-        }
+    if (req->formed() && req->sent()) {
+        setGatewayTimeout(Time::now());
 
-        if (res->sent()) {
-            removeRequest();
-            removeResponse();
-
-            getClientIO()->clear();
-
-            if (!isTunnel() && getGatewayIO()) {
-                g_server->addToDelFdsQ(getGatewayIO()->rdFd());
-            }
-
-            if (shouldBeClosed()) {
-                shouldBeRemoved(true);
-            }
-        }
-
-    } else if (fd == getGatewayIO()->wrFd()) {
-
-        if (_requests.empty()) {
-            return ;
-        }
-
-        HTTP::Request *req = _requests.front();
-        if (req->formed() && !req->sent()) {
-            reply(req);
+        if (req->isCGI()) {
+            Log.debug() << "Client:: request sent" << Log.endl; 
+            g_server->unlink(fd);
+            getGatewayIO()->wrFd(-1);
         }
     }
 }
 
-void Client::pollhup(int fd) {
-    Log.syserr() << "Client::pollhup [" << fd << "]" << Log.endl;
-    if (fd == getClientIO()->rdFd()) {
-        g_server->addToDelFdsQ(getClientIO()->rdFd());
-        g_server->addToDelFdsQ(getGatewayIO()->rdFd());
-        g_server->addToDelFdsQ(getGatewayIO()->wrFd());
+void Client::tryReceiveResponse(int fd) {
 
-    } else {
-        g_server->addToDelFdsQ(getGatewayIO()->rdFd());
-        g_server->addToDelFdsQ(getGatewayIO()->wrFd());
+    if (_responses.empty()) {
+        return ;
+    }
+
+    HTTP::Response *res = _responses.front();
+    if (!res->formed()) {
+        receive(res);
+    }
+
+    if (res->formed()) {
+        if (!isTunnel()) {
+            g_server->unlink(fd);
+            getGatewayIO()->reset();
+        }
     }
 }
 
-void Client::pollerr(int fd) {
-    Log.syserr() << "Client::pollerr [" << fd << "]" << Log.endl;
+void Client::tryReceiveRequest(int fd) {
+    (void)fd;
+    if (_requests.size() == _responses.size()) {
+        addRequest();
+    }
 
-    if (fd == getClientIO()->rdFd()) {
-        g_server->addToDelFdsQ(getClientIO()->rdFd());
-        g_server->addToDelFdsQ(getGatewayIO()->rdFd());
-        g_server->addToDelFdsQ(getGatewayIO()->wrFd());
-    } else {
-        g_server->addToDelFdsQ(getGatewayIO()->rdFd());
-        g_server->addToDelFdsQ(getGatewayIO()->wrFd());
+    if (_requests.size() > _responses.size()) {
+        receive(_requests.back());
+    }
+
+    if (_requests.back()->formed()) {
+        addResponse();
+    }
+}
+
+void
+Client::checkTimeout(void) {
+
+    std::time_t current = Time::now();
+
+    if (getClientTimeout() != 0 && current - getClientTimeout() > MAX_CLIENT_TIMEOUT) {
+        
+        IO *io = getClientIO();
+
+        if (io->rdFd() >= 0) {
+            Log.debug() << "Client:: [" << io->rdFd() << "] client timeout exceeded" << Log.endl;
+            
+            g_server->unlink(io->rdFd());
+            io->reset();
+            setClientTimeout(0);
+        }
+        // 408 Request Timeout
+    }
+
+    if (getGatewayTimeout() != 0 && current - getGatewayTimeout() > MAX_GATEWAY_TIMEOUT) {
+
+        IO *io = getGatewayIO();
+    
+        if (io->rdFd() >= 0) {
+            Log.debug() << "Client:: [" << io->rdFd() << "] gateway timeout exceeded" << Log.endl;
+            
+            g_server->unlink(io->rdFd());
+            g_server->unlink(io->wrFd());
+            setGatewayTimeout(0);
+            io->reset();
+        }
+
+        // need to kill child process if CGI
+        // res->terminateCGI();
+        // set response status to GATEWAY_TIMEOUT and reply to client
     }
 }
 
 void Client::reply(Response *res) {
     signal(SIGPIPE, SIG_IGN);
 
+    IO *io = getClientIO();
+
     if (!res->headSent()) {
-        if (!getClientIO()->getDataPos()) {
-            Log.debug() << std::endl << res->getHead() << Log.endl;
-            getClientIO()->setData(res->getHead().c_str());
-            getClientIO()->setDataSize(res->getHead().length());
+        if (res->getHead().empty()) {
+            res->headSent(true);
+            return ;
+        }
+
+        if (!io->getDataPos()) {
+            io->setData(res->getHead());
         }
 
     } else if (!res->bodySent()) {
-        if (!getClientIO()->getDataPos()) {
-            // Log.debug() << res->getBody() << Log.endl;
-            getClientIO()->setData(res->getBody().c_str());
-            getClientIO()->setDataSize(res->getBody().length());
+        if (res->getBody().empty()) {
+            res->bodySent(true);
+            return ;
+        }
+
+        if (!io->getDataPos()) {
+            io->setData(res->getBody());
         }
     }
 
-    int bytes = getClientIO()->write();
+    int bytes = io->write();
     
     if (bytes < 0) {
+        // check for blocking io
         return ;
     }
     
     if (bytes == 0) {
-        // if Proxy-tunnel close Client and Gateway sockets
+        g_server->unlink(io->wrFd());
+        io->reset();
+
+        g_server->unlink(getGatewayIO()->rdFd());
+        g_server->unlink(getGatewayIO()->wrFd());
+        getGatewayIO()->reset();
         return ;
     }
 
-    if (static_cast<std::size_t>(bytes) >= getClientIO()->getDataSize()) {
+    if (static_cast<std::size_t>(bytes) >= io->getDataSize()) {
         if (!res->headSent()) {
             res->headSent(true);
 
@@ -305,51 +374,50 @@ void Client::reply(Request *req) {
 
     signal(SIGPIPE, SIG_IGN);
 
+    IO *io = getGatewayIO();
+
     if (!req->headSent()) {
-        if (!getGatewayIO()->getDataPos()) {
-            getGatewayIO()->setData(req->getHead().c_str());
-            getGatewayIO()->setDataSize(req->getHead().length());
+        if (req->getHead().empty()) {
+            req->headSent(true);
+            return ;
+        }
+
+        if (!io->getDataPos()) {
+            io->setData(req->getHead());
         }
 
     } else if (!req->bodySent()) {
-        if (!getGatewayIO()->getDataPos()) {
-            getGatewayIO()->setData(req->getBody().c_str());
-            getGatewayIO()->setDataSize(req->getBody().length());
+        if (req->getBody().empty()) {
+            req->bodySent(true);
+            return ;
+        }
+
+        if (!io->getDataPos()) {
+            io->setData(req->getBody());
         }
     }
 
-    int bytes = getGatewayIO()->write();
+    int bytes = io->write();
     
     if (bytes < 0) {
-        // Log.debug() << "Gateway::write -1" << Log.endl;
+        // check for blocking io
         return ;
     }
     
     if (bytes == 0) {
-        // Log.debug() << "Gateway::write 0" << Log.endl;
-        if (req->isCGI()) {
-            g_server->addToDelFdsQ(getGatewayIO()->wrFd());
-            getGatewayIO()->closeWrFd();
-        }
-
-        // set response status as BAD_GATEWAY
-        // if CGI close pipe (standard action)
-        // if Proxy-req close only GATEWAY socket
-        // if Proxy-tunnel close Client and Gateway sockets
+        Log.debug() << "Client:: [" << io->wrFd() << "] peer closed connection" << Log.endl;
+        g_server->unlink(io->wrFd());
+        g_server->unlink(io->rdFd());
+        io->reset();
         return ;
     }
-    // Log.debug() << "Gateway::write " << bytes << Log.endl;
 
-    if (static_cast<std::size_t>(bytes) >= getGatewayIO()->getDataSize()) {
+    if (static_cast<std::size_t>(bytes) >= io->getDataSize()) {
         if (!req->headSent()) {
             req->headSent(true);
         } else if (!req->bodySent()) {
             req->bodySent(true);
         }
-    } 
-
-    if (req->sent()) {
-        setGatewayTimeout(Time::now());
     }
 }
 
@@ -358,14 +426,16 @@ void Client::receive(Request *req) {
     int bytes = getClientIO()->read();
 
     if (bytes < 0) {
-        Log.debug() << "Client::receive [" << getClientIO()->rdFd() << "] req not ready" << Log.endl;
         return ;
 
     } else if (bytes == 0) {
         Log.debug() << "Client::receive [" << getClientIO()->rdFd() << "] peer closed connection" << Log.endl;
-        shouldBeRemoved(true);
+        g_server->unlink(getClientIO()->rdFd());
+        getClientIO()->reset();
         return ;
     }
+
+    setClientTimeout(Time::now());
 
     while (!req->formed()) {
         std::string line;
@@ -383,23 +453,24 @@ void Client::receive(Response *res) {
     int bytes = getGatewayIO()->read();
 
     if (bytes < 0) {
-        Log.debug() << "Client::receive [" << getGatewayIO()->rdFd() << "] resp not ready" << Log.endl;
         return ;
 
     } else if (bytes == 0) {
         Log.debug() << "Client::receive [" << getGatewayIO()->rdFd() << "] resp done" << Log.endl;
 
         if (res->isCGI()) {
-            res->checkCGIFail();
-        }
-        
-        g_server->addToDelFdsQ(getGatewayIO()->rdFd());
-        getGatewayIO()->closeRdFd();
+            res->checkCGIFailure();
 
-    } else {
-        Log.debug() << "Client::receive [" << getGatewayIO()->rdFd() << "] resp reading" << Log.endl;
-        setGatewayTimeout(0);
+            // If no content-length header returned from CGI
+            // read the whole body at once
+            res->setBodySize(getGatewayIO()->getRem().length());
+        }
+
+        g_server->unlink(getGatewayIO()->rdFd());
+        getGatewayIO()->reset();
     }
+
+    setGatewayTimeout(0);
     
     while (!res->formed()) {
         std::string line;
