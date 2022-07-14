@@ -55,6 +55,11 @@ IO::getAddr(void) const {
     return _addr;
 }
 
+const std::string &
+IO::getRem(void) const {
+    return _rem;
+}
+
 void
 IO::setData(const std::string &data) {
     _data = data.c_str();

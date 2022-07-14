@@ -46,6 +46,8 @@ public:
     const char *getData(void) const;
     const std::string &getAddr(void) const;
 
+    const std::string &getRem(void) const;
+
     int read(void);
     int write(void);
     int nonblock(void);

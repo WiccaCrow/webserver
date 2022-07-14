@@ -217,7 +217,6 @@ void Client::tryReplyResponse(int fd) {
         removeResponse();
 
         if (shouldBeClosed()) {
-            // shouldBeRemoved(true);
             g_server->unlink(fd);
             getClientIO()->reset();
         }
@@ -448,12 +447,17 @@ void Client::receive(Response *res) {
 
     } else if (bytes == 0) {
         Log.debug() << "Client::receive [" << getGatewayIO()->rdFd() << "] resp done" << Log.endl;
-        g_server->unlink(getGatewayIO()->rdFd());
-        getGatewayIO()->reset();
 
         if (res->isCGI()) {
             res->checkCGIFailure();
+
+            // If no content-length header returned from CGI
+            // read the whole body at once
+            res->setBodySize(getGatewayIO()->getRem().length());
         }
+
+        g_server->unlink(getGatewayIO()->rdFd());
+        getGatewayIO()->reset();
     }
 
     setGatewayTimeout(0);
