@@ -385,7 +385,7 @@ Request::writeBody(const std::string &body) {
 StatusCode
 Request::parseBody(const std::string &line) {
     Log.debug() << "Request::parseBody " << line << Log.endl;
-    if (headers.has(TRANSFER_ENCODING)) {
+    if (headers.has(TRANSFER_ENCODING) && headers.value(TRANSFER_ENCODING) == "chunked") {
         Log.debug() << "Request::parseChunk" << Log.endl;
         return parseChunk(line);
     } else if (headers.has(CONTENT_LENGTH)) {
