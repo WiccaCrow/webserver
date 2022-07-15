@@ -3,6 +3,15 @@
 #include <map>
 #include <string>
 
+#ifndef TIME_STAMP
+    #define SEC 1
+    #define MIN 60 * SEC
+    #define HOUR 60 * MIN
+    #define DAY 24 * HOUR
+    #define MONTH 30 * DAY
+    #define YEAR 12 * MONTH
+#endif
+
 #ifndef SOMAXCONN
     # define SOMAXCONN 128
 #endif
@@ -24,7 +33,7 @@
 #endif
 
 #ifndef SESSION_LIFETIME
-    # define SESSION_LIFETIME 1000
+    # define SESSION_LIFETIME 20 * MIN
 #endif
 
 #ifndef CHUNK_SIZE

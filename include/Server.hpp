@@ -45,12 +45,16 @@ class Server {
     typedef std::vector<HTTP::Client *> ClientsVec;
     typedef ClientsVec::iterator          iter_cv;
 
+    typedef std::map<std::string, std::time_t>  SessionsMap;
+    typedef SessionsMap::iterator               iter_ssm;
+
     private:
-    ServersMap _servers;
-    SocketsVec _sockets;
-    FdIdMap    _connector;
-    ClientsVec _clients;
-    PollFdVec  _pollfds;
+    ServersMap  _servers;
+    SocketsVec  _sockets;
+    FdIdMap     _connector;
+    ClientsVec  _clients;
+    PollFdVec   _pollfds;
+    SessionsMap _sessions;
 
     bool   _working;
     Worker _workers[WORKERS];
@@ -100,6 +104,10 @@ class Server {
 
     void link(int fd, HTTP::Client *);
     void unlink(int fd);
+
+    void checkSessionsTimeout(void);
+    bool isActualSession(const std::string &s_id);
+    void addSession(const std::string s_id);
 
     private:
     void connect(std::size_t servid, int servfd);

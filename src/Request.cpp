@@ -396,7 +396,7 @@ Request::parseBody(const std::string &line) {
 }
 
 
-const std::map<std::string, std::string> &
+std::map<std::string, std::string> &
 Request::getCookie(void) {
     return _cookie;
 }

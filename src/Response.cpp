@@ -2,6 +2,7 @@
 
 #include "CGI.hpp"
 #include "Client.hpp"
+#include "Server.hpp"
 
 namespace HTTP {
 
@@ -568,6 +569,17 @@ void Response::makeHead(void) {
     addHeader(CONTENT_TYPE);
     addHeader(CONTENT_LENGTH);
     addHeader(ACCEPT_RANGES);
+
+    std::map<std::string, std::string> clientCookie = getRequest()->getCookie();
+    if (clientCookie.find("s_id") == clientCookie.end()) {
+        Cookie s_id("s_id", getRandId());
+        s_id.httpOnly = true;
+        s_id.maxAge = SESSION_LIFETIME;
+        s_id.setPath("/");
+        std::string sidStr = s_id.toString();
+        g_server->addSession(sidStr);
+        addHeader(SET_COOKIE, sidStr);
+    }
 
     std::string head;
     head.reserve(512);

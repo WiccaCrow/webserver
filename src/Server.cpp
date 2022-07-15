@@ -140,6 +140,7 @@ void Server::start(void) {
             process();
         }
         checkTimeout();
+        checkSessionsTimeout();
     
         emptyDelFdsQ();
         emptyDelClientQ();
@@ -378,7 +379,8 @@ isClientFree(HTTP::Client *client) {
     return (client == NULL);
 }
 
-void Server::checkTimeout(void) {
+void
+Server::checkTimeout(void) {
 
     for (ClientsVec::iterator it = _clients.begin(); it != _clients.end(); ++it) {
         
@@ -394,6 +396,36 @@ void Server::checkTimeout(void) {
             addToDelClientQ(client);
         }
     }
+}
+
+void
+Server::checkSessionsTimeout(void) {
+
+    for (SessionsMap::iterator it = _sessions.begin(); it != _sessions.end(); ) {
+
+        std::time_t current = Time::now();
+        if (it->second - current < SESSION_LIFETIME) {
+            _sessions.erase(it++);
+        } else {
+            ++it;
+        }
+    }
+}
+
+bool
+Server::isActualSession(const std::string &s_id) {
+    if (_sessions.find(s_id) != _sessions.end()) {
+        if (_sessions[s_id] >= SESSION_LIFETIME) {
+            return true;
+        }
+        _sessions.erase(s_id);
+    }
+    return false;
+}
+
+void
+Server::addSession(const std::string s_id) {
+    _sessions[s_id] = Time::now();
 }
 
 void

@@ -29,10 +29,10 @@
                         "user_file": ".htpasswd"
                     },
                     "alias": "./pages/site",
-                    "CGI": {
+                    "cgi": {
                         ".pl": "/usr/bin/perl",
-                        ".py": "/usr/bin/python",
-                        ".js": "/usr/local/bin/node",
+                        ".py": "/usr/bin/python3",
+                        ".js": "/usr/bin/node",
                         ".cgi": ""
                     },
                     "autoindex": true,
@@ -42,9 +42,9 @@
                 },
                 "/feedback": {
                     "root": "./pages/site",
-                    "CGI": {
-                        ".py": "/usr/bin/python",
-                        ".js": "/usr/local/bin/node"
+                    "cgi": {
+                        ".py": "/usr/bin/python3",
+                        ".js": "/usr/bin/node"
                     },
                     "autoindex": false,
                     "index": ["index.html", "index.php"],
