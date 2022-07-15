@@ -401,21 +401,16 @@ Server::checkTimeout(void) {
 void
 Server::checkSessionsTimeout(void) {
 
-    for (SessionsMap::iterator it = _sessions.begin(); it != _sessions.end(); ) {
-
-        std::time_t current = Time::now();
-        if (it->second - current < SESSION_LIFETIME) {
-            _sessions.erase(it++);
-        } else {
-            ++it;
-        }
+    for (SessionsMap::iterator it = _sessions.begin(); it != _sessions.end();) {
+        isActualSession((it++)->first);
     }
 }
 
 bool
 Server::isActualSession(const std::string &s_id) {
     if (_sessions.find(s_id) != _sessions.end()) {
-        if (_sessions[s_id] >= SESSION_LIFETIME) {
+        std::time_t current = Time::now();
+        if (current - _sessions[s_id] < SESSION_LIFETIME) {
             return true;
         }
         _sessions.erase(s_id);
