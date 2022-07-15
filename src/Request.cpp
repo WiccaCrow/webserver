@@ -364,7 +364,7 @@ Request::parseHeader(const std::string &line) {
         return BAD_REQUEST;
     }
 
-    if (tunnelGuard(!header.value.length() > MAX_HEADER_FIELD_LENGTH)) {
+    if (tunnelGuard(header.value.length() > MAX_HEADER_FIELD_LENGTH)) {
         Log.debug() << "Request:: Header is too large: " << line << Log.endl;
         return REQUEST_HEADER_FIELDS_TOO_LARGE;
     }
