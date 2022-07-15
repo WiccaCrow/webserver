@@ -27,6 +27,14 @@
     # define SESSION_LIFETIME 1000
 #endif
 
+#ifndef MAX_URI_LENGTH
+    # define MAX_URI_LENGTH 1024
+#endif
+
+#ifndef MAX_HEADER_FIELD_LENGTH
+    # define MAX_HEADER_FIELD_LENGTH 2048
+#endif
+
 #ifndef CHUNK_SIZE
     # define CHUNK_SIZE 40960
 #endif

@@ -162,6 +162,7 @@ void Client::addRequest(void) {
     _requests.push_back(req);
 
     if (++_nbRequests >= _maxRequests) {
+        req->setStatus(TOO_MANY_REQUESTS);
         shouldBeClosed(true);
     }
 

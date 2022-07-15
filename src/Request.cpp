@@ -208,6 +208,11 @@ Request::parseSL(const std::string &line) {
 
     skipSpaces(line, pos);
     _rawURI = getWord(line, " ", pos);
+    if (_rawURI.length() > MAX_URI_LENGTH) {
+        Log.debug() << "Request:: URI is too long: " << _rawURI << Log.endl;
+        return URI_TOO_LONG;
+    }
+
     _uri.parse(_rawURI);
 
     skipSpaces(line, pos);
@@ -216,7 +221,7 @@ Request::parseSL(const std::string &line) {
     skipSpaces(line, pos);
 
     if (tunnelGuard(line[pos])) {
-        Log.debug() << "Forbidden symbols at the end of the SL: " << Log.endl;
+        Log.debug() << "Request:: Forbidden symbols at the end of the SL: " << Log.endl;
         return BAD_REQUEST;
     }
     return checkSL();
@@ -355,13 +360,18 @@ Request::parseHeader(const std::string &line) {
     RequestHeader header;
 
     if (tunnelGuard(!header.parse(line))) {
-        Log.debug() << "ARequest:: Invalid header " << line << Log.endl;
+        Log.debug() << "Request:: Invalid header " << line << Log.endl;
         return BAD_REQUEST;
+    }
+
+    if (tunnelGuard(!header.value.length() > MAX_HEADER_FIELD_LENGTH)) {
+        Log.debug() << "Request:: Header is too large: " << line << Log.endl;
+        return REQUEST_HEADER_FIELDS_TOO_LARGE;
     }
 
     // dublicate header
     if (tunnelGuard(headers.has(header.hash))) {
-        Log.debug() << "ARequest:: Dublicated header" << Log.endl;
+        Log.debug() << "Request:: Dublicated header" << Log.endl;
         return BAD_REQUEST;
     }
 
