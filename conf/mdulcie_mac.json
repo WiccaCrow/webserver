@@ -43,7 +43,13 @@
                     "index": [ "index.html", "index.php" ],
                     "methods_allowed": [ "GET" ],
                     "post_max_body": 300
-                }
+                },
+                "/redirect": {
+                    "redirect": {
+                    "code": 301,
+                    "url": "http://www.google.com"
+                    }                       
+               }
             }
         }
     }
