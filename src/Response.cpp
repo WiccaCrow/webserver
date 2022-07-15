@@ -348,7 +348,9 @@ int Response::makeResponseForFile(void) {
     addHeader(CONTENT_TYPE, getContentType(resourcePath));
     addHeader(ETAG, getEtagFile(resourcePath));
     addHeader(LAST_MODIFIED, Time::gmt(getModifiedTime(resourcePath)));
-
+    if (getBody().empty()) {
+        addHeader(CONTENT_LENGTH, "0");
+    }
     return 1;
 }
 
