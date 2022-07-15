@@ -80,7 +80,7 @@ basicCheck(Object *src, const std::string &key, ExpectedType type) {
 }
 
 int
-getUInteger(Object *src, const std::string &key, int &res, int def) {
+getUInteger(Object *src, const std::string &key, std::size_t &res, std::size_t def) {
     ConfStatus status = basicCheck(src, key, NUMBER, res, def);
     if (status != SET) {
         return status;
@@ -97,7 +97,7 @@ getUInteger(Object *src, const std::string &key, int &res, int def) {
 }
 
 int
-getUInteger(Object *src, const std::string &key, int &res) {
+getUInteger(Object *src, const std::string &key, std::size_t &res) {
     ConfStatus status = basicCheck(src, key, NUMBER);
     if (status != SET) {
         return status;
@@ -105,7 +105,7 @@ getUInteger(Object *src, const std::string &key, int &res) {
 
     double num = src->get(key)->toNum();
     if (isUInteger(num)) {
-        res = static_cast<unsigned int>(num);
+        res = static_cast<std::size_t>(num);
         return SET;
     } else {
         Log.error() << key << ": should be an unsigned integer." << Log.endl;
@@ -230,7 +230,18 @@ getDefaultAllowedMethods() {
 const char * validKeywords[] = {
     KW_LISTEN, KW_SERVER_NAMES, KW_ERROR_PAGES, KW_PROXY, KW_ADD_HEADERS,
     KW_LOCATIONS, KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, 
-    KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, NULL
+    KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC,
+    KW_SETTINGS, KW_MAX_WAIT_CONN, KW_WORKERS, KW_WORKER_TIMEOUT, KW_MAX_REQUESTS,
+    KW_MAX_CLIENT_TIMEOUT, KW_MAX_GATEWAY_TIMEOUT, KW_MAX_URI_LENGTH, 
+    KW_MAX_HEADER_FIELD_LENGTH, KW_BLIND_PROXY, KW_SESSION_LIFETIME, KW_CHUNK_SIZE,
+    KW_MAX_REG_FILE_SIZE, KW_MAX_RANGE_SIZE, NULL
+};
+
+const char * validSettingsKeywords[] = {
+    KW_SETTINGS, KW_MAX_WAIT_CONN, KW_WORKERS, KW_WORKER_TIMEOUT, KW_MAX_REQUESTS,
+    KW_MAX_CLIENT_TIMEOUT, KW_MAX_GATEWAY_TIMEOUT, KW_MAX_URI_LENGTH, 
+    KW_MAX_HEADER_FIELD_LENGTH, KW_BLIND_PROXY, KW_SESSION_LIFETIME, KW_CHUNK_SIZE,
+    KW_MAX_REG_FILE_SIZE, KW_MAX_RANGE_SIZE, NULL
 };
 
 const char * validServerBlockKeywords[] = {
@@ -423,7 +434,7 @@ parseRedirect(Object *src, Redirect &res) {
     }
 
     Object *obj = src->get(KW_REDIRECT)->toObj();
-    int code = 0;
+    std::size_t code = 0;
     if (!getUInteger(obj, KW_CODE, code))
         return NONE_OR_INV;
 
@@ -758,6 +769,157 @@ parseServerBlock(Object *src, ServerBlock &dst) {
     return SET;
 }
 
+int parseSize(std::string &s, uint64_t &size) {
+
+    trim(s, " ");
+    
+    char *end = NULL;
+    uint64_t res = strtoull(s.c_str(), &end, 10);
+
+    if (end == NULL) {
+        Log.error() << "Missing size postfix" << Log.endl;
+        return 0;
+    }
+
+    while (*end == ' ') {
+        end++;
+    }
+
+            if (!strcmp(end, "B")) {
+        // No koefficient
+    } else if (!strcmp(end, "KB")) {
+        res = res * KB;
+    } else if (!strcmp(end, "MB")) {
+        res = res * MB;
+    } else if (!strcmp(end, "GB")) {
+        res = res * GB;
+    } else if (!strcmp(end, "TB")) {
+        res = res * TB;
+    } else if (!strcmp(end, "PB")) {
+        res = res * PB;
+    } else if (!strcmp(end, "EB")) {
+        res = res * EB;
+    } else if (!strcmp(end, "KiB")) {
+        res = res * KiB;
+    } else if (!strcmp(end, "MiB")) {
+        res = res * MiB;
+    } else if (!strcmp(end, "GiB")) {
+        res = res * GiB;
+    } else if (!strcmp(end, "TiB")) {
+        res = res * TiB;
+    } else if (!strcmp(end, "PiB")) {
+        res = res * PiB;
+    } else if (!strcmp(end, "EiB")) {
+        res = res * EiB;
+    } else {
+        Log.error() << "Unknown size postfix: " << end << Log.endl;
+        return 0;
+    }
+
+    size = res;
+    return 1;
+
+}
+
+int parseSettings(Object *src, Settings &sets) {
+
+    Settings def;
+
+    ConfStatus status = basicCheck(src, KW_SETTINGS, OBJECT, sets, def);
+    if (status != SET) {
+        return status;
+    }
+
+    Object *obj = src->get(KW_SETTINGS)->toObj();
+
+    if (!isValidKeywords(obj, validSettingsKeywords)) {
+        return NONE_OR_INV;
+    }
+
+    if (!getUInteger(obj, KW_MAX_WAIT_CONN, sets.max_wait_conn, def.max_wait_conn)) {
+        Log.error() << KW_MAX_WAIT_CONN << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    }
+
+    if (!getUInteger(obj, KW_WORKERS, sets.workers, def.workers)) {
+        Log.error() << KW_WORKERS << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    }
+
+    size_t time = 0;
+    if (!getUInteger(obj, KW_WORKER_TIMEOUT, time, def.worker_timeout)) {
+        Log.error() << KW_WORKER_TIMEOUT << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } else {
+        sets.worker_timeout = static_cast<time_t>(time);
+    }
+
+    if (!getUInteger(obj, KW_MAX_REQUESTS, sets.max_requests, def.max_requests)) {
+        Log.error() << KW_MAX_REQUESTS << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    }
+
+    time = 0;
+    if (!getUInteger(obj, KW_MAX_CLIENT_TIMEOUT, time, def.max_client_timeout)) {
+        Log.error() << KW_MAX_CLIENT_TIMEOUT << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } else {
+        sets.max_gateway_timeout = static_cast<time_t>(time);
+    }
+
+    time = 0;
+    if (!getUInteger(obj, KW_MAX_GATEWAY_TIMEOUT, time, def.max_gateway_timeout)) {
+        Log.error() << KW_MAX_GATEWAY_TIMEOUT << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } else {
+        sets.max_gateway_timeout = static_cast<time_t>(time);
+    }
+
+    if (!getUInteger(obj, KW_MAX_URI_LENGTH, sets.max_uri_length, def.max_uri_length)) {
+        Log.error() << KW_MAX_URI_LENGTH << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    }
+
+    if (!getUInteger(obj, KW_MAX_HEADER_FIELD_LENGTH, sets.max_header_field_length, def.max_header_field_length)) {
+        Log.error() << KW_MAX_HEADER_FIELD_LENGTH << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    }
+
+    if (!getBoolean(obj, KW_BLIND_PROXY, sets.blind_proxy, def.blind_proxy)) {
+        Log.error() << KW_BLIND_PROXY << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    }
+
+    string size_s;
+    if (!getString(obj, KW_CHUNK_SIZE, size_s, "")) {
+        Log.error() << KW_CHUNK_SIZE << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } else if (!size_s.empty() && !parseSize(size_s, sets.chunk_size)) {
+        Log.error() << KW_CHUNK_SIZE << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } 
+
+    size_s = "";
+    if (!getString(obj, KW_MAX_RANGE_SIZE, size_s, "")) {
+        Log.error() << KW_MAX_RANGE_SIZE << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } else if (!size_s.empty() && !parseSize(size_s, sets.max_range_size)) {
+        Log.error() << KW_MAX_RANGE_SIZE << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } 
+    
+    size_s = "";
+    if (!getString(obj, KW_MAX_REG_FILE_SIZE, size_s, "")) {
+        Log.error() << KW_MAX_REG_FILE_SIZE << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } else if (!size_s.empty() && !parseSize(size_s, sets.max_reg_file_size)) {
+        Log.error() << KW_MAX_REG_FILE_SIZE << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } 
+
+    return SET;
+}
+
 int
 parseServerBlocks(Object *src, Server::ServersMap &servers) {
 
@@ -790,6 +952,22 @@ parseServerBlocks(Object *src, Server::ServersMap &servers) {
     return SET;
 }
 
+int
+parseConfig(Object *src, Server *serv) {
+
+    if (!parseServerBlocks(src, serv->getServerBlocks())) {
+        Log.error() << "Servers parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    }
+
+    if (!parseSettings(src, serv->settings)) {
+        Log.error() << "Settings parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    }
+
+    return SET;
+}
+
 Server *
 loadConfig(const string filename) {
 
@@ -809,7 +987,7 @@ loadConfig(const string filename) {
     Server *serv = new Server();
     if (serv == NULL) {
         Log.syserr() << "Cannot allocate memory for Server" << Log.endl;
-    } else if (!parseServerBlocks(ptr, serv->getServerBlocks())) {
+    } else if (!parseConfig(ptr, serv)) {
         delete serv;
         serv = NULL;
     }

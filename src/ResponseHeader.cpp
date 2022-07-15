@@ -1,5 +1,6 @@
 #include "ResponseHeader.hpp"
 #include "Client.hpp"
+#include "Server.hpp"
 
 namespace HTTP {
 
@@ -166,7 +167,7 @@ ResponseHeader::KeepAlive(Response &res) {
     (void)res;
     
     if (res.headers[CONNECTION].value != "close") {
-        value = "timeout=" + sztos(MAX_CLIENT_TIMEOUT) + ", max=" + sztos(MAX_REQUESTS);
+        value = "timeout=" + sztos(g_server->settings.max_client_timeout) + ", max=" + sztos(g_server->settings.max_requests);
     }
 }
 

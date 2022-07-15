@@ -1,5 +1,25 @@
 #pragma once
 
+#ifndef SP
+    # define SP " "
+#endif
+
+#ifndef HTAB
+    # define HTAB "\t"
+#endif
+
+#ifndef CR
+    # define CR "\r"
+#endif
+
+#ifndef LF
+    # define LF "\n"
+#endif
+
+#ifndef CRLF
+    # define CRLF CR LF
+#endif
+
 #define HTML_BEG "<!DOCTYPE html><html>"
 #define HTML_END "</html>"
 

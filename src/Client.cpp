@@ -12,7 +12,7 @@ Client::Client(void)
     _shouldBeRemoved(false),
     _isTunnel(false),
     _nbRequests(0),
-    _maxRequests(MAX_REQUESTS),
+    _maxRequests(g_server->settings.max_requests),
     _clientTimeout(0),
     _gatewayTimeout(0),
     _id(-1),
@@ -285,7 +285,7 @@ Client::checkTimeout(void) {
 
     std::time_t current = Time::now();
 
-    if (getClientTimeout() != 0 && current - getClientTimeout() > MAX_CLIENT_TIMEOUT) {
+    if (getClientTimeout() != 0 && current - getClientTimeout() > g_server->settings.max_client_timeout) {
         
         IO *io = getClientIO();
 
@@ -299,7 +299,7 @@ Client::checkTimeout(void) {
         // 408 Request Timeout
     }
 
-    if (getGatewayTimeout() != 0 && current - getGatewayTimeout() > MAX_GATEWAY_TIMEOUT) {
+    if (getGatewayTimeout() != 0 && current - getGatewayTimeout() > g_server->settings.max_gateway_timeout) {
 
         IO *io = getGatewayIO();
     

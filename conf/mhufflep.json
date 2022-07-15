@@ -1,4 +1,19 @@
 {
+    "settings": {
+        "max_wait_conn": 128,
+        "blind_proxy": true,
+        "max_requests": 100,
+        "max_client_timeout": 25,
+        "max_gateway_timeout": 100,
+        "session_lifetime": "30 Days",
+        "max_uri_length": 1024,
+        "chunk_size": "40 MiB",
+        "max_header_field_length": 2048,
+        "worker_timeout": 10000,
+        "workers": 3,
+        "max_reg_file_size": "4 MiB",
+        "max_range_size": "2 MiB"
+    },
     "servers": {
         "http2": {
             "listen": "172.20.10.2:8080",

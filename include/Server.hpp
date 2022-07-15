@@ -24,6 +24,7 @@
 #include "ServerBlock.hpp"
 #include "Utils.hpp"
 #include "Worker.hpp"
+#include "Settings.hpp"
 
 class Server {
     public:
@@ -53,7 +54,7 @@ class Server {
     PollFdVec  _pollfds;
 
     bool   _working;
-    Worker _workers[WORKERS];
+    Worker *_workers;
 
     pthread_mutex_t _m_new_resp;
 
@@ -74,6 +75,7 @@ class Server {
     std::set<int>             _q_delPfds;
 
     public:
+    Settings settings;
     bool isDaemon;
 
     Server(void);

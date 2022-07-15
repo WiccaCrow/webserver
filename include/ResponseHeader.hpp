@@ -12,7 +12,6 @@
 #include "Globals.hpp"
 #include "HeadersCodes.hpp"
 
-
 namespace HTTP {
 
 class Response;

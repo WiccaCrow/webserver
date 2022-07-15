@@ -2,6 +2,7 @@
 
 #include "CGI.hpp"
 #include "Client.hpp"
+#include "Server.hpp"
 
 namespace HTTP {
 
@@ -369,7 +370,7 @@ void Response::makeResponseForMultipartRange(void) {
 
     RangeList::iterator range = ranges.begin();
     for (range = ranges.begin(); range != ranges.end(); ++range) {
-        range->narrow(MAX_RANGE);
+        range->narrow(g_server->settings.max_range_size);
         range->rlimit(getFileSize() - 1);
 
         // Range should not be included if invalid
@@ -391,8 +392,7 @@ void Response::makeResponseForMultipartRange(void) {
 void Response::makeResponseForRange(void) {
     RangeSet &range = getRequest()->getRangeList()[0];
 
-    // MAX_RANGE is about 2MB now
-    range.narrow(MAX_RANGE);
+    range.narrow(g_server->settings.max_range_size);
     range.rlimit(getFileSize() - 1);
 
     Log.debug() << "Range processed: " << range.to_string() << ", " << range.size() << Log.endl;
@@ -751,7 +751,7 @@ bool Response::parseLine(std::string &line) {
 
 bool
 Response::tunnelGuard(bool value) {
-    if (getClient()->isTunnel() && BLIND_PROXY) {
+    if (getClient()->isTunnel() && g_server->settings.blind_proxy) {
         return false;
     }
     return value;

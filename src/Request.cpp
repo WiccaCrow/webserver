@@ -192,7 +192,7 @@ Request::parseLine(std::string &line) {
 
 bool
 Request::tunnelGuard(bool value) {
-    if (getClient()->isTunnel() && BLIND_PROXY) {
+    if (getClient()->isTunnel() && g_server->settings.blind_proxy) {
         return false;
     }
     return value;
@@ -208,7 +208,7 @@ Request::parseSL(const std::string &line) {
 
     skipSpaces(line, pos);
     _rawURI = getWord(line, " ", pos);
-    if (_rawURI.length() > MAX_URI_LENGTH) {
+    if (_rawURI.length() > g_server->settings.max_uri_length) {
         Log.debug() << "Request:: URI is too long: " << _rawURI << Log.endl;
         return URI_TOO_LONG;
     }
@@ -335,7 +335,7 @@ Request::checkHeaders(void) {
         if (!converted) {
             return BAD_REQUEST;
         }
-        if (len > getLocation()->getPostMaxBodyRef()) {
+        if (static_cast<std::size_t>(len) > getLocation()->getPostMaxBodyRef()) {
             return PAYLOAD_TOO_LARGE;
         }
     }
@@ -364,7 +364,7 @@ Request::parseHeader(const std::string &line) {
         return BAD_REQUEST;
     }
 
-    if (tunnelGuard(header.value.length() > MAX_HEADER_FIELD_LENGTH)) {
+    if (tunnelGuard(header.value.length() > g_server->settings.max_header_field_length)) {
         Log.debug() << "Request:: Header is too large: " << line << Log.endl;
         return REQUEST_HEADER_FIELDS_TOO_LARGE;
     }

@@ -3,7 +3,8 @@
 const std::size_t reservedClients = 64;
 
 Server::Server()
-    : _working(true), isDaemon(false) {
+    : _working(true)
+    , isDaemon(false) {
     _pollfds.reserve(reservedClients);
 
     pthread_mutex_init(&_m_new_resp, NULL);
@@ -202,15 +203,26 @@ void Server::createSockets(void) {
 }
 
 void Server::startWorkers(void) {
+
+    _workers = new Worker[settings.workers];
+    
+    if (_workers == NULL) {
+        Log.syserr() << "Cannot allocate memory for workers" << Log.endl;
+    }
+
     for (std::size_t i = 0; i < Worker::count; i++) {
         _workers[i].create();
     }
 }
 
 void Server::stopWorkers(void) {
+
     for (std::size_t i = 0; i < Worker::count; i++) {
         _workers[i].join();
     }
+
+    delete[] _workers;
+    _workers = NULL;
 }
 
 void

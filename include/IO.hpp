@@ -8,6 +8,7 @@
 
 #include "Logger.hpp"
 #include "Globals.hpp"
+#include "HTML.hpp"
 
 class IO {
     int         _fdr;
