@@ -98,12 +98,7 @@ ResponseHeader::ContentLanguage(Response &res) {
 
 void
 ResponseHeader::ContentLength(Response &res) {
-    if (!value.empty()) {
-        return ;
-    }
-    if (res.getBody().length() != 0) {
-        value = sztos(res.getBody().length());
-    }
+    value = sztos(res.getBody().length());
 }
 
 void

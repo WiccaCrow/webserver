@@ -335,7 +335,10 @@ int Response::makeResponseForFile(void) {
 
     RangeList &ranges = getRequest()->getRangeList();
     if (ranges.size() == 1) {
-        makeResponseForRange();
+        if (!makeResponseForRange()) {
+            setStatus(RANGE_NOT_SATISFIABLE);
+            return 0;
+        }
     } else if (ranges.size() > 1) {
         makeResponseForMultipartRange();
     } else {
@@ -348,9 +351,8 @@ int Response::makeResponseForFile(void) {
     addHeader(CONTENT_TYPE, getContentType(resourcePath));
     addHeader(ETAG, getEtagFile(resourcePath));
     addHeader(LAST_MODIFIED, Time::gmt(getModifiedTime(resourcePath)));
-    if (getBody().empty()) {
-        addHeader(CONTENT_LENGTH, "0");
-    }
+    addHeader(CONTENT_LENGTH);
+
     return 1;
 }
 
@@ -361,7 +363,8 @@ Response::getContentRangeValue(RangeSet &range) {
     return ss.str();
 }
 
-void Response::makeResponseForMultipartRange(void) {
+int
+Response::makeResponseForMultipartRange(void) {
     const std::string &path = getRequest()->getResolvedPath();
     RangeList         &ranges = getRequest()->getRangeList();
 
@@ -374,6 +377,10 @@ void Response::makeResponseForMultipartRange(void) {
     for (range = ranges.begin(); range != ranges.end(); ++range) {
         range->narrow(g_server->settings.max_range_size);
         range->rlimit(getFileSize() - 1);
+
+        if (range->beg > getFileSize()) {
+            continue ;
+        }
 
         // Range should not be included if invalid
         ss << sepPrefix << boundary << CRLF;
@@ -389,19 +396,27 @@ void Response::makeResponseForMultipartRange(void) {
     setStatus(PARTIAL_CONTENT);
     addHeader(CONTENT_TYPE, "multipart/byteranges; boundary=" + boundary);
     setBody(ss.str());
+
+    return 1;
 }
 
-void Response::makeResponseForRange(void) {
+int Response::makeResponseForRange(void) {
     RangeSet &range = getRequest()->getRangeList()[0];
 
     range.narrow(g_server->settings.max_range_size);
     range.rlimit(getFileSize() - 1);
+
+    if (range.beg > getFileSize()) {
+        return 0;
+    }
 
     Log.debug() << "Range processed: " << range.to_string() << ", " << range.size() << Log.endl;
 
     setStatus(PARTIAL_CONTENT);
     addHeader(CONTENT_RANGE);
     setBody(std::string(_fileaddr + range.beg, range.size()));
+
+    return 1;
 }
 
 int Response::openFileToResponse(const std::string &resourcePath) {

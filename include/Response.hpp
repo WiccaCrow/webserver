@@ -78,8 +78,8 @@ public:
     void        makeResponseForNonAuth(void);
     int         makeResponseForDir(void);
     int         makeResponseForFile(void);
-    void        makeResponseForRange(void);
-    void        makeResponseForMultipartRange(void);
+    int         makeResponseForRange(void);
+    int         makeResponseForMultipartRange(void);
     int         makeResponseForCGI(void);
     int         makeResponseForRedirect(StatusCode, const std::string &);
 
