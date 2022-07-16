@@ -946,6 +946,7 @@ parseServerBlocks(Object *src, Server::ServersMap &servers) {
         return NONE_OR_INV;
     }
 
+    std::map< int, std::set<std::string> > uniqueNames;
     for (Object::iterator it = obj->begin(); it != obj->end(); it++) {
         ServerBlock servBlock;
         servBlock.setBlockname(it->first);
@@ -958,6 +959,15 @@ parseServerBlocks(Object *src, Server::ServersMap &servers) {
             Log.error() << "Serverblock " << it->first << " parsing failed" << Log.endl;
             return NONE_OR_INV;
         }
+
+        ServerBlock::ServerNamesVec &names = servBlock.getServerNamesRef();
+        for (ServerBlock::ServerNamesVec::iterator it = names.begin(); it != names.end(); ++it) {
+            if (!uniqueNames[servBlock.getPort()].insert(*it).second) {
+                Log.error() << "Duplicated server_name " << *it << Log.endl;
+                return NONE_OR_INV;
+            }
+        }
+        
         servers[servBlock.getPort()].push_back(servBlock);
     }
     return SET;

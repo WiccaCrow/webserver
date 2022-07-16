@@ -1,0 +1,12 @@
+{
+    "servers": {
+        "http1": {
+            "listen": "127.0.0.1:8080",
+            "server_names": [ "localhost" ]
+        },
+        "http2": {
+            "listen": "172.20.10.2:8080",
+            "server_names": [ "webserv.com", "localhost" ]   
+        }
+    }
+}
