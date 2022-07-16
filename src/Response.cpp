@@ -206,15 +206,24 @@ void Response::PATCH(void) {
     setStatus(NOT_IMPLEMENTED);
 }
 
+void
+Response::makeFileWithRandName(const std::string &directory) {
+    // std::srand(std::time(NULL));
+    std::string filename;
+    filename = "POST_" + itos(std::rand());
+    if (isFile(directory + "/" + filename)) {
+        setStatus(INTERNAL_SERVER_ERROR);
+    }
+    writeFile(directory + "/" + filename, getRequest()->getBody());
+    addHeader(LOCATION, getRequest()->getRawUri() + "/" + filename);
+}
+
 void Response::POST(void) {
 
     // Parse path_info
     const std::string &resourcePath = _req->getResolvedPath(); 
-
     if (isDirectory(resourcePath)) {
-        // create unique resource name
-        // write to file
-        return ;
+        makeFileWithRandName(resourcePath);
     } else if (isFile(resourcePath)) {
         matchCGI(_req->getResolvedPath());
         if (_cgi != NULL) {
