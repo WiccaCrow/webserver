@@ -5,7 +5,7 @@
         "max_requests": 100,
         "max_client_timeout": 25,
         "max_gateway_timeout": 100,
-        "session_lifetime": "30 Days",
+        "session_lifetime": 86400,
         "max_uri_length": 1024,
         "chunk_size": "40 MiB",
         "max_header_field_length": 2048,
