@@ -7,6 +7,11 @@
 #include <unistd.h>
 #include <vector>
 
+#include "Time.hpp"
+#include "SHA1.hpp"
+
+std::string getRandId(void);
+
 std::string join(std::vector<std::string> &v, const std::string &delim = ", ");
 std::vector<std::string> split(const std::string &source, const std::string &delimiters = " ");
 std::string              getWord(const std::string &line, const char *delims, std::size_t &pos);
@@ -39,9 +44,23 @@ void writeFile(const std::string &file, const std::string &content);
 std::string readFile(const std::string &file);
 
 std::string itohs(int nb);
-bool stoi64(int64_t &, const std::string &);
 bool stoll(long long &num, char const *s);
 bool stoll(char const *s);
+
+template <typename T>
+bool stoi64(T &num, const std::string &s) {
+    char              c;
+    std::stringstream ss(s.c_str());
+    ss >> num;
+    return !(ss.fail() || ss.get(c));
+}
+
+template <typename T>
+std::string NumberToString(T &num) {
+    std::ostringstream ss;
+    ss << num;
+    return ss.str();
+}
 
 std::size_t strlen_u8(const std::string &s);
 

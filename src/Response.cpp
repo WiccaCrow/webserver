@@ -589,6 +589,17 @@ void Response::makeHead(void) {
     std::string head;
     head.reserve(512);
     head = SERVER_PROTOCOL SP + statusLines[getStatus()] + CRLF;
+    
+    std::map<std::string, std::string> clientCookie = getRequest()->getCookie();
+    if (clientCookie.find("s_id") == clientCookie.end()) {
+        Cookie s_id("s_id", getRandId());
+        s_id.httpOnly = true;
+        s_id.maxAge = g_server->settings.session_lifetime;
+        s_id.setPath("/");
+        std::string sidStr = s_id.toString();
+        g_server->addSession(sidStr);
+        addHeader(SET_COOKIE, sidStr);
+    }
 
     Headers<ResponseHeader>::iterator it;
     for (it = headers.begin(); it != headers.end(); ++it) {

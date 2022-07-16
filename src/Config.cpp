@@ -854,11 +854,6 @@ int parseSettings(Object *src, Settings &sets) {
         sets.worker_timeout = static_cast<time_t>(time);
     }
 
-    if (!getUInteger(obj, KW_MAX_REQUESTS, sets.max_requests, def.max_requests)) {
-        Log.error() << KW_MAX_REQUESTS << " parsing failed" << Log.endl;
-        return NONE_OR_INV;
-    }
-
     time = 0;
     if (!getUInteger(obj, KW_MAX_CLIENT_TIMEOUT, time, def.max_client_timeout)) {
         Log.error() << KW_MAX_CLIENT_TIMEOUT << " parsing failed" << Log.endl;
@@ -873,6 +868,19 @@ int parseSettings(Object *src, Settings &sets) {
         return NONE_OR_INV;
     } else {
         sets.max_gateway_timeout = static_cast<time_t>(time);
+    }
+
+    time = 0;
+    if (!getUInteger(obj, KW_SESSION_LIFETIME, time, def.session_lifetime)) {
+        Log.error() << KW_SESSION_LIFETIME << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } else {
+        sets.session_lifetime = static_cast<time_t>(time);
+    }
+
+    if (!getUInteger(obj, KW_MAX_REQUESTS, sets.max_requests, def.max_requests)) {
+        Log.error() << KW_MAX_REQUESTS << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
     }
 
     if (!getUInteger(obj, KW_MAX_URI_LENGTH, sets.max_uri_length, def.max_uri_length)) {

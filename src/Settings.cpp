@@ -9,7 +9,7 @@ Settings::Settings(void) {
     max_requests = 100;
     max_client_timeout = 100;
     max_gateway_timeout = 25;
-    session_lifetime = 1;
+    session_lifetime = 86400; // 1 Day
     
     max_uri_length = 1024;
     max_header_field_length = 2048;

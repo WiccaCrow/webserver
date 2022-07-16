@@ -17,14 +17,6 @@ stoll(long long &num, char const *s) {
     return !(ss.fail() || ss.get(c));
 }
 
-bool
-stoi64(int64_t &num, const std::string &s) {
-    char              c;
-    std::stringstream ss(s.c_str());
-    ss >> num;
-    return !(ss.fail() || ss.get(c));
-}
-
 // Returns true if the conversion of a string to a number is true
 bool
 stoll(char const *s) {
@@ -636,4 +628,12 @@ getModifiedTime(const std::string &file) {
     return st.st_mtime;
 }
 
+std::string
+getRandId() {
+    int rand_id;
 
+    srand(Time::now());
+    rand_id = rand();
+    SHA1 sha1;
+    return sha1.hash(NumberToString(rand_id));
+}
