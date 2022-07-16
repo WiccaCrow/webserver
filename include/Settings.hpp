@@ -2,8 +2,9 @@
 
 #include "Globals.hpp"
 
-struct Settings {
+class Settings {
 
+public:
     std::size_t max_wait_conn;
     
     std::size_t workers;
@@ -23,4 +24,7 @@ struct Settings {
     uint64_t chunk_size;
     uint64_t max_reg_file_size;
     uint64_t max_range_size;
+
+    Settings(void);
+    ~Settings(void);
 };
