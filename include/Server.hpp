@@ -69,6 +69,7 @@ class Server {
     pthread_mutex_t _m_del_clnt;
 
     pthread_mutex_t _m_link;
+    pthread_mutex_t _m_sessions;
 
     std::list<HTTP::Response *> _q_newResponses;
 

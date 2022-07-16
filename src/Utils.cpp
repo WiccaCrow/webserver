@@ -627,13 +627,3 @@ getModifiedTime(const std::string &file) {
 
     return st.st_mtime;
 }
-
-std::string
-getRandId() {
-    int rand_id;
-
-    srand(Time::now());
-    rand_id = rand();
-    SHA1 sha1;
-    return sha1.hash(NumberToString(rand_id));
-}

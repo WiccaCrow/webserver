@@ -13,6 +13,7 @@ Server::Server()
     pthread_mutex_init(&_m_del_pfds, NULL);
     pthread_mutex_init(&_m_del_clnt, NULL);
     pthread_mutex_init(&_m_link, NULL);
+    pthread_mutex_init(&_m_sessions, NULL);
 }
 
 Server::~Server(void) {
@@ -33,6 +34,7 @@ Server::~Server(void) {
     pthread_mutex_destroy(&_m_del_pfds);
     pthread_mutex_destroy(&_m_del_clnt);
     pthread_mutex_destroy(&_m_link);
+    pthread_mutex_destroy(&_m_sessions);
 }
 
 // Could be used for re-reading config:
@@ -432,7 +434,12 @@ Server::isActualSession(const std::string &s_id) {
 
 void
 Server::addSession(const std::string s_id) {
+
+    pthread_mutex_lock(&_m_sessions);
+
     _sessions[s_id] = Time::now();
+
+    pthread_mutex_unlock(&_m_sessions);
 }
 
 void

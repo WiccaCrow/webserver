@@ -592,7 +592,8 @@ void Response::makeHead(void) {
     
     std::map<std::string, std::string> clientCookie = getRequest()->getCookie();
     if (clientCookie.find("s_id") == clientCookie.end()) {
-        Cookie s_id("s_id", getRandId());
+        SHA1 sha;
+        Cookie s_id("s_id", sha.hash(itos(rand())));
         s_id.httpOnly = true;
         s_id.maxAge = g_server->settings.session_lifetime;
         s_id.setPath("/");

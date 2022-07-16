@@ -10,8 +10,6 @@
 #include "Time.hpp"
 #include "SHA1.hpp"
 
-std::string getRandId(void);
-
 std::string join(std::vector<std::string> &v, const std::string &delim = ", ");
 std::vector<std::string> split(const std::string &source, const std::string &delimiters = " ");
 std::string              getWord(const std::string &line, const char *delims, std::size_t &pos);
