@@ -18,7 +18,7 @@ struct Settings {
     
     bool blind_proxy;
     
-    std::size_t session_lifetime; // ?
+    std::time_t session_lifetime;
 
     uint64_t chunk_size;
     uint64_t max_reg_file_size;

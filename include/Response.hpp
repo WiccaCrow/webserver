@@ -22,6 +22,8 @@
 #include "ResponseHeader.hpp"
 #include "HTML.hpp"
 #include "ErrorResponses.hpp"
+#include "Cookie.hpp"
+#include "Globals.hpp"
 // #include "Proxy.hpp"
 
 namespace HTTP {

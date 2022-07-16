@@ -187,7 +187,7 @@ RequestHeader::Cookie(Request &req) {
 
     std::vector<std::string> cookie_pairs = split(value, " ;");
     for (std::size_t i = 0; i < cookie_pairs.size(); ++i) {
-        std::size_t colonPos = cookie_pairs[i].find(':');
+        std::size_t colonPos = cookie_pairs[i].find('=');
         if (colonPos == std::string::npos) {
             continue;
         }

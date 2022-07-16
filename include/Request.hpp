@@ -106,8 +106,8 @@ public:
     // uint32_t getStoredHash(void) const;
     // void     setStoredHash(uint32_t);
 
-    const std::map<std::string, std::string> &getCookie(void);
-    void                                      setCookie(std::map<std::string, std::string> cookie);
+    std::map<std::string, std::string>  &getCookie(void);
+    void                                setCookie(std::map<std::string, std::string> cookie);
 
     void proxyLookUp(void);
 

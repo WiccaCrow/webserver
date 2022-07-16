@@ -81,6 +81,7 @@ basicCheck(Object *src, const std::string &key, ExpectedType type) {
 
 int
 getUInteger(Object *src, const std::string &key, std::size_t &res, std::size_t def) {
+
     ConfStatus status = basicCheck(src, key, NUMBER, res, def);
     if (status != SET) {
         return status;
@@ -98,6 +99,7 @@ getUInteger(Object *src, const std::string &key, std::size_t &res, std::size_t d
 
 int
 getUInteger(Object *src, const std::string &key, std::size_t &res) {
+
     ConfStatus status = basicCheck(src, key, NUMBER);
     if (status != SET) {
         return status;
@@ -832,6 +834,7 @@ int parseSettings(Object *src, Settings &sets) {
 
     Object *obj = src->get(KW_SETTINGS)->toObj();
 
+
     if (!isValidKeywords(obj, validSettingsKeywords)) {
         return NONE_OR_INV;
     }
@@ -854,17 +857,12 @@ int parseSettings(Object *src, Settings &sets) {
         sets.worker_timeout = static_cast<time_t>(time);
     }
 
-    if (!getUInteger(obj, KW_MAX_REQUESTS, sets.max_requests, def.max_requests)) {
-        Log.error() << KW_MAX_REQUESTS << " parsing failed" << Log.endl;
-        return NONE_OR_INV;
-    }
-
     time = 0;
     if (!getUInteger(obj, KW_MAX_CLIENT_TIMEOUT, time, def.max_client_timeout)) {
         Log.error() << KW_MAX_CLIENT_TIMEOUT << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     } else {
-        sets.max_gateway_timeout = static_cast<time_t>(time);
+        sets.max_client_timeout = static_cast<time_t>(time);
     }
 
     time = 0;
@@ -873,6 +871,19 @@ int parseSettings(Object *src, Settings &sets) {
         return NONE_OR_INV;
     } else {
         sets.max_gateway_timeout = static_cast<time_t>(time);
+    }
+
+    time = 0;
+    if (!getUInteger(obj, KW_SESSION_LIFETIME, time, def.session_lifetime)) {
+        Log.error() << KW_SESSION_LIFETIME << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } else {
+        sets.session_lifetime = static_cast<time_t>(time);
+    }
+
+    if (!getUInteger(obj, KW_MAX_REQUESTS, sets.max_requests, def.max_requests)) {
+        Log.error() << KW_MAX_REQUESTS << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
     }
 
     if (!getUInteger(obj, KW_MAX_URI_LENGTH, sets.max_uri_length, def.max_uri_length)) {
