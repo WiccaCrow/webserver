@@ -15,6 +15,7 @@
 #include <utility>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <ctime>
 
 #include "SHA1.hpp"
 #include "Request.hpp"
@@ -131,6 +132,8 @@ public:
     virtual StatusCode checkHeaders(void);    
     virtual StatusCode parseBody(const std::string &);
     virtual StatusCode writeBody(const std::string &);
+
+    void makeFileWithRandName(const std::string &directory);
 
 };
 
