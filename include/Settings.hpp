@@ -1,5 +1,8 @@
 #pragma once
 
+#include <ctime>
+#include <stdint.h>
+
 #include "Globals.hpp"
 
 class Settings {
