@@ -481,11 +481,13 @@ Server::unlink(int fd) {
     // Log.debug() << "Server::unlink: id = " << id << Log.endl;
 
     if (id < 0) {
+        pthread_mutex_unlock(&_m_link);
         return ;
     }
 
     HTTP::Client *client = _clients[id];
     if (client == NULL) {
+        pthread_mutex_unlock(&_m_link);
         return ;
     }
     // Log.debug() << "Server::unlink: client addr = " << client << Log.endl;
