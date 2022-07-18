@@ -310,6 +310,13 @@ Client::checkTimeout(void) {
             g_server->unlink(io->wrFd());
             setGatewayTimeout(0);
             io->reset();
+            
+            Response *res = _responses.front();
+
+            if (res->isCGI() && res->getCGI()->getPID() != -1) {
+                kill(res->getCGI()->getPID(), SIGKILL);
+                res->getCGI()->setPID(-1);
+            }
         }
 
         // need to kill child process if CGI
@@ -454,6 +461,14 @@ void Client::receive(Response *res) {
     int bytes = getGatewayIO()->read();
 
     if (bytes < 0) {
+        if (res->isCGI()) {
+            Log.debug() << "Client::receive CGI failed" << Log.endl;
+            res->checkCGIFailure();
+
+            g_server->unlink(getGatewayIO()->rdFd());
+            getGatewayIO()->reset();
+            setGatewayTimeout(0);
+        }
         return ;
 
     } else if (bytes == 0) {
