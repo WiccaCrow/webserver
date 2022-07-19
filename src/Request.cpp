@@ -97,6 +97,16 @@ Request::setRemoteUser(const std::string &user) {
     _remoteUser = user;
 }
 
+const std::string &
+Request::getPathInfo(void) const {
+    return _pathInfo;
+}
+
+void
+Request::setPathInfo(const std::string &info) {
+    _pathInfo = info;
+}
+
 URI &
 Request::getUriRef() {
     return _uri;
@@ -312,6 +322,7 @@ Request::checkHeaders(void) {
             proxyLookUp();
         }
         resolvePath();
+        checkCGI();
     }
 
     // Call each header handler
@@ -415,5 +426,48 @@ void
 Request::setCookie(std::map<std::string, std::string> cookie) {
     _cookie = cookie;
 }
+
+void
+Request::checkCGI(void) {
+
+    #ifndef CGI_VDIR
+     # define CGI_VDIR "cgi-bin"
+    #endif
+    
+    std::string s = getResolvedPath();
+
+    size_t pos = s.find("/" CGI_VDIR "/");
+
+    if (pos != std::string::npos) {
+
+        s.erase(pos, strlen(CGI_VDIR) + 1);
+
+        const std::vector<std::string> &parts = split(s.substr(pos), "/");
+        std::string path = s.substr(0, pos + 1);
+        std::string path_info;
+        for (size_t i = 0; i < parts.size(); ++i) {
+            path += parts[i];
+            if (!resourceExists(path)) {
+                Log.debug() << "Request:: " << path << " does not exist" << Log.endl; 
+                setStatus(NOT_FOUND);
+                return ;
+            }
+            if (!isDirectory(path)) {
+                for (size_t j = i + 1; j < parts.size(); j++) {
+                    path_info += "/" + parts[j];
+                }
+                isCGI(true);
+                break ;
+            }
+            path += "/";
+        }
+        setResolvedPath(path);
+        setPathInfo(path_info);
+        Log.debug() << "Request:: Upd Path: " << getResolvedPath() << Log.endl;
+        Log.debug() << "Request:: PathInfo: " << getPathInfo() << Log.endl;
+    } else {
+        isCGI(false);
+    }
+}  
 
 } // namespace HTTP

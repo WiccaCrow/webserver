@@ -115,6 +115,8 @@ void Response::assembleError(void) {
 
 void Response::handle(void) {
     if (getStatus() < BAD_REQUEST) {
+        isCGI(getRequest()->isCGI());
+
         Redirect &rdr = getRequest()->getLocation()->getRedirectRef();
         if (!getRequest()->authorized()) {
             makeResponseForNonAuth();
@@ -220,7 +222,6 @@ Response::makeFileWithRandName(const std::string &directory) {
 
 void Response::POST(void) {
 
-    // Parse path_info
     const std::string &resourcePath = _req->getResolvedPath(); 
     if (isDirectory(resourcePath)) {
         makeFileWithRandName(resourcePath);
@@ -603,7 +604,7 @@ void Response::makeHead(void) {
     if (clientCookie.find("s_id") == clientCookie.end()) {
         SHA1 sha;
         Cookie s_id("s_id", sha.hash(itos(rand())));
-        s_id.httpOnly = true;
+        s_id.httpOnly = g_server->settings.cookie_httpOnly;
         s_id.maxAge = g_server->settings.session_lifetime;
         s_id.setPath("/");
         std::string sidStr = s_id.toString();
@@ -735,6 +736,10 @@ void Response::setCGI(CGI *cgi) {
 void Response::matchCGI(const std::string &filepath) {
     typedef std::map<std::string, CGI> cgisMap;
     typedef cgisMap::iterator          iter;
+
+    if (!isCGI()) {
+        return ;
+    }
 
     cgisMap &cgis = getRequest()->getLocation()->getCGIsRef();
     for (iter it = cgis.begin(); it != cgis.end(); it++) {
