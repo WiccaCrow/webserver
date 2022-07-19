@@ -35,6 +35,9 @@
                         ".js": "/usr/bin/node",
                         ".cgi": ""
                     },
+                    "add_headers": [
+                        "Set-cookie: visit=9de70f6546b2452f6e7b98b46ac36070; Max-Age=86400; SameSite=strict; Path=/about"
+                    ],
                     "autoindex": true,
                     "index": ["index.html"],
                     "post_max_body": 200,
