@@ -7,10 +7,10 @@
 namespace HTTP {
 
 Response::Response(void)
-    : ARequest(), _parsedStatus(OK), _req(NULL), _cgi(NULL), _proxy(NULL), _fileaddr(NULL), _filefd(-1), _isProxy(false), _isCGI(false) {}
+    : ARequest(), _parsedStatus(OK), _req(NULL), _cgi(NULL), _proxy(NULL), _fileaddr(NULL), _filefd(-1), _offset(0), _isProxy(false), _isCGI(false) {}
 
 Response::Response(Request *req)
-    : ARequest(), _parsedStatus(OK), _req(req), _cgi(NULL), _proxy(NULL), _fileaddr(NULL), _filefd(-1), _isProxy(false), _isCGI(false) {
+    : ARequest(), _parsedStatus(OK), _req(req), _cgi(NULL), _proxy(NULL), _fileaddr(NULL), _filefd(-1), _offset(0), _isProxy(false), _isCGI(false) {
     setStatus(getRequest()->getStatus());
 }
 
@@ -352,16 +352,21 @@ int Response::makeResponseForFile(void) {
     } else if (ranges.size() > 1) {
         makeResponseForMultipartRange();
     } else {
-        setBody(std::string(_fileaddr, getFileSize()));
-        // if (getFileSize() > REGLR_DWNLD_MAX_SIZE) {
-        //     addHeader(TRANSFER_ENCODING, "chunked");
-        // }
+        if (static_cast<uint64_t>(getFileSize()) > g_server->settings.max_reg_file_size) {
+            chunked(true);
+        } else {
+            setBody(std::string(_fileaddr, getFileSize()));
+        }
     }
 
     addHeader(CONTENT_TYPE, getContentType(resourcePath));
     addHeader(ETAG, getEtagFile(resourcePath));
     addHeader(LAST_MODIFIED, Time::gmt(getModifiedTime(resourcePath)));
-    addHeader(CONTENT_LENGTH);
+    if (chunked()) {
+        addHeader(TRANSFER_ENCODING, "chunked");
+    } else {
+        addHeader(CONTENT_LENGTH);
+    }
 
     return 1;
 }
@@ -670,32 +675,32 @@ void Response::makeResponseForError(void) {
     setBody(errorResponses[getStatus()]);
 }
 
-// Rewrite
-// void
-// Response::makeChunk() {
-//     _res = "";
-//     if (!getHeader(TRANSFER_ENCODING) ) {
-//         return ;
-//     }
-//     if (_resourceFileStream.eof()) {
-//         _resourceFileStream.close();
-//         _resourceFileStream.clear();
-//         return ;
-//     }
-//     char buffer[CHUNK_SIZE] = {0};
-//     _resourceFileStream.read(buffer, sizeof(buffer) - 1);
-//     if (_resourceFileStream.fail() && !_resourceFileStream.eof()) {
-//         setStatus(INTERNAL_SERVER_ERROR);
-//         _client->shouldBeClosed(true);
-//         return ;
-//     } else {
-//         _res.assign(buffer, _resourceFileStream.gcount());
-//         _res = itohs(_resourceFileStream.gcount()) + CRLF + _res + CRLF;
-//     }
-//     if (_resourceFileStream.eof()) {
-//         _res += "0" CRLF CRLF;
-//     }
-// }
+std::string
+Response::makeChunk(void) {
+
+    std::string res;
+
+    const uint64_t chunk_size = g_server->settings.chunk_size;
+    const uint64_t filesize = _filestat.st_size;
+
+    if (_offset >= filesize) {
+        // could be trailer headers
+        res = "0" CRLF CRLF;
+        chunked(false);
+
+    } else {
+        uint64_t size = chunk_size;
+        if (filesize - _offset < chunk_size) {
+            size = filesize - _offset;
+        }
+
+        res.assign(_fileaddr + _offset, size);
+        res = itohs(size) + CRLF + res + CRLF;
+
+        _offset += size;
+    }
+    return res;
+}
 
 Request *
 Response::getRequest(void) {

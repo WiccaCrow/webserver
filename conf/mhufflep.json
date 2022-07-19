@@ -7,7 +7,7 @@
         "max_gateway_timeout": 100,
         "session_lifetime": 86400,
         "max_uri_length": 1024,
-        "chunk_size": "40 MiB",
+        "chunk_size": "10 MiB",
         "max_header_field_length": 2048,
         "worker_timeout": 10000,
         "workers": 3,

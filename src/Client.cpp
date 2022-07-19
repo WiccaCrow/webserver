@@ -341,13 +341,20 @@ void Client::reply(Response *res) {
         }
 
     } else if (!res->bodySent()) {
-        if (res->getBody().empty()) {
-            res->bodySent(true);
-            return ;
-        }
 
-        if (!io->getDataPos()) {
-            io->setData(res->getBody());
+        if (res->chunked()) {
+            if (!io->getDataPos()) {
+                io->setData(res->makeChunk());
+            }
+        } else {
+            if (res->getBody().empty()) {
+                res->bodySent(true);
+                return ;
+            }
+
+            if (!io->getDataPos()) {
+                io->setData(res->getBody());
+            }
         }
     }
 
@@ -372,7 +379,7 @@ void Client::reply(Response *res) {
         if (!res->headSent()) {
             res->headSent(true);
 
-        } else if (!res->bodySent()) {
+        } else if (!res->bodySent() && !res->chunked()) {
             res->bodySent(true);
         }
     }

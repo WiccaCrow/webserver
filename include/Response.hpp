@@ -42,6 +42,7 @@ class Response : public ARequest {
     char        *_fileaddr;
     int         _filefd;
     struct stat _filestat;
+    uint64_t    _offset;
 
     RangeSet    _range;
 
@@ -102,7 +103,7 @@ public:
 
     void        checkCGIFailure(void);
     
-    void  makeChunk(void);
+    std::string  makeChunk(void);
 
     virtual bool tunnelGuard(bool);
 

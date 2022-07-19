@@ -60,7 +60,7 @@ join(std::vector<std::string> &v, const std::string &delim) {
 }
 
 std::string
-itoh(int nb) {
+itohs(int nb) {
     std::string inhex;
     for (int hexDig = nb % 16; nb; hexDig = nb % 16) {
         if (hexDig > 9) {
