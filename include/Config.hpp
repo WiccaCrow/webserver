@@ -60,6 +60,7 @@ enum ConfStatus {
     # define KW_CHUNK_SIZE               "chunk_size"
     # define KW_MAX_REG_FILE_SIZE        "max_reg_file_size"
     # define KW_MAX_RANGE_SIZE           "max_range_size"
+    # define KW_COOKIE_HTTP_ONLY         "cookie_http_only"
 
 #endif
 

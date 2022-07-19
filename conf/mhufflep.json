@@ -12,7 +12,8 @@
         "worker_timeout": 10000,
         "workers": 3,
         "max_reg_file_size": "4 MiB",
-        "max_range_size": "2 MiB"
+        "max_range_size": "2 MiB",
+        "cookie_http_only": true
     },
     "servers": {
         "http2": {
@@ -29,6 +30,10 @@
             "post_max_body": 100,
             "autoindex": true,
             "index": [ "index.html" ],
+            "add_headers": [
+                "Set-cookie: visit=9de70f6546b2452f6e7b98b46ac36070; Max-Age=86400; SameSite=strict; Path=/",
+                "Set-cookie: key1=val1;"
+            ],
             "locations": {
                 "/Downloads": {
                     "root"  : "/Users/mhufflep/",

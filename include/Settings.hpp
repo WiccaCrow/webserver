@@ -21,6 +21,7 @@ public:
     std::size_t max_header_field_length;
     
     bool blind_proxy;
+    bool cookie_httpOnly;
     
     std::time_t session_lifetime;
 

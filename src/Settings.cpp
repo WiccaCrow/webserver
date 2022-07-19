@@ -15,6 +15,7 @@ Settings::Settings(void) {
     max_header_field_length = 2048;
 
     blind_proxy = false;
+    cookie_httpOnly = true;
     
     chunk_size = 40 * MiB;
     max_reg_file_size = 4 * MiB;

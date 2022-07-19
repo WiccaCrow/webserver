@@ -236,14 +236,14 @@ const char * validKeywords[] = {
     KW_SETTINGS, KW_MAX_WAIT_CONN, KW_WORKERS, KW_WORKER_TIMEOUT, KW_MAX_REQUESTS,
     KW_MAX_CLIENT_TIMEOUT, KW_MAX_GATEWAY_TIMEOUT, KW_MAX_URI_LENGTH, 
     KW_MAX_HEADER_FIELD_LENGTH, KW_BLIND_PROXY, KW_SESSION_LIFETIME, KW_CHUNK_SIZE,
-    KW_MAX_REG_FILE_SIZE, KW_MAX_RANGE_SIZE, NULL
+    KW_MAX_REG_FILE_SIZE, KW_MAX_RANGE_SIZE, KW_COOKIE_HTTP_ONLY, NULL
 };
 
 const char * validSettingsKeywords[] = {
     KW_SETTINGS, KW_MAX_WAIT_CONN, KW_WORKERS, KW_WORKER_TIMEOUT, KW_MAX_REQUESTS,
     KW_MAX_CLIENT_TIMEOUT, KW_MAX_GATEWAY_TIMEOUT, KW_MAX_URI_LENGTH, 
     KW_MAX_HEADER_FIELD_LENGTH, KW_BLIND_PROXY, KW_SESSION_LIFETIME, KW_CHUNK_SIZE,
-    KW_MAX_REG_FILE_SIZE, KW_MAX_RANGE_SIZE, NULL
+    KW_MAX_REG_FILE_SIZE, KW_MAX_RANGE_SIZE, KW_COOKIE_HTTP_ONLY, NULL
 };
 
 const char * validServerBlockKeywords[] = {
@@ -898,6 +898,11 @@ int parseSettings(Object *src, Settings &sets) {
 
     if (!getBoolean(obj, KW_BLIND_PROXY, sets.blind_proxy, def.blind_proxy)) {
         Log.error() << KW_BLIND_PROXY << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    }
+
+    if (!getBoolean(obj, KW_COOKIE_HTTP_ONLY, sets.cookie_httpOnly, def.cookie_httpOnly)) {
+        Log.error() << KW_COOKIE_HTTP_ONLY << " parsing failed" << Log.endl;
         return NONE_OR_INV;
     }
 
