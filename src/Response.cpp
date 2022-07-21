@@ -768,6 +768,8 @@ void Response::checkCGIFailure(void) {
 }
 
 bool Response::parseLine(std::string &line) {
+    // Log.debug() << "Response::parseLine:: " << line << Log.endl;
+
     if (!isCGI() && !flagSet(PARSED_SL)) {
         rtrim(line, CRLF);
         setStatus(!line.empty() ? parseSL(line) : CONTINUE);
@@ -856,6 +858,7 @@ StatusCode
 Response::parseHeader(const std::string &line) {
     ResponseHeader header;
 
+    // Log.debug() << "Response::parseHeader:: " << line << Log.endl;
     if (tunnelGuard(!header.parse(line, _isProxy))) {
         Log.debug() << "Response:: Invalid header " << line << Log.endl;
         return BAD_REQUEST;

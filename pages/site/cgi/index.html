@@ -39,12 +39,20 @@
     </style>
     <div id="container">
         <div class="top-container">
-            <span>CGI + POST</span>
+            <span>CGI::printenv</span>
         </div>
         <form method="POST" action="./cgi-bin/printenv3.py">
             <div>
                 <textarea name="field" cols="45" rows="10" id="body"></textarea>
             </div>
+            <div class="btm-container">
+                <input type="submit" value="Send" id="send-btn">
+            </div>
+        </form>
+        <div class="top-container">
+            <span>CGI::welcome</span>
+        </div>
+        <form method="GET" action="./cgi-bin/welcome.py">
             <div class="btm-container">
                 <input type="submit" value="Send" id="send-btn">
             </div>

@@ -21,7 +21,7 @@
             "server_names": [ "webserv.com" ],
             "cgi": {
                 ".pl": "/usr/bin/perl",
-                ".py": "/usr/bin/python",
+                ".py": "/usr/bin/python3",
                 ".php": "/opt/homebrew/bin/php-cgi",
                 ".js": "/usr/local/bin/node",
                 ".cgi": ""
