@@ -775,6 +775,11 @@ int parseSize(std::string &s, uint64_t &size) {
 
     trim(s, " ");
     
+    if (!std::isdigit(s[0])) {
+        Log.error() << "Bad size: " << s << Log.endl;
+        return 0;
+    }
+
     char *end = NULL;
     uint64_t res = strtoull(s.c_str(), &end, 10);
 
@@ -814,7 +819,7 @@ int parseSize(std::string &s, uint64_t &size) {
     } else if (!strcmp(end, "EiB")) {
         res = res * EiB;
     } else {
-        Log.error() << "Unknown size postfix: " << end << Log.endl;
+        Log.error() << "Unknown size postfix: \"" << end << "\"" << Log.endl;
         return 0;
     }
 
@@ -846,6 +851,9 @@ int parseSettings(Object *src, Settings &sets) {
 
     if (!getUInteger(obj, KW_WORKERS, sets.workers, def.workers)) {
         Log.error() << KW_WORKERS << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } else if (sets.workers > 30) {
+        Log.error() << KW_WORKERS << " upper bound is 30" << Log.endl;
         return NONE_OR_INV;
     }
 
@@ -931,7 +939,7 @@ int parseSettings(Object *src, Settings &sets) {
     } else if (!size_s.empty() && !parseSize(size_s, sets.max_reg_file_size)) {
         Log.error() << KW_MAX_REG_FILE_SIZE << " parsing failed" << Log.endl;
         return NONE_OR_INV;
-    } 
+    }
 
     return SET;
 }
