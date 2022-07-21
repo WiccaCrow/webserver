@@ -927,8 +927,7 @@ Response::parseBody(const std::string &line) {
         Log.debug() << "Response::writeBody" << Log.endl;
         return writeBody(line);
     } else {
-        setBody(getBody() + line);
-        return CONTINUE;
+        setBody(line);
     }
     return PROCESSING;
 }

@@ -146,6 +146,7 @@ CGI::setScriptPath(const std::string &path) {
 
 int
 CGI::exec(Request *req) {
+
     if (compiled() && !isExecutableFile(_filepath)) {
         Log.error() << _filepath << " is not executable" << Log.endl;
         return 0;
@@ -169,13 +170,25 @@ CGI::exec(Request *req) {
         args[1] = _filepath.c_str();
     }
 
-    Client *client = req->getClient();
-    IO *io = client->getGatewayIO();
+    IO in;
+    IO out;
 
-    if (io->pipe() < 0) {
-        Log.error() << "CGI::exec: pipe failed" << Log.endl;
+    if (in.pipe() != 0) {
+        Log.syserr() << "CGI::pipe::in: " << Log.endl;
         return 0;
     }
+
+    if (out.pipe() != 0) {
+        Log.syserr() << "CGI::pipe::out: " << Log.endl;
+        close(in.rdFd());
+        close(in.wrFd());
+        return 0;
+    }
+
+    Client *client = req->getClient();
+    IO *io = client->getGatewayIO();
+    io->rdFd(out.rdFd());
+    io->wrFd(in.wrFd());
 
     int childPID = fork();
     if (childPID < 0) {
@@ -184,12 +197,15 @@ CGI::exec(Request *req) {
 
     } else if (childPID == 0) {
 
-        if (dup2(io->rdFd(), fileno(stdin)) < 0) {
+        close(in.wrFd());
+        close(out.rdFd());
+
+        if (dup2(in.rdFd(), fileno(stdin)) < 0) {
             Log.syserr() << "CGI::exec: dup2 failed for stdin" << Log.endl;
             exit(123);
         }
     
-        if (dup2(io->wrFd(), fileno(stdout)) < 0) {
+        if (dup2(out.wrFd(), fileno(stdout)) < 0) {
             Log.syserr() << "CGI::exec: dup2 failed for stdout" << Log.endl;
             exit(124);
         }
@@ -199,6 +215,9 @@ CGI::exec(Request *req) {
             exit(125);
         }
     }
+
+    close(in.rdFd());
+    close(out.wrFd());
 
     setPID(childPID);
 

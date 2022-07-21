@@ -487,10 +487,10 @@ void Client::receive(Response *res) {
             // If no content-length header returned from CGI
             // read the whole body at once
             res->setBodySize(getGatewayIO()->getRem().length());
+            Log.debug() << "Rem len: " << res->getBodySize() << Log.endl;
         }
 
         g_server->unlink(getGatewayIO()->rdFd());
-        getGatewayIO()->reset();
     }
 
     setGatewayTimeout(0);
