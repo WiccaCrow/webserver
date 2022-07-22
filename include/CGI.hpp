@@ -50,7 +50,6 @@ public:
 
     bool initEnv(void);
     bool setEnv(Request *);
-    bool setFullEnv(Request *);
 
     void setExecPath(const std::string);
     const std::string getExecPath(void) const;

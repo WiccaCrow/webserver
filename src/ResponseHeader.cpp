@@ -1,5 +1,6 @@
 #include "ResponseHeader.hpp"
 #include "Client.hpp"
+#include "Server.hpp"
 
 namespace HTTP {
 
@@ -97,12 +98,7 @@ ResponseHeader::ContentLanguage(Response &res) {
 
 void
 ResponseHeader::ContentLength(Response &res) {
-    if (!value.empty()) {
-        return ;
-    }
-    if (res.getBody().length() != 0) {
-        value = sztos(res.getBody().length());
-    }
+    value = sztos(res.getBody().length());
 }
 
 void
@@ -166,7 +162,7 @@ ResponseHeader::KeepAlive(Response &res) {
     (void)res;
     
     if (res.headers[CONNECTION].value != "close") {
-        value = "timeout=" + sztos(MAX_CLIENT_TIMEOUT) + ", max=" + sztos(MAX_REQUESTS);
+        value = "timeout=" + sztos(g_server->settings.max_client_timeout) + ", max=" + sztos(g_server->settings.max_requests);
     }
 }
 

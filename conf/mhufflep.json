@@ -1,11 +1,27 @@
 {
+    "settings": {
+        "max_wait_conn": 128,
+        "blind_proxy": true,
+        "max_requests": 100,
+        "max_client_timeout": 25,
+        "max_gateway_timeout": 100,
+        "session_lifetime": 86400,
+        "max_uri_length": 1024,
+        "chunk_size": "10 MiB",
+        "max_header_field_length": 2048,
+        "worker_timeout": 10000,
+        "workers": 3,
+        "max_reg_file_size": "4 MiB",
+        "max_range_size": "2 MiB",
+        "cookie_http_only": true
+    },
     "servers": {
         "http2": {
             "listen": "172.20.10.2:8080",
             "server_names": [ "webserv.com" ],
             "cgi": {
                 ".pl": "/usr/bin/perl",
-                ".py": "/usr/bin/python",
+                ".py": "/usr/bin/python3",
                 ".php": "/opt/homebrew/bin/php-cgi",
                 ".js": "/usr/local/bin/node",
                 ".cgi": ""
@@ -14,6 +30,10 @@
             "post_max_body": 100,
             "autoindex": true,
             "index": [ "index.html" ],
+            "add_headers": [
+                "Set-cookie: visit=9de70f6546b2452f6e7b98b46ac36070; Max-Age=86400; SameSite=strict; Path=/",
+                "Set-cookie: key1=val1;"
+            ],
             "locations": {
                 "/Downloads": {
                     "root"  : "/Users/mhufflep/",

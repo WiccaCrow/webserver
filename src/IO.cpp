@@ -55,6 +55,11 @@ IO::getAddr(void) const {
     return _addr;
 }
 
+const std::string &
+IO::getRem(void) const {
+    return _rem;
+}
+
 void
 IO::setData(const std::string &data) {
     _data = data.c_str();
@@ -188,7 +193,7 @@ IO::listen(const std::string &addr, std::size_t port) {
         return -1;
     }
 
-    Log.info() << "IO::listen [" << _fdr << "] -> " << addr << ":" << port << Log.endl;
+    Log.info() << "IO::listen [" << _fdr << "] -> " << "http://" << addr << ":" << port << Log.endl;
     return _fdr;
 }
 

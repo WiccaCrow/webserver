@@ -1,4 +1,19 @@
 {
+    "settings": {
+        "max_wait_conn": 128,
+        "blind_proxy": true,
+        "max_requests": 100,
+        "max_client_timeout": 25000,
+        "max_gateway_timeout": 1000,
+        "session_lifetime": 86400,
+        "max_uri_length": 1024,
+        "chunk_size": "200000 MiB",
+        "max_header_field_length": 2048,
+        "worker_timeout": 10000,
+        "workers": 3,
+        "max_reg_file_size": "400000 MiB",
+        "max_range_size": "4000000000 MiB"
+    },
     "servers": {
         "http": {
             "server_names": [ "localhost" ],
@@ -6,13 +21,13 @@
                 ".bla": "./tests/ubuntu_cgi_tester"
             },
             "methods_allowed": [ "GET" ],
-            "post_max_body": 200,
             "root": "./pages/site",
             "autoindex": true,
             "index": [ "index.html" ],
             "locations": {
                 "/put_test": {
                     "alias": "./tests",
+                    "post_max_body": 2147483647,
                     "methods_allowed": [ "PUT" ]
                 },
                 "/post_body": {
@@ -24,7 +39,11 @@
                     "alias": "./YoupiBanane",
                     "autoindex": false,
                     "index": [ "youpi.bad_extension" ],
-                    "methods_allowed": [ "GET" ]
+                    "methods_allowed": [ "GET", "POST" ],
+                    "post_max_body": 2147483647,
+                    "cgi": {
+                        ".bla": "./tests/mac_cgi_tester"
+                    }
                 }
             }
         }

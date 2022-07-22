@@ -25,7 +25,7 @@ private:
     std::string   _alias;
     bool          _autoindex;
     IndicesVec    _index;
-    int           _post_max_body;
+    std::size_t   _post_max_body;
     MethodsVec    _allowedMethods;
     CGIsMap       _CGIs;
     Redirect      _redirect;
@@ -42,7 +42,7 @@ public:
     Redirect      &getRedirectRef(void);
     std::string   &getPathRef(void);
     bool          &getAutoindexRef(void);
-    int           &getPostMaxBodyRef(void);
+    std::size_t   &getPostMaxBodyRef(void);
     std::string   &getAliasRef(void);
     std::string   &getRootRef(void);
     IndicesVec    &getIndexRef(void);

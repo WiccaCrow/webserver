@@ -39,6 +39,7 @@ private:
 
     std::string    _resolvedPath;
     std::string    _remoteUser;
+    std::string    _pathInfo;
     
     ServerBlock *  _servBlock;
     Location    *  _location;
@@ -71,6 +72,9 @@ public:
 
     const std::string &getRemoteUser(void) const;
     void    setRemoteUser(const std::string &);
+
+    const std::string &getPathInfo(void) const;
+    void setPathInfo(const std::string &);
 
     virtual bool tunnelGuard(bool);
 
@@ -106,10 +110,12 @@ public:
     // uint32_t getStoredHash(void) const;
     // void     setStoredHash(uint32_t);
 
-    const std::map<std::string, std::string> &getCookie(void);
-    void                                      setCookie(std::map<std::string, std::string> cookie);
+    std::map<std::string, std::string>  &getCookie(void);
+    void                                setCookie(std::map<std::string, std::string> cookie);
 
     void proxyLookUp(void);
+
+    void checkCGI(void);
 
 };
 

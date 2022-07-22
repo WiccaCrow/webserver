@@ -3,7 +3,8 @@
 const std::size_t reservedClients = 64;
 
 Server::Server()
-    : _working(true), isDaemon(false) {
+    : _working(true)
+    , isDaemon(false) {
     _pollfds.reserve(reservedClients);
 
     pthread_mutex_init(&_m_new_resp, NULL);
@@ -12,6 +13,7 @@ Server::Server()
     pthread_mutex_init(&_m_del_pfds, NULL);
     pthread_mutex_init(&_m_del_clnt, NULL);
     pthread_mutex_init(&_m_link, NULL);
+    pthread_mutex_init(&_m_sessions, NULL);
 }
 
 Server::~Server(void) {
@@ -32,6 +34,7 @@ Server::~Server(void) {
     pthread_mutex_destroy(&_m_del_pfds);
     pthread_mutex_destroy(&_m_del_clnt);
     pthread_mutex_destroy(&_m_link);
+    pthread_mutex_destroy(&_m_sessions);
 }
 
 // Could be used for re-reading config:
@@ -140,6 +143,7 @@ void Server::start(void) {
             process();
         }
         checkTimeout();
+        checkSessionsTimeout();
     
         emptyDelFdsQ();
         emptyDelClientQ();
@@ -202,15 +206,26 @@ void Server::createSockets(void) {
 }
 
 void Server::startWorkers(void) {
+
+    _workers = new Worker[settings.workers];
+    
+    if (_workers == NULL) {
+        Log.syserr() << "Cannot allocate memory for workers" << Log.endl;
+    }
+
     for (std::size_t i = 0; i < Worker::count; i++) {
         _workers[i].create();
     }
 }
 
 void Server::stopWorkers(void) {
+
     for (std::size_t i = 0; i < Worker::count; i++) {
         _workers[i].join();
     }
+
+    delete[] _workers;
+    _workers = NULL;
 }
 
 void
@@ -378,7 +393,8 @@ isClientFree(HTTP::Client *client) {
     return (client == NULL);
 }
 
-void Server::checkTimeout(void) {
+void
+Server::checkTimeout(void) {
 
     for (ClientsVec::iterator it = _clients.begin(); it != _clients.end(); ++it) {
         
@@ -394,6 +410,36 @@ void Server::checkTimeout(void) {
             addToDelClientQ(client);
         }
     }
+}
+
+void
+Server::checkSessionsTimeout(void) {
+
+    for (SessionsMap::iterator it = _sessions.begin(); it != _sessions.end();) {
+        isActualSession((it++)->first);
+    }
+}
+
+bool
+Server::isActualSession(const std::string &s_id) {
+    if (_sessions.find(s_id) != _sessions.end()) {
+        std::time_t current = Time::now();
+        if (current - _sessions[s_id] < settings.session_lifetime) {
+            return true;
+        }
+        _sessions.erase(s_id);
+    }
+    return false;
+}
+
+void
+Server::addSession(const std::string s_id) {
+
+    pthread_mutex_lock(&_m_sessions);
+
+    _sessions[s_id] = Time::now();
+
+    pthread_mutex_unlock(&_m_sessions);
 }
 
 void
@@ -435,11 +481,13 @@ Server::unlink(int fd) {
     // Log.debug() << "Server::unlink: id = " << id << Log.endl;
 
     if (id < 0) {
+        pthread_mutex_unlock(&_m_link);
         return ;
     }
 
     HTTP::Client *client = _clients[id];
     if (client == NULL) {
+        pthread_mutex_unlock(&_m_link);
         return ;
     }
     // Log.debug() << "Server::unlink: client addr = " << client << Log.endl;

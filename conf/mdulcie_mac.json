@@ -1,4 +1,19 @@
 {
+    "settings": {
+        "max_wait_conn": 128,
+        "blind_proxy": true,
+        "max_requests": 100,
+        "max_client_timeout": 25000,
+        "max_gateway_timeout": 1000,
+        "session_lifetime": 86400,
+        "max_uri_length": 1024,
+        "chunk_size": "100 MiB",
+        "max_header_field_length": 2048,
+        "worker_timeout": 10000,
+        "workers": 3,
+        "max_reg_file_size": "4 MiB",
+        "max_range_size": "2 MiB"
+    },
     "servers": {
         "http": {
             "listen": "127.0.0.1:7575",
@@ -19,6 +34,10 @@
                 "504": "./pages/error_pages/504.html",
                 "505": "./pages/error_pages/505.html"
             },
+            "root": "/Users/mdulcie/goinfre",
+            "add_headers": [
+                "Set-cookie: visit=9de70f6546b2452f6e7b98b46ac36070; Max-Age=86400; SameSite=strict; Path=/"
+            ],
             "methods_allowed": [ "GET", "POST" ],
             "post_max_body": 100,
             "autoindex": true,
@@ -32,17 +51,36 @@
             },
             "locations": {
                 "/about": {
-                    "root": "./pages",
+                    "alias": "./pages/site",
+                    "cgi": {
+                        ".py": "/usr/bin/python3"
+
+                    },
                     "autoindex": false,
                     "index": [ "index.html" ],
                     "post_max_body": 200,
-                    "methods_allowed": [ "GET", "POST" ]                 
+                    "methods_allowed": [ "GET", "POST" ],
+                    "add_headers": [
+                        "Set-cookie: visit=9de70f6546b2452f6e7b98b46ac36070; Max-Age=86400; SameSite=strict; Path=/about"
+                    ]             
                 },
                 "/feedback": {
                     "autoindex": false,
                     "index": [ "index.html", "index.php" ],
                     "methods_allowed": [ "GET" ],
                     "post_max_body": 300
+                },
+                "/redirect": {
+                    "redirect": {
+                    "code": 301,
+                    "url": "http://www.google.com"
+                    }                       
+               },
+               "/goinfre": {
+                    "alias": "/Users/mdulcie/goinfre",
+                    "autoindex": false,
+                    "index": [ "index.html" ],
+                    "methods_allowed": [ "GET", "POST", "PUT" ]
                 }
             }
         }

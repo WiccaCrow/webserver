@@ -58,7 +58,7 @@ Worker::_cycle(void *ptr) {
         HTTP::Response *res = g_server->rmFromRespQ();
 
         if (res == NULL) {
-            usleep(WORKER_TIMEOUT);
+            usleep(g_server->settings.worker_timeout);
             continue;
         }
 

@@ -10,6 +10,7 @@
 #include "Globals.hpp"
 #include "HeaderNames.hpp"
 #include "HeadersCodes.hpp"
+#include "HTML.hpp"
 
 namespace HTTP {
 

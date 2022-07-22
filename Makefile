@@ -26,16 +26,17 @@ INCLUDE_DIR  = include
 LOGS_DIR     = logs
 DFLT_DIR	 = default
 
-SRCS     =  Auth.cpp                Location.cpp            SHA1.cpp           \
-            Base64.cpp              Logger.cpp              Server.cpp         \
-            CGI.cpp                 Time.cpp                ServerBlock.cpp    \
-            CRC.cpp                 Redirect.cpp            StatusLines.cpp    \
-            Client.cpp              Request.cpp             URI.cpp            \
-            Config.cpp              RequestHeader.cpp       Utils.cpp          \
-            ErrorResponses.cpp      Response.cpp            main.cpp           \
-            Header.cpp              ResponseContType.cpp    Range.cpp		   \
-            HeaderNames.cpp         ResponseHeader.cpp      Worker.cpp     	   \
-			IO.cpp    Proxy.cpp ARequest.cpp 
+SRCS     =  ARequest.cpp            IO.cpp                  SHA1.cpp		\
+			Auth.cpp                Location.cpp            Server.cpp		\
+			Base64.cpp              Logger.cpp              ServerBlock.cpp	\
+			CGI.cpp                 Proxy.cpp               Settings.cpp	\
+			CRC.cpp                 Range.cpp               StatusLines.cpp	\
+			Client.cpp              Redirect.cpp            Time.cpp		\
+			Config.cpp              Request.cpp             URI.cpp			\
+			Cookie.cpp              RequestHeader.cpp       Utils.cpp		\
+			ErrorResponses.cpp      Response.cpp            Worker.cpp		\
+			Header.cpp              ResponseContType.cpp    main.cpp		\
+			HeaderNames.cpp         ResponseHeader.cpp
 
 OBJS = $(addprefix $(OBJS_DIR)/, $(SRCS:.cpp=.o))
 DEPS = $(addprefix $(DEPS_DIR)/, $(SRCS:.cpp=.d))
@@ -49,7 +50,7 @@ LIBJSONINCLUDE = ./${LIBJSONDIR}/src
 LIBJSONFLAGS = -ljson -L ./${LIBJSONDIR} -I ${LIBJSONINCLUDE} 
 
 ###################################################################################
-#                                    Cycle                                        #
+#                                   Commands                                      #
 ###################################################################################
 
 all: libjson makedir $(NAME)
@@ -65,12 +66,14 @@ makedir:
 
 
 $(NAME): $(OBJS)
-	$(CXX) $(CPPFLAGS) $^ -o $(NAME) $(LIBJSONFLAGS) $(LDFLAGS)
+	$(CXX) $(CPPFLAGS) $^ -o $@ $(LIBJSONFLAGS) $(LDFLAGS)
 
 -include $(DEPS)
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
-	$(CXX) $(CPPFLAGS) -c $< -o $@ -I $(INCLUDE_DIR) -I $(LIBJSONINCLUDE) \
-        -MMD -MF $(patsubst ${OBJS_DIR}/%.o,${DEPS_DIR}/%.d,$@) -D LOGS_DIR=\"${LOGS_DIR}\"
+	$(CXX) $(CPPFLAGS) -c $< -o $@ \
+        -I $(INCLUDE_DIR) -I $(LIBJSONINCLUDE) \
+        -D LOGS_DIR=\"${LOGS_DIR}\" \
+        -MMD -MF $(patsubst ${OBJS_DIR}/%.o,${DEPS_DIR}/%.d,$@) 
 
 clean:
 	rm -rf ${DEPS_DIR} ${OBJS_DIR} ${LOGS_DIR} YoupiBanane
@@ -87,7 +90,7 @@ re: fclean all
 cgi:
 	gcc ./pages/site/cgi/printenv.c -o ./pages/site/cgi/printenv.cgi
 
-YoupiBanane:
+tester:
 	mkdir -p YoupiBanane/nop YoupiBanane/Yeah
 	touch ./YoupiBanane/youpi.bad_extension ./YoupiBanane/youpi.bla
 	touch ./YoupiBanane/nop/youpi.bad_extension ./YoupiBanane/nop/other.pouic

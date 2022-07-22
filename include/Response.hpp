@@ -15,12 +15,15 @@
 #include <utility>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <ctime>
 
 #include "SHA1.hpp"
 #include "Request.hpp"
 #include "ResponseHeader.hpp"
 #include "HTML.hpp"
 #include "ErrorResponses.hpp"
+#include "Cookie.hpp"
+#include "Globals.hpp"
 // #include "Proxy.hpp"
 
 namespace HTTP {
@@ -39,6 +42,7 @@ class Response : public ARequest {
     char        *_fileaddr;
     int         _filefd;
     struct stat _filestat;
+    uint64_t    _offset;
 
     RangeSet    _range;
 
@@ -78,8 +82,8 @@ public:
     void        makeResponseForNonAuth(void);
     int         makeResponseForDir(void);
     int         makeResponseForFile(void);
-    void        makeResponseForRange(void);
-    void        makeResponseForMultipartRange(void);
+    int         makeResponseForRange(void);
+    int         makeResponseForMultipartRange(void);
     int         makeResponseForCGI(void);
     int         makeResponseForRedirect(StatusCode, const std::string &);
 
@@ -99,7 +103,7 @@ public:
 
     void        checkCGIFailure(void);
     
-    void  makeChunk(void);
+    std::string  makeChunk(void);
 
     virtual bool tunnelGuard(bool);
 
@@ -129,6 +133,8 @@ public:
     virtual StatusCode checkHeaders(void);    
     virtual StatusCode parseBody(const std::string &);
     virtual StatusCode writeBody(const std::string &);
+
+    void makeFileWithRandName(const std::string &directory);
 
 };
 

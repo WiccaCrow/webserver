@@ -45,6 +45,23 @@ enum ConfStatus {
     # define KW_PASS             "pass"
     # define KW_DOMAINS          "domains"
     # define KW_ADD_HEADERS      "add_headers"
+
+    # define KW_SETTINGS                 "settings"
+    # define KW_MAX_WAIT_CONN            "max_wait_conn"
+    # define KW_WORKERS                  "workers"
+    # define KW_WORKER_TIMEOUT           "worker_timeout"
+    # define KW_MAX_REQUESTS             "max_requests"
+    # define KW_MAX_CLIENT_TIMEOUT       "max_client_timeout"
+    # define KW_MAX_GATEWAY_TIMEOUT      "max_gateway_timeout"
+    # define KW_MAX_URI_LENGTH           "max_uri_length"
+    # define KW_MAX_HEADER_FIELD_LENGTH  "max_header_field_length"
+    # define KW_BLIND_PROXY              "blind_proxy"
+    # define KW_SESSION_LIFETIME         "session_lifetime"
+    # define KW_CHUNK_SIZE               "chunk_size"
+    # define KW_MAX_REG_FILE_SIZE        "max_reg_file_size"
+    # define KW_MAX_RANGE_SIZE           "max_range_size"
+    # define KW_COOKIE_HTTP_ONLY         "cookie_http_only"
+
 #endif
 
 int isInteger(double &num);
@@ -57,17 +74,17 @@ template <typename T>
 ConfStatus basicCheck(Object *, const std::string &key, ExpectedType, T &res, T def);
 ConfStatus basicCheck(Object *, const std::string &key, ExpectedType);
 
-int getUInteger(Object *, const std::string &key, int &res, int def);
-int getUInteger(Object *, const std::string &key, int &res);
+// int getUInteger(Object *, const std::string &key, int &res, int def);
+// int getUInteger(Object *, const std::string &key, int &res);
 
-int getString(Object *, const std::string &key, std::string &res, std::string def);
-int getString(Object *, const std::string &key, std::string &res);
+// int getString(Object *, const std::string &key, std::string &res, std::string def);
+// int getString(Object *, const std::string &key, std::string &res);
 
-int getBoolean(Object *, const std::string &key, bool &res, bool def);
-int getBoolean(Object *, const std::string &key, bool &res);
+// int getBoolean(Object *, const std::string &key, bool &res, bool def);
+// int getBoolean(Object *, const std::string &key, bool &res);
 
-int getArray(Object *, const std::string &key, std::vector<std::string> &res, std::vector<std::string> def);
-int getArray(Object *, const std::string &key, std::vector<std::string> &res);
+// int getArray(Object *, const std::string &key, std::vector<std::string> &res, std::vector<std::string> def);
+// int getArray(Object *, const std::string &key, std::vector<std::string> &res);
 
 template <typename T>
 int isSubset(std::vector<T> set, std::vector<T> subset);

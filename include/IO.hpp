@@ -8,6 +8,7 @@
 
 #include "Logger.hpp"
 #include "Globals.hpp"
+#include "HTML.hpp"
 
 class IO {
     int         _fdr;
@@ -45,6 +46,8 @@ public:
     std::size_t getDataSize(void) const;
     const char *getData(void) const;
     const std::string &getAddr(void) const;
+
+    const std::string &getRem(void) const;
 
     int read(void);
     int write(void);

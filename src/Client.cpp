@@ -12,7 +12,7 @@ Client::Client(void)
     _shouldBeRemoved(false),
     _isTunnel(false),
     _nbRequests(0),
-    _maxRequests(MAX_REQUESTS),
+    _maxRequests(g_server->settings.max_requests),
     _clientTimeout(0),
     _gatewayTimeout(0),
     _id(-1),
@@ -162,6 +162,7 @@ void Client::addRequest(void) {
     _requests.push_back(req);
 
     if (++_nbRequests >= _maxRequests) {
+        req->setStatus(TOO_MANY_REQUESTS);
         shouldBeClosed(true);
     }
 
@@ -217,7 +218,6 @@ void Client::tryReplyResponse(int fd) {
         removeResponse();
 
         if (shouldBeClosed()) {
-            // shouldBeRemoved(true);
             g_server->unlink(fd);
             getClientIO()->reset();
         }
@@ -285,7 +285,7 @@ Client::checkTimeout(void) {
 
     std::time_t current = Time::now();
 
-    if (getClientTimeout() != 0 && current - getClientTimeout() > MAX_CLIENT_TIMEOUT) {
+    if (getClientTimeout() != 0 && current - getClientTimeout() > g_server->settings.max_client_timeout) {
         
         IO *io = getClientIO();
 
@@ -299,7 +299,7 @@ Client::checkTimeout(void) {
         // 408 Request Timeout
     }
 
-    if (getGatewayTimeout() != 0 && current - getGatewayTimeout() > MAX_GATEWAY_TIMEOUT) {
+    if (getGatewayTimeout() != 0 && current - getGatewayTimeout() > g_server->settings.max_gateway_timeout) {
 
         IO *io = getGatewayIO();
     
@@ -310,6 +310,13 @@ Client::checkTimeout(void) {
             g_server->unlink(io->wrFd());
             setGatewayTimeout(0);
             io->reset();
+            
+            Response *res = _responses.front();
+
+            if (res->isCGI() && res->getCGI()->getPID() != -1) {
+                kill(res->getCGI()->getPID(), SIGKILL);
+                res->getCGI()->setPID(-1);
+            }
         }
 
         // need to kill child process if CGI
@@ -319,6 +326,7 @@ Client::checkTimeout(void) {
 }
 
 void Client::reply(Response *res) {
+    Log.info() << res->getStatus() << Log.endl; // tester
     signal(SIGPIPE, SIG_IGN);
 
     IO *io = getClientIO();
@@ -334,13 +342,20 @@ void Client::reply(Response *res) {
         }
 
     } else if (!res->bodySent()) {
-        if (res->getBody().empty()) {
-            res->bodySent(true);
-            return ;
-        }
 
-        if (!io->getDataPos()) {
-            io->setData(res->getBody());
+        if (res->chunked()) {
+            if (!io->getDataPos()) {
+                io->setData(res->makeChunk());
+            }
+        } else {
+            if (res->getBody().empty()) {
+                res->bodySent(true);
+                return ;
+            }
+
+            if (!io->getDataPos()) {
+                io->setData(res->getBody());
+            }
         }
     }
 
@@ -365,7 +380,7 @@ void Client::reply(Response *res) {
         if (!res->headSent()) {
             res->headSent(true);
 
-        } else if (!res->bodySent()) {
+        } else if (!res->bodySent() && !res->chunked()) {
             res->bodySent(true);
         }
     }
@@ -454,16 +469,29 @@ void Client::receive(Response *res) {
     int bytes = getGatewayIO()->read();
 
     if (bytes < 0) {
+        if (res->isCGI()) {
+            Log.debug() << "Client::receive CGI failed" << Log.endl;
+            res->checkCGIFailure();
+
+            g_server->unlink(getGatewayIO()->rdFd());
+            getGatewayIO()->reset();
+            setGatewayTimeout(0);
+        }
         return ;
 
     } else if (bytes == 0) {
         Log.debug() << "Client::receive [" << getGatewayIO()->rdFd() << "] resp done" << Log.endl;
-        g_server->unlink(getGatewayIO()->rdFd());
-        getGatewayIO()->reset();
 
         if (res->isCGI()) {
             res->checkCGIFailure();
+
+            // If no content-length header returned from CGI
+            // read the whole body at once
+            res->setBodySize(getGatewayIO()->getRem().length());
+            Log.debug() << "Rem len: " << res->getBodySize() << Log.endl;
         }
+
+        g_server->unlink(getGatewayIO()->rdFd());
     }
 
     setGatewayTimeout(0);

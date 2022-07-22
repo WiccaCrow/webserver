@@ -97,6 +97,16 @@ Request::setRemoteUser(const std::string &user) {
     _remoteUser = user;
 }
 
+const std::string &
+Request::getPathInfo(void) const {
+    return _pathInfo;
+}
+
+void
+Request::setPathInfo(const std::string &info) {
+    _pathInfo = info;
+}
+
 URI &
 Request::getUriRef() {
     return _uri;
@@ -163,6 +173,12 @@ Request::parseLine(std::string &line) {
         setStatus(!line.empty() ? parseHeader(line) : checkHeaders());
     } else if (!flagSet(PARSED_BODY)) {
         setStatus(parseBody(line));
+
+        if (getBody().length() > static_cast<size_t>(getLocation()->getPostMaxBodyRef())) {
+            Log.info() << "Request::parseLine Body length   = " << getBody().length() << Log.endl; // tester
+            Log.info() << "Request::parseLine Max body size = " << static_cast<size_t>(getLocation()->getPostMaxBodyRef()) << Log.endl;  // tester
+            setStatus(PAYLOAD_TOO_LARGE);
+        }
     } else {
         setStatus(PROCESSING);
     }
@@ -188,7 +204,7 @@ Request::parseLine(std::string &line) {
 
 bool
 Request::tunnelGuard(bool value) {
-    if (getClient()->isTunnel() && BLIND_PROXY) {
+    if (getClient()->isTunnel() && g_server->settings.blind_proxy) {
         return false;
     }
     return value;
@@ -204,6 +220,11 @@ Request::parseSL(const std::string &line) {
 
     skipSpaces(line, pos);
     _rawURI = getWord(line, " ", pos);
+    if (_rawURI.length() > g_server->settings.max_uri_length) {
+        Log.debug() << "Request:: URI is too long: " << _rawURI << Log.endl;
+        return URI_TOO_LONG;
+    }
+
     _uri.parse(_rawURI);
 
     skipSpaces(line, pos);
@@ -212,7 +233,7 @@ Request::parseSL(const std::string &line) {
     skipSpaces(line, pos);
 
     if (tunnelGuard(line[pos])) {
-        Log.debug() << "Forbidden symbols at the end of the SL: " << Log.endl;
+        Log.debug() << "Request:: Forbidden symbols at the end of the SL: " << Log.endl;
         return BAD_REQUEST;
     }
     return checkSL();
@@ -303,6 +324,7 @@ Request::checkHeaders(void) {
             proxyLookUp();
         }
         resolvePath();
+        checkCGI();
     }
 
     // Call each header handler
@@ -318,6 +340,17 @@ Request::checkHeaders(void) {
     if (tunnelGuard(it_method == allowed.end())) {
         Log.debug() << "Request:: Method " << getMethod() << " is not allowed" << Log.endl;
         return METHOD_NOT_ALLOWED;
+    }
+
+    if (headers.has(CONTENT_LENGTH)) {
+        int64_t len;
+        bool converted = stoi64(len, headers[CONTENT_LENGTH].value);
+        if (!converted) {
+            return BAD_REQUEST;
+        }
+        if (static_cast<std::size_t>(len) > getLocation()->getPostMaxBodyRef()) {
+            return PAYLOAD_TOO_LARGE;
+        }
     }
 
     if (!headers.has(TRANSFER_ENCODING) && !headers.has(CONTENT_LENGTH)) {
@@ -340,13 +373,18 @@ Request::parseHeader(const std::string &line) {
     RequestHeader header;
 
     if (tunnelGuard(!header.parse(line))) {
-        Log.debug() << "ARequest:: Invalid header " << line << Log.endl;
+        Log.debug() << "Request:: Invalid header " << line << Log.endl;
         return BAD_REQUEST;
+    }
+
+    if (tunnelGuard(header.value.length() > g_server->settings.max_header_field_length)) {
+        Log.debug() << "Request:: Header is too large: " << line << Log.endl;
+        return REQUEST_HEADER_FIELDS_TOO_LARGE;
     }
 
     // dublicate header
     if (tunnelGuard(headers.has(header.hash))) {
-        Log.debug() << "ARequest:: Dublicated header" << Log.endl;
+        Log.debug() << "Request:: Dublicated header" << Log.endl;
         return BAD_REQUEST;
     }
 
@@ -369,9 +407,9 @@ Request::writeBody(const std::string &body) {
 
 StatusCode
 Request::parseBody(const std::string &line) {
-    Log.debug() << "Request::parseBody " << line << Log.endl;
-    if (headers.has(TRANSFER_ENCODING)) {
-        Log.debug() << "Request::parseChunk" << Log.endl;
+    // Log.debug() << "Request::parseBody " << line << Log.endl;
+    if (headers.has(TRANSFER_ENCODING) && headers.value(TRANSFER_ENCODING) == "chunked") {
+        // Log.debug() << "Request::parseChunk" << Log.endl;
         return parseChunk(line);
     } else if (headers.has(CONTENT_LENGTH)) {
         Log.debug() << "Request::writeBody" << Log.endl;
@@ -381,7 +419,7 @@ Request::parseBody(const std::string &line) {
 }
 
 
-const std::map<std::string, std::string> &
+std::map<std::string, std::string> &
 Request::getCookie(void) {
     return _cookie;
 }
@@ -390,5 +428,51 @@ void
 Request::setCookie(std::map<std::string, std::string> cookie) {
     _cookie = cookie;
 }
+
+void
+Request::checkCGI(void) {
+
+    #ifndef CGI_VDIR
+     # define CGI_VDIR "cgi-bin"
+    #endif
+    
+    std::string s = getResolvedPath();
+
+    size_t pos = s.find("/" CGI_VDIR "/");
+
+    if (pos != std::string::npos) {
+
+        s.erase(pos, strlen(CGI_VDIR) + 1);
+
+        const std::vector<std::string> &parts = split(s.substr(pos), "/");
+        std::string path = s.substr(0, pos + 1);
+        std::string path_info;
+        for (size_t i = 0; i < parts.size(); ++i) {
+            path += parts[i];
+            if (!resourceExists(path)) {
+                Log.debug() << "Request:: " << path << " does not exist" << Log.endl; 
+                setStatus(NOT_FOUND);
+                return ;
+            }
+            if (!isDirectory(path)) {
+                for (size_t j = i + 1; j < parts.size(); j++) {
+                    path_info += "/" + parts[j];
+                }
+                isCGI(true);
+                break ;
+            }
+            path += "/";
+        }
+        setResolvedPath(path);
+        setPathInfo(path_info);
+        Log.debug() << "Request:: Upd Path: " << getResolvedPath() << Log.endl;
+        Log.debug() << "Request:: PathInfo: " << getPathInfo() << Log.endl;
+    } else {
+        isCGI(false);
+        if (getMethod() == "POST") {
+            isCGI(true);
+        }
+    }
+}  
 
 } // namespace HTTP

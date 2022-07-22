@@ -54,49 +54,15 @@ setValue(char *const env, const std::string value) {
     strncat(env, value.c_str(), envVarLen - 1 - strlen(env));
 }
 
-// This version passes all the env, including system
-// Currently env pass with setEnv function.
-bool CGI::setFullEnv(Request *req) {
-    if (!initEnv()) {
-        return false;
-    }
-
-    setenv("PATH_INFO", "", 1);
-    setenv("PATH_TRANSLATED", req->getResolvedPath().c_str(), 1); // ?
-
-    const std::string &host = req->getClient()->getDomainName();
-    const std::string &addr = req->getClient()->getClientIO()->getAddr();
-    setenv("REMOTE_HOST", host.empty() ? addr.c_str() : host.c_str(), 1);
-    setenv("REMOTE_ADDR", addr.c_str(), 1);
-    setenv("REMOTE_USER", req->getRemoteUser().c_str(), 1);
-    setenv("REMOTE_IDENT", "", 1);
-
-    setenv("AUTH_TYPE", req->getLocation()->getAuthRef().getType().c_str(), 1);
-    setenv("QUERY_STRING", req->getUriRef()._query.c_str(), 1);
-    setenv("REQUEST_METHOD", req->getMethod().c_str(), 1);
-    setenv("SCRIPT_NAME", req->getUriRef()._path.c_str(), 1);
-    setenv("CONTENT_LENGTH", sztos(req->getBody().length()).c_str(), 1);
-    setenv("CONTENT_TYPE", req->headers[CONTENT_TYPE].value.c_str(), 1);
-
-    setenv("GATEWAY_INTERFACE", GATEWAY_INTERFACE, 1);
-    setenv("SERVER_NAME", req->getUriRef().getAuthority().c_str(), 1);
-    setenv("SERVER_SOFTWARE", SERVER_SOFTWARE, 1);
-    setenv("SERVER_PROTOCOL", SERVER_PROTOCOL, 1);
-
-    // Current server block
-    setenv("SERVER_PORT", sztos(req->getServerBlock()->getPort()).c_str(), 1); // 80
-    setenv("REDIRECT_STATUS", "200", 1);
-
-    return true;
-}
-
 bool CGI::setEnv(Request *req) {
+
     if (!initEnv()) {
         return false;
     }
 
     // PATH_INFO
-    setValue(_env[0], ""); // Someday we will learn how to parse this 
+    setValue(_env[0], req->getPathInfo());
+    // setValue(_env[0], req->getUriRef()._path);
 
     // PATH_TRANSLATED
     setValue(_env[1], req->getResolvedPath()); // Definitely not like that!
@@ -126,7 +92,7 @@ bool CGI::setEnv(Request *req) {
     setValue(_env[8], req->getMethod());
 
     // SCRIPT_NAME
-    setValue(_env[9], req->getUriRef()._path);
+    setValue(_env[9], req->getUriRef()._path); // PATH_INFO should be excluded
 
     // CONTENT_LENGTH
     Log.debug() << "CGI: body length: " << req->getBody().length() << Log.endl; 
@@ -139,7 +105,7 @@ bool CGI::setEnv(Request *req) {
     setValue(_env[12], GATEWAY_INTERFACE);
 
     // SERVER_NAME
-    setValue(_env[13], req->getUriRef().getAuthority()); // Not like that!
+    setValue(_env[13], req->getClient()->getServerIO()->getAddr());
 
     // SERVER_SOFTWARE
     setValue(_env[14], SERVER_SOFTWARE);
@@ -148,7 +114,7 @@ bool CGI::setEnv(Request *req) {
     setValue(_env[15], SERVER_PROTOCOL);
 
     // SERVER_PORT
-    setValue(_env[16], sztos(req->getServerBlock()->getPort()));
+    setValue(_env[16], sztos(req->getClient()->getServerIO()->getPort()));
 
     // REDIRECT_STATUS
     setValue(_env[17], "200");
@@ -180,8 +146,13 @@ CGI::setScriptPath(const std::string &path) {
 
 int
 CGI::exec(Request *req) {
-    if ((compiled() && !isExecutableFile(_filepath)) || !isExecutableFile(_execpath)) {
+
+    if (compiled() && !isExecutableFile(_filepath)) {
         Log.error() << _filepath << " is not executable" << Log.endl;
+        return 0;
+    
+    } else if (!compiled() && !isExecutableFile(_execpath)) {
+        Log.error() << _execpath << " is not executable" << Log.endl;
         return 0;
     }
 
@@ -199,13 +170,25 @@ CGI::exec(Request *req) {
         args[1] = _filepath.c_str();
     }
 
-    Client *client = req->getClient();
-    IO *io = client->getGatewayIO();
+    IO in;
+    IO out;
 
-    if (io->pipe() < 0) {
-        Log.error() << "CGI::exec: pipe failed" << Log.endl;
+    if (in.pipe() != 0) {
+        Log.syserr() << "CGI::pipe::in: " << Log.endl;
         return 0;
     }
+
+    if (out.pipe() != 0) {
+        Log.syserr() << "CGI::pipe::out: " << Log.endl;
+        close(in.rdFd());
+        close(in.wrFd());
+        return 0;
+    }
+
+    Client *client = req->getClient();
+    IO *io = client->getGatewayIO();
+    io->rdFd(out.rdFd());
+    io->wrFd(in.wrFd());
 
     int childPID = fork();
     if (childPID < 0) {
@@ -214,12 +197,15 @@ CGI::exec(Request *req) {
 
     } else if (childPID == 0) {
 
-        if (dup2(io->rdFd(), fileno(stdin)) < 0) {
+        close(in.wrFd());
+        close(out.rdFd());
+
+        if (dup2(in.rdFd(), fileno(stdin)) < 0) {
             Log.syserr() << "CGI::exec: dup2 failed for stdin" << Log.endl;
             exit(123);
         }
     
-        if (dup2(io->wrFd(), fileno(stdout)) < 0) {
+        if (dup2(out.wrFd(), fileno(stdout)) < 0) {
             Log.syserr() << "CGI::exec: dup2 failed for stdout" << Log.endl;
             exit(124);
         }
@@ -229,6 +215,9 @@ CGI::exec(Request *req) {
             exit(125);
         }
     }
+
+    close(in.rdFd());
+    close(out.wrFd());
 
     setPID(childPID);
 
