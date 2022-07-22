@@ -161,13 +161,16 @@ CGI::exec(Request *req) {
         return 0;
     }
 
+    const std::string dir = getDirectory(_filepath);
+    const std::string filename = "./" + _filepath.substr(_filepath.find_last_of("/") + 1);
+    
     const char *args[3] = {0};
     if (compiled()) {
-        args[0] = _filepath.c_str();
+        args[0] = filename.c_str();
         args[1] = "";
     } else {
         args[0] = _execpath.c_str();
-        args[1] = _filepath.c_str();
+        args[1] = filename.c_str();
     }
 
     IO in;
@@ -197,7 +200,6 @@ CGI::exec(Request *req) {
 
     } else if (childPID == 0) {
 
-        const std::string dir = getDirectory(_filepath);
         if (!dir.empty()) {
             chdir(dir.c_str());
         }
