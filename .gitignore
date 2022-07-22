@@ -51,3 +51,4 @@ logs/
 *.out.dSYM
 .editorconfig
 *.cgi
+*.mp3
