@@ -1,0 +1,88 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tester</title>
+</head>
+<body>
+    <style>
+        * {
+            font-family: monospace;
+            color: black;
+        }
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #container {
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #bacbd2;
+            border-radius: 15px;
+            justify-content: center;
+            align-items: center;
+            justify-content: space-evenly;
+            width: 100%;
+            max-width: 300px;
+            background: linear-gradient(180deg, #e4f3ff, #ffffff);
+            margin: 5px;
+            padding: 10px;
+        }
+        #input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+        }
+        #cancel-btn {
+            border: 1px solid #bacbd2;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #deebf6, #faafaf);
+        }
+        #request-btn {
+            border: 1px solid #bacbd2;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #deebf6, #d8fcb6);
+        }
+        #pick-btn {
+            border: 1px solid #bacbd2;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #ecebeb, #fbfbfb);
+        }
+        input:disabled,
+        input[disabled]{
+            border: 1px solid #999999;
+            background-color: #cccccc;
+            color: #666666;
+        }
+    </style>
+    <div id="container">
+        <div>
+            <label for="methods">Method:</label>
+            <select name="methods" id="methods">
+                <option value="GET" selected>GET</option>
+                <option value="POST">POST</option>
+                <option value="HEAD">HEAD</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+                <option value="OPTIONS">OPTIONS</option>
+            </select>
+        </div>
+        
+        <div id="input-container">
+            <label for="request-uri">URI:</label>
+            <input id="request-uri" type="text" placeholder="/somefile.txt"/>
+            <br>
+            <input id="pick-btn" type="button" value="Select file" hidden/>
+            <label id="body-label" for="request-body">Body: </label>
+            <textarea name="request-body" id="request-body" cols="30" rows="5"></textarea>
+        </div>
+        
+        <div id="btn-container">
+            <input id="cancel-btn" type="button" value="Cancel"/>
+            <input id="request-btn" type="button" value="Request"/>
+        </div>
+    </div>
+    <script src="tester.js"></script>
+</body>
+</html>
