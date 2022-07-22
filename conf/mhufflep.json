@@ -35,6 +35,10 @@
                 "Set-cookie: key1=val1;"
             ],
             "locations": {
+                "/delete": {
+                    "alias": "/Users/mhufflep/Desktop",
+                    "methods_allowed": [ "GET", "POST", "DELETE" ]
+                },
                 "/welcome": {
                     "alias": "./pages/site/welcome",
                     "cgi": {

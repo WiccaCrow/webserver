@@ -1,62 +1,57 @@
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DELETE tester</title>
 </head>
 <body>
     <style>
+        * {
+            font-family: monospace;
+            font-size: 1.05rem;
+            color: black;
+        }
         body {
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        hr {
-            width: 100%;
-        }
         #container {
             display: flex;
-            align-items: center;
             flex-direction: column;
-            border: 1px solid black;
-            width: 400px;
-            padding: 10px;
-            
-        }
-        #btn-container {
-            margin: 5px;
-            display: flex;
-            justify-content: space-around;
-            flex-direction: row;
-            width: 50%;
-        }
-        #input-container {
-            margin: 5px;
-            display: flex;
+            border: 3px solid #bacbd2;
+            border-radius: 15px;
             justify-content: center;
-            flex-direction: column;
-        }
-
-        #input-container input {
-            margin-top: 5px;
-            margin-bottom: 5px;
+            align-items: center;
+            justify-content: space-evenly;
+            width: 100%;
+            max-width: 300px;
+            height: 150px;
+            background: linear-gradient(180deg, #e4f3ff, #ffffff);
+            margin: 5px;
         }
 
         #cancel-btn {
-            background-color: rgb(255, 115, 115);
+            border-radius: 10px;
+            background: linear-gradient(180deg, #deebf6, #faafaf);
         }
         #delete-btn {
-            background-color: rgb(203, 254, 155);
+            border-radius: 10px;
+            background: linear-gradient(180deg, #deebf6, #d8fcb6);
+        }
+        #pick-btn {
+            border-radius: 10px;
+            background: linear-gradient(180deg, #ecebeb, #fbfbfb);
         }
     </style>
     <div id="container">
-        <div id=btn-container>
+        <div>
             <span>DELETE tester</span>
         </div>
-        <hr>
+        
         <div id="input-container">
-            <input id="uri" type="text" placeholder="http://localhost:8080/location"/>
-            <input id="filepicker" type="file"/>
+            <input id="pick-btn" type="button" value="Select file"/>
         </div>
-        <hr>
+        
         <div id="btn-container">
             <input id="cancel-btn" type="button" value="Cancel"/>
             <input id="delete-btn" type="button" value="Delete"/>

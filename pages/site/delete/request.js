@@ -1,61 +1,55 @@
-class httpAPI {
-
-    delete(url) {
-        try {
-            fetch(url, {
-                method: 'DELETE',
-            })
-            .then(response => {
-                return response.status == 204 ? "OK" : "NOT OK";
-            });
-        } catch (e) {
-            console.log(e);
-        }
-    }
-
-    checkStatus (response) {
-        if (response.ok) {
-          return response;
-        }
-    
-        return response.json().then(error => {
-          error.response = response;
-          throw error;
+async function DELETE(url) {
+    try {
+        let response = await fetch(url, {
+            method: 'DELETE',
         });
+
+        return response.status >= 200 && response.status < 300 ? "OK" : "NOT OK";
+    } catch (e) {
+        console.error("error occured");
+        console.error(e);
     }
 }
-
 
 window.addEventListener("load", function() {
 
     let cancelBtn = document.querySelector("#cancel-btn");
-    let filepicker = document.querySelector("#filepicker");
-    let uriInput = document.querySelector("#uri");
+    let pickBtn = document.querySelector("#pick-btn");
     let deleteBtn = document.querySelector("#delete-btn");
-    
-    filepicker.defaultValue = '/src.png';
-    uriInput.defaultValue = 'http://localhost:7676/';
+    let filename = '';
+
     let onCancel = () => {
         console.log('cleared');
-        filepicker.value = '';
+        filename = '';
     }
 
-    function onDelete() {
-        let filename = filepicker.value.replace(/.*[\/\\]/, '');
-        let uri = uriInput.value;
-        if (uri[uri.length - 1] == '/')
-            uri = uri.slice(0, -1);
+    let onPick = () => {
+        const fileinput = document.createElement('input');
+        fileinput.type = 'file';
 
-        console.log(`${uri}/${filename}`);
-        const api = new httpAPI;
+        fileinput.onchange = e => { 
+            filename = e.target.files[0].name; 
+        }
+
+        fileinput.click();
+    }
+
+    async function onDelete() {
+
+        if (filename == '') {
+            alert("You need to pick file");
+            return ;
+        } 
+
+        const reqUri = `${window.location.origin}/delete/${filename}`;
+        console.log(reqUri);
         
-        let status = api.delete(`${uri}/${filename}`);
+        let status = await DELETE(reqUri);
         console.log(status);
-        // .then(data => console.log(data))
-        // .catch(err => console.log(err));
     }
 
     cancelBtn.addEventListener('click', onCancel);
     deleteBtn.addEventListener('click', onDelete); 
+    pickBtn.addEventListener('click', onPick); 
 });
     
