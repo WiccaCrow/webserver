@@ -601,6 +601,8 @@ void Response::makeHead(void) {
     addHeader(CONTENT_LENGTH);
     addHeader(ACCEPT_RANGES);
 
+    Log.info() << getRequest()->getMethod() << " " << getRequest()->getUriRef()._path << " = " << getStatus() << Log.endl;
+
     std::string head;
     head.reserve(512);
     head = SERVER_PROTOCOL SP + statusLines[getStatus()] + CRLF;
