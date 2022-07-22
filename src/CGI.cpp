@@ -197,6 +197,11 @@ CGI::exec(Request *req) {
 
     } else if (childPID == 0) {
 
+        const std::string dir = getDirectory(_filepath);
+        if (!dir.empty()) {
+            chdir(dir.c_str());
+        }
+
         close(in.wrFd());
         close(out.rdFd());
 

@@ -792,6 +792,10 @@ bool Response::parseLine(std::string &line) {
             setStatus(OK);
         }
 
+        if (isCGI() && headers.has(LOCATION)) {
+            setStatus(SEE_OTHER);
+        }
+
         makeHead();
         formed(true);
     }

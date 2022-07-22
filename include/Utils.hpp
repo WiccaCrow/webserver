@@ -87,3 +87,5 @@ bool isReadableFile(const std::string &filename);
 bool isExecutableFile(const std::string &filename);
 bool checkRegFilePerms(const std::string &filename, int perm);
 int  rmdirNonEmpty(std::string &resourceDel);
+
+std::string getDirectory(const std::string &filename);

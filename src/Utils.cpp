@@ -583,6 +583,19 @@ isExecutableFile(const std::string &filename) {
     return checkRegFilePerms(filename, S_IEXEC); // User rights only
 }
 
+std::string
+getDirectory(const std::string &filename) {
+    std::string directory;
+
+    const size_t last = filename.rfind('/');
+    if (std::string::npos != last) {
+        directory = filename.substr(0, last);
+    }
+
+    return directory;
+}
+
+
 int
 rmdirNonEmpty(std::string &resourceDel) {
     struct dirent *dirContent;
