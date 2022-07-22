@@ -76,7 +76,7 @@ void Server::finish(void) {
 
 static void
 sigint_handler(int) {
-    Log << std::endl;
+    std::cout << std::endl;
     Log.info() << "Server is stopping..." << Log.endl;
     g_server->finish();
 }
