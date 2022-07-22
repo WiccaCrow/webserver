@@ -1,0 +1,68 @@
+<html>
+<head>
+    <title>Cute page</title>
+</head>
+<body>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: monospace;
+            font-size: 1rem;
+        }
+        #container {
+            display: flex;
+            flex-direction: column;
+            border: 3px solid #f3dfe2;
+            border-radius: 15px;
+            justify-content: center;
+            align-items: center;
+            width: 50%;
+            background: linear-gradient(180deg, #e4f3ff, #ffffff);
+        }
+        .top-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+        form {
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+            align-content: center;
+            justify-content: center;
+        }
+        label {
+            margin: 10px;
+        }
+        #fname {
+            font-family: monospace;
+        }
+        .btm-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 10px;
+        }
+        #send-btn {
+            border-radius: 10px;
+            font-family: monospace;
+            background: linear-gradient(180deg, #deebf6, #fed3ea);
+        }
+    </style>
+    <div id="container">
+        <div class="top-container">
+            <span>Hey, cutie!</span>
+        </div>
+        <form method="POST" action="./cgi-bin/welcome.py">
+            <label for="fname">What's your name?</label><br>
+            <input type="text" id="fname" name="fname"><br>
+            <div class="btm-container">
+                <input type="submit" value="Nice to meet you!" id="send-btn">
+            </div>
+        </form>
+    </div>
+</body>
+</html>

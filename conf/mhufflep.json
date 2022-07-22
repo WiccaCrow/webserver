@@ -35,6 +35,14 @@
                 "Set-cookie: key1=val1;"
             ],
             "locations": {
+                "/welcome": {
+                    "alias": "./pages/site/welcome",
+                    "cgi": {
+                        ".py": "/usr/bin/python3"
+                    },
+                    "index": [ "index.html" ],
+                    "methods_allowed": [ "GET", "POST" ] 
+                },
                 "/Downloads": {
                     "root"  : "/Users/mhufflep/",
                     "autoindex": true,
