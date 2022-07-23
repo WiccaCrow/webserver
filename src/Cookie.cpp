@@ -2,7 +2,12 @@
 
 namespace HTTP {
 
-Cookie::Cookie(std::string name, std::string value) : name(name), value(value) {}
+Cookie::Cookie(std::string name, std::string value)
+    : name(name)
+    , value(value)
+    , httpOnly(false)
+    , secure(false)
+    , maxAge(0) {}
 
 Cookie::Cookie(Cookie &copy) {
     *this = copy;
@@ -79,7 +84,6 @@ Cookie::setExpires(int wDay, int mDay, int month, int year, int hour, int min, i
     t->tm_sec = sec;
     _expires = Time::time2str(t, Time::f_gmt);
 }
-
 
 const std::string
 Cookie::toString() const {
