@@ -193,7 +193,7 @@ IO::listen(const std::string &addr, std::size_t port) {
         return -1;
     }
 
-    Log.info() << "IO::listen [" << _fdr << "] -> " << "http://" << addr << ":" << port << Log.endl;
+    Log.info() << "Listening on http://" << addr << ":" << port << Log.endl;
     return _fdr;
 }
 
