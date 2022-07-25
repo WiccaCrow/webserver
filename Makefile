@@ -36,7 +36,7 @@ SRCS     =  ARequest.cpp            IO.cpp                  SHA1.cpp		\
 			Cookie.cpp              RequestHeader.cpp       Utils.cpp		\
 			ErrorResponses.cpp      Response.cpp            Worker.cpp		\
 			Header.cpp              ResponseContType.cpp    main.cpp		\
-			HeaderNames.cpp         ResponseHeader.cpp
+			HeaderNames.cpp         ResponseHeader.cpp		ETag.cpp
 
 OBJS = $(addprefix $(OBJS_DIR)/, $(SRCS:.cpp=.o))
 DEPS = $(addprefix $(DEPS_DIR)/, $(SRCS:.cpp=.d))

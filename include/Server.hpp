@@ -17,6 +17,7 @@
 #include <queue>
 #include <vector>
 
+#include "ETag.hpp"
 #include "Client.hpp"
 #include "Logger.hpp"
 #include "Request.hpp"

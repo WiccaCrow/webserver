@@ -45,7 +45,5 @@
 #endif
 
 class Server;
-
 extern Server *g_server;
 
-extern std::map<std::string, std::string> g_etags;

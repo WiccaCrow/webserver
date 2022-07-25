@@ -24,7 +24,7 @@
 #include "ErrorResponses.hpp"
 #include "Cookie.hpp"
 #include "Globals.hpp"
-// #include "Proxy.hpp"
+#include "ETag.hpp"
 
 namespace HTTP {
 
@@ -118,8 +118,6 @@ public:
 
     Request *getRequest(void);
     Client *getClient(void);
-
-    std::string getEtagFile(const std::string &filename);
 
     void *getFileAddr(void);
     int64_t getFileSize(void);

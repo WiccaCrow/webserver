@@ -45,8 +45,7 @@ private:
     Location    *  _location;
     Client      *  _client;
 
-    // why here?
-    // uint32_t       _storedHash; 
+    bool           _useRanges;
     bool           _authorized;
 
     std::map<std::string, std::string> _cookie;
@@ -107,8 +106,8 @@ public:
     bool authorized(void) const;
     void authorized(bool);
 
-    // uint32_t getStoredHash(void) const;
-    // void     setStoredHash(uint32_t);
+    bool useRanges(void) const;
+    void useRanges(bool);
 
     std::map<std::string, std::string>  &getCookie(void);
     void                                setCookie(std::map<std::string, std::string> cookie);

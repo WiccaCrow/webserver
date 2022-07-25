@@ -14,6 +14,8 @@ Server::Server()
     pthread_mutex_init(&_m_del_clnt, NULL);
     pthread_mutex_init(&_m_link, NULL);
     pthread_mutex_init(&_m_sessions, NULL);
+
+    HTTP::ETag::StaticConstructor();
 }
 
 Server::~Server(void) {
@@ -35,6 +37,8 @@ Server::~Server(void) {
     pthread_mutex_destroy(&_m_del_clnt);
     pthread_mutex_destroy(&_m_link);
     pthread_mutex_destroy(&_m_sessions);
+
+    HTTP::ETag::StaticDestructor();
 }
 
 // Could be used for re-reading config:

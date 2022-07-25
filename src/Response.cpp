@@ -114,7 +114,7 @@ void Response::assembleError(void) {
 }
 
 void Response::handle(void) {
-    if (getStatus() < BAD_REQUEST) {
+    if (getStatus() < 300) {
         isCGI(getRequest()->isCGI());
 
         Redirect &rdr = getRequest()->getLocation()->getRedirectRef();
@@ -316,21 +316,6 @@ bool Response::indexFileExists(const std::string &resourcePath) {
     return false;
 }
 
-std::string
-Response::getEtagFile(const std::string &filename) {
-    struct stat st;
-    if (stat(filename.c_str(), &st) < 0) {
-        return "";
-    }
-
-    SHA1 sha;
-    // std::string time = Time::gmt(st.st_mtime);
-    // std::string hash = sha.hash(time);
-    // Log.debug() << time << " " << hash << Log.endl;
-
-    return sha.hash(Time::gmt(st.st_mtime));
-}
-
 int Response::makeResponseForFile(void) {
     const std::string &resourcePath = _req->getResolvedPath();
 
@@ -360,8 +345,15 @@ int Response::makeResponseForFile(void) {
     }
 
     addHeader(CONTENT_TYPE, getContentType(resourcePath));
-    addHeader(ETAG, getEtagFile(resourcePath));
-    addHeader(LAST_MODIFIED, Time::gmt(getModifiedTime(resourcePath)));
+    if (!resourcePath.empty()) {
+
+        // add mutex
+        ETag *etag = ETag::get(resourcePath);
+        etag->setTag(_filestat.st_mtime);
+
+        addHeader(ETAG, etag->getTag());
+        addHeader(LAST_MODIFIED, etag->getEntityStrTime());
+    }
     if (chunked()) {
         addHeader(TRANSFER_ENCODING, "chunked");
     } else {
@@ -399,8 +391,8 @@ Response::makeResponseForMultipartRange(void) {
 
         // Range should not be included if invalid
         ss << sepPrefix << boundary << CRLF;
-        ss << headerNames[CONTENT_TYPE] << getContentType(path) << CRLF;
-        ss << headerNames[CONTENT_RANGE] << getContentRangeValue(*range) << CRLF;
+        ss << headerNames[CONTENT_TYPE] << ":" << getContentType(path) << CRLF;
+        ss << headerNames[CONTENT_RANGE] << ":" << getContentRangeValue(*range) << CRLF;
         ss.write(_fileaddr + range->beg, range->size() - 1);
         ss << CRLF;
     }

@@ -11,12 +11,13 @@
 #include "HeaderNames.hpp"
 #include "HeadersCodes.hpp"
 #include "HTML.hpp"
+#include "ETag.hpp"
 
 namespace HTTP {
 
 class Header {
     
-    public:
+public:
     uint32_t    hash;
     std::string key;
     std::string value;

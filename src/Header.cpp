@@ -2,8 +2,6 @@
 
 namespace HTTP {
 
-std::map<std::string, std::string> g_etags;
-
 Header::Header() {}
 
 Header::~Header() {}

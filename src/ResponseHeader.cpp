@@ -62,6 +62,7 @@ ResponseHeader::AltSvc(Response &res) {
 void
 ResponseHeader::CacheControl(Response &res) {
     (void)res;
+    // value = "no-cache";
 }
 
 void

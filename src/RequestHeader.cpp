@@ -98,11 +98,13 @@ StatusCode
 RequestHeader::Authorization(Request &req) {
 
     if (req.isProxy()) {
+        Log.debug() << "Authorization::Proxy-request received" << Log.endl;
         return CONTINUE;
     }
 
     const Auth &auth = req.getLocation()->getAuthRef();
     if (!auth.isSet()) {
+        Log.debug() << "Authorization::Auth not set" << Log.endl;
         return CONTINUE;
     }
 
@@ -246,10 +248,6 @@ RequestHeader::Host(Request &req) {
 StatusCode
 RequestHeader::IfMatch(Request &req) {
 
-    // remove
-    if (true)
-        return CONTINUE;
-
     std::vector<std::string> tags = split(value, ", \"");
 
     if (tags[0] == "*") {
@@ -263,15 +261,14 @@ RequestHeader::IfMatch(Request &req) {
         }
     }
 
-    std::map<std::string, std::string>::const_iterator itStored;
-    itStored = g_etags.find(req.getResolvedPath());
-    if (itStored == g_etags.end()) {
+    ETag *tag = ETag::get(req.getResolvedPath(), false);
+    if (tag == NULL) {
         Log.debug() << "IfMatch:: No etag value found for " << req.getResolvedPath() << Log.endl;
         return PRECONDITION_FAILED;
     }
 
     std::vector<std::string>::iterator itMatched;
-    itMatched = std::find(tags.begin(), tags.end(), itStored->second);
+    itMatched = std::find(tags.begin(), tags.end(), tag->getTag());
     if (itMatched == tags.end()) {
         Log.debug() << "IfMatch:: None of etag values matched " << *itMatched << Log.endl;
         return PRECONDITION_FAILED;
@@ -282,10 +279,6 @@ RequestHeader::IfMatch(Request &req) {
 StatusCode
 RequestHeader::IfNoneMatch(Request &req) {
     (void)req;
-
-    // remove
-    if (true)
-        return CONTINUE;
 
     std::vector<std::string> tags = split(value, ", \"");
 
@@ -301,15 +294,14 @@ RequestHeader::IfNoneMatch(Request &req) {
         }
     }
 
-    std::map<std::string, std::string>::const_iterator itStored;
-    itStored = g_etags.find(req.getResolvedPath());
-    if (itStored == g_etags.end()) {
+    ETag *tag = ETag::get(req.getResolvedPath(), false);
+    if (tag == NULL) {
         Log.debug() << "IfNoneMatch:: [OK] No etag value found for " << req.getResolvedPath() << Log.endl;
         return CONTINUE;
     }
 
     std::vector<std::string>::iterator itMatched;
-    itMatched = std::find(tags.begin(), tags.end(), itStored->second);
+    itMatched = std::find(tags.begin(), tags.end(), tag->getTag());
     if (itMatched == tags.end()) {
         Log.debug() << "IfNoneMatch:: None of etag values matched " << *itMatched << Log.endl;
         return CONTINUE;
@@ -384,7 +376,30 @@ RequestHeader::IfUnmodifiedSince(Request &req) {
 
 StatusCode
 RequestHeader::IfRange(Request &req) {
-    (void)req;
+
+    struct tm tm;
+    if (Time::gmt(value, &tm)) {
+
+        ETag *tag = ETag::get(req.getResolvedPath());
+        if (tag->getEntityStrTime() != value) {
+            req.useRanges(false);
+        }
+        return CONTINUE;
+
+    } else {
+        Log.debug() << "IfRange:: Cannot read datetime, trying etag..." << value << Log.endl;
+    }
+
+    if (!Base64::isValid(value)) {
+        Log.debug() << "IfRange:: Invalid etag " << value << Log.endl;
+        return BAD_REQUEST;
+    }
+
+    ETag *tag = ETag::get(req.getResolvedPath());
+    if (tag->getTag() != value) {
+        req.useRanges(false);
+    }
+    
     return CONTINUE;
 }
 
@@ -435,13 +450,6 @@ RequestHeader::ProxyAuthorization(Request &req) {
         return NOT_IMPLEMENTED;
     }
 
-    // Remove (become rudimental part as soon as sessions will be implemeted)
-    // uint32_t receivedHash = crc(splitted[1].c_str(), splitted[1].length());
-    // if (!splitted[1].empty() && receivedHash == req.getStoredHash()) {
-    //     Log.debug() << "ProxyAuthorization::Identical hash detected" << Log.endl;
-    //     return CONTINUE;
-    // }
-
     std::string decoded = Base64::decode(splitted[1]);
     Log.debug() << "ProxyAuthorization::Decoded Base64:" << decoded << Log.endl;
     if (decoded.empty()) {
@@ -451,7 +459,6 @@ RequestHeader::ProxyAuthorization(Request &req) {
 
     req.authorized(auth.isAuthorized(decoded, &req));
     if (req.authorized()) {
-        // req.setStoredHash(receivedHash);
         Log.debug() << "ProxyAuthorization::Succeed" << Log.endl;
     } else {
         Log.debug() << "ProxyAuthorization::Failed" << Log.endl;
