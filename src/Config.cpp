@@ -610,10 +610,15 @@ parseLocation(Object *src, Location &dst, Location &def) {
         dst.getRootRef() += "/";
     }
 
-    if (!getUInteger(src, KW_POST_MAX_BODY, dst.getPostMaxBodyRef(), 200)) {
+    string size_s;
+    if (!getString(src, KW_POST_MAX_BODY, size_s, "200B")) {
         Log.error() << KW_POST_MAX_BODY << " parsing failed" << Log.endl;
         return NONE_OR_INV;
-    }
+    } else if (!size_s.empty() && !parseSize(size_s, dst.getPostMaxBodyRef())) {
+        Log.error() << KW_POST_MAX_BODY << " parsing failed" << Log.endl;
+        return NONE_OR_INV;
+    } 
+    Log.info() << KW_POST_MAX_BODY << " set to " << dst.getPostMaxBodyRef() << " for " << dst.getPathRef() << Log.endl;
 
     if (!getBoolean(src, KW_AUTOINDEX, dst.getAutoindexRef(), false)) {
         Log.error() << KW_AUTOINDEX << " parsing failed" << Log.endl;

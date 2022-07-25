@@ -74,18 +74,6 @@ template <typename T>
 ConfStatus basicCheck(Object *, const std::string &key, ExpectedType, T &res, T def);
 ConfStatus basicCheck(Object *, const std::string &key, ExpectedType);
 
-// int getUInteger(Object *, const std::string &key, int &res, int def);
-// int getUInteger(Object *, const std::string &key, int &res);
-
-// int getString(Object *, const std::string &key, std::string &res, std::string def);
-// int getString(Object *, const std::string &key, std::string &res);
-
-// int getBoolean(Object *, const std::string &key, bool &res, bool def);
-// int getBoolean(Object *, const std::string &key, bool &res);
-
-// int getArray(Object *, const std::string &key, std::vector<std::string> &res, std::vector<std::string> def);
-// int getArray(Object *, const std::string &key, std::vector<std::string> &res);
-
 template <typename T>
 int isSubset(std::vector<T> set, std::vector<T> subset);
 
@@ -93,6 +81,8 @@ int isSubset(std::vector<T> set, std::vector<T> subset);
 Location::MethodsVec getDefaultAllowedMethods();
 
 // Object parsing
+int parseSize(std::string &s, uint64_t &size);
+
 int parseCGI(Object *, Location::CGIsMap &);
 int isValidCGI(Location::CGIsMap &);
 

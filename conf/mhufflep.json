@@ -27,7 +27,7 @@
                 ".cgi": ""
             },
             "methods_allowed": [ "GET", "PUT", "POST" ],
-            "post_max_body": 100,
+            "post_max_body": "100B",
             "autoindex": true,
             "index": [ "index.html" ],
             "add_headers": [
@@ -59,7 +59,7 @@
                         "user_file": ".htpasswd"
                     },
                     "index": [ "index.html" ],
-                    "post_max_body": 200,
+                    "post_max_body": "250B",
                     "methods_allowed": [ "GET", "POST" ]                 
                 },
                 "/test": {
@@ -70,7 +70,7 @@
                         ".py": "/usr/bin/python"
                     },
                     "index": [ "index.html" ],
-                    "post_max_body": 200,
+                    "post_max_body": "200B",
                     "methods_allowed": [ "GET", "POST" ]                 
                 },
                 "/feedback": {
@@ -86,7 +86,7 @@
                     "autoindex": false,
                     "index": [ "index.html", "index.php" ],
                     "methods_allowed": [ "GET", "DELETE" ],
-                    "post_max_body": 300
+                    "post_max_body": "300 B"
                 }
             }
         }

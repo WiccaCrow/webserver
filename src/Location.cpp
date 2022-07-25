@@ -20,7 +20,7 @@ Location::getAutoindexRef(void) {
     return _autoindex;
 }
 
-std::size_t &
+uint64_t &
 Location::getPostMaxBodyRef(void) {
     return _post_max_body;
 }
