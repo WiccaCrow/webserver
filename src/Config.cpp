@@ -1,5 +1,22 @@
 #include "Config.hpp"
 
+std::list<std::string> trace;
+
+void conftrace_add(const std::string &kw) {
+    trace.push_front(kw);
+}
+
+std::string conftrace_path(void) {
+    typedef std::list<std::string>::iterator iter;
+    std::string fullpath;
+
+    for (iter it = trace.begin(); it != trace.end(); ++it) {
+        fullpath += *it + "::";
+    }
+
+    return fullpath;
+}
+
 int
 isInteger(double &num) {
     return (num - static_cast<int32_t>(num) == 0);
@@ -51,7 +68,7 @@ basicCheck(Object *src, const std::string &key, ExpectedType type, T &res, T def
     AType *ptr = src->get(key);
     if (ptr->isNull()) {
         res = def;
-        Log.info() << "Used default parameter for " << src->getKey() << "::" << key << Log.endl;
+        // Log.info() << "Used default parameter for " << src->getKey() << "::" << key << Log.endl;
         return DEFAULT;
     }
 
@@ -300,6 +317,18 @@ isValidKeywords(Object *src, const char *validKeywords[]) {
     return true;
 }
 
+int checkMutualExclusions(Object *src, const std::string &key1, const std::string &key2) {
+    AType *ptr1 = src->get(key1);
+    AType *ptr2 = src->get(key2);
+
+    bool valid = ptr1->isNull() || ptr2->isNull();
+
+    if (!valid) {
+        Log.error() << "\"" << key1 << "\" and \"" << key2 << "\" are mutually exclusive" << Log.endl;
+    }
+    
+    return valid;
+}
 
 // Object parsing
 int
@@ -437,11 +466,13 @@ parseRedirect(Object *src, Redirect &res) {
 
     Object *obj = src->get(KW_REDIRECT)->toObj();
     std::size_t code = 0;
-    if (!getUInteger(obj, KW_CODE, code))
+    if (!getUInteger(obj, KW_CODE, code)) {
         return NONE_OR_INV;
+    }
 
-    if (!getString(obj, KW_URL, res.getURIRef()))
+    if (!getString(obj, KW_URL, res.getURIRef())) {
         return NONE_OR_INV;
+    }
 
     res.getCodeRef() = static_cast<StatusCode>(code);
     res.set(true);
@@ -467,6 +498,7 @@ int
 parseProxy(Object *src, Proxy &res) {
     Proxy def;
 
+
     ConfStatus status = basicCheck(src, KW_PROXY, OBJECT, res, def);
     if (status != SET) {
         return status;
@@ -474,12 +506,18 @@ parseProxy(Object *src, Proxy &res) {
 
     Object *obj = src->get(KW_PROXY)->toObj();
 
-    if (!getArray(obj, KW_DOMAINS, res.getDomainsRef())) {
+    if (!checkMutualExclusions(obj, KW_DOMAINS, KW_PASS)) {
+        return NONE_OR_INV;
+    }
+
+    if (!getArray(obj, KW_DOMAINS, res.getDomainsRef(), def.getDomainsRef())) {
+        conftrace_add(KW_DOMAINS);
         return NONE_OR_INV;
     }
 
     std::string pass;
-    if (!getString(obj, KW_PASS, pass)) {
+    if (!getString(obj, KW_PASS, pass, "")) {
+        conftrace_add(KW_PASS);
         return NONE_OR_INV;
     }
     res.getPassRef().parse(pass);
@@ -493,6 +531,7 @@ isValidProxy(Proxy &res) {
     Proxy::DomainsVec &domains = res.getDomainsRef();
     for (size_t i = 0; i < domains.size(); ++i) {
         if (!isValidHost(domains[i])) {
+            conftrace_add(KW_DOMAINS);
             Log.error() << KW_DOMAINS << " " << domains[i] << " is invalid" << Log.endl;
             return 0;
         }
@@ -503,13 +542,16 @@ isValidProxy(Proxy &res) {
 
     if (host.empty()) {
         if (!port.empty()) {
+            conftrace_add(KW_PASS);
             Log.error() << KW_PASS << " contains only port" << Log.endl;
             return 0;
         }
     } else if (!isValidHost(host)) {
+        conftrace_add(KW_PASS);
         Log.error() << KW_PASS << " has invalid host" << Log.endl;
         return 0;
     } else if (!isValidPort(port)) {
+        conftrace_add(KW_PASS);
         Log.error() << KW_PASS << " has invalid port" << Log.endl;
         return 0;
     }
@@ -527,10 +569,12 @@ parseAuth(Object *src, Auth &res) {
     Object *obj = src->get(KW_AUTH_BASIC)->toObj();
 
     if (!getString(obj, KW_REALM, res.getRealmRef())) {
+        conftrace_add(KW_REALM);
         return NONE_OR_INV;
     }
 
     if (!getString(obj, KW_USER_FILE, res.getFileRef())) {
+        conftrace_add(KW_USER_FILE);
         return NONE_OR_INV;
     }
 
@@ -543,27 +587,24 @@ isValidAuth(Auth &res) {
 
     if (res.isSet()) {
         if (res.getRealmRef().empty()) {
+            conftrace_add(KW_REALM);
             Log.error() << KW_REALM << " is empty" << Log.endl;
             return 0;
         } else if (!resourceExists(res.getFileRef())) {
+            conftrace_add(KW_USER_FILE);
             Log.error() << KW_USER_FILE << " " << res.getFileRef() << " does not exist" << Log.endl;
             return 0;
         } else if (!isReadableFile(res.getFileRef())) {
+            conftrace_add(KW_USER_FILE);
             Log.error() << KW_USER_FILE << " " << res.getFileRef() << " is not readable" << Log.endl;
             return 0;
         } else if (!res.loadData()) {
+            conftrace_add(KW_USER_FILE);
             Log.error() << KW_USER_FILE << " " << res.getFileRef() << " load failed" << Log.endl;
             return 0;
         }
     }
     return 1;
-}
-
-int checkMutualExclusions(Object *src, const std::string &key1, const std::string &key2) {
-    AType *ptr1 = src->get(key1);
-    AType *ptr2 = src->get(key2);
-    
-    return ptr1->isNull() || ptr2->isNull();
 }
 
 int
@@ -575,22 +616,23 @@ parseLocation(Object *src, Location &dst, Location &def) {
             return NONE_OR_INV;
         }
         if (!checkMutualExclusions(src, KW_ALIAS, KW_ROOT)) {
-            Log.error() << KW_ROOT << " and " << KW_ALIAS " are mutually exclusive" << Log.endl;
             return NONE_OR_INV;
         }
 
         ConfStatus aliasStatus = (ConfStatus)getString(src, KW_ALIAS, dst.getAliasRef(), "");
         
         if (aliasStatus == NONE_OR_INV) {
-            Log.error() << KW_ALIAS << " parsing failed" << Log.endl;
+            conftrace_add(KW_ALIAS);
             return NONE_OR_INV;
         }
 
         if (aliasStatus != DEFAULT) {
             if (!resourceExists(dst.getAliasRef())) {
+                conftrace_add(KW_ALIAS);
                 Log.error() << KW_ALIAS << " " << dst.getAliasRef() + " does not exist" << Log.endl;
                 return NONE_OR_INV;
             } else if (!isDirectory(dst.getAliasRef())) {
+                conftrace_add(KW_ALIAS);
                 Log.error() << KW_ALIAS << " must be a directory" << Log.endl;
                 return NONE_OR_INV;
             }
@@ -598,12 +640,14 @@ parseLocation(Object *src, Location &dst, Location &def) {
     }
 
     if (!getString(src, KW_ROOT, dst.getRootRef(), def.getRootRef())) {
-        Log.error() << KW_ROOT << " parsing failed" << Log.endl;
+        conftrace_add(KW_ROOT);
         return NONE_OR_INV;
     } else if (!resourceExists(dst.getRootRef())) {
+        conftrace_add(KW_ROOT);
         Log.error() << KW_ROOT << dst.getRootRef() << " does not exist" << Log.endl;
         return NONE_OR_INV;
     } else if (!isDirectory(dst.getRootRef())) {
+        conftrace_add(KW_ROOT);
         Log.error() << KW_ROOT << " must be a directory" << Log.endl;
         return NONE_OR_INV;
     } else if (dst.getRootRef()[dst.getRootRef().length() - 1] != '/') { // ??
@@ -612,72 +656,75 @@ parseLocation(Object *src, Location &dst, Location &def) {
 
     string size_s;
     if (!getString(src, KW_POST_MAX_BODY, size_s, "200B")) {
-        Log.error() << KW_POST_MAX_BODY << " parsing failed" << Log.endl;
+        conftrace_add(KW_POST_MAX_BODY);
         return NONE_OR_INV;
     } else if (!size_s.empty() && !parseSize(size_s, dst.getPostMaxBodyRef())) {
-        Log.error() << KW_POST_MAX_BODY << " parsing failed" << Log.endl;
+        conftrace_add(KW_POST_MAX_BODY);
         return NONE_OR_INV;
     } 
-    Log.info() << KW_POST_MAX_BODY << " set to " << dst.getPostMaxBodyRef() << " for " << dst.getPathRef() << Log.endl;
 
     if (!getBoolean(src, KW_AUTOINDEX, dst.getAutoindexRef(), false)) {
-        Log.error() << KW_AUTOINDEX << " parsing failed" << Log.endl;
+        conftrace_add(KW_AUTOINDEX);
         return NONE_OR_INV;
     }
 
     if (!parseRedirect(src, dst.getRedirectRef())) {
-        Log.error() << KW_REDIRECT << " parsing failed" << Log.endl;
+        conftrace_add(KW_REDIRECT);
         return NONE_OR_INV;
     } else if (!isValidRedirect(dst.getRedirectRef())) {
+        conftrace_add(KW_REDIRECT);
         return NONE_OR_INV;
     }
 
     if (!parseProxy(src, dst.getProxyRef())) {
-        Log.error() << KW_PROXY << " parsing failed" << Log.endl;
+        conftrace_add(KW_PROXY);
         return NONE_OR_INV;
     } else if (!isValidProxy(dst.getProxyRef())) {
-        Log.error() << KW_PROXY << " parsing failed" << Log.endl;
+        conftrace_add(KW_PROXY);
         return NONE_OR_INV;
     }
 
     if (!parseErrorPages(src, dst.getErrorPagesRef())) {
-        Log.error() << KW_ERROR_PAGES << " parsing failed" << Log.endl;
+        conftrace_add(KW_ERROR_PAGES);
         return NONE_OR_INV;
     } else if (!isValidErrorPages(dst.getErrorPagesRef())) {
-        Log.error() << KW_ERROR_PAGES << " parsing failed" << Log.endl;
+        conftrace_add(KW_ERROR_PAGES);
         return NONE_OR_INV;
     }
 
     if (!parseAuth(src, dst.getAuthRef())) {
-        Log.error() << KW_AUTH_BASIC << " parsing failed" << Log.endl;
+        conftrace_add(KW_AUTH_BASIC);
         return NONE_OR_INV;
     } else if (!isValidAuth(dst.getAuthRef())) {
+        conftrace_add(KW_AUTH_BASIC);
         return NONE_OR_INV;
     }
 
     if (!parseCGI(src, dst.getCGIsRef())) {
-        Log.error() << KW_CGI << " parsing failed" << Log.endl;
+        conftrace_add(KW_CGI);
         return NONE_OR_INV;
     } else if (!isValidCGI(dst.getCGIsRef())) {
+        conftrace_add(KW_CGI);
         Log.error() << KW_CGI << " is invalid, usage: <ext>:<path-to-exec>" << Log.endl;
         return NONE_OR_INV;
     }
 
     if (!getArray(src, KW_METHODS_ALLOWED, dst.getAllowedMethodsRef(), getDefaultAllowedMethods())) {
-        Log.error() << KW_METHODS_ALLOWED << " parsing failed" << Log.endl;
+        conftrace_add(KW_METHODS_ALLOWED);
         return NONE_OR_INV;
     } else if (!isSubset(getDefaultAllowedMethods(), dst.getAllowedMethodsRef())) {
+        conftrace_add(KW_METHODS_ALLOWED);
         Log.error() << KW_METHODS_ALLOWED << " has unrecognized value" << Log.endl;
         return NONE_OR_INV;
     }
      
     if (!parseHeaders(src, dst.getHeaders())) {
-        Log.error() << KW_ADD_HEADERS << " parsing failed" << Log.endl;
+        conftrace_add(KW_ADD_HEADERS);
         return NONE_OR_INV;
     }
 
     if (!getArray(src, KW_INDEX, dst.getIndexRef(), def.getIndexRef())) {
-        Log.error() << KW_INDEX << " parsing failed" << Log.endl;
+        conftrace_add(KW_INDEX);
         return NONE_OR_INV;
     }
 
@@ -701,14 +748,14 @@ parseLocations(Object *src, ServerBlock::LocationsMap &res, Location &base) {
         }
 
         if (!isValidPath(it->first)) {
-            Log.error() << "location " << it->first << " invalid path" << Log.endl;
+            conftrace_add(it->first);
             return NONE_OR_INV;
         }
         location.getPathRef() = it->first;
 
         Object *obj = it->second->toObj();
         if (!parseLocation(obj, location, base)) {
-            Log.error() << "location " << it->first << " parsing failed" << Log.endl;
+            conftrace_add(it->first);
             return NONE_OR_INV;
         }
         
@@ -739,22 +786,23 @@ parseServerBlock(Object *src, ServerBlock &dst) {
     }
 
     if (!getArray(src, KW_SERVER_NAMES, dst.getServerNamesRef(), dst.getServerNamesRef())) {
-        Log.error() << KW_SERVER_NAMES << " parsing failed" << Log.endl;
+        conftrace_add(KW_SERVER_NAMES);
         return NONE_OR_INV;
     }
 
     std::string listen;
     if (!getString(src, KW_LISTEN, listen, "0.0.0.0:8080")) {
-        Log.error() << KW_LISTEN << " parsing failed" << Log.endl;
+        conftrace_add(KW_LISTEN);
         return NONE_OR_INV;
     } 
     URI uri;
     uri.parse(listen);
     if (!isValidIpv4(uri._host)) {
+        conftrace_add(KW_LISTEN);
         Log.error() << KW_LISTEN << " is invalid or not in ipv4 format" << Log.endl;
         return NONE_OR_INV;
     } else if (!isValidPort(uri._port)) {
-        Log.error() << KW_LISTEN << " is invalid port" << Log.endl;
+        conftrace_add(KW_LISTEN);
         return NONE_OR_INV;
     }
     dst.getAddrRef() = uri._host;
@@ -764,12 +812,12 @@ parseServerBlock(Object *src, ServerBlock &dst) {
     // realpath("./", resolvedPath);
     dst.getLocationBaseRef().getRootRef() = "./";
     if (!parseLocation(src, dst.getLocationBaseRef(), dst.getLocationBaseRef())) {
-        Log.error() << "location_base" << " parsing failed" << Log.endl;
+        conftrace_add("/");
         return NONE_OR_INV;
     }
 
     if (!parseLocations(src, dst.getLocationsRef(), dst.getLocationBaseRef())) {
-        Log.error() << KW_LOCATIONS << " parsing failed" << Log.endl;
+        conftrace_add(KW_LOCATIONS);
         return NONE_OR_INV;
     }
 
@@ -850,21 +898,22 @@ int parseSettings(Object *src, Settings &sets) {
     }
 
     if (!getUInteger(obj, KW_MAX_WAIT_CONN, sets.max_wait_conn, def.max_wait_conn)) {
-        Log.error() << KW_MAX_WAIT_CONN << " parsing failed" << Log.endl;
+        conftrace_add(KW_MAX_WAIT_CONN);
         return NONE_OR_INV;
     }
 
     if (!getUInteger(obj, KW_WORKERS, sets.workers, def.workers)) {
-        Log.error() << KW_WORKERS << " parsing failed" << Log.endl;
+        conftrace_add(KW_WORKERS);
         return NONE_OR_INV;
     } else if (sets.workers > 30) {
+        conftrace_add(KW_WORKERS);
         Log.error() << KW_WORKERS << " upper bound is 30" << Log.endl;
         return NONE_OR_INV;
     }
 
     size_t time = 0;
     if (!getUInteger(obj, KW_WORKER_TIMEOUT, time, def.worker_timeout)) {
-        Log.error() << KW_WORKER_TIMEOUT << " parsing failed" << Log.endl;
+        conftrace_add(KW_WORKER_TIMEOUT);
         return NONE_OR_INV;
     } else {
         sets.worker_timeout = static_cast<time_t>(time);
@@ -872,7 +921,7 @@ int parseSettings(Object *src, Settings &sets) {
 
     time = 0;
     if (!getUInteger(obj, KW_MAX_CLIENT_TIMEOUT, time, def.max_client_timeout)) {
-        Log.error() << KW_MAX_CLIENT_TIMEOUT << " parsing failed" << Log.endl;
+        conftrace_add(KW_MAX_CLIENT_TIMEOUT);
         return NONE_OR_INV;
     } else {
         sets.max_client_timeout = static_cast<time_t>(time);
@@ -880,7 +929,7 @@ int parseSettings(Object *src, Settings &sets) {
 
     time = 0;
     if (!getUInteger(obj, KW_MAX_GATEWAY_TIMEOUT, time, def.max_gateway_timeout)) {
-        Log.error() << KW_MAX_GATEWAY_TIMEOUT << " parsing failed" << Log.endl;
+        conftrace_add(KW_MAX_GATEWAY_TIMEOUT);
         return NONE_OR_INV;
     } else {
         sets.max_gateway_timeout = static_cast<time_t>(time);
@@ -888,61 +937,61 @@ int parseSettings(Object *src, Settings &sets) {
 
     time = 0;
     if (!getUInteger(obj, KW_SESSION_LIFETIME, time, def.session_lifetime)) {
-        Log.error() << KW_SESSION_LIFETIME << " parsing failed" << Log.endl;
+        conftrace_add(KW_SESSION_LIFETIME);
         return NONE_OR_INV;
     } else {
         sets.session_lifetime = static_cast<time_t>(time);
     }
 
     if (!getUInteger(obj, KW_MAX_REQUESTS, sets.max_requests, def.max_requests)) {
-        Log.error() << KW_MAX_REQUESTS << " parsing failed" << Log.endl;
+        conftrace_add(KW_MAX_REQUESTS);
         return NONE_OR_INV;
     }
 
     if (!getUInteger(obj, KW_MAX_URI_LENGTH, sets.max_uri_length, def.max_uri_length)) {
-        Log.error() << KW_MAX_URI_LENGTH << " parsing failed" << Log.endl;
+        conftrace_add(KW_MAX_URI_LENGTH);
         return NONE_OR_INV;
     }
 
     if (!getUInteger(obj, KW_MAX_HEADER_FIELD_LENGTH, sets.max_header_field_length, def.max_header_field_length)) {
-        Log.error() << KW_MAX_HEADER_FIELD_LENGTH << " parsing failed" << Log.endl;
+        conftrace_add(KW_MAX_HEADER_FIELD_LENGTH);
         return NONE_OR_INV;
     }
 
     if (!getBoolean(obj, KW_BLIND_PROXY, sets.blind_proxy, def.blind_proxy)) {
-        Log.error() << KW_BLIND_PROXY << " parsing failed" << Log.endl;
+        conftrace_add(KW_BLIND_PROXY);
         return NONE_OR_INV;
     }
 
     if (!getBoolean(obj, KW_COOKIE_HTTP_ONLY, sets.cookie_httpOnly, def.cookie_httpOnly)) {
-        Log.error() << KW_COOKIE_HTTP_ONLY << " parsing failed" << Log.endl;
+        conftrace_add(KW_COOKIE_HTTP_ONLY);
         return NONE_OR_INV;
     }
 
     string size_s;
     if (!getString(obj, KW_CHUNK_SIZE, size_s, "")) {
-        Log.error() << KW_CHUNK_SIZE << " parsing failed" << Log.endl;
+        conftrace_add(KW_CHUNK_SIZE);
         return NONE_OR_INV;
     } else if (!size_s.empty() && !parseSize(size_s, sets.chunk_size)) {
-        Log.error() << KW_CHUNK_SIZE << " parsing failed" << Log.endl;
+        conftrace_add(KW_CHUNK_SIZE);
         return NONE_OR_INV;
     } 
 
     size_s = "";
     if (!getString(obj, KW_MAX_RANGE_SIZE, size_s, "")) {
-        Log.error() << KW_MAX_RANGE_SIZE << " parsing failed" << Log.endl;
+        conftrace_add(KW_MAX_RANGE_SIZE);
         return NONE_OR_INV;
     } else if (!size_s.empty() && !parseSize(size_s, sets.max_range_size)) {
-        Log.error() << KW_MAX_RANGE_SIZE << " parsing failed" << Log.endl;
+        conftrace_add(KW_MAX_RANGE_SIZE);
         return NONE_OR_INV;
     } 
     
     size_s = "";
     if (!getString(obj, KW_MAX_REG_FILE_SIZE, size_s, "")) {
-        Log.error() << KW_MAX_REG_FILE_SIZE << " parsing failed" << Log.endl;
+        conftrace_add(KW_MAX_REG_FILE_SIZE);
         return NONE_OR_INV;
     } else if (!size_s.empty() && !parseSize(size_s, sets.max_reg_file_size)) {
-        Log.error() << KW_MAX_REG_FILE_SIZE << " parsing failed" << Log.endl;
+        conftrace_add(KW_MAX_REG_FILE_SIZE);
         return NONE_OR_INV;
     }
 
@@ -960,6 +1009,7 @@ parseServerBlocks(Object *src, Server::ServersMap &servers) {
     Object *obj = src->get(KW_SERVERS)->toObj();
 
     if (obj->begin() == obj->end()) {
+        conftrace_add(KW_SERVERS);
         Log.error() << "Serverblocks not found" << Log.endl;
         return NONE_OR_INV;
     }
@@ -974,7 +1024,7 @@ parseServerBlocks(Object *src, Server::ServersMap &servers) {
         }
 
         if (!parseServerBlock(it->second->toObj(), servBlock)) {
-            Log.error() << "Serverblock " << it->first << " parsing failed" << Log.endl;
+            conftrace_add(it->first);
             return NONE_OR_INV;
         }
 
@@ -995,12 +1045,14 @@ int
 parseConfig(Object *src, Server *serv) {
 
     if (!parseServerBlocks(src, serv->getServerBlocks())) {
-        Log.error() << "Servers parsing failed" << Log.endl;
+        conftrace_add("conf");
+        Log.error() << "at " << conftrace_path() << Log.endl;
         return NONE_OR_INV;
     }
 
     if (!parseSettings(src, serv->settings)) {
-        Log.error() << "Settings parsing failed" << Log.endl;
+        conftrace_add("conf");
+        Log.error() << "at " << conftrace_path() << Log.endl;
         return NONE_OR_INV;
     }
 
@@ -1034,3 +1086,5 @@ loadConfig(const string filename) {
     delete ptr;
     return serv;
 }
+
+
