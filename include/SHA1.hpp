@@ -15,8 +15,8 @@ private:
     static uint32_t K[4];
 
     void initH(void);
-    void processChunk(void);
-    void copyChunk(const uint8_t *str);
+    void processBlock(void);
+    void copyBlock(const uint8_t *str);
 
 public:
     SHA1(void);

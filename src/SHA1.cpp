@@ -42,7 +42,7 @@ f(size_t t, uint32_t B, uint32_t C, uint32_t D) {
 }
 
 void
-SHA1::processChunk(void) {
+SHA1::processBlock(void) {
     for (size_t t = 16; t < 80; t++) {
         W[t] = shift(1, W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16]);
     }
@@ -66,7 +66,7 @@ SHA1::processChunk(void) {
 }
 
 void
-SHA1::copyChunk(const uint8_t *str) {
+SHA1::copyBlock(const uint8_t *str) {
     size_t i = 0;
     for (size_t j = 0; j < 16; j++) {    
         unsigned char tmp = str[i] ? str[i] : 0x80;
@@ -94,16 +94,16 @@ SHA1::hash(const std::string &msg) {
     size_t i = 0;
     const size_t chunksCount = (msg.length() / 64) + 1;
     for (size_t index = 1; index < chunksCount; index++) {
-        copyChunk((str + i));
+        copyBlock((str + i));
         i += 64;
-        processChunk();
+        processBlock();
     }
 
     memset((void *)W, 0, 64);
-    copyChunk((str + i));
+    copyBlock((str + i));
     W[14] = static_cast<uint32_t>((bits >> 32));
     W[15] = static_cast<uint32_t>((bits << 32) >> 32);    
-    processChunk();
+    processBlock();
 
     char hex[50] = {0};
     sprintf(hex, "%08x%08x%08x%08x%08x", H[0], H[1], H[2], H[3], H[4]);
