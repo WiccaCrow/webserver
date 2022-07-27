@@ -377,6 +377,10 @@ RequestHeader::IfUnmodifiedSince(Request &req) {
 StatusCode
 RequestHeader::IfRange(Request &req) {
 
+    if (req.isProxy()) {
+        return CONTINUE;
+    }
+
     struct tm tm;
     if (Time::gmt(value, &tm)) {
 

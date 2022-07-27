@@ -409,7 +409,7 @@ Server::checkTimeout(void) {
 
         client->checkTimeout();
 
-        if (client->links == 0) {
+        if (client->links == 0 && !client->processing()) {
             *it = NULL;
             addToDelClientQ(client);
         }

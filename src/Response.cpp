@@ -102,7 +102,7 @@ void Response::makeResponseForProxy() {
         }
     }
 
-    _proxy->prepare(getRequest());
+    getRequest()->makeHead();
     isProxy(true);
 }
 
@@ -892,6 +892,8 @@ Response::checkHeaders(void) {
         // need to add check for chunked responses
         isChunkSize(true);
         setBodySize(0);
+        chunked(true);
+        headers.erase(TRANSFER_ENCODING);
     } else {
         setBodySize(ULLONG_MAX);
     }
@@ -921,7 +923,7 @@ Response::writeBody(const std::string &body) {
 StatusCode
 Response::parseBody(const std::string &line) {
     Log.debug() << "Response::parseBody " << Log.endl;
-    if (headers.has(TRANSFER_ENCODING)) {
+    if (chunked()) {
         Log.debug() << "Response::parseChunk" << Log.endl;
         return parseChunk(line);
     } else if (headers.has(CONTENT_LENGTH)) {

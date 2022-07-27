@@ -96,6 +96,9 @@ public:
     URI &getHostRef(void);
     URI &getReferrerRef(void);
 
+    void makeHead(void);
+    std::string makeSL(void);
+
     RangeList &getRangeList(void);
 
     const std::string &getResolvedPath(void) const;

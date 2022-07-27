@@ -22,32 +22,21 @@ URI &Proxy::getPassRef(void) {
     return _pass;
 }
 
-void Proxy::prepare(Request *req) {
-    // IO *io = res->getClient()->getGatewayIO();
-
-    std::string toWrite;
-    toWrite.reserve(512);
-    toWrite = makeStartLine(req) + CRLF;
-    Headers<RequestHeader>::iterator it = req->headers.begin();
-    for (; it != req->headers.end(); ++it) {
-        if (it->first == CONNECTION || it->first == KEEP_ALIVE) {
-            continue;
-        }
-        toWrite += it->second.toString() + CRLF;
-    }
-    toWrite += CRLF;
-    req->setHead(toWrite);
-    // writeToSocket(io->wrFd(), res->getRequest()->getHead());
-    // writeToSocket(io->wrFd(), res->getRequest()->getBody());
-}
-
 int Proxy::pass(Request *req) {
 
-    const std::string &host = req->getUriRef()._host;
-    const std::string &port = req->getUriRef()._port_s;
+    std::string host;
+    std::string port;
+
+    if (!_pass._host.empty() && !_pass._port_s.empty()) {
+        host = _pass._host;
+        port = _pass._port_s;
+    } else {
+        host = req->getUriRef()._host;
+        port = req->getUriRef()._port_s;
+    }
 
     struct addrinfo *addrlst = NULL;
-    Log.error() << "Proxy::pass for " << host << ":" << port << Log.endl;
+    Log.debug() << "Try to proxy to " << host << ":" << port << Log.endl;
     if (getaddrinfo(host.c_str(), port.c_str(), NULL, &addrlst)) {
         Log.error() << "Proxy::getaddrinfo -> " << host << ":" << port << Log.endl;
         return 0;
@@ -81,11 +70,11 @@ int Proxy::setConnection(struct addrinfo *lst, Request *req) {
         connected = sock->connect(lst->ai_addr, lst->ai_addrlen);
 
         struct sockaddr_in *addr = (struct sockaddr_in *)lst->ai_addr;
-        Log.debug() << "Proxy:: Try connect [" << fd << "] -> " << inet_ntoa(addr->sin_addr) << Log.endl;
+        Log.debug() << "Proxy:: [" << fd << "] Try connect to " << inet_ntoa(addr->sin_addr) << ":" << ntohs(addr->sin_port) << Log.endl;
     }
 
-    if (!connected && lst == NULL) {
-        Log.error() << "Proxy:: Failed [" << fd << "] -> " << _host << ":" << _port << Log.endl;
+    if (connected == -1) {
+        Log.error() << "Proxy:: [" << fd << "] Connection failed" << Log.endl;
         return 0;
     }
 
@@ -94,37 +83,13 @@ int Proxy::setConnection(struct addrinfo *lst, Request *req) {
         return 0;
     }
 
-    Log.info() << "Proxy:: Established [" << fd << "]" << Log.endl;
+    struct sockaddr_in ownAddr;
+    socklen_t ownAddrSize = sizeof(ownAddr);
+    getsockname(sock->rdFd(), (struct sockaddr *)&ownAddr, &ownAddrSize);
+    Log.debug() << "Proxy:: [" << fd << "] Established from " << inet_ntoa(ownAddr.sin_addr) << ":" << ntohs(ownAddr.sin_port) << Log.endl;
 
     g_server->link(sock->rdFd(), req->getClient());
     return 1;
-}
-
-int Proxy::writeToSocket(int fd, std::string toWrite) {
-
-    if (write(fd, toWrite.c_str(), toWrite.length()) == -1) {
-        Log.syserr() << "Proxy::write: " << Log.endl;
-        return 0;
-    }
-    return 1;
-}
-
-std::string
-Proxy::makeStartLine(Request *req) {
-
-    URI     &uri = req->getUriRef();
-
-    if (uri._path.empty()) {
-        if (req->getMethod() == "OPTIONS") {
-            uri._path = "*";
-        } else {
-            uri._path = "/";
-        }
-    }
-    if (!uri._host.empty()) {
-        req->headers[HOST].value = uri._host + ":" + uri._port_s;
-    }
-    return req->getMethod() + " " + uri._path + " " + SERVER_PROTOCOL;
 }
 
 } // namespace HTTP

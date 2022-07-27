@@ -213,14 +213,6 @@ int IO::read(void) {
         return bytes;
     } 
 
-    // if (isBlock || !bytes) {
-    //     // close
-    // }
-
-    // if (_rem.find("\x06") != std::string::npos) {
-    //     return 0;
-    // }
-
     return bytes;
 }
 

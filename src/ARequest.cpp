@@ -256,6 +256,7 @@ ARequest::writeChunkSize(const std::string &line) {
         return BAD_REQUEST;
 
     } else if (_chunkSize == 0) {
+        chunked(false);
         setFlag(PARSED_BODY);
         return PROCESSING;
     }

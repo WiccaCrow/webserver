@@ -318,7 +318,11 @@ Request::checkHeaders(void) {
     }
     if (!_location) {
         setLocation(getServerBlock()->matchLocation(_uri._path));
-        if (!getClient()->isTunnel()) {
+        URI &pass = getLocation()->getProxyRef().getPassRef();
+        if (!pass._host.empty() && !pass._port_s.empty()) {
+            Log.debug() << "Request::ReverseProxy to " << pass._host << ":" << pass._port << Log.endl;
+            isProxy(true);
+        } else if (!getClient()->isTunnel()) {
             proxyLookUp();
         }
         resolvePath();
@@ -469,6 +473,49 @@ Request::checkCGI(void) {
     } else {
         isCGI(false);
     }
-}  
+}
+
+std::string
+Request::makeSL(void) {
+
+    if (_uri._path.empty()) {
+        if (getMethod() == "OPTIONS") {
+            _uri._path = "*";
+        } else {
+            _uri._path = "/";
+        }
+    }
+    if (!_uri._host.empty()) {
+        headers[HOST].value = _uri._host + ":" + _uri._port_s;
+    }
+    return getMethod() + " " + _uri._path + " " + SERVER_PROTOCOL + CRLF;
+}
+
+void
+Request::makeHead(void) {
+
+    std::string head;
+    head.reserve(512);
+
+    URI &pass = getLocation()->getProxyRef().getPassRef();
+    
+    head.reserve(512);
+    head = makeSL();
+    Headers<RequestHeader>::iterator it = headers.begin();
+    for (; it != headers.end(); ++it) {
+        if (it->first == CONNECTION) {
+            if (!pass._host.empty() && !pass._port_s.empty()) {
+                head += headerNames[it->first] + ": close" + CRLF;
+            }
+            continue;
+        }
+        else if (it->first == KEEP_ALIVE) {
+            continue;
+        }
+        head += it->second.toString() + CRLF;
+    }
+    head += CRLF;
+    setHead(head);
+}
 
 } // namespace HTTP
