@@ -1020,11 +1020,13 @@ parseServerBlocks(Object *src, Server::ServersMap &servers) {
         servBlock.setBlockname(it->first);
 
         if (!basicCheck(obj, it->first, OBJECT)) {
+            conftrace_add(KW_SERVERS);
             return NONE_OR_INV;
         }
 
         if (!parseServerBlock(it->second->toObj(), servBlock)) {
             conftrace_add(it->first);
+            conftrace_add(KW_SERVERS);
             return NONE_OR_INV;
         }
 
@@ -1032,6 +1034,7 @@ parseServerBlocks(Object *src, Server::ServersMap &servers) {
         for (ServerBlock::ServerNamesVec::iterator it = names.begin(); it != names.end(); ++it) {
             if (!uniqueNames[servBlock.getPort()].insert(*it).second) {
                 Log.error() << "Duplicated server_name " << *it << Log.endl;
+                conftrace_add(KW_SERVERS);
                 return NONE_OR_INV;
             }
         }
