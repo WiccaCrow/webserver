@@ -8,6 +8,7 @@ Client::Client(void)
     : _clientIO(NULL), 
     _serverIO(NULL),
     _gatewayIO(NULL),
+    _processing(false),
     _shouldBeClosed(false),
     _shouldBeRemoved(false),
     _isTunnel(false),
@@ -20,13 +21,13 @@ Client::Client(void)
 {
     _clientIO = new IO();
     if (_clientIO == NULL) {
-        shouldBeRemoved(true);
+        // shouldBeRemoved(true);
         Log.syserr() << "Client:: Cannot allocate memory for client socket" << Log.endl;
     }
 
     _gatewayIO = new IO();
     if (_gatewayIO == NULL) {
-        shouldBeRemoved(true);
+        // shouldBeRemoved(true);
         Log.syserr() << "Client:: Cannot allocate memory for gateway socket" << Log.endl;
     }
 }
@@ -56,6 +57,14 @@ Client::~Client(void) {
     }
 }
 
+void Client::processing(bool flag) {
+    _processing = flag;
+}
+
+bool Client::processing(void) const {
+    return _processing;
+}
+
 void Client::shouldBeClosed(bool flag) {
     _shouldBeClosed = flag;
 }
@@ -65,13 +74,13 @@ bool Client::shouldBeClosed(void) const {
 }
 
 // Remove
-void Client::shouldBeRemoved(bool flag) {
-    _shouldBeRemoved = flag;
-}
+// void Client::shouldBeRemoved(bool flag) {
+//     _shouldBeRemoved = flag;
+// }
 
-bool Client::shouldBeRemoved(void) const {
-    return _shouldBeRemoved;
-}
+// bool Client::shouldBeRemoved(void) const {
+//     return _shouldBeRemoved;
+// }
 
 bool Client::isTunnel(void) const {
     return _isTunnel;
@@ -156,7 +165,7 @@ void Client::addRequest(void) {
     Request *req = new Request(this);
     if (req == NULL) {
         Log.syserr() << "Cannot allocate memory for Request" << Log.endl;
-        shouldBeRemoved(true);
+        // shouldBeRemoved(true);
         return ;
     }
     _requests.push_back(req);
@@ -176,7 +185,7 @@ void Client::addResponse(void) {
 
     if (res == NULL) {
         Log.syserr() << "Cannot allocate memory for Response" << Log.endl;
-        shouldBeRemoved(true);
+        // shouldBeRemoved(true);
         return ;
     }
     _responses.push_back(res);
@@ -214,6 +223,7 @@ void Client::tryReplyResponse(int fd) {
     }
 
     if (res->formed() && res->sent()) {
+
         removeRequest();
         removeResponse();
 
@@ -317,11 +327,8 @@ Client::checkTimeout(void) {
                 kill(res->getCGI()->getPID(), SIGKILL);
                 res->getCGI()->setPID(-1);
             }
+            // 504 Gateway Timeout
         }
-
-        // need to kill child process if CGI
-        // res->terminateCGI();
-        // set response status to GATEWAY_TIMEOUT and reply to client
     }
 }
 

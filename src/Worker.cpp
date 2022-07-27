@@ -62,18 +62,21 @@ Worker::_cycle(void *ptr) {
             continue;
         }
 
-        if (res == NULL) {
-            Log.debug() << "Worker " << w->id() << "::cycle: resp is NULL" << Log.endl;
-        }
 
-        if (res->getRequest() == NULL) {
-            Log.debug() << "Worker " << w->id() << "::cycle: req is NULL" << Log.endl;
-        }
+        // if (res == NULL) {
+        //     Log.debug() << "Worker " << w->id() << "::cycle: resp is NULL" << Log.endl;
+        // }
 
+        // if (res->getRequest() == NULL) {
+        //     Log.debug() << "Worker " << w->id() << "::cycle: req is NULL" << Log.endl;
+        // }
+
+        res->getClient()->processing(true);
         const std::string path = res->getRequest()->getUriRef()._path;
         Log.debug() << "Worker " << w->id() << "::cycle: " << path << " started" << Log.endl;
         res->handle();
         Log.debug() << "Worker " << w->id() << "::cycle: " << path << " finished" << Log.endl;
+        res->getClient()->processing(false);
     }
 
     Log.debug() << "Worker " << w->id() << "::cycle stopped" << Log.endl;

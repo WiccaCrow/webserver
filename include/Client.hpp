@@ -20,6 +20,7 @@ class Client {
     IO *_serverIO;
     IO *_gatewayIO;
 
+    bool _processing;
     bool _shouldBeClosed;
     bool _shouldBeRemoved;
     bool _isTunnel;
@@ -28,7 +29,6 @@ class Client {
     std::size_t _maxRequests;
     std::time_t _clientTimeout;
     std::time_t _gatewayTimeout;
-    // std::time_t _maxTimeout;
 
     std::string _domain;
 
@@ -50,11 +50,14 @@ public:
     void tryReceiveResponse(int fd);
     void tryReceiveRequest(int fd);
 
+    bool processing(void) const;
+    void processing(bool);
+
     bool shouldBeClosed(void) const;
     void shouldBeClosed(bool);
 
-    bool shouldBeRemoved(void) const;
-    void shouldBeRemoved(bool);
+    // bool shouldBeRemoved(void) const;
+    // void shouldBeRemoved(bool);
 
     bool isTunnel(void) const;
     void isTunnel(bool);
