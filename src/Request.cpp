@@ -497,16 +497,16 @@ Request::makeHead(void) {
     std::string head;
     head.reserve(512);
 
-    URI &pass = getLocation()->getProxyRef().getPassRef();
+    // URI &pass = getLocation()->getProxyRef().getPassRef();
     
     head.reserve(512);
     head = makeSL();
     Headers<RequestHeader>::iterator it = headers.begin();
     for (; it != headers.end(); ++it) {
         if (it->first == CONNECTION) {
-            if (!pass._host.empty() && !pass._port_s.empty()) {
-                head += headerNames[it->first] + ": close" + CRLF;
-            }
+            // if (!pass._host.empty() && !pass._port_s.empty()) {
+            //     head += headerNames[it->first] + ": close" + CRLF;
+            // }
             continue;
         }
         else if (it->first == KEEP_ALIVE) {

@@ -416,7 +416,25 @@ RequestHeader::KeepAlive(Request &req) {
     
 StatusCode
 RequestHeader::MaxForwards(Request &req) {
-    (void)req;
+
+    if (req.getMethod() != "OPTIONS" && req.getMethod() != "TRACE") {
+        return CONTINUE;
+    }
+
+    int64_t num;
+    if (!stoi64(num, value)) {
+        return BAD_REQUEST;
+    }
+
+    if (num < 0) {
+        return BAD_REQUEST;
+    } else if (num > 0) {
+        num--;
+        value = ulltos(num);
+    } else {
+        req.isProxy(false);
+    }
+
     return CONTINUE;
 }
 

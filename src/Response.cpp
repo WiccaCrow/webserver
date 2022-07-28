@@ -201,7 +201,23 @@ void Response::CONNECT(void) {
 }
 
 void Response::TRACE(void) {
-    setStatus(NOT_IMPLEMENTED);
+
+    std::string forwards;
+
+    bool hasForwardHeader = getRequest()->headers.has(MAX_FORWARDS);
+    if (hasForwardHeader) {
+        forwards = getRequest()->headers[MAX_FORWARDS].value;
+    }
+
+    if (!hasForwardHeader || forwards == "0") {
+        addHeader(CONTENT_TYPE, "message/http");
+        getRequest()->makeHead();
+        setBody(getRequest()->getHead() + getRequest()->getBody());
+        setStatus(OK);
+    } else {
+        Log.error() << "Response::TRACE: Max-forwards " << forwards << "received" << Log.endl;
+        setStatus(INTERNAL_SERVER_ERROR);
+    }
 }
 
 void Response::PATCH(void) {
