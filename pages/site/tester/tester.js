@@ -131,10 +131,12 @@ window.addEventListener("load", function() {
         let res;
         switch (method) {
             case 'GET':
-            case 'POST':
-            case 'PUT':
             case 'HEAD':
                 res = await onGet();
+                break;
+            case 'POST':
+            case 'PUT':
+                res = await onPost();
                 break;
             case 'DELETE':
                 res = await onDelete();
