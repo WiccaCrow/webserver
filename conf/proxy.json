@@ -34,7 +34,7 @@
                 "Set-cookie: key2=val2; ",
                 "Set-cookie: key3=val3; "
             ],
-            "methods_allowed": [ "GET", "PUT", "POST", "CONNECT", "bla" ],
+            "methods_allowed": [ "GET", "PUT", "POST", "CONNECT" ],
             "post_max_body": "250B",
             "autoindex": true,
             "index": [ "index.html" ],
@@ -71,7 +71,7 @@
                     },
                     "autoindex": false,
                     "index": [ "index.html", "index.php" ],
-                    "methods_allowed": [ "DELETE", "GET", "bla" ],
+                    "methods_allowed": [ "DELETE", "GET" ],
                     "post_max_body": "250B"
                 }
             }

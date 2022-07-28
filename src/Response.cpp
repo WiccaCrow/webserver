@@ -218,6 +218,7 @@ Response::makeFileWithRandName(const std::string &directory) {
     }
     writeFile(directory + "/" + filename, getRequest()->getBody());
     addHeader(LOCATION, getRequest()->getRawUri() + "/" + filename);
+    setStatus(CREATED);
 }
 
 void Response::POST(void) {
@@ -255,6 +256,7 @@ void Response::PUT(void) {
     } else {
         writeFile(resourcePath, getRequest()->getBody());
         setBody(DEF_PAGE_BEG "File created." DEF_PAGE_END);
+        setStatus(CREATED);
     }
     addHeader(CONTENT_TYPE);
 }
