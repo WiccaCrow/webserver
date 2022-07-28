@@ -67,7 +67,7 @@ const std::string Base64::decode(const std::string &in) {
 bool
 Base64::isValid(const std::string &s) {
     for (size_t i = 0; i < s.length(); i++) {
-        if (!std::strchr(encoders, s[i]) && s[i] != '=') {
+        if (!strchr(encoders, s[i]) && s[i] != '=') {
             return false;
         }
     }

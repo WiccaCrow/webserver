@@ -215,6 +215,7 @@ void Server::startWorkers(void) {
     
     if (_workers == NULL) {
         Log.syserr() << "Cannot allocate memory for workers" << Log.endl;
+        return;
     }
 
     for (std::size_t i = 0; i < Worker::count; i++) {
