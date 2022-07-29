@@ -1,24 +1,15 @@
 async function sendRequest(url, reqmethod, headers = {}, body = '') {
     
-    try {
-        let response = await fetch(url, {
-            method: reqmethod,
-            headers: headers,
-            body: body
-        });
-        return response.status;    
-    } catch (e) {
-        console.error("An error occured");
-        console.error(e);
+    let data = { method: reqmethod };
+    if (Object.keys(headers).length !== 0) {
+        data.headers = headers;
     }
-}
+    if (body !== '') {
+        data.body = body;
+    }
 
-async function sendRequest(url, reqmethod) {
-    
     try {
-        let response = await fetch(url, {
-            method: reqmethod,
-        });
+        let response = await fetch(url, data);
         return response.status;    
     } catch (e) {
         console.error("An error occured");
@@ -40,7 +31,8 @@ window.addEventListener("load", function() {
         fileinput.type = 'file';
 
         fileinput.onchange = e => { 
-            filename = e.target.files[0].name; 
+            filename = e.target.files[0].name;
+            requestUri.value = '/delete/' + filename;
         }
 
         fileinput.click();
@@ -48,22 +40,26 @@ window.addEventListener("load", function() {
     
     let methodChanged = () => {
         method = methods.value;
+        requestUri.value = '';
 
         if (method == 'DELETE') {
             pickBtn.hidden = false;
             requestBody.hidden = true;
-            requestUri.hidden = true;
+            requestUri.hidden = false;
+            requestUri.disabled = true;
             bodyLabel.hidden = true;
         } else if (method == 'POST' || method == 'PUT') {
             pickBtn.hidden = true;
             requestBody.hidden = false;
             requestUri.hidden = false;
             bodyLabel.hidden = false;
+            requestUri.disabled = false;
         } else {
             pickBtn.hidden = true;
             requestBody.hidden = true;
             requestUri.hidden = false;
             bodyLabel.hidden = true;
+            requestUri.disabled = false;
         }
     }
 
@@ -83,15 +79,15 @@ window.addEventListener("load", function() {
     async function onDelete() {
 
         if (filename == '') {
-            alert("You need to pick file");
+            alert("You need to pick some file");
             return ;
         } 
 
-        const reqUri = `/delete/${filename}`;
+        const reqUri = `${requestUri.value}`;
         console.log(reqUri);
         
-        let status = await sendRequest(reqUri);
-        console.log(status);
+        let status = await sendRequest(reqUri, method);
+        return status;
     }
 
     async function onGet() {
@@ -100,7 +96,6 @@ window.addEventListener("load", function() {
         console.log(reqUri);
 
         let status = await sendRequest(reqUri, method);
-        console.log(status);
         return status;
     }
 
@@ -112,17 +107,16 @@ window.addEventListener("load", function() {
         headers = {};
         if (requestBody.value != '') {
             headers['Content-type'] = 'text/html';
+            headers['Content-length'] = requestBody.value.length;
         }
 
         let status = await sendRequest(reqUri, method, headers, requestBody.value);
-        console.log(status);
         return status;
     }
 
     async function onOptions() {
 
-        let status = await sendRequest("*", method, headers, requestBody.value);
-        console.log(status);
+        let status = await sendRequest("*", method);
         return status;
     }
 
@@ -148,8 +142,9 @@ window.addEventListener("load", function() {
                 console.error(`Unknown method ${method}`);
                 break;
         }
+        console.log(`${method} ${requestUri.value} = ${res}`);
+        alert(`${method} ${requestUri.value} = ${res}`);
         onCancel();
-        alert(`Returned status: ${res}`);
     }
 
     cancelBtn.addEventListener('click', onCancel);
