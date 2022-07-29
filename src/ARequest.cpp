@@ -6,7 +6,7 @@ ARequest::ARequest(void)
     : _major(0)
     , _minor(0) 
     , _isChunkSize(false)
-    , _bodySize(0)
+    , _bodySize(-1)
     , _chunkSize(0)
     , _parseFlags(PARSED_NONE)
     , _headSent(false)
@@ -191,13 +191,13 @@ ARequest::isCGI(bool isCGI) {
     _isCGI = isCGI;
 }
 
-std::size_t
+int64_t
 ARequest::getBodySize(void) const {
     return _bodySize;
 }
 
 void
-ARequest::setBodySize(std::size_t size) {
+ARequest::setBodySize(int64_t size) {
     _bodySize = size;
 }
 

@@ -25,7 +25,7 @@ private:
 
     // Parsing
     bool              _isChunkSize;
-    std::size_t       _bodySize;
+    int64_t           _bodySize;
     std::size_t       _chunkSize;
     std::size_t       _parseFlags;
 
@@ -50,7 +50,7 @@ public:
     void setMinor(int);
     void setStatus(StatusCode);
     void setFlag(std::size_t);
-    void setBodySize(std::size_t);
+    void setBodySize(int64_t);
     void setHead(const std::string &);
     void setBody(const std::string &);
     void setProtocol(const std::string &);
@@ -59,7 +59,7 @@ public:
     int getMinor(void) const;
     StatusCode getStatus(void) const;
     std::size_t getFlags(void) const;
-    std::size_t getBodySize(void) const;
+    int64_t getBodySize(void) const;
     const std::string &getBody(void) const;
     const std::string &getHead(void) const;
     const std::string &getProtocol(void) const;

@@ -1,4 +1,20 @@
 {
+	"settings": {
+        "max_wait_conn": 128,
+        "blind_proxy": true,
+        "max_requests": 100,
+        "max_client_timeout": 25,
+        "max_gateway_timeout": 100,
+        "session_lifetime": 86400,
+        "max_uri_length": 1024,
+        "chunk_size": "10 MiB",
+        "max_header_field_length": 2048,
+        "worker_timeout": 10000,
+        "workers": 3,
+        "max_reg_file_size": "4 MiB",
+        "max_range_size": "2 MiB",
+        "cookie_http_only": true
+    },
     "servers": {
         "http": {
             "listen": "127.0.0.1:8080",
@@ -26,10 +42,18 @@
                 ".cgi": ""
             },
             "methods_allowed": [ "GET", "PUT", "POST" ],
-            "post_max_body": 100,
+            "post_max_body": "100B",
             "autoindex": true,
             "index": [ "index.html" ],
             "locations": {
+				"/welcome": {
+                    "alias": "./pages/site/welcome",
+                    "cgi": {
+                        ".py": "/usr/bin/python3"
+                    },
+                    "index": [ "index.html" ],
+                    "methods_allowed": [ "GET", "POST" ] 
+                },
                 "/try.about": {
                     "alias": "/home/mhufflep/Downloads",
                     "autoindex": true,
@@ -38,7 +62,7 @@
                         ".py": "/usr/bin/python3.8"
                     },
                     "index": [ "index.html" ],
-                    "post_max_body": 200,
+                    "post_max_body": "100B",
                     "methods_allowed": [ "GET", "POST" ]                 
                 },
                 "/feedback": {
@@ -54,7 +78,7 @@
                     "autoindex": false,
                     "index": [ "index.html", "index.php" ],
                     "methods_allowed": [ "DELETE" ],
-                    "post_max_body": 300
+                    "post_max_body": "100B"
                 }
             }
         },
@@ -62,7 +86,7 @@
             "listen": "172.20.10.3:8080",
             "server_names": [ "webserv.com" ],
             "methods_allowed": [ "GET", "PUT", "POST" ],
-            "post_max_body": 100,
+            "post_max_body": "100B",
             "autoindex": true,
             "index": [ "index.html" ],
             "locations": {
@@ -70,7 +94,7 @@
                     "alias": "/home/mhufflep/Downloads",
                     "autoindex": true,
                     "index": [ "index.html" ],
-                    "post_max_body": 200,
+                    "post_max_body": "100B",
                     "methods_allowed": [ "GET", "POST" ]                 
                 },
                 "/feedback": {
@@ -82,7 +106,7 @@
                     "autoindex": false,
                     "index": [ "index.html", "index.php" ],
                     "methods_allowed": [ "DELETE" ],
-                    "post_max_body": 300
+                    "post_max_body": "100B"
                 }
             }
         }

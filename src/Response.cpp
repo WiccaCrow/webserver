@@ -927,7 +927,7 @@ StatusCode
 Response::writeBody(const std::string &body) {
     Log.debug() << "Response::writeBody " << Log.endl;
 
-    if (body.length() > getBodySize()) {
+    if (static_cast<int64_t>(body.length()) > getBodySize()) {
         Log.error() << "Response: Body length is too long " << Log.endl;
         Log.error() << "Response: expected: " << getBodySize() << Log.endl;
         Log.error() << "Response: got: " << body.length() << Log.endl;

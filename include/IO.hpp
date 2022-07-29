@@ -52,7 +52,7 @@ public:
     int read(void);
     int write(void);
     int nonblock(void);
-    int getline(std::string &, std::size_t);
+    int getline(std::string &, int64_t);
 
     int pipe(void);
 

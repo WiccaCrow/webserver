@@ -309,6 +309,7 @@ Server::pollhup(int fd) {
         // client->getGatewayIO()->closeWrFd();
 
     } else if (fd == client->getGatewayIO()->rdFd()) {
+        client->tryReceiveResponse(fd);
         unlink(fd);
         // addToDelFdsQ(client->getGatewayIO()->rdFd());
         // client->getGatewayIO()->closeRdFd();

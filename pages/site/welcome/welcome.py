@@ -15,5 +15,6 @@ tts = gTTS(text=msg, lang='en', slow=False)
 
 tts.save('./voice.mp3')
 
-print("Location: /welcome/welcome.html\n\n")
+print("Content-length: 0")
+print("Location: /welcome/welcome.html\n")
 

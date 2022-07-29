@@ -234,9 +234,9 @@ IO::write(void) {
 }
 
 int
-IO::getline(std::string &line, std::size_t size) {
+IO::getline(std::string &line, int64_t size) {
     std::size_t pos = 0;
-    if (!size) {
+    if (size < 0) {
         pos = _rem.find(LF);
         if (pos == std::string::npos) {
             return 0;
@@ -244,7 +244,7 @@ IO::getline(std::string &line, std::size_t size) {
         pos += 1;
 
     } else {
-        if (_rem.length() < size) {
+        if (static_cast<int64_t>(_rem.length()) < size) {
             return 0;
         }
         pos = size;

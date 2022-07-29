@@ -399,7 +399,7 @@ StatusCode
 Request::writeBody(const std::string &body) {
     Log.debug() << "Request::writeBody " << body << Log.endl;
 
-    if (tunnelGuard(body.length() > getBodySize())) {
+    if (tunnelGuard(static_cast<int64_t>(body.length()) > getBodySize())) {
         Log.error() << "Request: Body length is too long" << Log.endl;
         return BAD_REQUEST;
     }
