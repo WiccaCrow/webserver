@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string.h>
 
 class Base64 {
     static const char *encoders;

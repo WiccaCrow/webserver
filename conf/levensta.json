@@ -18,11 +18,19 @@
                 "504": "./pages/error_pages/504.html",
                 "505": "./pages/error_pages/505.html"
             },
-            "methods_allowed": ["GET", "PUT"],
-            "post_max_body": 100,
+            "methods_allowed": ["POST", "GET", "PUT"],
+            "post_max_body": "100B",
             "autoindex": true,
             "index": ["index.html"],
             "locations": {
+                "/welcome": {
+                    "alias": "./pages/site/welcome",
+                    "cgi": {
+                        ".py": "/usr/bin/python3"
+                    },
+                    "index": [ "index.html" ],
+                    "methods_allowed": [ "GET", "POST" ] 
+                },
                 "/about": {
                     "auth_basic": {
                         "realm": "eternity",
@@ -40,8 +48,8 @@
                     ],
                     "autoindex": true,
                     "index": ["index.html"],
-                    "post_max_body": 200,
-                    "methods_allowed": ["GET", "POST"]                 
+                    "post_max_body": "200B",
+                    "methods_allowed": ["GET", "POST"]
                 },
                 "/feedback": {
                     "root": "./pages/site",
@@ -52,7 +60,7 @@
                     "autoindex": false,
                     "index": ["index.html", "index.php"],
                     "methods_allowed": [ "DELETE" ],
-                    "post_max_body": 300
+                    "post_max_body": "300B"
                 }
             }
         }
