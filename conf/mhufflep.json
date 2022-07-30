@@ -27,7 +27,7 @@
                 ".cgi": ""
             },
             "methods_allowed": [ "GET", "PUT", "POST", "TRACE" ],
-            "post_max_body": "100B",
+            "post_max_body": "1 GiB",
             "autoindex": true,
             "index": [ "index.html" ],
             "add_headers": [

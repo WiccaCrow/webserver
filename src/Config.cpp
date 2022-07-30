@@ -27,6 +27,11 @@ isUInteger(double &num) {
     return (isInteger(num) && num >= 0);
 }
 
+std::ostream &operator<<(std::ostream &out, ExpectedType type) {
+    out << getExpectedTypeName(type);
+    return out;
+}
+
 std::string
 getExpectedTypeName(ExpectedType type) {
     switch (type) {
@@ -73,8 +78,7 @@ basicCheck(Object *src, const std::string &key, ExpectedType type, T &res, T def
     }
 
     if (!typeExpected(ptr, type)) {
-        Log.error() << key << ": expected " << getExpectedTypeName(type) << Log.endl;
-        Log.error() << key << ": got " << ptr->getType() << Log.endl;
+        Log.error() << key << ": expected " << type << ", got " << ptr->getType() << Log.endl;
         return NONE_OR_INV;
     }
     return SET;
@@ -205,7 +209,7 @@ getArray(Object *src, const std::string &key, std::vector<std::string> &res, std
     Array::iterator end = arr->end();
     for (; it != end; it++) {
         if ((*it)->isNull() || !(*it)->isStr()) {
-            Log.error() << key << " has mixed value(s)" << Log.endl;
+            Log.error() << key << " has non-string value(s)" << Log.endl;
             return NONE_OR_INV;
         }
         res.push_back((*it)->toStr());
@@ -227,7 +231,7 @@ getArray(Object *src, const std::string &key, std::vector<std::string> &res) {
     res.clear();
     for (; it != end; it++) {
         if ((*it)->isNull() || !(*it)->isStr()) {
-            Log.error() << key << " has mixed value(s)" << Log.endl;
+            Log.error() << key << " has non-string value(s)" << Log.endl;
             return NONE_OR_INV;
         }
         res.push_back((*it)->toStr());
@@ -1009,7 +1013,6 @@ parseServerBlocks(Object *src, Server::ServersMap &servers) {
     Object *obj = src->get(KW_SERVERS)->toObj();
 
     if (obj->begin() == obj->end()) {
-        conftrace_add(KW_SERVERS);
         Log.error() << "Serverblocks not found" << Log.endl;
         return NONE_OR_INV;
     }
@@ -1020,21 +1023,19 @@ parseServerBlocks(Object *src, Server::ServersMap &servers) {
         servBlock.setBlockname(it->first);
 
         if (!basicCheck(obj, it->first, OBJECT)) {
-            conftrace_add(KW_SERVERS);
             return NONE_OR_INV;
         }
 
         if (!parseServerBlock(it->second->toObj(), servBlock)) {
             conftrace_add(it->first);
-            conftrace_add(KW_SERVERS);
             return NONE_OR_INV;
         }
 
         ServerBlock::ServerNamesVec &names = servBlock.getServerNamesRef();
-        for (ServerBlock::ServerNamesVec::iterator it = names.begin(); it != names.end(); ++it) {
-            if (!uniqueNames[servBlock.getPort()].insert(*it).second) {
-                Log.error() << "Duplicated server_name " << *it << Log.endl;
-                conftrace_add(KW_SERVERS);
+        for (ServerBlock::ServerNamesVec::iterator sn = names.begin(); sn != names.end(); ++sn) {
+            if (!uniqueNames[servBlock.getPort()].insert(*sn).second) {
+                Log.error() << "Duplicated server_name " << *sn << Log.endl;
+                conftrace_add(it->first);
                 return NONE_OR_INV;
             }
         }
@@ -1048,12 +1049,14 @@ int
 parseConfig(Object *src, Server *serv) {
 
     if (!parseServerBlocks(src, serv->getServerBlocks())) {
+        conftrace_add(KW_SERVERS);
         conftrace_add("conf");
         Log.error() << "at " << conftrace_path() << Log.endl;
         return NONE_OR_INV;
     }
 
     if (!parseSettings(src, serv->settings)) {
+        conftrace_add(KW_SETTINGS);
         conftrace_add("conf");
         Log.error() << "at " << conftrace_path() << Log.endl;
         return NONE_OR_INV;

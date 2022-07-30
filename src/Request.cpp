@@ -397,7 +397,7 @@ Request::parseHeader(const std::string &line) {
 
 StatusCode
 Request::writeBody(const std::string &body) {
-    Log.debug() << "Request::writeBody " << body << Log.endl;
+    Log.debug() << "Request::writeBody " << Log.endl;
 
     if (tunnelGuard(static_cast<int64_t>(body.length()) > getBodySize())) {
         Log.error() << "Request: Body length is too long" << Log.endl;
@@ -410,7 +410,7 @@ Request::writeBody(const std::string &body) {
 
 StatusCode
 Request::parseBody(const std::string &line) {
-    Log.debug() << "Request::parseBody " << line << Log.endl;
+    Log.debug() << "Request::parseBody " << Log.endl;
     if (headers.has(TRANSFER_ENCODING) && headers.value(TRANSFER_ENCODING) == "chunked") {
         Log.debug() << "Request::parseChunk" << Log.endl;
         return parseChunk(line);
