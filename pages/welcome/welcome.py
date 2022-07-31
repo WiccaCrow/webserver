@@ -2,18 +2,18 @@ import os
 import sys
 from gtts import gTTS
 from io import BytesIO
+import urllib
+import cgi,cgitb
 
-bytesN = int(os.environ["CONTENT_LENGTH"])
-msg = 'Welcome on webserv '
+form = cgi.FieldStorage()
 
-if (bytesN != 0):
-    body = sys.stdin.read(bytesN)
-    body = body.replace('fname=', '')
-    msg += body + "!"
+msg = 'Welcome on webserv ' + form['fname'].value
 
-tts = gTTS(text=msg, lang='en', slow=False)
+# print(msg, file=sys.stderr)
 
-tts.save('./voice.mp3')
+tts = gTTS(text = msg, lang = 'en', slow = False)
+
+tts.save('./welcome.mp3')
 
 print("Content-length: 0")
 print("Location: /welcome/welcome.html\n")
