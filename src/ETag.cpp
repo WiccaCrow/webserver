@@ -25,10 +25,15 @@ ETag::~ETag(void) {}
 
 void
 ETag::setTag(time_t time) {
+
+    pthread_mutex_lock(&ETag::_lock);
+
     _atime = Time::now();
     _mtime = time;
     _mtime_s = Time::gmt(time);
     _tag = Base64::encode(SHA1().hash(_mtime_s));
+
+    pthread_mutex_unlock(&ETag::_lock);
 }
 
 const std::string &
