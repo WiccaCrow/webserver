@@ -277,6 +277,11 @@ void Client::tryReceiveResponse(int fd) {
 
 void Client::tryReceiveRequest(int fd) {
     (void)fd;
+
+    if (shouldBeClosed()) {
+        return ;
+    }
+
     if (_requests.size() == _responses.size()) {
         addRequest();
     }

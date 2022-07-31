@@ -97,7 +97,7 @@ public:
 
     // setters, getters
     // to send response
-    void shouldBeClosedIf(void);
+    // void shouldBeClosedIf(void);
 
     const std::string &getStatusLine(void);
 

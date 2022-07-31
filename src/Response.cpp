@@ -46,25 +46,24 @@ Response::~Response(void) {
     }
 }
 
-void Response::shouldBeClosedIf(void) {
-    static const std::size_t size = 6;
-    static const StatusCode  failedStatuses[size] = {
-         BAD_REQUEST,
-         REQUEST_TIMEOUT,
-         INTERNAL_SERVER_ERROR,
-         PAYLOAD_TOO_LARGE,
-         UNAUTHORIZED,
-         PROXY_AUTHENTICATION_REQUIRED};
-
-    for (std::size_t i = 0; i < size; i++) {
-        if (getStatus() == failedStatuses[i]) {
-            Log.debug() << "Response::shouldBeClosedIf" << Log.endl;
-            getClient()->shouldBeClosed(true);
-            addHeader(CONNECTION, "close");
-            break;
-        }
-    }
-}
+// void Response::shouldBeClosedIf(void) {
+//     static const std::size_t size = 6;
+//     static const StatusCode  failedStatuses[size] = {
+//          BAD_REQUEST,
+//          REQUEST_TIMEOUT,
+//          INTERNAL_SERVER_ERROR,
+//          PAYLOAD_TOO_LARGE,
+//          UNAUTHORIZED,
+//          PROXY_AUTHENTICATION_REQUIRED};
+//     for (std::size_t i = 0; i < size; i++) {
+//         if (getStatus() == failedStatuses[i]) {
+//             Log.debug() << "Response::shouldBeClosedIf" << Log.endl;
+//             getClient()->shouldBeClosed(true);
+//             addHeader(CONNECTION, "close");
+//             break;
+//         }
+//     }
+// }
 
 void Response::makeResponseForMethod(void) {
     const std::string &method = getRequest()->getMethod();
@@ -119,7 +118,8 @@ void Response::makeResponseForProxy() {
 
 void Response::assembleError(void) {
     makeResponseForError();
-    shouldBeClosedIf();
+    getClient()->shouldBeClosed(true);
+    addHeader(CONNECTION, "close");
     makeHead();
     formed(true);
 }
