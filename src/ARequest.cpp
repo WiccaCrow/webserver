@@ -330,6 +330,8 @@ ARequest::mapFile(void) {
 
     setRealBodySize(_filestat.st_size);
 
+    // Log.debug() << "File size: " << getRealBodySize() << Log.endl;
+
     _fileaddr = (char *)mmap(NULL, getRealBodySize(), PROT_READ, MAP_SHARED, _filefd, 0);
     if (_fileaddr == NULL) {
         Log.error() << "mmap failed" <<Log.endl;

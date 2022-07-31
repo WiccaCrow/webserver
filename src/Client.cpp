@@ -355,7 +355,7 @@ void Client::reply(Response *res) {
                 io->setData(res->makeChunk());
             }
         } else if (res->parted()) {
-            // Log.debug() << "Reply chunked res" << Log.endl;
+            // Log.debug() << "Reply parted res" << Log.endl;
             if (!io->getDataPos()) {
                 io->setData(res->makePart());
             }
@@ -366,7 +366,7 @@ void Client::reply(Response *res) {
             }
         }
 
-        if (!io->getData()) {
+        if (io->getData().empty()) {
             res->bodySent(true);
             return ;
         }
@@ -433,7 +433,7 @@ void Client::reply(Request *req) {
             }
         }
 
-        if (!io->getData()) {
+        if (io->getData().empty()) {
             req->bodySent(true);
             return ;
         }

@@ -384,7 +384,7 @@ int Response::makeResponseForFile(void) {
             return 0;
         }
     } else {
-        if (static_cast<uint64_t>(getFileSize()) > g_server->settings.max_reg_file_size) {
+        if (static_cast<uint64_t>(getRealBodySize()) > g_server->settings.max_reg_file_size) {
             chunked(true);
         } else {
             setBody(std::string(_fileaddr, getFileSize()));

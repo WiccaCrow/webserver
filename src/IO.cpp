@@ -7,7 +7,6 @@ IO::IO(void)
     , _fdw(-1)
     , _af(AF_UNSPEC)
     , _port(0)
-    , _data(0)
     , _dataSize(0)
     , _dataPos(0) {}
 
@@ -62,7 +61,7 @@ IO::getRem(void) const {
 
 void
 IO::setData(const std::string &data) {
-    _data = data.c_str();
+    _data = data;
     setDataSize(data.length());
 }
 
@@ -76,7 +75,7 @@ IO::setDataPos(std::size_t pos) {
     _dataPos = pos;
 }
 
-const char *
+const std::string &
 IO::getData(void) const {
     return _data;
 }
@@ -93,7 +92,7 @@ IO::getDataPos(void) const {
 
 void
 IO::clear(void) {
-    _data = NULL;
+    _data = "";
     setDataPos(0);
     setDataSize(0);
 }
@@ -220,7 +219,7 @@ int IO::read(void) {
 int
 IO::write(void) {
 
-    long bytes = ::write(_fdw,  _data + _dataPos, _dataSize - _dataPos);
+    long bytes = ::write(_fdw,  _data.c_str() + _dataPos, _dataSize - _dataPos);
     
     if (bytes > 0) {
         _dataPos += bytes;
