@@ -116,11 +116,12 @@ window.addEventListener("load", function() {
 
     async function onOptions() {
 
-        if (requestUri.value[requestUri.value.length - 1] != '/') {
-            requestUri.value += '/';
+        let reqUri = requestUri.value; 
+        if (reqUri == '*') {
+            reqUri = '/';
+        } else if (reqUri[reqUri.length - 1] != '/') {
+            reqUri += '/';
         }
-
-        const reqUri = `${requestUri.value}`;
 
         console.log(reqUri);
 
