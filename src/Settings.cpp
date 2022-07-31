@@ -20,6 +20,7 @@ Settings::Settings(void) {
     chunk_size = 40 * MiB;
     max_reg_file_size = 4 * MiB;
     max_range_size = 2 * MiB;
+    max_reg_upload_size = 30 * MiB;
 
 }
 

@@ -13,7 +13,8 @@
         "workers": 3,
         "max_reg_file_size": "4 MiB",
         "max_range_size": "2 MiB",
-        "cookie_http_only": true
+        "cookie_http_only": true,
+        "max_reg_upload_size": "10B"
     },
     "servers": {
         "http2": {
@@ -40,7 +41,7 @@
                     "methods_allowed": [ "GET", "POST", "DELETE", "PUT" ]
                 },
                 "/welcome": {
-                    "alias": "./pages/site/welcome",
+                    "alias": "./pages/welcome",
                     "cgi": {
                         ".py": "/usr/bin/python3"
                     },

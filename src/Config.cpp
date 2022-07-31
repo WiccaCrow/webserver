@@ -257,14 +257,14 @@ const char * validKeywords[] = {
     KW_SETTINGS, KW_MAX_WAIT_CONN, KW_WORKERS, KW_WORKER_TIMEOUT, KW_MAX_REQUESTS,
     KW_MAX_CLIENT_TIMEOUT, KW_MAX_GATEWAY_TIMEOUT, KW_MAX_URI_LENGTH, 
     KW_MAX_HEADER_FIELD_LENGTH, KW_BLIND_PROXY, KW_SESSION_LIFETIME, KW_CHUNK_SIZE,
-    KW_MAX_REG_FILE_SIZE, KW_MAX_RANGE_SIZE, KW_COOKIE_HTTP_ONLY, NULL
+    KW_MAX_REG_FILE_SIZE, KW_MAX_RANGE_SIZE, KW_COOKIE_HTTP_ONLY, KW_MAX_REG_UPLOAD_SIZE, NULL
 };
 
 const char * validSettingsKeywords[] = {
     KW_SETTINGS, KW_MAX_WAIT_CONN, KW_WORKERS, KW_WORKER_TIMEOUT, KW_MAX_REQUESTS,
     KW_MAX_CLIENT_TIMEOUT, KW_MAX_GATEWAY_TIMEOUT, KW_MAX_URI_LENGTH, 
     KW_MAX_HEADER_FIELD_LENGTH, KW_BLIND_PROXY, KW_SESSION_LIFETIME, KW_CHUNK_SIZE,
-    KW_MAX_REG_FILE_SIZE, KW_MAX_RANGE_SIZE, KW_COOKIE_HTTP_ONLY, NULL
+    KW_MAX_REG_FILE_SIZE, KW_MAX_RANGE_SIZE, KW_COOKIE_HTTP_ONLY, KW_MAX_REG_UPLOAD_SIZE, NULL
 };
 
 const char * validServerBlockKeywords[] = {
@@ -996,6 +996,15 @@ int parseSettings(Object *src, Settings &sets) {
         return NONE_OR_INV;
     } else if (!size_s.empty() && !parseSize(size_s, sets.max_reg_file_size)) {
         conftrace_add(KW_MAX_REG_FILE_SIZE);
+        return NONE_OR_INV;
+    }
+
+    size_s = "";
+    if (!getString(obj, KW_MAX_REG_UPLOAD_SIZE, size_s, "")) {
+        conftrace_add(KW_MAX_REG_UPLOAD_SIZE);
+        return NONE_OR_INV;
+    } else if (!size_s.empty() && !parseSize(size_s, sets.max_reg_upload_size)) {
+        conftrace_add(KW_MAX_REG_UPLOAD_SIZE);
         return NONE_OR_INV;
     }
 
