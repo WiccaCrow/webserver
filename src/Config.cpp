@@ -752,6 +752,7 @@ parseLocations(Object *src, ServerBlock::LocationsMap &res, Location &base) {
         }
 
         if (!isValidPath(it->first)) {
+            Log.error() << "Invalid location path" << Log.endl;
             conftrace_add(it->first);
             return NONE_OR_INV;
         }
