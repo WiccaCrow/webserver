@@ -28,6 +28,7 @@ public:
     uint64_t chunk_size;
     uint64_t max_reg_file_size;
     uint64_t max_range_size;
+    uint64_t max_reg_upload_size;
 
     Settings(void);
     ~Settings(void);
