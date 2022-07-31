@@ -209,6 +209,7 @@ int IO::read(void) {
         if (!strcmp(buf, "\xff\xf4\xff\xfd\x06") || !strcmp(buf, "\xff\xed\xff\xfd\x06")) {
             return 0;
         }
+        
         _rem.append(buf, bytes);
         return bytes;
     } 
@@ -244,12 +245,11 @@ IO::getline(std::string &line, int64_t size) {
         pos += 1;
 
     } else {
-        if (static_cast<int64_t>(_rem.length()) < size) {
+        if (_rem.length() == 0 && size != 0) {
             return 0;
         }
-        pos = size;
+        pos = _rem.length();
     }
-
     line = _rem.substr(0, pos);
     _rem.erase(0, pos);
     return 1;

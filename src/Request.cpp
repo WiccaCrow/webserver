@@ -9,7 +9,6 @@ Request::Request(void)
     : ARequest()
     , _servBlock(NULL)
     , _location(NULL)
-    , _client(NULL)
     , _useRanges(true)
     , _authorized(false) {}
 
@@ -17,11 +16,13 @@ Request::Request(Client *client)
     : ARequest()
     , _servBlock(NULL)
     , _location(NULL)
-    , _client(client)
     , _useRanges(true)
-    , _authorized(false) {}
+    , _authorized(false) {
+    setClient(client);
+}
 
-Request::~Request() {}
+Request::~Request(void) {
+}
 
 Request::Request(const Request &other) : ARequest(other) {
     *this = other;
@@ -39,10 +40,9 @@ Request::operator=(const Request &other) {
         _location     = other._location;
         _authorized   = other._authorized;
         _cookie       = other._cookie;
-        _client       = other._client;
         _host         = other._host;
         _useRanges    = other._useRanges;
-        headers      = other.headers;
+        headers       = other.headers;
     }
     return *this;
 }
@@ -53,7 +53,7 @@ Request::getMethod() const {
 }
 
 const std::string &
-Request::getPath() const {
+Request::getPath(void) const {
     return _uri._path;
 }
 
@@ -75,16 +75,6 @@ Request::getLocation(void) const {
 void
 Request::setLocation(Location *location) {
     _location = location;
-}
-
-Client *
-Request::getClient(void) {
-    return _client;
-}
-
-void
-Request::setClient(Client *client) {
-    _client = client;
 }
 
 const std::string &
@@ -165,20 +155,19 @@ Request::useRanges(bool flag) {
 bool
 Request::parseLine(std::string &line) {
 
-    if (!flagSet(PARSED_SL)) {
-        rtrim(line, CRLF);
-        setStatus(!line.empty() ? parseSL(line) : CONTINUE);
-    } else if (!flagSet(PARSED_HEADERS)) {
-        rtrim(line, CRLF);
-        setStatus(!line.empty() ? parseHeader(line) : checkHeaders());
-    } else if (!flagSet(PARSED_BODY)) {
-        setStatus(parseBody(line));
+    if (getStatus() < BAD_REQUEST) {
 
-        if (getBody().length() > static_cast<size_t>(getLocation()->getPostMaxBodyRef())) {
-            setStatus(PAYLOAD_TOO_LARGE);
+        if (!flagSet(PARSED_SL)) {
+            rtrim(line, CRLF);
+            setStatus(!line.empty() ? parseSL(line) : CONTINUE);
+        } else if (!flagSet(PARSED_HEADERS)) {
+            rtrim(line, CRLF);
+            setStatus(!line.empty() ? parseHeader(line) : checkHeaders());
+        } else if (!flagSet(PARSED_BODY)) {
+            setStatus(parseBody(line));
+        } else {
+            setStatus(PROCESSING);
         }
-    } else {
-        setStatus(PROCESSING);
     }
 
     if (getStatus() != CONTINUE) {
@@ -200,13 +189,13 @@ Request::parseLine(std::string &line) {
     return formed();
 }
 
-bool
-Request::tunnelGuard(bool value) {
-    if (getClient()->isTunnel() && g_server->settings.blind_proxy) {
-        return false;
-    }
-    return value;
-}
+// bool
+// Request::tunnelGuard(bool value) {
+//     if (getClient()->isTunnel() && g_server->settings.blind_proxy) {
+//         return false;
+//     }
+//     return value;
+// }
 
 StatusCode
 Request::parseSL(const std::string &line) {
@@ -354,9 +343,14 @@ Request::checkHeaders(void) {
         if (static_cast<std::size_t>(len) > getLocation()->getPostMaxBodyRef()) {
             return PAYLOAD_TOO_LARGE;
         }
+    } else if (headers.has(TRANSFER_ENCODING)) {
+        if (headers[TRANSFER_ENCODING].value == "chunked") {
+            chunked(true);
+            headers.erase(TRANSFER_ENCODING);
+        }
     }
 
-    if (!headers.has(TRANSFER_ENCODING) && !headers.has(CONTENT_LENGTH)) {
+    if (!chunked() && !headers.has(CONTENT_LENGTH)) {
         // PUT or POST or PATCH
         if (tunnelGuard(_method[0] == 'P')) {
             Log.error() << "Request::Transfer-Encoding/Content-Length is missing in request" << Log.endl;
@@ -397,27 +391,55 @@ Request::parseHeader(const std::string &line) {
 
 StatusCode
 Request::writeBody(const std::string &body) {
-    Log.debug() << "Request::writeBody " << Log.endl;
 
-    if (tunnelGuard(static_cast<int64_t>(body.length()) > getBodySize())) {
-        Log.error() << "Request: Body length is too long" << Log.endl;
+    appendBody(body);
+    if (tunnelGuard(getRealBodySize()) > getExpBodySize()) {
+        Log.error() << "Request: Body length exceeds content-length" << Log.endl;
+        Log.error() << "Request: expected: " << getExpBodySize() << Log.endl;
+        Log.error() << "Request: got: " << getRealBodySize() << Log.endl;
         return BAD_REQUEST;
+    } else if (getRealBodySize() == getExpBodySize()) {
+        Log.debug() << "Request: Body processed" << Log.endl;
+        setFlag(PARSED_BODY);
     }
-    setBody(body);
-    setFlag(PARSED_BODY);
     return PROCESSING;
 }
 
 StatusCode
 Request::parseBody(const std::string &line) {
-    Log.debug() << "Request::parseBody " << Log.endl;
-    if (headers.has(TRANSFER_ENCODING) && headers.value(TRANSFER_ENCODING) == "chunked") {
+
+    if (line.length() < 100) {
+        Log.debug() << line << Log.endl;
+    }
+
+    uint64_t size = getRealBodySize() + line.length();
+
+    if (size > g_server->settings.max_reg_upload_size && _filefd == -1) {
+        char tmpl[] = "/tmp/wsfileXXXXXX";
+        _filefd = mkstemp(tmpl);
+        if (_filefd == -1) {
+            Log.syserr() << "Request:: Unable to create tmp file" << Log.endl; 
+            return INSUFFICIENT_STORAGE;
+        }
+        _filename = tmpl;
+        Log.debug() << "Request:: tmp file " << _filename << " created" << Log.endl; 
+    }
+
+    if (size > getLocation()->getPostMaxBodyRef()) {
+        Log.debug() << "Request:: Payload too large (" << size << " > " << getLocation()->getPostMaxBodyRef() << Log.endl; 
+        return PAYLOAD_TOO_LARGE;
+    }
+
+    if (chunked()) {
         Log.debug() << "Request::parseChunk" << Log.endl;
         return parseChunk(line);
     } else if (headers.has(CONTENT_LENGTH)) {
         Log.debug() << "Request::writeBody" << Log.endl;
         return writeBody(line);
+    } else {
+        Log.debug() << "Request::parseBody: invalid request" << Log.endl;
     }
+    
     return PROCESSING;
 }
 
@@ -497,16 +519,10 @@ Request::makeHead(void) {
     std::string head;
     head.reserve(512);
 
-    // URI &pass = getLocation()->getProxyRef().getPassRef();
-    
-    head.reserve(512);
     head = makeSL();
     Headers<RequestHeader>::iterator it = headers.begin();
     for (; it != headers.end(); ++it) {
         if (it->first == CONNECTION) {
-            // if (!pass._host.empty() && !pass._port_s.empty()) {
-            //     head += headerNames[it->first] + ": close" + CRLF;
-            // }
             continue;
         }
         else if (it->first == KEEP_ALIVE) {
@@ -516,6 +532,13 @@ Request::makeHead(void) {
     }
     head += CRLF;
     setHead(head);
+}
+
+void
+Request::addHeader(uint32_t hash, const std::string &value) {
+    if (headers[hash].value.empty()) {
+        headers[hash].value = value;
+    }
 }
 
 } // namespace HTTP

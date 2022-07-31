@@ -43,7 +43,7 @@ private:
     
     ServerBlock *  _servBlock;
     Location    *  _location;
-    Client      *  _client;
+    // Client      *  _client;
 
     bool           _useRanges;
     bool           _authorized;
@@ -66,16 +66,13 @@ public:
     Location *getLocation(void) const;
     void      setLocation(Location *);
 
-    Client *getClient(void);
-    void    setClient(Client *);
-
     const std::string &getRemoteUser(void) const;
     void    setRemoteUser(const std::string &);
 
     const std::string &getPathInfo(void) const;
     void setPathInfo(const std::string &);
 
-    virtual bool tunnelGuard(bool);
+    // virtual bool tunnelGuard(bool);
 
     virtual bool parseLine(std::string &);
 
@@ -118,6 +115,8 @@ public:
     void proxyLookUp(void);
 
     void checkCGI(void);
+
+    void addHeader(uint32_t, const std::string & = "");
 
 };
 

@@ -13,8 +13,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <utility>
-#include <sys/stat.h>
-#include <sys/mman.h>
 #include <ctime>
 
 #include "SHA1.hpp"
@@ -39,15 +37,7 @@ class Response : public ARequest {
     CGI        *_cgi;
     Proxy      *_proxy;
 
-    char        *_fileaddr;
-    int         _filefd;
-    struct stat _filestat;
-    uint64_t    _offset;
-
     RangeSet    _range;
-
-    bool        _isProxy;
-    bool        _isCGI;
 
 public:
     Headers<ResponseHeader> headers;
@@ -89,7 +79,7 @@ public:
 
     int         contentForGetHead(void);
     bool        indexFileExists(const std::string &);
-    int         openFileToResponse(const std::string &);
+    int         openFile(const std::string &);
     int         listing(const std::string &);
     int         fillDirContent(std::deque<std::string> &, const std::string &directory);
     std::string createTableLine(const std::string &);
@@ -103,9 +93,7 @@ public:
 
     void        checkCGIFailure(void);
     
-    std::string  makeChunk(void);
-
-    virtual bool tunnelGuard(bool);
+    // virtual bool tunnelGuard(bool);
 
     // setters, getters
     // to send response
@@ -117,7 +105,6 @@ public:
     CGI *getCGI(void) const;
 
     Request *getRequest(void);
-    Client *getClient(void);
 
     void *getFileAddr(void);
     int64_t getFileSize(void);
@@ -134,6 +121,7 @@ public:
 
     void makeFileWithRandName(const std::string &directory);
 
+    void writeBodyToFile(const std::string &);
 };
 
 } // namespace HTTP

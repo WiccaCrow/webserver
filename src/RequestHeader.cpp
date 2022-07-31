@@ -172,7 +172,7 @@ RequestHeader::ContentLength(Request &req) {
         return BAD_REQUEST;
     }
     // req.isChunkSize(false);
-    req.setBodySize(length);
+    req.setExpBodySize(length);
 
     return CONTINUE;
 }

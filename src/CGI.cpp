@@ -95,8 +95,8 @@ bool CGI::setEnv(Request *req) {
     setValue(_env[9], req->getUriRef()._path); // PATH_INFO should be excluded
 
     // CONTENT_LENGTH
-    Log.debug() << "CGI: body length: " << req->getBody().length() << Log.endl; 
-    setValue(_env[10], sztos(req->getBody().length()));
+    Log.debug() << "CGI: body length: " << req->getRealBodySize() << Log.endl; 
+    setValue(_env[10], lltos(req->getRealBodySize()));
 
     // CONTENT_TYPE
     setValue(_env[11], req->headers[CONTENT_TYPE].value) ;
@@ -228,9 +228,7 @@ CGI::exec(Request *req) {
 
     setPID(childPID);
 
-    req->isCGI(true);
-    
-    if (!req->getBody().empty()) {
+    if (req->getRealBodySize() != 0) {
         g_server->link(io->wrFd(), client);
     } else {
         close(io->wrFd());

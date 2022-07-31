@@ -1,4 +1,6 @@
 #include "ARequest.hpp"
+#include "Server.hpp"
+#include "Client.hpp"
 
 namespace HTTP {
 
@@ -6,7 +8,8 @@ ARequest::ARequest(void)
     : _major(0)
     , _minor(0) 
     , _isChunkSize(false)
-    , _bodySize(-1)
+    , _expBodySize(-1)
+    , _realBodySize(0)
     , _chunkSize(0)
     , _parseFlags(PARSED_NONE)
     , _headSent(false)
@@ -15,33 +18,31 @@ ARequest::ARequest(void)
     , _chunked(false)
     , _isProxy(false)
     , _isCGI(false)
-    , _status(OK) {}
+    , _parted(false)
+    , _status(OK)
+    , _fileaddr(NULL)
+    , _filefd(-1)
+    , _offset(0) {}
 
-ARequest::~ARequest(void) {}
+ARequest::~ARequest(void) {
+    if (_filefd != -1) {
+        close(_filefd);
+    }
+    if (_fileaddr != NULL) {
+        // Log.debug() << "munmap file" << Log.endl;
+        munmap(_fileaddr, getRealBodySize());
+    }
+}
 
-// ARequest::ARequest(const ARequest &other) {
-//     *this = other;
-// }
+Client *
+ARequest::getClient(void) {
+    return _client;
+}
 
-// ARequest &
-// ARequest::operator=(const ARequest &other) {
-//     if (this != &other) {
-//         _minor        = other._minor;
-//         _major        = other._major;
-//         _protocol     = other._protocol;
-//         _body         = other._body;
-//         _head         = other._head;
-//         _bodySize     = other._bodySize;
-//         _isChunkSize  = other._isChunkSize;
-//         _parseFlags   = other._parseFlags;
-//         _chunkSize    = other._chunkSize;
-//         _sent         = other._sent;
-//         _formed       = other._formed;
-//         _chunked      = other._chunked;
-//         _status       = other._status;
-//     }
-//     return *this;
-// }
+void
+ARequest::setClient(Client *client) {
+    _client = client;
+}
 
 const std::string &
 ARequest::getBody(void) const {
@@ -68,9 +69,37 @@ ARequest::getMinor(void) const {
     return _minor;
 }
 
+int
+ARequest::getFileFd(void) const {
+    return _filefd;
+}
+
+const std::string &
+ARequest::getFilename(void) const {
+    return _filename;
+}
+
 void
 ARequest::setBody(const std::string &body) {
     _body = body;
+}
+
+void
+ARequest::appendBody(const std::string &body) {
+    if (_filefd != -1) {
+        const char *data = body.c_str();
+        for (size_t i = 0; i < body.length(); ) {
+            int bytes = write(_filefd, &data[i], body.length() - i);
+            if (bytes < 0) {
+                Log.syserr() << "ARequest:: Cannot write to tmp file" << Log.endl;
+                return ;
+            }
+            i += bytes;
+        }
+    } else {
+        _body += body;
+    }
+    setRealBodySize(getRealBodySize() + body.length());
 }
 
 void
@@ -96,6 +125,16 @@ ARequest::formed(void) const {
 void
 ARequest::formed(bool formed) {
     _formed = formed;
+}
+
+bool
+ARequest::parted(void) const {
+    return _parted;
+}
+
+void
+ARequest::parted(bool parted) {
+    _parted = parted;
 }
 
 bool
@@ -192,13 +231,23 @@ ARequest::isCGI(bool isCGI) {
 }
 
 int64_t
-ARequest::getBodySize(void) const {
-    return _bodySize;
+ARequest::getExpBodySize(void) const {
+    return _expBodySize;
 }
 
 void
-ARequest::setBodySize(int64_t size) {
-    _bodySize = size;
+ARequest::setExpBodySize(int64_t size) {
+    _expBodySize = size;
+}
+
+int64_t
+ARequest::getRealBodySize(void) const {
+    return _realBodySize;
+}
+
+void
+ARequest::setRealBodySize(int64_t size) {
+    _realBodySize = size;
 }
 
 void
@@ -210,16 +259,17 @@ StatusCode
 ARequest::writeChunk(const std::string &chunk) {
 
     if (_chunkSize >= chunk.length()) {
-        _body += chunk;
+        appendBody(chunk);
         _chunkSize -= chunk.length();
 
     } else {
+        // Maybe should be fixed to handle chunks that ended only with \n
         if (chunk[_chunkSize] != '\r' || 
             chunk[_chunkSize + 1] != '\n') {
             Log.error() << "ARequest:: Invalid chunk length" << Log.endl;
             return BAD_REQUEST;
         }
-        _body += chunk.substr(0, chunk.length() - 2);
+        appendBody(chunk.substr(0, chunk.length() - 2));
         _chunkSize = 0;
         isChunkSize(true);
     }
@@ -264,5 +314,93 @@ ARequest::writeChunkSize(const std::string &line) {
     isChunkSize(false);
     return CONTINUE;
 }
+
+int
+ARequest::mapFile(void) {
+
+    if (_filefd < 0) {
+        Log.error() << "open failed" <<Log.endl;
+        return 0;
+    }
+
+    if (fstat(_filefd, &_filestat) < 0) {
+        Log.error() << "fstat failed" <<Log.endl;
+        return 0;
+    }
+
+    setRealBodySize(_filestat.st_size);
+
+    _fileaddr = (char *)mmap(NULL, getRealBodySize(), PROT_READ, MAP_SHARED, _filefd, 0);
+    if (_fileaddr == NULL) {
+        Log.error() << "mmap failed" <<Log.endl;
+        return 0;   
+    }
+
+    std::string res;
+    res.append(_fileaddr, getRealBodySize());
+    // Log.debug() << "Mapped file: " << res << Log.endl;
+
+    return 1;
+}
+
+bool
+ARequest::tunnelGuard(bool value) {
+    if (getClient()->isTunnel() && g_server->settings.blind_proxy) {
+        return false;
+    }
+    return value;
+}
+
+std::string
+ARequest::makeChunk(void) {
+
+    std::string res;
+
+    const uint64_t chunk_size = g_server->settings.chunk_size;
+    const uint64_t filesize = getRealBodySize();
+
+    if (_offset >= filesize) {
+        // could be trailer headers
+        res = "0" CRLF CRLF;
+        chunked(false);
+
+    } else {
+        uint64_t size = chunk_size;
+        if (filesize - _offset < chunk_size) {
+            size = filesize - _offset;
+        }
+
+        res.assign(_fileaddr + _offset, size);
+        res = itohs(size) + CRLF + res + CRLF;
+
+        _offset += size;
+    }
+    return res;
+}
+
+std::string
+ARequest::makePart(void) {
+
+    std::string res;
+
+    const uint64_t chunk_size = g_server->settings.chunk_size;
+    const uint64_t filesize = getRealBodySize();
+
+    if (_offset < filesize) {
+        uint64_t size = chunk_size;
+        if (filesize - _offset < chunk_size) {
+            size = filesize - _offset;
+        }
+
+        res.assign(_fileaddr + _offset, size);
+        _offset += size;
+    }
+
+    if (_offset >= filesize) {
+       parted(false);
+    }
+    return res;
+}
+
 
 }

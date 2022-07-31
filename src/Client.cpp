@@ -350,25 +350,31 @@ void Client::reply(Response *res) {
     } else if (!res->bodySent()) {
 
         if (res->chunked()) {
+            // Log.debug() << "Reply chunked res" << Log.endl;
             if (!io->getDataPos()) {
                 io->setData(res->makeChunk());
             }
-        } else {
-            if (res->getBody().empty()) {
-                res->bodySent(true);
-                return ;
+        } else if (res->parted()) {
+            // Log.debug() << "Reply chunked res" << Log.endl;
+            if (!io->getDataPos()) {
+                io->setData(res->makePart());
             }
-
+        } else {
+            // Log.debug() << "Reply regular res" << Log.endl;
             if (!io->getDataPos()) {
                 io->setData(res->getBody());
             }
+        }
+
+        if (!io->getData()) {
+            res->bodySent(true);
+            return ;
         }
     }
 
     int bytes = io->write();
     
     if (bytes < 0) {
-        // check for blocking io
         return ;
     }
     
@@ -386,7 +392,7 @@ void Client::reply(Response *res) {
         if (!res->headSent()) {
             res->headSent(true);
 
-        } else if (!res->bodySent() && !res->chunked()) {
+        } else if (!res->bodySent() && !res->chunked() && !res->parted()) {
             res->bodySent(true);
         }
     }
@@ -409,27 +415,44 @@ void Client::reply(Request *req) {
         }
 
     } else if (!req->bodySent()) {
-        if (req->getBody().empty()) {
-            req->bodySent(true);
-            return ;
+
+        if (req->chunked()) {
+            // Log.debug() << "Reply chunked req" << Log.endl;
+            if (!io->getDataPos()) {
+                io->setData(req->makeChunk());
+            }
+        } else if (req->parted()) {
+            // Log.debug() << "Reply parted req" << Log.endl;
+            if (!io->getDataPos()) {
+                io->setData(req->makePart());
+            }
+        } else {
+            // Log.debug() << "Reply regular req" << Log.endl;
+            if (!io->getDataPos()) {
+                io->setData(req->getBody());
+            }
         }
 
-        if (!io->getDataPos()) {
-            io->setData(req->getBody());
+        if (!io->getData()) {
+            req->bodySent(true);
+            return ;
         }
     }
 
     int bytes = io->write();
     
     if (bytes < 0) {
-        // check for blocking io
+        if (req->isCGI()) {
+            Log.syserr() << "Client:: [" << io->wrFd() << " write failed" << Log.endl;
+            g_server->unlink(io->wrFd());
+            io->reset();
+        }
         return ;
     }
     
     if (bytes == 0) {
         Log.debug() << "Client:: [" << io->wrFd() << "] peer closed connection" << Log.endl;
         g_server->unlink(io->wrFd());
-        g_server->unlink(io->rdFd());
         io->reset();
         return ;
     }
@@ -437,7 +460,7 @@ void Client::reply(Request *req) {
     if (static_cast<std::size_t>(bytes) >= io->getDataSize()) {
         if (!req->headSent()) {
             req->headSent(true);
-        } else if (!req->bodySent()) {
+        } else if (!req->bodySent() && !req->chunked() && !req->parted()) {
             req->bodySent(true);
         }
     }
@@ -462,7 +485,7 @@ void Client::receive(Request *req) {
     while (!req->formed()) {
         std::string line;
 
-        if (!getClientIO()->getline(line, req->getBodySize())) {
+        if (!getClientIO()->getline(line, req->getExpBodySize())) {
             return ;
         }
 
@@ -491,10 +514,7 @@ void Client::receive(Response *res) {
         if (res->isCGI()) {
             res->checkCGIFailure();
 
-            // If no content-length header returned from CGI
-            // read the whole body at once
-            res->setBodySize(getGatewayIO()->getRem().length());
-            Log.debug() << "Rem len: " << res->getBodySize() << Log.endl;
+            Log.debug() << "Rem len: " << res->getExpBodySize() << Log.endl;
         }
 
         g_server->unlink(getGatewayIO()->rdFd());
@@ -509,7 +529,7 @@ void Client::receive(Response *res) {
             res->assembleError();
         }
 
-        if (!getGatewayIO()->getline(line, res->getBodySize())) {
+        if (!getGatewayIO()->getline(line, res->getExpBodySize())) {
             return ;
         }
 

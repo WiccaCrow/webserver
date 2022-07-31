@@ -7,11 +7,20 @@
 namespace HTTP {
 
 Response::Response(void)
-    : ARequest(), _parsedStatus(OK), _req(NULL), _cgi(NULL), _proxy(NULL), _fileaddr(NULL), _filefd(-1), _offset(0), _isProxy(false), _isCGI(false) {}
+    : ARequest()
+    , _parsedStatus(OK)
+    , _req(NULL)
+    , _cgi(NULL)
+    , _proxy(NULL) {}
 
 Response::Response(Request *req)
-    : ARequest(), _parsedStatus(OK), _req(req), _cgi(NULL), _proxy(NULL), _fileaddr(NULL), _filefd(-1), _offset(0), _isProxy(false), _isCGI(false) {
+    : ARequest()
+    , _parsedStatus(OK)
+    , _req(req)
+    , _cgi(NULL)
+    , _proxy(NULL) {
     setStatus(getRequest()->getStatus());
+    setClient(getRequest()->getClient());
 }
 
 Response::Response(const Response &other) {
@@ -23,11 +32,6 @@ Response &Response::operator=(const Response &other) {
         _req = other._req;
         _cgi = other._cgi;
         _proxy = other._proxy;
-        _fileaddr = other._fileaddr;
-        _filefd = other._filefd;
-        _isProxy = other._isProxy;
-        _isCGI = other._isCGI;
-
         headers = other.headers;
     }
     return *this;
@@ -39,12 +43,6 @@ Response::~Response(void) {
     }
     if (_proxy != NULL) {
         delete _proxy;
-    }
-    if (_filefd != -1) {
-        close(_filefd);
-    }
-    if (_fileaddr != NULL) {
-        munmap(_fileaddr, _filestat.st_size);
     }
 }
 
@@ -96,6 +94,19 @@ void Response::makeResponseForProxy() {
 
     _proxy = new Proxy(getRequest()->getLocation()->getProxyRef());
 
+    if (getRequest()->getFileFd() != -1) {
+        if (!getRequest()->mapFile()) {
+            setStatus(INTERNAL_SERVER_ERROR);
+            return ;
+        }
+
+        if (getRequest()->chunked()) {
+            getRequest()->addHeader(TRANSFER_ENCODING, "chunked");
+        } else {
+            getRequest()->parted(true);
+        }
+    }
+
     if (!getClient()->isTunnel()) {
         if (!_proxy->pass(getRequest())) {
             setStatus(BAD_GATEWAY);
@@ -114,6 +125,7 @@ void Response::assembleError(void) {
 }
 
 void Response::handle(void) {
+
     if (getStatus() < 300) {
         isCGI(getRequest()->isCGI());
 
@@ -124,6 +136,8 @@ void Response::handle(void) {
             makeResponseForRedirect(rdr.getCodeRef(), rdr.getURIRef());
         } else if (getClient()->isTunnel() || getRequest()->isProxy()) {
             makeResponseForProxy();
+        } else if (getRequest()->isCGI()) {
+            makeResponseForCGI();
         } else {
             makeResponseForMethod();
         }
@@ -168,7 +182,7 @@ void Response::DELETE(void) {
             setStatus(FORBIDDEN);
             return;
         }
-    } else if (remove(resourcePath.c_str())) {
+    } else if (std::remove(resourcePath.c_str())) {
         setStatus(FORBIDDEN);
         return;
     }
@@ -225,34 +239,40 @@ void Response::PATCH(void) {
 }
 
 void
+Response::writeBodyToFile(const std::string &resourcePath) {
+    if (getRequest()->getFileFd() != -1) {
+        if (std::rename(getRequest()->getFilename().c_str(), resourcePath.c_str())) {
+            Log.syserr() << "Cannot move tmp file " << _filename << Log.endl;
+            setStatus(INTERNAL_SERVER_ERROR);
+        }
+    } else {
+        writeFile(resourcePath, getRequest()->getBody());
+    }
+}
+
+void
 Response::makeFileWithRandName(const std::string &directory) {
-    // std::srand(std::time(NULL));
-    std::string filename;
-    filename = "POST_" + itos(std::rand());
-    if (isFile(directory + "/" + filename)) {
+
+    const std::string &filename = "POST_" + itos(std::rand());
+    const std::string &fullpath = directory + "/" + filename;
+
+    if (isFile(fullpath)) {
         setStatus(INTERNAL_SERVER_ERROR);
     }
-    writeFile(directory + "/" + filename, getRequest()->getBody());
+
+    writeBodyToFile(fullpath);
     addHeader(LOCATION, getRequest()->getRawUri() + "/" + filename);
     setStatus(CREATED);
 }
 
 void Response::POST(void) {
 
-    const std::string &resourcePath = _req->getResolvedPath(); 
-    if (isDirectory(resourcePath)) {
-        makeFileWithRandName(resourcePath);
-    } else if (isFile(resourcePath)) {
-        matchCGI(_req->getResolvedPath());
-        if (_cgi != NULL) {
-            makeResponseForCGI();
-        } else {
-            setStatus(BAD_GATEWAY);
-        }
-    } else {
+    if (!isDirectory(getRequest()->getResolvedPath())) {
         setStatus(FORBIDDEN);
-        return ; 
+        return ;
     }
+
+    makeFileWithRandName(getRequest()->getResolvedPath());
 }
 
 void Response::PUT(void) {
@@ -266,11 +286,11 @@ void Response::PUT(void) {
             setStatus(FORBIDDEN);
             return;
         } else {
-            writeFile(resourcePath, getRequest()->getBody());
+            writeBodyToFile(resourcePath);
             setBody(DEF_PAGE_BEG "File is overwritten." DEF_PAGE_END);
         }
     } else {
-        writeFile(resourcePath, getRequest()->getBody());
+        writeBodyToFile(resourcePath);
         setBody(DEF_PAGE_BEG "File created." DEF_PAGE_END);
         setStatus(CREATED);
     }
@@ -335,14 +355,20 @@ bool Response::indexFileExists(const std::string &resourcePath) {
 }
 
 int Response::makeResponseForFile(void) {
+
     const std::string &resourcePath = _req->getResolvedPath();
 
-    matchCGI(resourcePath);
-    if (_cgi != NULL) {
-        return makeResponseForCGI();
+    Log.debug() << "Response:: " << resourcePath << Log.endl;
+
+    if (!openFile(resourcePath)) {
+        Log.error() << "Response:: Cannot open file " << resourcePath << Log.endl; 
+        setStatus(INTERNAL_SERVER_ERROR);
+        return 0;
     }
 
-    if (!openFileToResponse(resourcePath)) {
+    if (!mapFile()) {
+        Log.error() << "Response:: Cannot map file " << resourcePath << Log.endl; 
+        setStatus(INTERNAL_SERVER_ERROR);
         return 0;
     }
 
@@ -353,7 +379,10 @@ int Response::makeResponseForFile(void) {
             return 0;
         }
     } else if (ranges.size() > 1) {
-        makeResponseForMultipartRange();
+        if (!makeResponseForMultipartRange()) {
+            setStatus(RANGE_NOT_SATISFIABLE);
+            return 0;
+        }
     } else {
         if (static_cast<uint64_t>(getFileSize()) > g_server->settings.max_reg_file_size) {
             chunked(true);
@@ -363,15 +392,15 @@ int Response::makeResponseForFile(void) {
     }
 
     addHeader(CONTENT_TYPE, getContentType(resourcePath));
-    if (!resourcePath.empty()) {
 
-        // add mutex
+    if (!resourcePath.empty()) {
         ETag *etag = ETag::get(resourcePath);
         etag->setTag(_filestat.st_mtime);
 
         addHeader(ETAG, etag->getTag());
         addHeader(LAST_MODIFIED, etag->getEntityStrTime());
     }
+
     if (chunked()) {
         addHeader(TRANSFER_ENCODING, "chunked");
     } else {
@@ -396,7 +425,7 @@ Response::makeResponseForMultipartRange(void) {
     std::stringstream ss;
 
     const std::string &sepPrefix = "--";
-    const std::string &boundary = "q1w2e3r4";
+    const std::string &boundary = Base64::encode(SHA1().hash(itos(std::rand())));
 
     RangeList::iterator range = ranges.begin();
     for (range = ranges.begin(); range != ranges.end(); ++range) {
@@ -444,27 +473,10 @@ int Response::makeResponseForRange(void) {
     return 1;
 }
 
-int Response::openFileToResponse(const std::string &resourcePath) {
+int Response::openFile(const std::string &resourcePath) {
+
     _filefd = open(resourcePath.c_str(), O_RDONLY);
-    if (_filefd < 0) {
-        setStatus(FORBIDDEN);
-        return 0;
-    }
-
-    if (fstat(_filefd, &_filestat) < 0) {
-        close(_filefd);
-        setStatus(FORBIDDEN);
-        return 0;
-    }
-
-    _fileaddr = (char *)mmap(NULL, _filestat.st_size, PROT_READ, MAP_SHARED, _filefd, 0);
-    if (_fileaddr == NULL) {
-        close(_filefd);
-        setStatus(FORBIDDEN);
-        return 0;
-    }
-
-    return 1;
+    return (_filefd != -1);
 }
 
 std::string
@@ -546,8 +558,17 @@ Response::createTableLine(const std::string &filename) {
 }
 
 int Response::listing(const std::string &resourcePath) {
-    std::string           body =
-        HTML_BEG HEAD_BEG TITLE_BEG + _req->getPath() + TITLE_END META_UTF8 DEFAULT_CSS HEAD_END BODY_BEG H1_BEG "Index on " + _req->getPath() + H1_END HR TABLE_BEG TR_BEG TH_BEG "Filename" TH_END TH_BEG "Last modified" TH_END TH_BEG "Size" TH_END TR_END TR_BEG TD_BEG "<a href=\"..\">../</a>" TD_END TD_BEG TD_END TD_BEG TD_END TR_END;
+    std::string body =
+    HTML_BEG
+        HEAD_BEG 
+            TITLE_BEG + _req->getPath() + TITLE_END
+            META_UTF8 DEFAULT_CSS 
+        HEAD_END
+        BODY_BEG 
+        H1_BEG "Index on " + _req->getPath() + H1_END
+        HR TABLE_BEG 
+            TR_BEG TH_BEG "Filename" TH_END TH_BEG "Last modified" TH_END TH_BEG "Size" TH_END TR_END
+            TR_BEG TD_BEG "<a href=\"..\">../</a>" TD_END TD_BEG TD_END TD_BEG TD_END TR_END;
 
     std::deque<std::string> filenames;
     if (!fillDirContent(filenames, resourcePath)) {
@@ -565,7 +586,6 @@ int Response::listing(const std::string &resourcePath) {
     body += TABLE_END HR BODY_END HTML_END;
 
     setBody(body);
-    // setBodyLength(_body.length());
 
     return 1;
 }
@@ -619,8 +639,7 @@ void Response::makeHead(void) {
     
     std::map<std::string, std::string> clientCookie = getRequest()->getCookie();
     if (clientCookie.find("s_id") == clientCookie.end()) {
-        SHA1 sha;
-        Cookie s_id("s_id", sha.hash(itos(rand())));
+        Cookie s_id("s_id", SHA1().hash(itos(rand())));
         s_id.httpOnly = g_server->settings.cookie_httpOnly;
         s_id.maxAge = g_server->settings.session_lifetime;
         s_id.setPath("/");
@@ -658,13 +677,33 @@ void Response::addHeader(uint32_t hash, const std::string &value) {
 }
 
 int Response::makeResponseForCGI(void) {
+
+    if (!isFile(_req->getResolvedPath())) {
+        setStatus(FORBIDDEN);
+        return 0;
+    }
+
+    matchCGI(_req->getResolvedPath());
+
+    if (_cgi == NULL) {
+        setStatus(BAD_GATEWAY);
+        return 0;
+    }
+
+    if (getRequest()->getFileFd() != -1) {
+        if (!getRequest()->mapFile()) {
+            setStatus(INTERNAL_SERVER_ERROR);
+            return 0;
+        }
+        getRequest()->parted(true);
+    }
+
     if (!_cgi->exec(getRequest())) {
         setStatus(BAD_GATEWAY);
         return 0;
-    } else {
-        isCGI(true);
-        return 1;
     }
+
+    return 1;
 }
 
 void Response::makeResponseForError(void) {
@@ -687,50 +726,10 @@ void Response::makeResponseForError(void) {
     setBody(errorResponses[getStatus()]);
 }
 
-std::string
-Response::makeChunk(void) {
-
-    std::string res;
-
-    const uint64_t chunk_size = g_server->settings.chunk_size;
-    const uint64_t filesize = _filestat.st_size;
-
-    if (_offset >= filesize) {
-        // could be trailer headers
-        res = "0" CRLF CRLF;
-        chunked(false);
-
-    } else {
-        uint64_t size = chunk_size;
-        if (filesize - _offset < chunk_size) {
-            size = filesize - _offset;
-        }
-
-        res.assign(_fileaddr + _offset, size);
-        res = itohs(size) + CRLF + res + CRLF;
-
-        _offset += size;
-    }
-    return res;
-}
-
 Request *
 Response::getRequest(void) {
     return _req;
 }
-
-Client *
-Response::getClient(void) {
-    return getRequest()->getClient();
-}
-
-// bool Response::isProxy(void) const {
-//     return _isProxy;
-// }
-
-// void Response::isProxy(bool isProxy) {
-//     _isProxy = isProxy;
-// }
 
 void *
 Response::getFileAddr(void) {
@@ -796,7 +795,7 @@ bool Response::parseLine(std::string &line) {
     }
 
     if (getStatus() == PROCESSING) {
-        if (isCGI() && getBody().empty()) {
+        if (isCGI() && getRealBodySize() == 0) {
             setStatus(NO_CONTENT);
         } else if (isProxy()) {
             setStatus(_parsedStatus);
@@ -808,19 +807,19 @@ bool Response::parseLine(std::string &line) {
             setStatus(SEE_OTHER);
         }
 
+        if (getFileFd() != -1) {
+            if (!mapFile()) {
+                setStatus(INTERNAL_SERVER_ERROR);
+            } else if (!chunked()) {
+                parted(true);
+            }
+        }
+
         makeHead();
         formed(true);
     }
 
     return formed();
-}
-
-bool
-Response::tunnelGuard(bool value) {
-    if (getClient()->isTunnel() && g_server->settings.blind_proxy) {
-        return false;
-    }
-    return value;
 }
 
 StatusCode
@@ -875,7 +874,7 @@ Response::parseHeader(const std::string &line) {
     ResponseHeader header;
 
     // Log.debug() << "Response::parseHeader:: " << line << Log.endl;
-    if (tunnelGuard(!header.parse(line, _isProxy))) {
+    if (tunnelGuard(!header.parse(line, isProxy()))) {
         Log.debug() << "Response:: Invalid header " << line << Log.endl;
         return BAD_REQUEST;
     }
@@ -884,8 +883,6 @@ Response::parseHeader(const std::string &line) {
     if (tunnelGuard(header.hash != SET_COOKIE)) {
         if (headers.has(header.hash)) {
             headers[header.hash].value += ", " + header.value;
-            // Log.debug() << "Response:: Dublicated header " << header.key << " " << header.hash << Log.endl;
-            // return BAD_REQUEST;
             return CONTINUE;
         }
     }
@@ -905,15 +902,16 @@ Response::checkHeaders(void) {
             Log.debug() << "Response::ParsedHeaders::Bad length " << num << Log.endl;
             return BAD_GATEWAY;
         }
-        setBodySize(num);
+        setExpBodySize(num);
     } else if (headers.has(TRANSFER_ENCODING)) {
-        // need to add check for chunked responses
-        isChunkSize(true);
-        setBodySize(0);
-        chunked(true);
-        headers.erase(TRANSFER_ENCODING);
+        if (headers[TRANSFER_ENCODING].value == "chunked") {
+            isChunkSize(true);
+            setExpBodySize(0);
+            chunked(true);
+            headers.erase(TRANSFER_ENCODING);
+        }
     } else {
-        setBodySize(ULLONG_MAX);
+        setExpBodySize(ULLONG_MAX);
     }
 
     headers.erase(CONNECTION);
@@ -925,22 +923,36 @@ Response::checkHeaders(void) {
 
 StatusCode
 Response::writeBody(const std::string &body) {
-    Log.debug() << "Response::writeBody " << Log.endl;
 
-    if (static_cast<int64_t>(body.length()) > getBodySize()) {
-        Log.error() << "Response: Body length is too long " << Log.endl;
-        Log.error() << "Response: expected: " << getBodySize() << Log.endl;
-        Log.error() << "Response: got: " << body.length() << Log.endl;
-        return BAD_GATEWAY;
+    appendBody(body);
+    if (tunnelGuard(getRealBodySize()) > getExpBodySize()) {
+        Log.error() << "Response: Body length exceeds content-length" << Log.endl;
+        Log.error() << "Response: expected: " << getExpBodySize() << Log.endl;
+        Log.error() << "Response: got: " << getRealBodySize() << Log.endl;
+        return BAD_REQUEST;
+    } else if (getRealBodySize() == getExpBodySize()) {
+        Log.debug() << "Response: Body processed" << Log.endl;
+        setFlag(PARSED_BODY);
     }
-    setBody(body);
-    setFlag(PARSED_BODY);
     return PROCESSING;
 }
 
 StatusCode
 Response::parseBody(const std::string &line) {
-    Log.debug() << "Response::parseBody " << Log.endl;
+
+    uint64_t size = getRealBodySize() + line.length();
+
+    if (size > g_server->settings.max_reg_upload_size && _filefd == -1) {
+        char tmpl[] = "/tmp/wsfileXXXXXX";
+        _filefd = mkstemp(tmpl);
+        if (_filefd == -1) {
+            Log.syserr() << "Response:: Unable to create tmp file" << Log.endl; 
+            return INTERNAL_SERVER_ERROR;
+        }
+        _filename = tmpl;
+        Log.debug() << "Response:: tmp file " << _filename << " created" << Log.endl; 
+    }
+
     if (chunked()) {
         Log.debug() << "Response::parseChunk" << Log.endl;
         return parseChunk(line);
@@ -948,7 +960,8 @@ Response::parseBody(const std::string &line) {
         Log.debug() << "Response::writeBody" << Log.endl;
         return writeBody(line);
     } else {
-        setBody(line);
+        Log.debug() << "Response::parseBody, unknown size" << Log.endl;
+        appendBody(line);
     }
     return PROCESSING;
 }
