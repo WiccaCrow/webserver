@@ -116,7 +116,15 @@ window.addEventListener("load", function() {
 
     async function onOptions() {
 
-        let status = await sendRequest("*", method);
+        if (requestUri.value[requestUri.value.length - 1] != '/') {
+            requestUri.value += '/';
+        }
+
+        const reqUri = `${requestUri.value}`;
+
+        console.log(reqUri);
+
+        let status = await sendRequest(reqUri, method);
         return status;
     }
 
