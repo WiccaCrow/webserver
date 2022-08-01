@@ -82,6 +82,7 @@ ARequest::getFilename(void) const {
 void
 ARequest::setBody(const std::string &body) {
     _body = body;
+    setRealBodySize(body.length());
 }
 
 void

@@ -206,7 +206,7 @@ void Response::TRACE(void) {
     if (!hasForwardHeader || forwards == "0") {
         addHeader(CONTENT_TYPE, "message/http");
         getRequest()->makeHead();
-        setBody(getRequest()->getHead() + getRequest()->getBody());
+        setBody(getRequest()->getHead());
         setStatus(OK);
     } else {
         Log.error() << "Response::TRACE: Max-forwards " << forwards << "received" << Log.endl;
@@ -566,7 +566,6 @@ int Response::listing(const std::string &resourcePath) {
     body += TABLE_END HR BODY_END HTML_END;
 
     setBody(body);
-    setRealBodySize(body.length());
 
     return 1;
 }
