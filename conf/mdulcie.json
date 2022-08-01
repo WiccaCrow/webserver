@@ -1,4 +1,21 @@
 {
+    "settings": {
+        "max_wait_conn": 128,
+        "blind_proxy": true,
+        "max_requests": 100,
+        "max_client_timeout": 25,
+        "max_gateway_timeout": 100,
+        "session_lifetime": 86400,
+        "max_uri_length": 1024,
+        "chunk_size": "10 MiB",
+        "max_header_field_length": 2048,
+        "worker_timeout": 10000,
+        "workers": 3,
+        "max_reg_file_size": "400 MiB",
+        "max_range_size": "2 MiB",
+        "cookie_http_only": true,
+        "max_reg_upload_size": "10B"
+    },
     "servers": {
         "http": {
             "listen": "127.0.0.1:8080",
@@ -10,23 +27,38 @@
             "cgi": {
                 ".py": "/usr/bin/python3.9"
             },
-            "methods_allowed": [ "GET", "POST", "CONNECT" ],
-            "post_max_body": 100,
+            "methods_allowed": [ "GET", "POST", "CONNECT", "HEAD", "OPTIONS" ],
+            "post_max_body": "100B",
             "autoindex": true,
             "index": [ "index.html" ],
             "locations": {
+                "/welcome": {
+                    "alias": "./pages/welcome",
+                    "cgi": {
+                        ".py": "/usr/bin/python3"
+                    },
+                    "index": [ "index.html" ],
+                    "methods_allowed": [ "GET", "POST" ] 
+                },
                 "/ss": {
                     "alias": "/home/user/Desktop/github/",
                     "autoindex": true,
                     "index": [ "index.html" ],
-                    "post_max_body": 200,
+                    "post_max_body": "200B",
+                    "methods_allowed": [ "GET", "POST" ]
+                },
+                "/pages": {
+                    "alias": "/home/user/Desktop/github/webserver/pages/",
+                    "autoindex": true,
+                    "index": [ "index.html" ],
+                    "post_max_body": "200B",
                     "methods_allowed": [ "GET", "POST" ]
                 },
                 "/about": {
                     "alias": "/home/user/Desktop/github/webserver/pages/site",
                     "autoindex": true,
                     "index": [ "index.html" ],
-                    "post_max_body": 200,
+                    "post_max_body": "200B",
                     "methods_allowed": [ "GET", "POST" ]                 
                 },
                 "/feedback": {
@@ -36,11 +68,15 @@
                     "autoindex": false,
                     "index": [ "index.html", "index.php" ],
                     "methods_allowed": [ "GET" ],
-                    "post_max_body": 300
+                    "post_max_body": "300B"
                 },
                 "/put": {
                     "alias": "/home/user/Desktop/github/webserver/put",
-                    "methods_allowed": [ "PUT" ]
+                    "methods_allowed": [ "PUT", "DELETE", "POST" ]
+                },
+                "/delete": {
+                    "alias": "/home/user/Desktop/github/webserver/put",
+                    "methods_allowed": [ "DELETE" ]
                 }
             }
         }
