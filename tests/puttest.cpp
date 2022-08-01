@@ -1,3 +1,8 @@
+// g++ -Wall -Wextra -Werror puttest.cpp -o puttest ; ./puttest 127.0.0.1 123G
+// ./puttest 127.0.0.1 123
+// ./puttest 127.0.0.1 123M
+// ./puttest 127.0.0.1 123G
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,14 +15,19 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include <sstream>
+#include <string>
+#include <stdlib.h>
 
 
 #define PORT "8080"
+#define MAXBODY 20000000000
 
 long    setMsgBodySize(char *size);
 void*   get_in_addr(struct sockaddr *sa);
 int     connectToServer(char *IPv4);
 void    sendMSG(int sockfd, long stringsize);
+void    checkIpFormat(char *IPv4);
+long    checkSizeFormat(char *size);
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
@@ -34,12 +44,40 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-long setMsgBodySize(char *size) {
-    long stringsize;
+long    checkSizeFormat(char *size) {
+    std::string sizestring;
     std::stringstream ss(size);
-    ss >> stringsize;
-    std::cout << "body size is set." << std::endl;
-    return stringsize;
+    ss >> sizestring;
+    size_t pos = sizestring.find_first_not_of("0123456789MG");
+    if (pos != std::string::npos) {
+        std::cerr << "Error: wrong body size format (0123456789 and MG)." << std::endl;
+        exit (1);
+    }
+
+    pos = sizestring.find_first_of("MG");
+    if (pos != std::string::npos && pos != sizestring.length() - 1) {
+        std::cerr << "Error: wrong body size format (MG can only be the last character)." << std::endl;
+        exit (1);
+    }
+
+    if (pos == sizestring.length() - 1) {
+        return(sizestring[pos] == 'M' ? 1000000 : 1000000000);
+    }
+    return 1;
+}
+
+long setMsgBodySize(char *size) {
+    long b = checkSizeFormat(size);
+    std::stringstream ss(size);
+
+    long sizelong;
+    ss >> sizelong;
+    sizelong *= b;
+    std::cout << "body size is set " << sizelong << std::endl;
+    if (sizelong > MAXBODY) {
+        std::cerr << "Error: fix define MAXBODY or change size." << std::endl;
+    }
+    return sizelong;
 }
 
 void *get_in_addr(struct sockaddr *sa) {
@@ -50,7 +88,38 @@ void *get_in_addr(struct sockaddr *sa) {
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+void    checkIpFormat(char *IPv4) {
+    std::string IPv4str(IPv4);
+
+    if (IPv4str.find_first_not_of("0123456789.") != std::string::npos) {
+        std::cerr << "Error: wrong IP format (0123456789.)" << std::endl;
+        exit (1);
+    }
+
+    int i = 4;
+    size_t pos = 0;
+    for (size_t poslast = 0; pos != std::string::npos && i; --i) {
+        pos = IPv4str.find_first_of(".", poslast);
+
+        size_t posn = (pos != std::string::npos ? pos: IPv4str.length());
+        std::string ip(&IPv4str[poslast], &IPv4str[posn]);
+        char *end;
+        if (ip.empty() || strtoul(ip.c_str(), &end, 10) > 255) {
+            std::cerr << "Error: wrong IP format (0-255)" << std::endl;
+            exit (1);
+        }
+        poslast = pos + 1;
+    }
+
+    if (!(pos == std::string::npos && !i)) {
+        std::cerr << (pos == std::string::npos) <<"Error: wrong IP format (x.x.x.x)" << i << std::endl;
+        exit (1);
+    }
+}
+
 int connectToServer(char *IPv4) {
+    checkIpFormat(IPv4);
+
     int sockfd;
     struct addrinfo hints, *servinfo, *p;
     int rv;

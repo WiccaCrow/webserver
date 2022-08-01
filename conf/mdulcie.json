@@ -72,7 +72,8 @@
                 },
                 "/put": {
                     "alias": "/home/user/Desktop/github/webserver/put",
-                    "methods_allowed": [ "PUT", "DELETE", "POST" ]
+                    "methods_allowed": [ "PUT", "DELETE", "POST" ],
+                    "post_max_body": "21GB"
                 },
                 "/delete": {
                     "alias": "/home/user/Desktop/github/webserver/put",
