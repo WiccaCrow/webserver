@@ -1,7 +1,7 @@
-// g++ -Wall -Wextra -Werror puttest.cpp -o puttest ; ./puttest 127.0.0.1 123G
-// ./puttest 127.0.0.1 123
-// ./puttest 127.0.0.1 123M
-// ./puttest 127.0.0.1 123G
+// g++ -Wall -Wextra -Werror puttest.cpp -o puttest 
+// ./puttest 127.0.0.1 8080 123
+// ./puttest 127.0.0.1 8080 123M
+// ./puttest 127.0.0.1 8080 123G
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,30 +18,45 @@
 #include <string>
 #include <stdlib.h>
 
-
-#define PORT "8080"
 #define MAXBODY 20000000000
 
 long    setMsgBodySize(char *size);
-void*   get_in_addr(struct sockaddr *sa);
-int     connectToServer(char *IPv4);
-void    sendMSG(int sockfd, long stringsize);
-void    checkIpFormat(char *IPv4);
 long    checkSizeFormat(char *size);
 
+int     connectToServer(char *IPv4, char *port);
+void    checkIpFormat(char *IPv4);
+void    checkPortFormat(char *port);
+void*   get_in_addr(struct sockaddr *sa);
+
+void    sendMSG(int sockfd, long stringsize);
+
 int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        fprintf(stderr, "Error. Usage: client hostname (IPv4) and size of body to send (bytes)\n");
+    if (argc != 4) {
+        fprintf(stderr, "Error. Usage: client hostname (IPv4), port and size of body to send (bytes)\n");
         exit(1);
     }
     
-    long stringsize = setMsgBodySize(argv[2]);
-    int sockfd = connectToServer(argv[1]);
+    long stringsize = setMsgBodySize(argv[3]);
+    int sockfd = connectToServer(argv[1], argv[2]);
     sendMSG(sockfd, stringsize);
     char buf[10];
     read(sockfd, buf, 10);
     close(sockfd);
     return 0;
+}
+
+long setMsgBodySize(char *size) {
+    long b = checkSizeFormat(size);
+    std::stringstream ss(size);
+
+    long sizel;
+    ss >> sizel;
+    sizel *= b;
+    std::cout << "body size is set " << sizel << std::endl;
+    if (sizel > MAXBODY) {
+        std::cerr << "Error: fix define MAXBODY or change size." << std::endl;
+    }
+    return sizel;
 }
 
 long    checkSizeFormat(char *size) {
@@ -63,29 +78,54 @@ long    checkSizeFormat(char *size) {
     if (pos == sizestring.length() - 1) {
         return(sizestring[pos] == 'M' ? 1000000 : 1000000000);
     }
+
     return 1;
 }
 
-long setMsgBodySize(char *size) {
-    long b = checkSizeFormat(size);
-    std::stringstream ss(size);
+int connectToServer(char *IPv4, char *port) {
+    checkIpFormat(IPv4);
+    checkPortFormat(port);
 
-    long sizelong;
-    ss >> sizelong;
-    sizelong *= b;
-    std::cout << "body size is set " << sizelong << std::endl;
-    if (sizelong > MAXBODY) {
-        std::cerr << "Error: fix define MAXBODY or change size." << std::endl;
+    int sockfd;
+    struct addrinfo hints, *servinfo, *p;
+    int rv;
+    char s[INET6_ADDRSTRLEN];
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ((rv = getaddrinfo(IPv4, port, &hints, &servinfo)) != 0) {
+        std::cerr << "getaddrinfo: " << gai_strerror(rv) << std::endl;
+        exit(2);
     }
-    return sizelong;
-}
 
-void *get_in_addr(struct sockaddr *sa) {
-    if (sa->sa_family == AF_INET) {
-        return &(((struct sockaddr_in*)sa)->sin_addr);
+    for(p = servinfo; p != NULL; p = p->ai_next) {
+        if ((sockfd = socket(p->ai_family, p->ai_socktype,
+            p->ai_protocol)) == -1) {
+            std::cerr << "client: socket" << std::endl;
+            continue;
+        }
+
+        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            close(sockfd);
+            std::cerr << "client: connect. Try next addr" << std::endl;
+            continue;
+        }
+
+        break;
     }
 
-    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+    if (p == NULL) {
+        std::cerr << "client: failed to connect" << std::endl;
+        exit(3);
+    }
+
+    inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
+    std::cout << "client: connecting to " <<  IPv4 << ":" << port << std::endl;
+    freeaddrinfo(servinfo);
+
+    return sockfd;
 }
 
 void    checkIpFormat(char *IPv4) {
@@ -117,49 +157,34 @@ void    checkIpFormat(char *IPv4) {
     }
 }
 
-int connectToServer(char *IPv4) {
-    checkIpFormat(IPv4);
+void    checkPortFormat(char *port) {
+    std::string portstr(port);
 
-    int sockfd;
-    struct addrinfo hints, *servinfo, *p;
-    int rv;
-    char s[INET6_ADDRSTRLEN];
-
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-
-    if ((rv = getaddrinfo(IPv4, PORT, &hints, &servinfo)) != 0) {
-        std::cerr << "getaddrinfo: " << gai_strerror(rv) << std::endl;
-        exit(2);
+    size_t pos = portstr.find_first_not_of("0123456789");
+    if (pos != std::string::npos) {
+        std::cerr << "Error: wrong port format (0123456789)." << std::endl;
+        exit (1);
+    }
+    
+    long portl;
+    std::stringstream ss(port);
+    ss >> portl;
+    if (portl < 0 || portl > 65535) {
+        std::cerr << "Error: wrong port value (0 - 65535)." << std::endl;
+        exit (1);
     }
 
-    for(p = servinfo; p != NULL; p = p->ai_next) {
-        if ((sockfd = socket(p->ai_family, p->ai_socktype,
-            p->ai_protocol)) == -1) {
-            std::cerr << "client: socket" << std::endl;
-            continue;
-        }
+    if (portl < 1024 || portl > 49151) {
+        std::cout << "Warning: port out of range 1024 - 49151." << std::endl;
+    }
+}
 
-        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-            close(sockfd);
-            std::cerr << "client: connect. Try next addr" << std::endl;
-            continue;
-        }
-
-        break;
+void *get_in_addr(struct sockaddr *sa) {
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
     }
 
-    if (p == NULL) {
-        std::cerr << "client: failed to connect" << std::endl;
-        exit(3);
-    }
-
-    inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
-    std::cout << "client: connecting to " <<  IPv4 << ":" << PORT << std::endl;
-    freeaddrinfo(servinfo);
-
-    return sockfd;
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
 void    sendMSG(int sockfd, long stringsize) {
