@@ -218,16 +218,17 @@ void Response::PATCH(void) {
     setStatus(NOT_IMPLEMENTED);
 }
 
-void
+bool
 Response::writeBodyToFile(const std::string &resourcePath) {
     if (getRequest()->getFileFd() != -1) {
         if (std::rename(getRequest()->getFilename().c_str(), resourcePath.c_str())) {
             Log.syserr() << "Cannot move tmp file " << _filename << Log.endl;
-            setStatus(INTERNAL_SERVER_ERROR);
+            return false;
         }
     } else {
         writeFile(resourcePath, getRequest()->getBody());
     }
+    return true;
 }
 
 void
@@ -238,9 +239,13 @@ Response::makeFileWithRandName(const std::string &directory) {
 
     if (isFile(fullpath)) {
         setStatus(INTERNAL_SERVER_ERROR);
+        return ;
     }
 
-    writeBodyToFile(fullpath);
+    if (!writeBodyToFile(fullpath)) {
+        setStatus(INTERNAL_SERVER_ERROR);
+        return ;
+    }
     addHeader(LOCATION, getRequest()->getRawUri() + "/" + filename);
     setStatus(CREATED);
 }
@@ -266,11 +271,17 @@ void Response::PUT(void) {
             setStatus(FORBIDDEN);
             return;
         } else {
-            writeBodyToFile(resourcePath);
+            if (!writeBodyToFile(resourcePath)) {
+                setStatus(INTERNAL_SERVER_ERROR);
+                return ;
+            }
             setBody(DEF_PAGE_BEG "File is overwritten." DEF_PAGE_END);
         }
     } else {
-        writeBodyToFile(resourcePath);
+        if (!writeBodyToFile(resourcePath)) {
+            setStatus(INTERNAL_SERVER_ERROR);
+            return ;
+        }
         setBody(DEF_PAGE_BEG "File created." DEF_PAGE_END);
         setStatus(CREATED);
     }

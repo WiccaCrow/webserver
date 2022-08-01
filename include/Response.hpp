@@ -118,7 +118,7 @@ public:
     virtual StatusCode parseHeader(const std::string &);
     virtual StatusCode checkHeaders(void);    
 
-    void writeBodyToFile(const std::string &);
+    bool writeBodyToFile(const std::string &);
 };
 
 } // namespace HTTP

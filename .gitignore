@@ -45,6 +45,7 @@ webserv
 .vscode
 .obj/
 logs/
+.tmp/
 .deps/
 .idea
 *.out

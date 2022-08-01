@@ -259,7 +259,7 @@ ARequest::setStatus(StatusCode status) {
 bool
 ARequest::createTmpFile(void) {
 
-    char tmpl[] = "/tmp/wsfileXXXXXX";
+    char tmpl[] = "./.tmp/wsfileXXXXXX";
     _filefd = mkstemp(tmpl);
 
     if (_filefd == -1) {

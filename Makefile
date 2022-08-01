@@ -22,6 +22,7 @@ endif
 SRCS_DIR     = src
 OBJS_DIR     = .obj
 DEPS_DIR     = .deps
+TMP_DIR		 = .tmp
 INCLUDE_DIR  = include
 LOGS_DIR     = logs
 DFLT_DIR	 = default
@@ -63,6 +64,7 @@ makedir:
 	@if ! [ -d ${OBJS_DIR} ] ; then mkdir ${OBJS_DIR} ; fi
 	@if ! [ -d ${DEPS_DIR} ] ; then mkdir ${DEPS_DIR} ; fi
 	@if ! [ -d ${LOGS_DIR} ] ; then mkdir ${LOGS_DIR} ; fi
+	@if ! [ -d ${TMP_DIR} ] ; then mkdir ${TMP_DIR} ; fi
 
 
 $(NAME): $(OBJS)
@@ -76,7 +78,7 @@ $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
         -MMD -MF $(patsubst ${OBJS_DIR}/%.o,${DEPS_DIR}/%.d,$@) 
 
 clean:
-	rm -rf ${DEPS_DIR} ${OBJS_DIR} ${LOGS_DIR} YoupiBanane
+	rm -rf ${DEPS_DIR} ${OBJS_DIR} ${LOGS_DIR} ${TMP_DIR} YoupiBanane
 
 fclean: clean
 	rm -rf $(NAME)

@@ -3,7 +3,7 @@
         "max_wait_conn": 128,
         "blind_proxy": true,
         "max_requests": 100,
-        "max_client_timeout": 25,
+        "max_client_timeout": 100,
         "max_gateway_timeout": 100,
         "session_lifetime": 86400,
         "max_uri_length": 1024,
@@ -13,7 +13,8 @@
         "workers": 3,
         "max_reg_file_size": "4 MiB",
         "max_range_size": "2 MiB",
-        "cookie_http_only": true
+        "cookie_http_only": true,
+		"max_reg_upload_size": "10MB"
     },
     "servers": {
         "http": {
@@ -42,7 +43,7 @@
                 ".cgi": ""
             },
             "methods_allowed": [ "GET", "PUT", "POST" ],
-            "post_max_body": "100B",
+            "post_max_body": "10 GB",
             "autoindex": true,
             "index": [ "index.html" ],
             "locations": {
