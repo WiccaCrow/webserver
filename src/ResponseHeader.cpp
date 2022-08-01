@@ -99,7 +99,7 @@ ResponseHeader::ContentLanguage(Response &res) {
 
 void
 ResponseHeader::ContentLength(Response &res) {
-    value = sztos(res.getBody().length());
+    value = sztos(res.getRealBodySize());
 }
 
 void
@@ -120,7 +120,6 @@ ResponseHeader::ContentRange(Response &res) {
 
 void
 ResponseHeader::ContentType(Response &res) {
-    (void)res;
 
     if (startsWith(value, "text")) {
         value += "; charset=utf-8";
@@ -160,7 +159,6 @@ ResponseHeader::Host(Response &res) {
 
 void
 ResponseHeader::KeepAlive(Response &res) {
-    (void)res;
     
     if (res.headers[CONNECTION].value != "close") {
         value = "timeout=" + sztos(g_server->settings.max_client_timeout) + ", max=" + sztos(g_server->settings.max_requests);
@@ -189,7 +187,6 @@ ResponseHeader::Pragma(Response &res) {
 
 void
 ResponseHeader::ProxyAuthenticate(Response &res) {
-
     value = "Basic realm=\"" + res.getRequest()->getLocation()->getAuthRef().getRealmRef() + "\"";
 }
 
