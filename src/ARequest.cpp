@@ -421,9 +421,10 @@ ARequest::writeBody(const std::string &body) {
     if (getRealBodySize() == getExpBodySize()) {
         Log.debug() << "ARequest:: Body processed" << Log.endl;
         setFlag(PARSED_BODY);
+        return PROCESSING;
     }
 
-    return PROCESSING;
+    return CONTINUE;
 }
 
 StatusCode
