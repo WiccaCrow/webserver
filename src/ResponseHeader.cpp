@@ -120,6 +120,7 @@ ResponseHeader::ContentRange(Response &res) {
 
 void
 ResponseHeader::ContentType(Response &res) {
+    (void)res;
 
     if (startsWith(value, "text")) {
         value += "; charset=utf-8";

@@ -77,6 +77,8 @@ public:
     int         makeResponseForCGI(void);
     int         makeResponseForRedirect(StatusCode, const std::string &);
 
+    void        makeFileWithRandName(const std::string &directory);
+
     int         contentForGetHead(void);
     bool        indexFileExists(const std::string &);
     int         openFile(const std::string &);
@@ -93,11 +95,10 @@ public:
 
     void        checkCGIFailure(void);
     
-    // virtual bool tunnelGuard(bool);
+    virtual bool has(uint32_t hash);
 
     // setters, getters
     // to send response
-    // void shouldBeClosedIf(void);
 
     const std::string &getStatusLine(void);
 
@@ -116,10 +117,6 @@ public:
     virtual StatusCode checkSL(void);
     virtual StatusCode parseHeader(const std::string &);
     virtual StatusCode checkHeaders(void);    
-    virtual StatusCode parseBody(const std::string &);
-    virtual StatusCode writeBody(const std::string &);
-
-    void makeFileWithRandName(const std::string &directory);
 
     void writeBodyToFile(const std::string &);
 };

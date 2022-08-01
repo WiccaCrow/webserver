@@ -72,18 +72,16 @@ public:
     const std::string &getPathInfo(void) const;
     void setPathInfo(const std::string &);
 
-    // virtual bool tunnelGuard(bool);
+    virtual bool has(uint32_t hash);
 
     virtual bool parseLine(std::string &);
-
     virtual StatusCode parseSL(const std::string &);
     virtual StatusCode checkSL(void);
-
     virtual StatusCode parseHeader(const std::string &);
     virtual StatusCode checkHeaders(void);
 
-    virtual StatusCode parseBody(const std::string &);
-    virtual StatusCode writeBody(const std::string &);
+    // virtual StatusCode parseBody(const std::string &);
+    // virtual StatusCode writeBody(const std::string &);
 
     const std::string &getPath(void) const;
     const std::string &getMethod(void) const;

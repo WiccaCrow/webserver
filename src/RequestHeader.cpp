@@ -162,7 +162,7 @@ RequestHeader::Connection(Request &req) {
 
 StatusCode
 RequestHeader::ContentLength(Request &req) {
-    if (req.headers.has(TRANSFER_ENCODING)) {
+    if (req.has(TRANSFER_ENCODING)) {
         Log.debug() << "ContentLength::ContentLength: TransferEncoding header exist" << Log.endl;
         return BAD_REQUEST;
     }
@@ -171,7 +171,11 @@ RequestHeader::ContentLength(Request &req) {
     if (!stoll(length, value.c_str())) {
         return BAD_REQUEST;
     }
-    // req.isChunkSize(false);
+
+    if (static_cast<std::size_t>(length) > req.getLocation()->getPostMaxBodyRef()) {
+        return PAYLOAD_TOO_LARGE;
+    }
+
     req.setExpBodySize(length);
 
     return CONTINUE;
@@ -318,7 +322,7 @@ RequestHeader::IfModifiedSince(Request &req) {
 
     // A recipient MUST ignore If-Modified-Since if the request contains an
     // If-None-Match header field;
-    if (req.headers.has(IF_NONE_MATCH)) {
+    if (req.has(IF_NONE_MATCH)) {
         // Maybe value should be cleared
         Log.debug() << "IfModifiedSince:: IfNoneMatch present" << Log.endl;
         return CONTINUE;
@@ -354,7 +358,7 @@ RequestHeader::IfUnmodifiedSince(Request &req) {
 
     // A recipient MUST ignore If-Modified-Since if the request contains an
     // If-None-Match header field;
-    if (req.headers.has(IF_MATCH)) {
+    if (req.has(IF_MATCH)) {
         // Maybe value should be cleared
         Log.debug() << "IfUnModifiedSince:: IfMatch present" << Log.endl;
         return CONTINUE;
@@ -516,7 +520,7 @@ RequestHeader::TransferEncoding(Request &req) {
     std::set<std::string> acceptedValues;
     acceptedValues.insert("chunked");
 
-    if (req.headers.has(CONTENT_LENGTH)) {
+    if (req.has(CONTENT_LENGTH)) {
         Log.debug() << "ContentLength::TransferEncoding: ContentLength header exist" << Log.endl;
         return BAD_REQUEST;
     }
@@ -528,6 +532,7 @@ RequestHeader::TransferEncoding(Request &req) {
             return NOT_IMPLEMENTED;
         }
     }
+    req.chunked(true);
     req.isChunkSize(true);
     return CONTINUE;
 }

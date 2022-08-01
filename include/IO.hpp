@@ -20,7 +20,6 @@ class IO {
 
     std::string _rem;
 
-    //const char *_data;
     std::string _data;
     std::size_t _dataSize;
     std::size_t _dataPos;
@@ -28,9 +27,6 @@ class IO {
 public:
     IO(void);
     ~IO(void);
-
-    // void closeRdFd(void);
-    // void closeWrFd(void);
 
     void rdFd(int);
     void wrFd(int);

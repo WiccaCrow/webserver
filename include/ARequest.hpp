@@ -8,6 +8,7 @@
 #include "Globals.hpp"
 #include "Status.hpp"
 #include "Logger.hpp"
+#include "Header.hpp"
 
 namespace HTTP {
 
@@ -115,24 +116,27 @@ public:
     bool isCGI(void);
     void isCGI(bool);
 
-    StatusCode parseChunk(const std::string &);
-    StatusCode writeChunkSize(const std::string &);
-    StatusCode writeChunk(const std::string &);
-
     bool tunnelGuard(bool);
+
+    virtual bool has(uint32_t hdrhash) = 0;
 
     virtual bool parseLine(std::string &) = 0;
     virtual StatusCode parseSL(const std::string &) = 0;
     virtual StatusCode checkSL(void) = 0;
     virtual StatusCode parseHeader(const std::string &) = 0;
-    virtual StatusCode checkHeaders(void) = 0;    
-    virtual StatusCode parseBody(const std::string &) = 0;
-    virtual StatusCode writeBody(const std::string &) = 0;
-
+    virtual StatusCode checkHeaders(void) = 0;
+    
+    StatusCode parseBody(const std::string &);
+    StatusCode writeBody(const std::string &);
+    StatusCode writeChunkSize(const std::string &);
+    StatusCode writeChunk(const std::string &);
+    StatusCode writePart(const std::string &);
+    
     std::string makeChunk(void);
     std::string makePart(void);
 
-    int mapFile(void);
+    bool createTmpFile(void);
+    bool mapFile(void);
 
 };
 

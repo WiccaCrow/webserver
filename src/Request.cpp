@@ -291,6 +291,11 @@ Request::proxyLookUp(void) {
     }
 }
 
+bool
+Request::has(uint32_t hash) {
+    return headers.has(hash);
+}
+
 StatusCode
 Request::checkHeaders(void) {
 
@@ -334,23 +339,11 @@ Request::checkHeaders(void) {
         return METHOD_NOT_ALLOWED;
     }
 
-    if (headers.has(CONTENT_LENGTH)) {
-        int64_t len;
-        bool converted = stoi64(len, headers[CONTENT_LENGTH].value);
-        if (!converted) {
-            return BAD_REQUEST;
-        }
-        if (static_cast<std::size_t>(len) > getLocation()->getPostMaxBodyRef()) {
-            return PAYLOAD_TOO_LARGE;
-        }
-    } else if (headers.has(TRANSFER_ENCODING)) {
-        if (headers[TRANSFER_ENCODING].value == "chunked") {
-            chunked(true);
-            headers.erase(TRANSFER_ENCODING);
-        }
+    if (has(TRANSFER_ENCODING)) {
+        headers.erase(TRANSFER_ENCODING);
     }
 
-    if (!chunked() && !headers.has(CONTENT_LENGTH)) {
+    if (!chunked() && !has(CONTENT_LENGTH)) {
         // PUT or POST or PATCH
         if (tunnelGuard(_method[0] == 'P')) {
             Log.error() << "Request::Transfer-Encoding/Content-Length is missing in request" << Log.endl;
@@ -380,7 +373,7 @@ Request::parseHeader(const std::string &line) {
     }
 
     // dublicate header
-    if (tunnelGuard(headers.has(header.hash))) {
+    if (tunnelGuard(has(header.hash))) {
         Log.debug() << "Request:: Dublicated header" << Log.endl;
         return BAD_REQUEST;
     }
@@ -388,61 +381,6 @@ Request::parseHeader(const std::string &line) {
     headers.insert(header);
     return CONTINUE;
 }
-
-StatusCode
-Request::writeBody(const std::string &body) {
-
-    appendBody(body);
-    if (tunnelGuard(getRealBodySize()) > getExpBodySize()) {
-        Log.error() << "Request: Body length exceeds content-length" << Log.endl;
-        Log.error() << "Request: expected: " << getExpBodySize() << Log.endl;
-        Log.error() << "Request: got: " << getRealBodySize() << Log.endl;
-        return BAD_REQUEST;
-    } else if (getRealBodySize() == getExpBodySize()) {
-        Log.debug() << "Request: Body processed" << Log.endl;
-        setFlag(PARSED_BODY);
-    }
-    return PROCESSING;
-}
-
-StatusCode
-Request::parseBody(const std::string &line) {
-
-    if (line.length() < 100) {
-        Log.debug() << line << Log.endl;
-    }
-
-    uint64_t size = getRealBodySize() + line.length();
-
-    if (size > g_server->settings.max_reg_upload_size && _filefd == -1) {
-        char tmpl[] = "/tmp/wsfileXXXXXX";
-        _filefd = mkstemp(tmpl);
-        if (_filefd == -1) {
-            Log.syserr() << "Request:: Unable to create tmp file" << Log.endl; 
-            return INSUFFICIENT_STORAGE;
-        }
-        _filename = tmpl;
-        Log.debug() << "Request:: tmp file " << _filename << " created" << Log.endl; 
-    }
-
-    if (size > getLocation()->getPostMaxBodyRef()) {
-        Log.debug() << "Request:: Payload too large (" << size << " > " << getLocation()->getPostMaxBodyRef() << Log.endl; 
-        return PAYLOAD_TOO_LARGE;
-    }
-
-    if (chunked()) {
-        Log.debug() << "Request::parseChunk" << Log.endl;
-        return parseChunk(line);
-    } else if (headers.has(CONTENT_LENGTH)) {
-        Log.debug() << "Request::writeBody" << Log.endl;
-        return writeBody(line);
-    } else {
-        Log.debug() << "Request::parseBody: invalid request" << Log.endl;
-    }
-    
-    return PROCESSING;
-}
-
 
 std::map<std::string, std::string> &
 Request::getCookie(void) {

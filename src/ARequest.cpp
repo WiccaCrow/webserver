@@ -255,77 +255,30 @@ ARequest::setStatus(StatusCode status) {
     _status = status;
 }
 
-StatusCode
-ARequest::writeChunk(const std::string &chunk) {
+bool
+ARequest::createTmpFile(void) {
 
-    if (_chunkSize >= chunk.length()) {
-        appendBody(chunk);
-        _chunkSize -= chunk.length();
+    char tmpl[] = "/tmp/wsfileXXXXXX";
+    _filefd = mkstemp(tmpl);
 
-    } else {
-        // Maybe should be fixed to handle chunks that ended only with \n
-        if (chunk[_chunkSize] != '\r' || 
-            chunk[_chunkSize + 1] != '\n') {
-            Log.error() << "ARequest:: Invalid chunk length" << Log.endl;
-            return BAD_REQUEST;
-        }
-        appendBody(chunk.substr(0, chunk.length() - 2));
-        _chunkSize = 0;
-        isChunkSize(true);
+    if (_filefd == -1) {
+        return false;
     }
-
-    return CONTINUE;
+    _filename = tmpl;
+    return true;
 }
 
-StatusCode
-ARequest::parseChunk(const std::string &line) {    
-    return (isChunkSize() ? writeChunkSize(line) : writeChunk(line));
-}
-
-StatusCode
-ARequest::writeChunkSize(const std::string &line) {
-
-    if (line.empty()) {
-        Log.error() << "ARequest:: Chunk size is empty" << Log.endl;
-        return BAD_REQUEST;
-    }
-
-    char *end = NULL;
-    _chunkSize = strtoul(line.c_str(), &end, 16);
-
-    if (!end || end[0] != '\r' || end[1] != '\n') {
-        Log.error() << "ARequest:: Chunks size is invalid: " << line << Log.endl;
-        return BAD_REQUEST;
-
-    } else if (_chunkSize == ULONG_MAX) {
-        Log.error() << "ARequest:: Chunk size is ULONG_MAX: " << line << Log.endl;
-        return BAD_REQUEST;
-
-    } else if (_chunkSize == 0 && line[0] != '0') {
-        Log.error() << "ARequest:: Chunk size parsing failed: " << line << Log.endl;
-        return BAD_REQUEST;
-
-    } else if (_chunkSize == 0) {
-        chunked(false);
-        setFlag(PARSED_BODY);
-        return PROCESSING;
-    }
-
-    isChunkSize(false);
-    return CONTINUE;
-}
-
-int
+bool
 ARequest::mapFile(void) {
 
     if (_filefd < 0) {
         Log.error() << "open failed" <<Log.endl;
-        return 0;
+        return false;
     }
 
     if (fstat(_filefd, &_filestat) < 0) {
         Log.error() << "fstat failed" <<Log.endl;
-        return 0;
+        return false;
     }
 
     setRealBodySize(_filestat.st_size);
@@ -335,14 +288,14 @@ ARequest::mapFile(void) {
     _fileaddr = (char *)mmap(NULL, getRealBodySize(), PROT_READ, MAP_SHARED, _filefd, 0);
     if (_fileaddr == NULL) {
         Log.error() << "mmap failed" <<Log.endl;
-        return 0;   
+        return false;   
     }
 
     std::string res;
     res.append(_fileaddr, getRealBodySize());
     // Log.debug() << "Mapped file: " << res << Log.endl;
 
-    return 1;
+    return true;
 }
 
 bool
@@ -402,6 +355,110 @@ ARequest::makePart(void) {
        parted(false);
     }
     return res;
+}
+
+StatusCode
+ARequest::writeChunk(const std::string &chunk) {
+
+    if (_chunkSize >= chunk.length()) {
+        appendBody(chunk);
+        _chunkSize -= chunk.length();
+
+    } else {
+        // Maybe should be fixed to handle chunks that ended only with \n
+        if (chunk[_chunkSize] != '\r' || 
+            chunk[_chunkSize + 1] != '\n') {
+            Log.error() << "ARequest:: Invalid chunk length" << Log.endl;
+            return BAD_REQUEST;
+        }
+        appendBody(chunk.substr(0, chunk.length() - 2));
+        _chunkSize = 0;
+        isChunkSize(true);
+    }
+
+    return CONTINUE;
+}
+
+StatusCode
+ARequest::writeChunkSize(const std::string &line) {
+
+    if (line.empty()) {
+        Log.error() << "ARequest:: Chunk size is empty" << Log.endl;
+        return BAD_REQUEST;
+    }
+
+    char *end = NULL;
+    _chunkSize = strtoul(line.c_str(), &end, 16);
+
+    if (!end || end[0] != '\r' || end[1] != '\n') {
+        Log.error() << "ARequest:: Chunks size is invalid: " << line << Log.endl;
+        return BAD_REQUEST;
+
+    } else if (_chunkSize == ULONG_MAX) {
+        Log.error() << "ARequest:: Chunk size is ULONG_MAX: " << line << Log.endl;
+        return BAD_REQUEST;
+
+    } else if (_chunkSize == 0 && line[0] != '0') {
+        Log.error() << "ARequest:: Chunk size parsing failed: " << line << Log.endl;
+        return BAD_REQUEST;
+
+    } else if (_chunkSize == 0) {
+        chunked(false);
+        setFlag(PARSED_BODY);
+        return PROCESSING;
+    }
+
+    isChunkSize(false);
+    return CONTINUE;
+}
+
+StatusCode
+ARequest::writeBody(const std::string &body) {
+
+    Log.debug() << "Response::writeBody" << Log.endl;
+
+    appendBody(body);
+    if (getRealBodySize() == getExpBodySize()) {
+        Log.debug() << "ARequest:: Body processed" << Log.endl;
+        setFlag(PARSED_BODY);
+    }
+
+    return PROCESSING;
+}
+
+StatusCode
+ARequest::writePart(const std::string &body) {
+
+    Log.debug() << "ARequest::writePart (CGI-only)" << Log.endl;
+
+    if (body.empty()) {
+        setFlag(PARSED_BODY);
+        return PROCESSING;
+    }
+    appendBody(body);
+    return CONTINUE;
+}
+
+StatusCode
+ARequest::parseBody(const std::string &line) {
+
+    uint64_t size = getRealBodySize() + line.length();
+
+    if (size > g_server->settings.max_reg_upload_size && _filefd == -1) {
+        if (!createTmpFile()) {
+            Log.syserr() << "ARequest:: Unable to create tmp file" << Log.endl; 
+            return INTERNAL_SERVER_ERROR;
+        }
+        Log.debug() << "ARequest:: tmp file " << _filename << " created" << Log.endl; 
+    }
+
+    if (chunked()) {
+        return (isChunkSize() ? writeChunkSize(line) : writeChunk(line));
+    } else if (has(CONTENT_LENGTH)) {
+        return writeBody(line);
+    } else {
+        return writePart(line);
+    }
 }
 
 

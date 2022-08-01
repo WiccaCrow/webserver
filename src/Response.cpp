@@ -1,5 +1,4 @@
 #include "Response.hpp"
-
 #include "CGI.hpp"
 #include "Client.hpp"
 #include "Server.hpp"
@@ -45,25 +44,6 @@ Response::~Response(void) {
         delete _proxy;
     }
 }
-
-// void Response::shouldBeClosedIf(void) {
-//     static const std::size_t size = 6;
-//     static const StatusCode  failedStatuses[size] = {
-//          BAD_REQUEST,
-//          REQUEST_TIMEOUT,
-//          INTERNAL_SERVER_ERROR,
-//          PAYLOAD_TOO_LARGE,
-//          UNAUTHORIZED,
-//          PROXY_AUTHENTICATION_REQUIRED};
-//     for (std::size_t i = 0; i < size; i++) {
-//         if (getStatus() == failedStatuses[i]) {
-//             Log.debug() << "Response::shouldBeClosedIf" << Log.endl;
-//             getClient()->shouldBeClosed(true);
-//             addHeader(CONNECTION, "close");
-//             break;
-//         }
-//     }
-// }
 
 void Response::makeResponseForMethod(void) {
     const std::string &method = getRequest()->getMethod();
@@ -218,7 +198,7 @@ void Response::TRACE(void) {
 
     std::string forwards;
 
-    bool hasForwardHeader = getRequest()->headers.has(MAX_FORWARDS);
+    bool hasForwardHeader = getRequest()->has(MAX_FORWARDS);
     if (hasForwardHeader) {
         forwards = getRequest()->headers[MAX_FORWARDS].value;
     }
@@ -778,6 +758,11 @@ void Response::checkCGIFailure(void) {
     }
 }
 
+bool
+Response::has(uint32_t hash) {
+    return headers.has(hash);
+}
+
 bool Response::parseLine(std::string &line) {
     // Log.debug() << "Response::parseLine:: " << line << Log.endl;
 
@@ -791,7 +776,7 @@ bool Response::parseLine(std::string &line) {
         setStatus(!line.empty() ? parseBody(line) : PROCESSING);
     } else {
         setStatus(INTERNAL_SERVER_ERROR);
-        Log.error() << "Somehow we ended up here" << Log.endl;
+        Log.error() << "Response:: Formed flag wasn't set" << Log.endl;
     }
 
     if (getStatus() == PROCESSING) {
@@ -803,7 +788,7 @@ bool Response::parseLine(std::string &line) {
             setStatus(OK);
         }
 
-        if (isCGI() && headers.has(LOCATION)) {
+        if (isCGI() && has(LOCATION)) {
             setStatus(SEE_OTHER);
         }
 
@@ -881,7 +866,7 @@ Response::parseHeader(const std::string &line) {
 
     // dublicate header
     if (tunnelGuard(header.hash != SET_COOKIE)) {
-        if (headers.has(header.hash)) {
+        if (has(static_cast<HeaderCode>(header.hash))) {
             headers[header.hash].value += ", " + header.value;
             return CONTINUE;
         }
@@ -895,15 +880,15 @@ StatusCode
 Response::checkHeaders(void) {
     setFlag(PARSED_HEADERS);
 
-    if (headers.has(CONTENT_LENGTH)) {
+    if (has(CONTENT_LENGTH)) {
         std::string &len_s = headers[CONTENT_LENGTH].value;
-        long long    num;
-        if (!stoll(num, len_s.c_str())) {
-            Log.debug() << "Response::ParsedHeaders::Bad length " << num << Log.endl;
+        long long    num = -1;
+        if (!stoll(num, len_s.c_str()) || num < 0) {
+            Log.debug() << "Response:: Invalid Content-length" << num << Log.endl;
             return BAD_GATEWAY;
         }
         setExpBodySize(num);
-    } else if (headers.has(TRANSFER_ENCODING)) {
+    } else if (has(TRANSFER_ENCODING)) {
         if (headers[TRANSFER_ENCODING].value == "chunked") {
             isChunkSize(true);
             setExpBodySize(0);
@@ -919,51 +904,6 @@ Response::checkHeaders(void) {
 
     Log.debug() << "Response::ParsedHeaders::Continue" << Log.endl;
     return CONTINUE;
-}
-
-StatusCode
-Response::writeBody(const std::string &body) {
-
-    appendBody(body);
-    if (tunnelGuard(getRealBodySize()) > getExpBodySize()) {
-        Log.error() << "Response: Body length exceeds content-length" << Log.endl;
-        Log.error() << "Response: expected: " << getExpBodySize() << Log.endl;
-        Log.error() << "Response: got: " << getRealBodySize() << Log.endl;
-        return BAD_REQUEST;
-    } else if (getRealBodySize() == getExpBodySize()) {
-        Log.debug() << "Response: Body processed" << Log.endl;
-        setFlag(PARSED_BODY);
-    }
-    return PROCESSING;
-}
-
-StatusCode
-Response::parseBody(const std::string &line) {
-
-    uint64_t size = getRealBodySize() + line.length();
-
-    if (size > g_server->settings.max_reg_upload_size && _filefd == -1) {
-        char tmpl[] = "/tmp/wsfileXXXXXX";
-        _filefd = mkstemp(tmpl);
-        if (_filefd == -1) {
-            Log.syserr() << "Response:: Unable to create tmp file" << Log.endl; 
-            return INTERNAL_SERVER_ERROR;
-        }
-        _filename = tmpl;
-        Log.debug() << "Response:: tmp file " << _filename << " created" << Log.endl; 
-    }
-
-    if (chunked()) {
-        Log.debug() << "Response::parseChunk" << Log.endl;
-        return parseChunk(line);
-    } else if (headers.has(CONTENT_LENGTH)) {
-        Log.debug() << "Response::writeBody" << Log.endl;
-        return writeBody(line);
-    } else {
-        Log.debug() << "Response::parseBody, unknown size" << Log.endl;
-        appendBody(line);
-    }
-    return PROCESSING;
 }
 
 } // namespace HTTP

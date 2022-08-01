@@ -490,7 +490,7 @@ void Client::receive(Request *req) {
     while (!req->formed()) {
         std::string line;
 
-        if (!getClientIO()->getline(line, req->getExpBodySize())) {
+        if (!getClientIO()->getline(line, req->getExpBodySize() - req->getRealBodySize())) {
             return ;
         }
 
@@ -534,7 +534,7 @@ void Client::receive(Response *res) {
             res->assembleError();
         }
 
-        if (!getGatewayIO()->getline(line, res->getExpBodySize())) {
+        if (!getGatewayIO()->getline(line, res->getExpBodySize() - res->getRealBodySize())) {
             return ;
         }
 

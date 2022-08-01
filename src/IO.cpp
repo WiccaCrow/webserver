@@ -247,7 +247,10 @@ IO::getline(std::string &line, int64_t size) {
         if (_rem.length() == 0 && size != 0) {
             return 0;
         }
-        pos = _rem.length();
+        pos = size;
+        if (pos > _rem.length()) {
+            pos = _rem.length();
+        }
     }
     line = _rem.substr(0, pos);
     _rem.erase(0, pos);
