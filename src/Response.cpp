@@ -566,6 +566,7 @@ int Response::listing(const std::string &resourcePath) {
     body += TABLE_END HR BODY_END HTML_END;
 
     setBody(body);
+    setRealBodySize(body.length());
 
     return 1;
 }
