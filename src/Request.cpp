@@ -238,6 +238,11 @@ Request::checkSL(void) {
     //     return BAD_REQUEST;
     // }
 
+    if (checkDirDepth(_uri._path) < 0) {
+        Log.debug() << "Request::checkSL: uri " << _uri._path << " is forbidden" << Log.endl;
+        return FORBIDDEN;
+    }
+
     if (tunnelGuard(!isValidProtocol(getProtocol()))) {
         Log.debug() << "Request::checkSL: protocol " << getProtocol() << " is not valid" << Log.endl;
         return BAD_REQUEST;
@@ -276,15 +281,23 @@ Request::resolvePath(void) {
 }
 
 void
-Request::proxyLookUp(void) {
+Request::checkProxy(void) {
     typedef Proxy::DomainsVec Domains;
     typedef Domains::const_iterator c_iter;
 
-    Log.debug() << "Request::proxyLookUp for \"" << _uri._host << "\"" << Log.endl;
-    const Domains &domains = getLocation()->getProxy().getDomainsRef();
+    Proxy &proxy = getLocation()->getProxyRef();
+    URI &pass = proxy.getPassRef();
+    if (!pass._host.empty() && !pass._port_s.empty()) {
+        Log.debug() << "Request::checkProxy, reverse to " << pass._host << ":" << pass._port << Log.endl;
+        isProxy(true);
+        return ;
+    }
+
+    Log.debug() << "Request::checkProxy for \"" << _uri._host << "\"" << Log.endl;
+    const Domains &domains = proxy.getDomainsRef();
     for (c_iter it = domains.begin(); it != domains.end(); ++it) {
         if (*it == _uri._host) {
-            Log.debug() << "Request::proxyLookUp: match " << *it << Log.endl;
+            Log.debug() << "Request::checkProxy: match " << *it << Log.endl;
             isProxy(true);
             return ;
         }
@@ -300,27 +313,16 @@ StatusCode
 Request::checkHeaders(void) {
 
     setFlag(PARSED_HEADERS);
-    
-    // We should not check header host, but host entity itself 
-    // if (!isHeaderExist(HOST)) {
-    //     Log.error() << "Request:: Host not found" << Log.endl;
-    //     return BAD_REQUEST;
-    // }
 
     if (!_servBlock) {
         setServerBlock(getClient()->matchServerBlock(_uri._host));
     }
+
     if (!_location) {
         setLocation(getServerBlock()->matchLocation(_uri._path));
-        URI &pass = getLocation()->getProxyRef().getPassRef();
-        if (!pass._host.empty() && !pass._port_s.empty()) {
-            Log.debug() << "Request::ReverseProxy to " << pass._host << ":" << pass._port << Log.endl;
-            isProxy(true);
-        } else if (!getClient()->isTunnel()) {
-            proxyLookUp();
-        }
-        resolvePath();
+        checkProxy();
         checkCGI();
+        resolvePath();
     }
 
     // Call each header handler

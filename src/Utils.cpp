@@ -640,3 +640,28 @@ getModifiedTime(const std::string &file) {
 
     return st.st_mtime;
 }
+
+int
+checkDirDepth(const std::string &path) {
+
+    int depth = 0;
+
+    char *s = strdup(path.c_str());
+    if (s == NULL) {
+        return -1;
+    }
+
+    char *token = strtok(s, "/");
+    while (token) {
+        if (!strcmp(token, "..")) {
+            if (--depth < 0) {
+                break ;
+            }
+        } else {
+            depth++;
+        }
+        token = strtok(NULL, "/");
+    }
+    free(s);
+    return depth;
+}

@@ -110,7 +110,7 @@ public:
     std::map<std::string, std::string>  &getCookie(void);
     void                                setCookie(std::map<std::string, std::string> cookie);
 
-    void proxyLookUp(void);
+    void checkProxy(void);
 
     void checkCGI(void);
 

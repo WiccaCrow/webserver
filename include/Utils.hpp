@@ -89,3 +89,4 @@ bool checkRegFilePerms(const std::string &filename, int perm);
 int  rmdirNonEmpty(std::string &resourceDel);
 
 std::string getDirectory(const std::string &filename);
+int checkDirDepth(const std::string &path);
