@@ -20,6 +20,9 @@
         "http2": {
             "listen": "172.20.10.2:8080",
             "server_names": [ "webserv.com" ],
+            "error_pages": {
+                "404": "~/error.jpeg"
+            },
             "cgi": {
                 ".pl": "/usr/bin/perl",
                 ".py": "/usr/bin/python3",
@@ -36,9 +39,9 @@
                 "Set-cookie: key1=val1;"
             ],
             "locations": {
-                "/delete": {
+                "/delete/": {
                     "autoindex": true,
-                    "alias": "./pages/cgi",
+                    "alias": "./pages/cgi/",
                     "methods_allowed": [ "GET", "POST", "DELETE", "PUT" ]
                 },
                 "/welcome": {

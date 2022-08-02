@@ -355,6 +355,39 @@ int checkMutualExclusions(Object *src, const std::string &key1, const std::strin
 
 // Object parsing
 int
+parsePath(std::string &path, bool addEndSlash = false) {
+
+    if (path.empty()) {
+        return 1;
+    }
+
+    if (path[0] == '~') {
+        std::string home = getenv("HOME");
+        if (home[home.length() - 1] == '/') {
+            home.erase(home.length() - 1);
+        }
+
+        if (path.length() == 1) {
+            path = home;
+        } else if (path[1] == '/') {
+            path = home + path.substr(1);
+        }
+    }
+
+    if (addEndSlash) {
+        if (!endsWith(path, "/")) {
+            path += "/";
+        }
+    } else {
+        if (endsWith(path, "/")) {
+            path.erase(path.size() - 1);
+        }
+    }
+
+    return 1;
+}
+
+int
 parseCGI(Object *src, Location::CGIsMap &res) {
     
     Location::CGIsMap def;
@@ -376,6 +409,7 @@ parseCGI(Object *src, Location::CGIsMap &res) {
         if (!getString(obj, it->first, value)) {
             return NONE_OR_INV;
         }
+        parsePath(value);
         cgi.setExecPath(value);
         if (it->first == cgi.compiledExt) {
             cgi.compiled(true);
@@ -453,11 +487,12 @@ parseErrorPages(Object *src, Location::ErrorPagesMap &res) {
 
         int code = static_cast<int>(value);
         if (it->second->isNull() || !it->second->isStr()) {
-            Log.error() << KW_ERROR_PAGES << " value " << value <<  " is not a string" << Log.endl;
+            Log.error() << KW_ERROR_PAGES << " value " << value << " is not a string" << Log.endl;
             return NONE_OR_INV;
         }
-
-        res.insert(std::make_pair(code, it->second->toStr()));
+        std::string path = it->second->toStr();
+        parsePath(path);
+        res.insert(std::make_pair(code, path));
     }
     return SET;
 }
@@ -631,30 +666,9 @@ isValidAuth(Auth &res) {
 }
 
 int
-parsePath(std::string &path) {
-
-    if (path.empty()) {
-        return 1;
-    }
-
-    if (path[0] == '~') {
-        std::string home = getenv("HOME");
-        if (home[home.length() - 1] == '/') {
-            home.erase(home.length() - 1);
-        }
-
-        if (path.length() == 1) {
-            path = home;
-        } else if (path[1] == '/') {
-            path = home + path.substr(1);
-        }
-    }
-
-    return 1;
-}
-
-int
 parseLocation(Object *src, Location &dst, Location &def) {
+
+    bool addEndSlash = endsWith(dst.getPathRef(), "/");
 
     if (&dst != &def) {
 
@@ -672,11 +686,7 @@ parseLocation(Object *src, Location &dst, Location &def) {
             return NONE_OR_INV;
         }
 
-        if (!parsePath(dst.getAliasRef())) {
-            Log.error() << KW_ALIAS << " is empty" << Log.endl;
-            conftrace_add(KW_ALIAS);
-            return NONE_OR_INV;
-        }
+        parsePath(dst.getAliasRef(), addEndSlash);
 
         if (aliasStatus != DEFAULT) {
             if (!resourceExists(dst.getAliasRef())) {
@@ -694,11 +704,9 @@ parseLocation(Object *src, Location &dst, Location &def) {
     if (!getString(src, KW_ROOT, dst.getRootRef(), def.getRootRef())) {
         conftrace_add(KW_ROOT);
         return NONE_OR_INV;
-    } else if (!parsePath(dst.getAliasRef())) {
-        Log.error() << KW_ROOT << " is empty" << Log.endl;
-        conftrace_add(KW_ROOT);
-        return NONE_OR_INV;
     }
+    
+    parsePath(dst.getRootRef(), addEndSlash);
 
     if (!resourceExists(dst.getRootRef())) {
         conftrace_add(KW_ROOT);
