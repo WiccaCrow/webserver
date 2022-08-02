@@ -13,7 +13,7 @@ msg = 'Welcome on webserv ' + form['fname'].value
 
 tts = gTTS(text = msg, lang = 'en', slow = False)
 
-tts.save('./welcome.mp3')
+tts.save('../welcome.mp3')
 
 print("Content-length: 0")
 print("Location: /welcome/welcome.html\n")

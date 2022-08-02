@@ -37,7 +37,8 @@
             ],
             "locations": {
                 "/delete": {
-                    "alias": "/Users/mhufflep/Desktop",
+                    "autoindex": true,
+                    "alias": "./pages/cgi",
                     "methods_allowed": [ "GET", "POST", "DELETE", "PUT" ]
                 },
                 "/welcome": {

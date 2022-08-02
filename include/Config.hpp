@@ -34,6 +34,7 @@ enum ConfStatus {
     # define KW_INDEX            "index"
     # define KW_AUTOINDEX        "autoindex"
     # define KW_METHODS_ALLOWED  "methods_allowed"
+    # define KW_CGI_METHODS      "cgi_methods"
     # define KW_POST_MAX_BODY    "post_max_body"
     # define KW_REDIRECT         "redirect"
     # define KW_AUTH_BASIC       "auth_basic"

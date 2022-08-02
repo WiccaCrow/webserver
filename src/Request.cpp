@@ -397,43 +397,56 @@ Request::setCookie(std::map<std::string, std::string> cookie) {
 void
 Request::checkCGI(void) {
 
-    #ifndef CGI_VDIR
-     # define CGI_VDIR "cgi-bin"
+    #ifndef CGI_DIR
+     # define CGI_DIR "cgi-bin"
     #endif
+
+    Location::CGIsMap &cgis = getLocation()->getCGIsRef();
     
-    std::string s = getResolvedPath();
+    bool hasCGIDir = false;
+    bool hasScript = false;
 
-    size_t pos = s.find("/" CGI_VDIR "/");
+    std::string path;
+    std::string path_info;
 
-    if (pos != std::string::npos) {
+    char *str = strdup(_uri._path.c_str());
+    if (str == NULL) {
+        return ;
+    }
 
-        s.erase(pos, strlen(CGI_VDIR) + 1);
+    char *token = strtok(str, "/");
+    while (token) {
 
-        const std::vector<std::string> &parts = split(s.substr(pos), "/");
-        std::string path = s.substr(0, pos + 1);
-        std::string path_info;
-        for (size_t i = 0; i < parts.size(); ++i) {
-            path += parts[i];
-            if (!resourceExists(path)) {
-                Log.debug() << "Request:: " << path << " does not exist" << Log.endl; 
-                setStatus(NOT_FOUND);
-                return ;
-            }
-            if (!isDirectory(path)) {
-                for (size_t j = i + 1; j < parts.size(); j++) {
-                    path_info += "/" + parts[j];
-                }
-                isCGI(true);
-                break ;
-            }
+        if (hasCGIDir && hasScript) {
+            path_info += "/";
+            path_info += token;
+        } else {
             path += "/";
+            path += token; 
         }
-        setResolvedPath(path);
+
+        if (!hasCGIDir && !strcmp(token, CGI_DIR)) {
+            hasCGIDir = true;
+        } else if (hasCGIDir) {
+            Location::CGIsMap::iterator it;
+            for (it = cgis.begin(); it != cgis.end(); ++it) {
+                if (endsWith(token, it->first)) {
+                    hasScript = true;
+                }
+            }
+        }
+        token = strtok(NULL, "/");
+    }
+
+    free(str);
+
+    if (hasCGIDir && hasScript) {
+        Log.debug() << "Request:: CGI-request: " << path << Log.endl;
+        isCGI(true);
+
+        Log.debug() << "Request:: PathInfo: " << path_info << Log.endl;
         setPathInfo(path_info);
-        Log.debug() << "Request:: Upd Path: " << getResolvedPath() << Log.endl;
-        Log.debug() << "Request:: PathInfo: " << getPathInfo() << Log.endl;
-    } else {
-        isCGI(false);
+        _uri._path = path;
     }
 }
 

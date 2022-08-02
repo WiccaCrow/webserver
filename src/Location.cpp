@@ -50,6 +50,11 @@ Location::getAllowedMethodsRef(void) {
     return _allowedMethods;
 }
 
+Location::MethodsVec &
+Location::getCGIMethodsRef(void) {
+    return _cgiMethods;
+}
+
 Location::CGIsMap &
 Location::getCGIsRef(void) {
     return _CGIs;

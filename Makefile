@@ -90,7 +90,7 @@ re: fclean all
 ###################################################################################
 
 cgi:
-	gcc ./pages/site/cgi/printenv.c -o ./pages/site/cgi/printenv.cgi
+	gcc ./pages/site/cgi/printenv.c -o ./pages/site/cgi/cgi-bin/printenv.cgi
 
 tester:
 	mkdir -p YoupiBanane/nop YoupiBanane/Yeah

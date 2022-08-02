@@ -240,12 +240,28 @@ getArray(Object *src, const std::string &key, std::vector<std::string> &res) {
 }
 
 Location::MethodsVec
-getDefaultAllowedMethods() {
+getDefaultAllowedMethods(void) {
 
     Location::MethodsVec allowed(9);
     for (std::size_t i = 0; validMethods[i]; i++) {
         allowed.push_back(validMethods[i]);   
     }
+
+    // allowed.push_back("GET");
+    // allowed.push_back("HEAD");   
+    // allowed.push_back("POST");
+    // allowed.push_back("OPTIONS");
+
+    return allowed;
+}
+
+Location::MethodsVec
+getDefaultCGIMethods(void) {
+
+    Location::MethodsVec allowed(9);
+    allowed.push_back("GET");   
+    allowed.push_back("HEAD");   
+    allowed.push_back("POST");   
 
     return allowed;
 }
@@ -257,7 +273,8 @@ const char * validKeywords[] = {
     KW_SETTINGS, KW_MAX_WAIT_CONN, KW_WORKERS, KW_WORKER_TIMEOUT, KW_MAX_REQUESTS,
     KW_MAX_CLIENT_TIMEOUT, KW_MAX_GATEWAY_TIMEOUT, KW_MAX_URI_LENGTH, 
     KW_MAX_HEADER_FIELD_LENGTH, KW_BLIND_PROXY, KW_SESSION_LIFETIME, KW_CHUNK_SIZE,
-    KW_MAX_REG_FILE_SIZE, KW_MAX_RANGE_SIZE, KW_COOKIE_HTTP_ONLY, KW_MAX_REG_UPLOAD_SIZE, NULL
+    KW_MAX_REG_FILE_SIZE, KW_MAX_RANGE_SIZE, KW_COOKIE_HTTP_ONLY, KW_MAX_REG_UPLOAD_SIZE,
+    KW_CGI_METHODS, NULL
 };
 
 const char * validSettingsKeywords[] = {
@@ -270,12 +287,14 @@ const char * validSettingsKeywords[] = {
 const char * validServerBlockKeywords[] = {
     KW_LISTEN, KW_SERVER_NAMES, KW_ERROR_PAGES, KW_ADD_HEADERS, 
     KW_LOCATIONS, KW_CGI, KW_ROOT, KW_INDEX, KW_AUTOINDEX, KW_PROXY,
-    KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, NULL
+    KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC,
+    KW_CGI_METHODS, NULL
 };
 
 const char * validLocationKeywords[] = {
     KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, KW_ERROR_PAGES, KW_PROXY,
-    KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, KW_ADD_HEADERS, NULL
+    KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, KW_ADD_HEADERS,
+    KW_CGI_METHODS, NULL
 };
 
 const char * validProxyKeywords[] = {
@@ -612,6 +631,29 @@ isValidAuth(Auth &res) {
 }
 
 int
+parsePath(std::string &path) {
+
+    if (path.empty()) {
+        return 1;
+    }
+
+    if (path[0] == '~') {
+        std::string home = getenv("HOME");
+        if (home[home.length() - 1] == '/') {
+            home.erase(home.length() - 1);
+        }
+
+        if (path.length() == 1) {
+            path = home;
+        } else if (path[1] == '/') {
+            path = home + path.substr(1);
+        }
+    }
+
+    return 1;
+}
+
+int
 parseLocation(Object *src, Location &dst, Location &def) {
 
     if (&dst != &def) {
@@ -626,6 +668,12 @@ parseLocation(Object *src, Location &dst, Location &def) {
         ConfStatus aliasStatus = (ConfStatus)getString(src, KW_ALIAS, dst.getAliasRef(), "");
         
         if (aliasStatus == NONE_OR_INV) {
+            conftrace_add(KW_ALIAS);
+            return NONE_OR_INV;
+        }
+
+        if (!parsePath(dst.getAliasRef())) {
+            Log.error() << KW_ALIAS << " is empty" << Log.endl;
             conftrace_add(KW_ALIAS);
             return NONE_OR_INV;
         }
@@ -646,7 +694,13 @@ parseLocation(Object *src, Location &dst, Location &def) {
     if (!getString(src, KW_ROOT, dst.getRootRef(), def.getRootRef())) {
         conftrace_add(KW_ROOT);
         return NONE_OR_INV;
-    } else if (!resourceExists(dst.getRootRef())) {
+    } else if (!parsePath(dst.getAliasRef())) {
+        Log.error() << KW_ROOT << " is empty" << Log.endl;
+        conftrace_add(KW_ROOT);
+        return NONE_OR_INV;
+    }
+
+    if (!resourceExists(dst.getRootRef())) {
         conftrace_add(KW_ROOT);
         Log.error() << KW_ROOT << dst.getRootRef() << " does not exist" << Log.endl;
         return NONE_OR_INV;
@@ -719,6 +773,15 @@ parseLocation(Object *src, Location &dst, Location &def) {
     } else if (!isSubset(getDefaultAllowedMethods(), dst.getAllowedMethodsRef())) {
         conftrace_add(KW_METHODS_ALLOWED);
         Log.error() << KW_METHODS_ALLOWED << " has unrecognized value" << Log.endl;
+        return NONE_OR_INV;
+    }
+
+    if (!getArray(src, KW_CGI_METHODS, dst.getCGIMethodsRef(), getDefaultCGIMethods())) {
+        conftrace_add(KW_CGI_METHODS);
+        return NONE_OR_INV;
+    } else if (!isSubset(getDefaultCGIMethods(), dst.getCGIMethodsRef())) {
+        conftrace_add(KW_CGI_METHODS);
+        Log.error() << KW_CGI_METHODS << " has unrecognized value" << Log.endl;
         return NONE_OR_INV;
     }
      

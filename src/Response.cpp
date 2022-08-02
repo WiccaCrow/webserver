@@ -669,6 +669,17 @@ void Response::addHeader(uint32_t hash, const std::string &value) {
 
 int Response::makeResponseForCGI(void) {
 
+    Location::MethodsVec &allowed = getRequest()->getLocation()->getCGIMethodsRef();
+    if (std::find(allowed.begin(), allowed.end(), getRequest()->getMethod()) == allowed.end()) {
+        setStatus(METHOD_NOT_ALLOWED);
+        return 0;
+    }
+
+    if (!resourceExists(_req->getResolvedPath())) {
+        setStatus(NOT_FOUND);
+        return 0;   
+    }
+
     if (!isFile(_req->getResolvedPath())) {
         setStatus(FORBIDDEN);
         return 0;

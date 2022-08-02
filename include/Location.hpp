@@ -27,6 +27,7 @@ private:
     IndicesVec    _index;
     uint64_t      _post_max_body;
     MethodsVec    _allowedMethods;
+    MethodsVec    _cgiMethods;
     CGIsMap       _CGIs;
     Redirect      _redirect;
     Auth          _auth;
@@ -47,6 +48,7 @@ public:
     std::string   &getRootRef(void);
     IndicesVec    &getIndexRef(void);
     MethodsVec    &getAllowedMethodsRef(void);
+    MethodsVec    &getCGIMethodsRef(void);
     CGIsMap       &getCGIsRef(void);
     ErrorPagesMap &getErrorPagesRef(void);
     Proxy         &getProxyRef(void);
