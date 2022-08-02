@@ -207,6 +207,7 @@ void Client::removeResponse(void) {
     if (_responses.size() > 0) {
         Response *res = _responses.front();
         _responses.pop_front();
+        processing(false);
         delete res;
     }
 }

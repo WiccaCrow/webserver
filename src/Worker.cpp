@@ -76,7 +76,6 @@ Worker::_cycle(void *ptr) {
         Log.debug() << "Worker " << w->id() << "::cycle: " << path << " started" << Log.endl;
         res->handle();
         Log.debug() << "Worker " << w->id() << "::cycle: " << path << " finished" << Log.endl;
-        res->getClient()->processing(false);
     }
 
     Log.debug() << "Worker " << w->id() << "::cycle stopped" << Log.endl;

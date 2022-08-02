@@ -48,7 +48,7 @@
             "index": [ "index.html" ],
             "locations": {
 				"/welcome": {
-                    "alias": "./pages/site/welcome",
+                    "alias": "./pages/welcome",
                     "cgi": {
                         ".py": "/usr/bin/python3"
                     },
