@@ -321,9 +321,11 @@ Request::checkHeaders(void) {
     }
 
     if (hasHost) {
-        RequestHeader &host = headers[HOST];
-        if (tunnelGuard(host.handle(*this) != CONTINUE)) {
-            return BAD_REQUEST;
+        if (_uri._host.empty() || !isProxy()) {
+            RequestHeader &host = headers[HOST];
+            if (tunnelGuard(host.handle(*this) != CONTINUE)) {
+                return BAD_REQUEST;
+            }
         }
     }
 
