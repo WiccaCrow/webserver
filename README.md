@@ -78,42 +78,45 @@ Here's an example of a minimalistic server configuration:
 
 There's a list of all directives that server supports.
 
-<a href="#servers">servers</a> <br>
-<a href="#settings">settings</a> <br>
-<a href="#listen">listen</a> <br>
-<a href="#server_names">server_names</a> <br>
-<a href="#locations">locations</a> <br>
-<a href="#error_pages">error_pages</a> <br>
-<a href="#cgi">cgi</a> <br>
-<a href="#methods_allowed">methods_allowed</a> <br>
-<a href="#cgi_methods">cgi_methods</a> <br>
-<a href="#post_max_body">post_max_body</a> <br>
-<a href="#autoindex">autoindex</a> <br>
-<a href="#index">index</a> <br>
-<a href="#root">root</a> <br>
-<a href="#alias">alias</a> <br>
-<a href="#add_headers">add_headers</a> <br>
-<a href="#auth_basic">auth_basic</a> <br>
-<a href="#realm">realm</a> <br>
-<a href="#user_file">user_file</a> <br>
-<a href="#redirect">redirect</a> <br>
-<a href="#code">code</a> <br>
-<a href="#url">url</a> <br>
-<a href="#max_wait_conn">max_wait_conn</a> <br>
-<a href="#max_requests">max_requests</a> <br>
-<a href="#max_client_timeout">max_client_timeout</a> <br>
-<a href="#max_gateway_timeout">max_gateway_timeout</a> <br>
-<a href="#session_lifetime">session_lifetime</a> <br>
-<a href="#max_uri_length">max_uri_length</a> <br>
-<a href="#max_header_field_length">max_header_field_length</a> <br>
-<a href="#worker_timeout">worker_timeout</a> <br>
-<a href="#workers">workers</a> <br>
-<a href="#chunk_size">chunk_size</a> <br>
-<a href="#max_reg_file_size">max_reg_file_size</a> <br>
-<a href="#max_range_size">max_range_size</a> <br>
-<a href="#max_reg_upload_size">max_reg_upload_size</a> <br>
-<a href="#blind_proxy">blind_proxy</a> <br>
-<a href="#cookie_http_only">cookie_http_only</a> <br>
+* <a href="#servers">servers</a> <br>
+* <a href="#settings">settings</a> <br>
+* <a href="#listen">listen</a> <br>
+* <a href="#server_names">server_names</a> <br>
+* <a href="#locations">locations</a> <br>
+* <a href="#error_pages">error_pages</a> <br>
+* <a href="#cgi">cgi</a> <br>
+* <a href="#methods_allowed">methods_allowed</a> <br>
+* <a href="#cgi_methods">cgi_methods</a> <br>
+* <a href="#post_max_body">post_max_body</a> <br>
+* <a href="#autoindex">autoindex</a> <br>
+* <a href="#index">index</a> <br>
+* <a href="#root">root</a> <br>
+* <a href="#alias">alias</a> <br>
+* <a href="#add_headers">add_headers</a> <br>
+* <a href="#auth_basic">auth_basic</a> <br>
+* <a href="#realm">realm</a> <br>
+* <a href="#user_file">user_file</a> <br>
+* <a href="#redirect">redirect</a> <br>
+* <a href="#code">code</a> <br>
+* <a href="#url">url</a> <br>
+* <a href="#proxy">proxy</a> <br>
+* <a href="#domains">domains</a> <br>
+* <a href="#pass">pass</a> <br>
+* <a href="#max_wait_conn">max_wait_conn</a> <br>
+* <a href="#max_requests">max_requests</a> <br>
+* <a href="#max_client_timeout">max_client_timeout</a> <br>
+* <a href="#max_gateway_timeout">max_gateway_timeout</a> <br>
+* <a href="#session_lifetime">session_lifetime</a> <br>
+* <a href="#max_uri_length">max_uri_length</a> <br>
+* <a href="#max_header_field_length">max_header_field_length</a> <br>
+* <a href="#worker_timeout">worker_timeout</a> <br>
+* <a href="#workers">workers</a> <br>
+* <a href="#chunk_size">chunk_size</a> <br>
+* <a href="#max_reg_file_size">max_reg_file_size</a> <br>
+* <a href="#max_range_size">max_range_size</a> <br>
+* <a href="#max_reg_upload_size">max_reg_upload_size</a> <br>
+* <a href="#blind_proxy">blind_proxy</a> <br>
+* <a href="#cookie_http_only">cookie_http_only</a> <br>
 
 
 ---
@@ -482,6 +485,59 @@ Examples:
 "url": "https://example.org"
 
 Description: Defines redirect url (3xx only). 
+```
+
+---
+
+### [**proxy**](#proxy)
+
+```
+Type: Object
+Syntax: proxy: { ... }
+Default: None
+Context: location
+
+Examples: 
+
+"proxy": {
+    "pass": "192.168.0.1:5555"
+}
+
+Description: Contains proxy configuration.
+```
+
+---
+
+### [**pass**](#pass)
+
+```
+Type: String
+Syntax: pass: "ip:port"
+Default: None
+Context: proxy
+
+Examples: 
+
+"pass": "127.0.0.1:9000"
+
+Description: Defines ip address to which request should be passed (reverse proxy). 
+```
+
+---
+
+### [**domains**](#domains)
+
+```
+Type: Array
+Syntax: domains: [ "name1", "name2" ]
+Default: None
+Context: proxy
+
+Examples: 
+
+"domains": [ "localhost", "webserv.com" ]
+
+Description: Defines hostnames to which request passing is allowed (forward proxy). 
 ```
 
 ---
