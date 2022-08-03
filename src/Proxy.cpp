@@ -35,6 +35,10 @@ int Proxy::pass(Request *req) {
         port = req->getUriRef()._port_s;
     }
 
+    if (port.empty()) {
+        port = "80";
+    }
+
     struct addrinfo *addrlst = NULL;
     Log.debug() << "Try to proxy to " << host << ":" << port << Log.endl;
     if (getaddrinfo(host.c_str(), port.c_str(), NULL, &addrlst)) {
