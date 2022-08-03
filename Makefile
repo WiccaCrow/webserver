@@ -1,4 +1,4 @@
-.PHONY: clean fclean re all libjson makedir
+.PHONY: clean fclean re all libjson makedir comp
 
 NAME = webserv
 
@@ -7,12 +7,24 @@ NAME = webserv
 ###################################################################################
 
 CXX       =   clang++
-CPPFLAGS  =   -Wall -Wextra -Werror -std=c++98 -g
+CPPFLAGS  =   -Wall -Wextra -Werror -std=c++98
 LDFLAGS   =   -lpthread
+COMP_CONST =  -D LOGS_DIR=\"${LOGS_DIR}\"
 
 ifeq ($(shell uname), Linux)
-	LDFLAGS    += -lcrypt
-	CPPFLAGS   += -fstandalone-debug
+	LDFLAGS += -lcrypt
+
+	ifeq ($(DEBUG), 1)
+		CPPFLAGS += -fstandalone-debug -g
+	endif
+else
+	ifeq ($(DEBUG), 1)
+		CPPFLAGS += -g
+	endif
+endif
+
+ifeq ($(USE_DAEMON), 1)
+	COMP_CONST += -D WS_DAEMON_MODE
 endif
 
 ###################################################################################
@@ -54,7 +66,13 @@ LIBJSONFLAGS = -ljson -L ./${LIBJSONDIR} -I ${LIBJSONINCLUDE}
 #                                   Commands                                      #
 ###################################################################################
 
-all: libjson makedir $(NAME)
+comp: libjson makedir $(NAME)
+
+all: 
+	$(MAKE) comp DEBUG=1
+
+daemon:
+	$(MAKE) all USE_DAEMON=1
 
 libjson:
 	@if ! [ "$(ls $(LIBJSONDIR))" ] ; then git submodule update --init; fi
@@ -74,7 +92,7 @@ $(NAME): $(OBJS)
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
 	$(CXX) $(CPPFLAGS) -c $< -o $@ \
         -I $(INCLUDE_DIR) -I $(LIBJSONINCLUDE) \
-        -D LOGS_DIR=\"${LOGS_DIR}\" \
+        ${COMP_CONST} \
         -MMD -MF $(patsubst ${OBJS_DIR}/%.o,${DEPS_DIR}/%.d,$@) 
 
 clean:
