@@ -48,7 +48,7 @@ Here's some run examples:
 webserv --daemon
 
 # Log levels
-./webserv -l side
+./webserv -l debug
 
 # Directory with logs ($PATH modification required)
 webserv -d <logdir>
@@ -59,6 +59,20 @@ webserv -d <logdir>
 ```
 
 ---
+
+# Configuring
+
+Webserver takes config of JSON format.
+
+Here's an example of a minimalistic server configuration:
+```json
+{
+    "servers": {
+        "mylovelyserver": {
+        }
+    }
+}
+```
 
 ## Directives
 
