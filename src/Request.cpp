@@ -314,6 +314,19 @@ Request::checkHeaders(void) {
 
     setFlag(PARSED_HEADERS);
 
+    bool hasHost = has(HOST);
+    if (_uri._host.empty() && !hasHost) {
+        Log.debug() << "Request:: host is not present" << Log.endl;
+        return BAD_REQUEST;
+    }
+
+    if (hasHost) {
+        RequestHeader &host = headers[HOST];
+        if (tunnelGuard(host.handle(*this) != CONTINUE)) {
+            return BAD_REQUEST;
+        }
+    }
+
     if (!_servBlock) {
         setServerBlock(getClient()->matchServerBlock(_uri._host));
     }

@@ -233,18 +233,32 @@ RequestHeader::From(Request &req) {
 StatusCode
 RequestHeader::Host(Request &req) {
     
-    URI &host = req.getHostRef();
-    host.parse(value);
+    URI &uri = req.getUriRef();
+    URI hdr;
 
-    if (!isValidHost(host._host)) {
-        Log.error() << "Host: Invalid Host " << host._host << Log.endl;
+    hdr.parse(value);
+    if (!isValidHost(hdr._host)) {
+        Log.error() << "Host: Invalid Host " << hdr._host << Log.endl;
         return BAD_REQUEST;
     }
-    
-    // if (req.getUriRef()._port != host._port) {
-    //     Log.error() << "Host: Port mismatch " << host._port_s << Log.endl;
-    //     return BAD_REQUEST;
-    // }
+
+    if (!uri._host.empty()) {
+        if (hdr._host != uri._host) {
+            Log.error() << "Host header doesn't match host in the uri" << Log.endl;
+            return BAD_REQUEST;
+        }
+    }
+
+    if (!uri._port_s.empty()) {
+        if (hdr._port_s != uri._port_s) {
+            Log.error() << "Port in the header doesn't match port in the uri" << Log.endl;
+            return BAD_REQUEST;
+        }
+    }
+
+    uri._host = hdr._host;
+    uri._port = hdr._port;
+    uri._port_s = hdr._port_s;
     
     return CONTINUE;
 }
