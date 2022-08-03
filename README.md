@@ -64,47 +64,47 @@ webserv -d <logdir>
 
 There's a list of all directives that server supports.
 
-#### [servers](#::servers)
-#### [settings](#::settings)
-#### [listen](#serverblock::listen)
-#### [server_names](#serverblock::server_names)
-#### [locations](#serverblock::locations)
-#### [error_pages](#location::error_pages)
-#### [cgi](#location::cgi)
-#### [methods_allowed](#location::methods_allowed)
-#### [cgi_methods](#location::cgi_methods)
-#### [post_max_body](#location::post_max_body)
-#### [autoindex](#location::autoindex)
-#### [index](#location::index)
-#### [root](#location::root)
-#### [alias](#location::alias)
-#### [add_headers](#location::add_headers)
-#### [auth_basic](#location::auth_basic)
-#### [realm](#auth_basic::realm)
-#### [user_file](#auth_basic::user_file)
-#### [redirect](#location::redirect)
-#### [code](#redirect::code)
-#### [url](#redirect::url)
-#### [max_wait_conn](#settings::max_wait_conn)
-#### [max_requests](#settings::max_requests)
-#### [max_client_timeout](#settings::max_client_timeout)
-#### [max_gateway_timeout](#settings::max_gateway_timeout)
-#### [session_lifetime](#settings::session_lifetime)
-#### [max_uri_length](#settings::max_uri_length)
-#### [max_header_field_length](#settings::max_header_field_length)
-#### [worker_timeout](#settings::worker_timeout)
-#### [workers](#settings::workers)
-#### [chunk_size](#settings::chunk_size)
-#### [max_reg_file_size](#settings::max_reg_file_size)
-#### [max_range_size](#settings::max_range_size)
-#### [max_reg_upload_size](#settings::max_reg_upload_size)
-#### [blind_proxy](#settings::blind_proxy)
-#### [cookie_http_only](#settings::cookie_http_only)
+<a href="#servers">servers</a> <br>
+<a href="#settings">settings</a> <br>
+<a href="#listen">listen</a> <br>
+<a href="#server_names">server_names</a> <br>
+<a href="#locations">locations</a> <br>
+<a href="#error_pages">error_pages</a> <br>
+<a href="#cgi">cgi</a> <br>
+<a href="#methods_allowed">methods_allowed</a> <br>
+<a href="#cgi_methods">cgi_methods</a> <br>
+<a href="#post_max_body">post_max_body</a> <br>
+<a href="#autoindex">autoindex</a> <br>
+<a href="#index">index</a> <br>
+<a href="#root">root</a> <br>
+<a href="#alias">alias</a> <br>
+<a href="#add_headers">add_headers</a> <br>
+<a href="#auth_basic">auth_basic</a> <br>
+<a href="#realm">realm</a> <br>
+<a href="#user_file">user_file</a> <br>
+<a href="#redirect">redirect</a> <br>
+<a href="#code">code</a> <br>
+<a href="#url">url</a> <br>
+<a href="#max_wait_conn">max_wait_conn</a> <br>
+<a href="#max_requests">max_requests</a> <br>
+<a href="#max_client_timeout">max_client_timeout</a> <br>
+<a href="#max_gateway_timeout">max_gateway_timeout</a> <br>
+<a href="#session_lifetime">session_lifetime</a> <br>
+<a href="#max_uri_length">max_uri_length</a> <br>
+<a href="#max_header_field_length">max_header_field_length</a> <br>
+<a href="#worker_timeout">worker_timeout</a> <br>
+<a href="#workers">workers</a> <br>
+<a href="#chunk_size">chunk_size</a> <br>
+<a href="#max_reg_file_size">max_reg_file_size</a> <br>
+<a href="#max_range_size">max_range_size</a> <br>
+<a href="#max_reg_upload_size">max_reg_upload_size</a> <br>
+<a href="#blind_proxy">blind_proxy</a> <br>
+<a href="#cookie_http_only">cookie_http_only</a> <br>
 
 
 ---
 
-## **::servers**
+## [**servers**](#servers)
 
 ```
 Type: Object
@@ -119,7 +119,7 @@ Description: Contains serverblock configurations
 
 ---
 
-### **serverblock::listen**
+### [**listen**](#listen)
 
 ```
 Type: String
@@ -135,7 +135,7 @@ Description: Contains ip address used by serverblock
 
 ---
 
-### **serverblock::server_names**
+### [**server_names**](#server_names)
 
 ```
 Type: Array
@@ -151,7 +151,7 @@ Description: Contains hostnames used by serverblock to define which block should
 
 ---
 
-### **serverblock::locations**
+### [**locations**](#locations)
 
 ```
 Type: Object
@@ -166,7 +166,7 @@ Description: Contains locations configurations.
 
 ---
 
-### **location::error_pages**
+### [**error_pages**](#error_pages)
 
 ```
 Type: Object
@@ -189,7 +189,7 @@ Description: Contains list of pages that should be returned in case of error.
 
 ---
 
-### **location::cgi**
+### [**cgi**](#cgi)
 
 ```
 Type: Object
@@ -215,7 +215,7 @@ and executable field must be empty
 
 ---
 
-### **location::methods_allowed**
+### [**methods_allowed**](#methods_allowed)
 
 ```
 Type: Array
@@ -237,7 +237,7 @@ Description: Contains list of the allowed methods of the current location
 
 ---
 
-### **location::cgi_methods**
+### [**cgi_methods**](#cgi_methods)
 
 ```
 Type: Array
@@ -259,7 +259,7 @@ Description: Contains list of the allowed methods of cgi in current location
 
 ---
 
-### **location::post_max_body**
+### [**post_max_body**](#post_max_body)
 
 ```
 Type: String
@@ -278,7 +278,7 @@ Description: Contains max size of body client could upload to the server
 
 ---
 
-### **location::autoindex**
+### [**autoindex**](#autoindex)
 
 ```
 Type: Boolean
@@ -293,7 +293,7 @@ Description: Enables\Disables directory listing in current location
 
 ---
 
-### **location::index**
+### [**index**](#index)
 
 ```
 Type: Array
@@ -308,7 +308,7 @@ Description: Contains list of index files of the current directory
 
 ---
 
-### **location::root**
+### [**root**](#root)
 
 ```
 Type: String
@@ -329,7 +329,7 @@ Explanation: if location's path is /about and it has root
 
 ---
 
-### **location::alias**
+### [**alias**](#alias)
 
 ```
 Type: String
@@ -349,7 +349,7 @@ Explanation: if location's path is /about and it has alias /example then request
 
 ---
 
-### **location::add_headers**
+### [**add_headers**](#add_headers)
 
 ```
 Type: Array
@@ -364,7 +364,7 @@ Description: Contains list of additonal headers that should be returned with the
 
 ---
 
-## **location::auth_basic**
+### [**auth_basic**](#auth_basic)
 
 ```
 Type: Object
@@ -384,7 +384,7 @@ Description: Contains authentication configuration
 
 ---
 
-### **auth_basic::realm**
+### [**realm**](#realm)
 
 ```
 Type: String
@@ -401,7 +401,7 @@ Description: Defines realm name of the basic authentication
 
 ---
 
-### **auth_basic::user_file**
+### [**user_file**](#user_file)
 
 ```
 Type: String
@@ -418,7 +418,7 @@ Description: Defines the path to the file with user basic authentication data.
 
 ---
 
-## **location::redirect**
+### [**redirect**](#redirect)
 
 ```
 Type: Object
@@ -438,7 +438,7 @@ Description: Contains redirect configuration
 
 ---
 
-### **redirect::code**
+### [**code**](#code)
 
 ```
 Type: Number
@@ -455,7 +455,7 @@ Description: Defines redirect status code (3xx only).
 
 ---
 
-### **redirect::url**
+### [**url**](#url)
 
 ```
 Type: String
@@ -472,9 +472,7 @@ Description: Defines redirect url (3xx only).
 
 ---
 
-
-
-## **::settings**
+### [**settings**](#settings)
 
 ```
 Type: Object
@@ -489,7 +487,7 @@ Description: Contains directives related to the server
 
 ---
 
-### **settings::max_wait_conn**
+### [**max_wait_conn**](#max_wait_conn)
 
 ```
 Type: Number
@@ -502,7 +500,7 @@ Description: Max number of clients waiting to be accepted
 
 ---
 
-### **settings::max_requests**
+### [**max_requests**](#max_requests)
 
 ```
 Type: Number
@@ -515,7 +513,7 @@ Description: Max number of requests that client could send before server closes 
 
 ---
 
-### **settings::max_client_timeout**
+### [**max_client_timeout**](#max_client_timeout)
 
 ```
 Type: Number
@@ -528,7 +526,7 @@ Description: Max client idle timeout (sec) before server closes connection.
 
 ---
 
-### **settings::max_gateway_timeout**
+### [**max_gateway_timeout**](#max_gateway_timeout)
 
 ```
 Type: Number
@@ -541,7 +539,7 @@ Description: Max gateway (cgi\proxy) idle timeout (sec) before server closes con
 
 ---
 
-### **settings::session_lifetime**
+### [**session_lifetime**](#session_lifetime)
 
 ```
 Type: Number
@@ -554,7 +552,7 @@ Description: Defines sessions max-age (sec).
 
 ---
 
-### **settings::max_uri_length**
+### [**max_uri_length**](#max_uri_length)
 
 ```
 Type: Number
@@ -567,7 +565,7 @@ Description: Defines max length of the uri in start line of the request.
 
 ---
 
-### **settings::max_header_field_length**
+### [**max_header_field_length**](#max_header_field_length)
 
 ```
 Type: Number
@@ -580,7 +578,7 @@ Description: Defines max length of the header's value.
 
 ---
 
-### **settings::worker_timeout**
+### [**worker_timeout**](#worker_timeout)
 
 ```
 Type: Number
@@ -595,7 +593,7 @@ Description: Defines idle timeout (nanosec) for thread when no
 
 ---
 
-### **settings::workers**
+### [**workers**](#workers)
 
 ```
 Type: Number
@@ -611,7 +609,7 @@ Optiomal value is number of CPU cores twice`
 
 ---
 
-### **settings::chunk_size**
+### [**chunk_size**](#chunk_size)
 
 ```
 Type: String
@@ -633,7 +631,7 @@ Description: Defines chunk size server used when performing chunked body of resp
 
 ---
 
-### **settings::max_reg_file_size**
+### [**max_reg_file_size**](#max_reg_file_size)
 
 ```
 Type: String
@@ -654,7 +652,7 @@ Description: Defined threshold size server used to decide whether body should be
 
 ---
 
-### **settings::max_range_size**
+### [**max_range_size**](#max_range_size)
 
 ```
 Type: String
@@ -675,7 +673,7 @@ Description: Defined max range size used to limit range body
 
 ---
 
-### **settings::max_reg_upload_size**
+### [**max_reg_upload_size**](#max_reg_upload_size)
 
 ```
 Type: String
@@ -696,13 +694,13 @@ Description: Defined threshold used to decide whether server should read body to
 
 ---
 
-### **settings::blind_proxy**
+### [**blind_proxy**](#blind_proxy)
 
 ```
 Type: Boolean
 Syntax: blind_proxy: true | false
 Default: false
-Context: location
+Context: settings
 
 Examples: blind_proxy: true
 
@@ -711,13 +709,13 @@ Description: Enables\Disables most of the validations when proxying.
 
 ---
 
-### **settings::cookie_http_only**
+### [**cookie_http_only**](#cookie_http_only)
 
 ```
 Type: Boolean
 Syntax: cookie_http_only: true | false
 Default: false
-Context: location
+Context: settings
 
 Examples: cookie_http_only: true
 
