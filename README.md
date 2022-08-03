@@ -114,7 +114,7 @@ Context: global
 
 Example: see config file
 
-Description: Contains serverblock configurations
+Description: Contains serverblock configurations.
 ```
 
 ---
@@ -130,7 +130,7 @@ Context: serverblock
 Example: 
 listen: "192.168.0.2:5656"
 
-Description: Contains ip address used by serverblock
+Description: Contains ip address used by serverblock.
 ```
 
 ---
@@ -209,8 +209,8 @@ Example:
 
 Description: Contains map of script extensions and executables script should be passed to.
 
-For compiled scripts extension should be changed to .cgi
-and executable field must be empty
+For compiled scripts extension MUST be changed to .cgi
+and executable field MUST be empty.
 ```
 
 ---
@@ -232,7 +232,7 @@ methods_allowed: [
     "GET", "PUT"
 ]
 
-Description: Contains list of the allowed methods of the current location
+Description: Contains list of the allowed methods of the current location.
 ```
 
 ---
@@ -254,7 +254,7 @@ cgi_methods: [
     "GET", "PUT"
 ]
 
-Description: Contains list of the allowed methods of cgi in current location
+Description: Contains list of the allowed methods of cgi in current location.
 ```
 
 ---
@@ -273,7 +273,7 @@ post_max_body: "100 B"
 post_max_body: "20 MiB"
 post_max_body: "1GB"
 
-Description: Contains max size of body client could upload to the server
+Description: Contains max size of body client could upload to the server.
 ```
 
 ---
@@ -288,7 +288,7 @@ Context: location
 
 Examples: autoindex: true
 
-Description: Enables\Disables directory listing in current location
+Description: Enables\Disables directory listing in current location.
 ```
 
 ---
@@ -303,7 +303,7 @@ Context: location
 
 Examples: index: [ "index.html", "pic.jpeg" ]
 
-Description: Contains list of index files of the current directory
+Description: Contains list of index files of the current directory.
 ```
 
 ---
@@ -318,10 +318,10 @@ Context: location
 
 Examples: root: "/Users/user/"
 
-Description: Contains path to the served directory
+Description: Contains path to the served directory.
 
 Explanation: if location's path is /about and it has root
-/example then request /about/index.html would be processed as /example/about/index.html
+/example then request /about/index.html would be processed as /example/about/index.html .
 ```
 
 `If location name ends with / then it'll be added to the path in the root directory.` <br>
@@ -341,7 +341,7 @@ Examples: alias: "/Users/user/"
 
 Description: Contains path to the served directory.
 
-Explanation: if location's path is /about and it has alias /example then request /about/index.html would be processed as /example/index.html
+Explanation: if location's path is /about and it has alias /example then request /about/index.html would be processed as /example/index.html .
 ```
 
 `If location name ends with / then it'll be added to the path in the alias directory.` <br>
@@ -359,7 +359,7 @@ Context: location
 
 Examples: add_headers: [ "Set-cookie: key1=val1;" ]
 
-Description: Contains list of additonal headers that should be returned with the response
+Description: Contains list of additonal headers that should be returned with the response.
 ```
 
 ---
@@ -379,7 +379,7 @@ Examples:
     "user_file": ".htpasswd"
 }
 
-Description: Contains authentication configuration
+Description: Contains authentication configuration.
 ```
 
 ---
@@ -396,7 +396,7 @@ Examples:
 
 "realm": "eternity",
 
-Description: Defines realm name of the basic authentication
+Description: Defines realm name of the basic authentication.
 ```
 
 ---
@@ -433,7 +433,7 @@ Examples:
     "url" : "https://google.com"
 }
 
-Description: Contains redirect configuration
+Description: Contains redirect configuration.
 ```
 
 ---
@@ -482,7 +482,7 @@ Context: global
 
 Example: see config file
 
-Description: Contains directives related to the server
+Description: Contains directives related to the server.
 ```
 
 ---
@@ -495,7 +495,7 @@ Syntax: max_wait_conn: 100
 Default: 128
 Context: settings
 
-Description: Max number of clients waiting to be accepted
+Description: Max number of clients waiting to be accepted.
 ```
 
 ---
@@ -586,10 +586,10 @@ Syntax: worker_timeout: 50000
 Default: 10000
 Context: settings
 
-Description: Defines idle timeout (nanosec) for thread when no 
+Description: Defines idle timeout (nanosec) for thread when no request received.
 ```
 
-`This value should be increased carefully as large value could decrease server performance`
+:warning: `This value should be increased carefully as large value could decrease server performance.`
 
 ---
 
@@ -604,8 +604,8 @@ Context: settings
 Description: Defines number of threads (workers) that processing requests.
 ```
 
-`This value should be increased carefully as CPU loading increases in direct ratio.
-Optiomal value is number of CPU cores twice`
+:warning: `This value should be increased carefully as CPU loading increases in direct ratio.
+Optimal value is number of CPU cores.`
 
 ---
 
@@ -623,11 +623,11 @@ chunk_size: "100 B"
 chunk_size: "20 MiB"
 chunk_size: "1KB"
 
-Description: Defines chunk size server used when performing chunked body of response
+Description: Defines chunk size server used when performing chunked body of response.
 
 ```
 
-`This value should be increased carefully as RAM loading increases in direct ratio`
+:warning: `This value should be increased carefully as RAM loading increases in direct ratio.`
 
 ---
 
@@ -645,10 +645,10 @@ max_reg_file_size: "100 B"
 max_reg_file_size: "20 MiB"
 max_reg_file_size: "1KB"
 
-Description: Defined threshold size server used to decide whether body should be sent by chunks
+Description: Defined threshold size server used to decide whether body should be sent by chunks.
 ```
 
-`This value should be increased carefully as RAM loading increases in direct ratio`
+:warning: `This value should be increased carefully as RAM loading increases in direct ratio.`
 
 ---
 
@@ -666,10 +666,10 @@ max_range_size: "100 B"
 max_range_size: "20 MiB"
 max_range_size: "1KB"
 
-Description: Defined max range size used to limit range body
+Description: Defined max range size used to limit range body.
 ```
 
-`This value should be increased carefully as RAM loading increases in direct ratio`
+:warning: `This value should be increased carefully as RAM loading increases in direct ratio.`
 
 ---
 
@@ -690,7 +690,7 @@ max_reg_upload_size: "1KB"
 Description: Defined threshold used to decide whether server should read body to the temporary file.
 ```
 
-`This value should be increased carefully as RAM loading increases in direct ratio`
+:warning: `This value should be increased carefully as RAM loading increases in direct ratio.`
 
 ---
 
@@ -719,7 +719,7 @@ Context: settings
 
 Examples: cookie_http_only: true
 
-Description: Enables\Disables http-only parameter of the cookies
+Description: Enables\Disables http-only parameter of the cookies.
 ```
 
 ---
