@@ -82,6 +82,7 @@ There's a list of all directives that server supports.
 * <a href="#settings">settings</a> <br>
 * <a href="#listen">listen</a> <br>
 * <a href="#server_names">server_names</a> <br>
+* <a href="#proxy_domains">proxy_domains</a> <br>
 * <a href="#locations">locations</a> <br>
 * <a href="#error_pages">error_pages</a> <br>
 * <a href="#cgi">cgi</a> <br>
@@ -99,9 +100,7 @@ There's a list of all directives that server supports.
 * <a href="#redirect">redirect</a> <br>
 * <a href="#code">code</a> <br>
 * <a href="#url">url</a> <br>
-* <a href="#proxy">proxy</a> <br>
-* <a href="#domains">domains</a> <br>
-* <a href="#pass">pass</a> <br>
+* <a href="#proxy_pass">proxy_pass</a> <br>
 * <a href="#max_wait_conn">max_wait_conn</a> <br>
 * <a href="#max_requests">max_requests</a> <br>
 * <a href="#max_client_timeout">max_client_timeout</a> <br>
@@ -164,6 +163,23 @@ Example:
 server_names: [ "localhost", "webserv.com" ]
 
 Description: Contains hostnames used by serverblock to define which block should process request.
+```
+
+---
+
+### [**proxy_domains**](#proxy_domains)
+
+```
+Type: Array
+Syntax: proxy_domains: [ "name1", "name2" ]
+Default: None
+Context: serverblock
+
+Examples: 
+
+"proxy_domains": [ "localhost", "webserv.com" ]
+
+Description: Defines hostnames to which request forwarding is allowed. 
 ```
 
 ---
@@ -489,55 +505,19 @@ Description: Defines redirect url (3xx only).
 
 ---
 
-### [**proxy**](#proxy)
+### [**proxy_pass**](#proxy_pass)
 
 ```
-Type: Object
-Syntax: proxy: { ... }
+Type: String
+Syntax: proxy_pass: "ip:port"
 Default: None
 Context: location
 
 Examples: 
 
-"proxy": {
-    "pass": "192.168.0.1:5555"
-}
-
-Description: Contains proxy configuration.
-```
-
----
-
-### [**pass**](#pass)
-
-```
-Type: String
-Syntax: pass: "ip:port"
-Default: None
-Context: proxy
-
-Examples: 
-
-"pass": "127.0.0.1:9000"
+"proxy_pass": "127.0.0.1:9000"
 
 Description: Defines ip address to which request should be passed (reverse proxy). 
-```
-
----
-
-### [**domains**](#domains)
-
-```
-Type: Array
-Syntax: domains: [ "name1", "name2" ]
-Default: None
-Context: proxy
-
-Examples: 
-
-"domains": [ "localhost", "webserv.com" ]
-
-Description: Defines hostnames to which request passing is allowed (forward proxy). 
 ```
 
 ---
