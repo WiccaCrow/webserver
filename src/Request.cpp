@@ -449,9 +449,7 @@ Request::checkCGI(void) {
             Location::CGIsMap::iterator it;
             for (it = cgis.begin(); it != cgis.end(); ++it) {
                 if (endsWith(token, it->first)) {
-                    if (isExecutableFile(it->first)) {
-                        hasScript = true;
-                    }
+                    hasScript = true;
                 }
             }
         }

@@ -285,10 +285,8 @@ const char * validSettingsKeywords[] = {
 };
 
 const char * validServerBlockKeywords[] = {
-    KW_LISTEN, KW_SERVER_NAMES, KW_ERROR_PAGES, KW_ADD_HEADERS, 
-    KW_LOCATIONS, KW_CGI, KW_ROOT, KW_INDEX, KW_AUTOINDEX, KW_PROXY,
-    KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC,
-    KW_CGI_METHODS, NULL
+    KW_LISTEN, KW_SERVER_NAMES,
+    KW_LOCATIONS, KW_PROXY, NULL
 };
 
 const char * validLocationKeywords[] = {
@@ -815,8 +813,27 @@ parseLocations(Object *src, ServerBlock::LocationsMap &res, Location &base) {
 
     Object *locations = src->get(KW_LOCATIONS)->toObj();
 
+    if (!basicCheck(locations, "/", OBJECT, base, base)) {
+        conftrace_add("/");
+        return NONE_OR_INV;
+    }
+
+    Object *rootObj = locations->get("/")->toObj();
+    base.getRootRef() = "./";
+
+    if (!rootObj->isNull()) {
+        if (!parseLocation(rootObj, base, base)) {
+            conftrace_add("/");
+            return NONE_OR_INV;
+        }
+    }
+
     for (Object::iterator it = locations->begin(); it != locations->end(); it++) {
     
+        if (it->first == "/") {
+            continue ;
+        }
+
         HTTP::Location location = base;
         if (!basicCheck(locations, it->first, OBJECT)) {
             return NONE_OR_INV;
@@ -883,14 +900,6 @@ parseServerBlock(Object *src, ServerBlock &dst) {
     }
     dst.getAddrRef() = uri._host;
     dst.getPortRef() = uri._port;
-
-    // char resolvedPath[256] = {0};
-    // realpath("./", resolvedPath);
-    dst.getLocationBaseRef().getRootRef() = "./";
-    if (!parseLocation(src, dst.getLocationBaseRef(), dst.getLocationBaseRef())) {
-        conftrace_add("/");
-        return NONE_OR_INV;
-    }
 
     if (!parseLocations(src, dst.getLocationsRef(), dst.getLocationBaseRef())) {
         conftrace_add(KW_LOCATIONS);
