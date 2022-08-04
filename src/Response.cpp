@@ -920,6 +920,7 @@ Response::checkHeaders(void) {
         setExpBodySize(ULLONG_MAX);
     }
 
+    headers.erase(SERVER);
     headers.erase(CONNECTION);
     headers.erase(KEEP_ALIVE);
 

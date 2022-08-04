@@ -335,6 +335,9 @@ Request::checkHeaders(void) {
 
     if (!_location) {
         setLocation(getServerBlock()->matchLocation(_uri._path));
+    }
+
+    if (_location) {
         checkProxy();
         checkCGI();
         resolvePath();
@@ -446,7 +449,9 @@ Request::checkCGI(void) {
             Location::CGIsMap::iterator it;
             for (it = cgis.begin(); it != cgis.end(); ++it) {
                 if (endsWith(token, it->first)) {
-                    hasScript = true;
+                    if (isExecutableFile(it->first)) {
+                        hasScript = true;
+                    }
                 }
             }
         }
