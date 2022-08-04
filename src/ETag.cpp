@@ -12,6 +12,13 @@ ETag::StaticConstructor(void) {
 
 void
 ETag::StaticDestructor(void) {
+    std::map<std::string, ETag *>::iterator it;
+    for (it = _etags.begin(); it != _etags.end(); ++it) {
+        if (it->second != NULL) {
+            delete it->second;
+        }
+    }
+
     pthread_mutex_destroy(&_lock);
 }
 
