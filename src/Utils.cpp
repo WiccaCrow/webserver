@@ -285,6 +285,10 @@ isValidScheme(const std::string &s) {
 
 bool
 isValidPort(const std::string &s) {
+    if (s.empty()) {
+        return false;
+    }
+    
     for (std::size_t i = 0; i < s.size(); i++) {
         if (!isdigit(s[i])) {
             return false;
