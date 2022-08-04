@@ -913,7 +913,6 @@ Response::checkHeaders(void) {
     } else if (has(TRANSFER_ENCODING)) {
         if (headers[TRANSFER_ENCODING].value == "chunked") {
             isChunkSize(true);
-            setExpBodySize(0);
             chunked(true);
             headers.erase(TRANSFER_ENCODING);
         }
