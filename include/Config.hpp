@@ -42,9 +42,8 @@ enum ConfStatus {
     # define KW_USER_FILE        "user_file"
     # define KW_CODE             "code" 
     # define KW_URL              "url"
-    # define KW_PROXY            "proxy"
-    # define KW_PASS             "pass"
-    # define KW_DOMAINS          "domains"
+    # define KW_PROXY_PASS       "proxy_pass"
+    # define KW_PROXY_DOMAINS    "proxy_domains"
     # define KW_ADD_HEADERS      "add_headers"
 
     # define KW_SETTINGS                 "settings"

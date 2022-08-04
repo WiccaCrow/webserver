@@ -267,7 +267,7 @@ getDefaultCGIMethods(void) {
 }
 
 const char * validKeywords[] = {
-    KW_LISTEN, KW_SERVER_NAMES, KW_ERROR_PAGES, KW_PROXY, KW_ADD_HEADERS,
+    KW_LISTEN, KW_SERVER_NAMES, KW_ERROR_PAGES, KW_PROXY_DOMAINS, KW_PROXY_PASS, KW_ADD_HEADERS,
     KW_LOCATIONS, KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, 
     KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC,
     KW_SETTINGS, KW_MAX_WAIT_CONN, KW_WORKERS, KW_WORKER_TIMEOUT, KW_MAX_REQUESTS,
@@ -286,17 +286,13 @@ const char * validSettingsKeywords[] = {
 
 const char * validServerBlockKeywords[] = {
     KW_LISTEN, KW_SERVER_NAMES,
-    KW_LOCATIONS, KW_PROXY, NULL
+    KW_LOCATIONS, KW_PROXY_DOMAINS, NULL
 };
 
 const char * validLocationKeywords[] = {
-    KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, KW_ERROR_PAGES, KW_PROXY,
+    KW_CGI, KW_ROOT, KW_ALIAS, KW_INDEX, KW_AUTOINDEX, KW_ERROR_PAGES, KW_PROXY_PASS,
     KW_METHODS_ALLOWED, KW_POST_MAX_BODY, KW_REDIRECT, KW_AUTH_BASIC, KW_ADD_HEADERS,
     KW_CGI_METHODS, NULL
-};
-
-const char * validProxyKeywords[] = {
-    KW_DOMAINS, KW_PASS, NULL
 };
 
 const char * validRedirectKeywords[] = {
@@ -551,64 +547,24 @@ isValidRedirect(Redirect &res) {
 }
 
 int
-parseProxy(Object *src, Proxy &res) {
-    Proxy def;
+isValidProxy(URI &proxy) {
 
-
-    ConfStatus status = basicCheck(src, KW_PROXY, OBJECT, res, def);
-    if (status != SET) {
-        return status;
-    }
-
-    Object *obj = src->get(KW_PROXY)->toObj();
-
-    if (!checkMutualExclusions(obj, KW_DOMAINS, KW_PASS)) {
-        return NONE_OR_INV;
-    }
-
-    if (!getArray(obj, KW_DOMAINS, res.getDomainsRef(), def.getDomainsRef())) {
-        conftrace_add(KW_DOMAINS);
-        return NONE_OR_INV;
-    }
-
-    std::string pass;
-    if (!getString(obj, KW_PASS, pass, "")) {
-        conftrace_add(KW_PASS);
-        return NONE_OR_INV;
-    }
-    res.getPassRef().parse(pass);
-
-    return SET;
-}
-
-int
-isValidProxy(Proxy &res) {
-
-    Proxy::DomainsVec &domains = res.getDomainsRef();
-    for (size_t i = 0; i < domains.size(); ++i) {
-        if (!isValidHost(domains[i])) {
-            conftrace_add(KW_DOMAINS);
-            Log.error() << KW_DOMAINS << " " << domains[i] << " is invalid" << Log.endl;
-            return 0;
-        }
-    }
-
-    const std::string &host = res.getPassRef()._host;
-    const std::string &port= res.getPassRef()._port_s;
+    const std::string &host = proxy._host;
+    const std::string &port= proxy._port_s;
 
     if (host.empty()) {
         if (!port.empty()) {
-            conftrace_add(KW_PASS);
-            Log.error() << KW_PASS << " contains only port" << Log.endl;
+            conftrace_add(KW_PROXY_PASS);
+            Log.error() << KW_PROXY_PASS << " contains only port" << Log.endl;
             return 0;
         }
     } else if (!isValidHost(host)) {
-        conftrace_add(KW_PASS);
-        Log.error() << KW_PASS << " has invalid host" << Log.endl;
+        conftrace_add(KW_PROXY_PASS);
+        Log.error() << KW_PROXY_PASS << " has invalid host" << Log.endl;
         return 0;
     } else if (!isValidPort(port)) {
-        conftrace_add(KW_PASS);
-        Log.error() << KW_PASS << " has invalid port" << Log.endl;
+        conftrace_add(KW_PROXY_PASS);
+        Log.error() << KW_PROXY_PASS << " has invalid port" << Log.endl;
         return 0;
     }
     return 1;
@@ -740,11 +696,16 @@ parseLocation(Object *src, Location &dst, Location &def) {
         return NONE_OR_INV;
     }
 
-    if (!parseProxy(src, dst.getProxyRef())) {
-        conftrace_add(KW_PROXY);
+    dst.getProxyPassRef().clear();
+    std::string pass;
+    if (!getString(src, KW_PROXY_PASS, pass, "")) {
+        conftrace_add(KW_PROXY_PASS);
         return NONE_OR_INV;
-    } else if (!isValidProxy(dst.getProxyRef())) {
-        conftrace_add(KW_PROXY);
+    }
+    
+    dst.getProxyPassRef().parse(pass);
+    if (!isValidProxy(dst.getProxyPassRef())) {
+        conftrace_add(KW_PROXY_PASS);
         return NONE_OR_INV;
     }
 
@@ -872,6 +833,19 @@ isValidPort(int port) {
 }
 
 int
+isValidProxyDomains(ServerBlock &srv) {
+    ServerBlock::DomainsVec &domains = srv.getProxyDomainsRef();
+    for (size_t i = 0; i < domains.size(); ++i) {
+        if (!isValidHost(domains[i])) {
+            conftrace_add(KW_PROXY_DOMAINS);
+            Log.error() << KW_PROXY_DOMAINS << " " << domains[i] << " is invalid" << Log.endl;
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int
 parseServerBlock(Object *src, ServerBlock &dst) {
 
     if (!isValidKeywords(src, validServerBlockKeywords)) {
@@ -900,6 +874,14 @@ parseServerBlock(Object *src, ServerBlock &dst) {
     }
     dst.getAddrRef() = uri._host;
     dst.getPortRef() = uri._port;
+
+    if (!getArray(src, KW_PROXY_DOMAINS, dst.getProxyDomainsRef(), dst.getProxyDomainsRef())) {
+        conftrace_add(KW_PROXY_DOMAINS);
+        return NONE_OR_INV;
+    } else if (!isValidProxyDomains(dst)) {
+        conftrace_add(KW_PROXY_DOMAINS);
+        return NONE_OR_INV;
+    }
 
     if (!parseLocations(src, dst.getLocationsRef(), dst.getLocationBaseRef())) {
         conftrace_add(KW_LOCATIONS);

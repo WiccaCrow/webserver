@@ -32,7 +32,7 @@ private:
     Redirect      _redirect;
     Auth          _auth;
     ErrorPagesMap _errorPages;
-    Proxy         _proxy;
+    URI           _proxy_pass;
     Headers<ResponseHeader> _headers;
 
 public:
@@ -51,8 +51,8 @@ public:
     MethodsVec    &getCGIMethodsRef(void);
     CGIsMap       &getCGIsRef(void);
     ErrorPagesMap &getErrorPagesRef(void);
-    Proxy         &getProxyRef(void);
-    const Proxy   &getProxy(void) const;
+    URI           &getProxyPassRef(void);
+    const URI     &getProxyPass(void) const;
 
     Headers<ResponseHeader>   &getHeaders(void);
 };

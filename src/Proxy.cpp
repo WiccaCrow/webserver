@@ -5,44 +5,22 @@
 
 namespace HTTP {
 
-Proxy::Proxy(void) {}
+Proxy::Proxy(const std::string &host, const std::string &port)
+    : _host(host)
+    , _port(port) {}
+
 Proxy::~Proxy(void) {}
-
-Proxy::DomainsVec &
-Proxy::getDomainsRef(void) {
-    return _domains;
-}
-
-const Proxy::DomainsVec &
-Proxy::getDomainsRef(void) const {
-    return _domains;
-}
-
-URI &Proxy::getPassRef(void) {
-    return _pass;
-}
 
 int Proxy::pass(Request *req) {
 
-    std::string host;
-    std::string port;
-
-    if (!_pass._host.empty() && !_pass._port_s.empty()) {
-        host = _pass._host;
-        port = _pass._port_s;
-    } else {
-        host = req->getUriRef()._host;
-        port = req->getUriRef()._port_s;
-    }
-
-    if (port.empty()) {
-        port = "80";
+    if (_port.empty()) {
+        _port = "80";
     }
 
     struct addrinfo *addrlst = NULL;
-    Log.debug() << "Try to proxy to " << host << ":" << port << Log.endl;
-    if (getaddrinfo(host.c_str(), port.c_str(), NULL, &addrlst)) {
-        Log.error() << "Proxy::getaddrinfo -> " << host << ":" << port << Log.endl;
+    Log.debug() << "Try to proxy to " << _host << ":" << _port << Log.endl;
+    if (getaddrinfo(_host.c_str(), _port.c_str(), NULL, &addrlst)) {
+        Log.error() << "Proxy::getaddrinfo -> " << _host << ":" << _port << Log.endl;
         return 0;
     }
 

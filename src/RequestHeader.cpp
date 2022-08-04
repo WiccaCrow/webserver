@@ -236,6 +236,10 @@ RequestHeader::Host(Request &req) {
     URI &uri = req.getUriRef();
     URI hdr;
 
+    if (!uri._host.empty() && req.isProxy()) {
+        return CONTINUE;
+    }
+
     hdr.parse(value);
     if (!isValidHost(hdr._host)) {
         Log.error() << "Host: Invalid Host " << hdr._host << Log.endl;

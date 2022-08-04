@@ -73,6 +73,16 @@ ServerBlock::getLocationBaseRef(void) {
     return _locationBase;
 }
 
+ServerBlock::DomainsVec &
+ServerBlock::getProxyDomainsRef(void) {
+    return _proxy_domains;
+}
+
+const ServerBlock::DomainsVec &
+ServerBlock::getProxyDomainsRef(void) const {
+    return _proxy_domains;
+}
+
 bool
 ServerBlock::hasName(const std::string &name) const {
    return std::find(_server_names.begin(), _server_names.end(), name) != _server_names.end();

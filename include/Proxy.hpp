@@ -18,24 +18,17 @@ class Request;
 class Proxy {
 
 public:
-    typedef std::vector<std::string>    DomainsVec;
 
 private:
-    DomainsVec    _domains;
-    URI           _pass;
+    std::string _host;
+    std::string _port;
 
 public:
-    Proxy(void);
+    Proxy(const std::string &host, const std::string &port);
     ~Proxy(void);
 
     int pass(Request *);
     int setConnection(struct addrinfo *, Request *);
-
-    DomainsVec          &getDomainsRef(void);
-    const DomainsVec    &getDomainsRef(void) const;
-
-    URI           &getPassRef(void);
-
 };
 
 }

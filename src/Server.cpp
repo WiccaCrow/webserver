@@ -85,6 +85,56 @@ sigint_handler(int) {
     g_server->finish();
 }
 
+bool
+Server::isServerHostname(const std::string &name) {
+    return (_hostnames.find(name) != _hostnames.end());
+}
+
+int
+Server::initHostnamesSet(void) {
+
+    char str[1024] = {0};
+    if (gethostname(str, 1024) < 0) {
+        Log.syserr() << "Server:: gethostname failed" << Log.endl;
+        finish();
+        return 0;
+    }
+
+    hostent *host = gethostbyname(str);
+    if (host == NULL) {
+        Log.syserr() << "Server:: gethostbyname failed" << Log.endl;
+        finish();
+        return 0;
+    }
+
+    _hostnames.insert(host->h_name);
+    for (size_t i = 0; host->h_aliases[i]; i++) {
+        _hostnames.insert(host->h_aliases[i]);
+    }
+
+    for (size_t i = 0; host->h_addr_list[i]; i++)
+    {
+        char *ip = inet_ntoa(*(in_addr *)host->h_addr_list[i]);
+        if (ip != NULL) {
+            _hostnames.insert(ip);
+        }
+        hostent *h = gethostbyaddr((in_addr *)host->h_addr_list[i], host->h_length, host->h_addrtype);
+        if (h != NULL) {
+            _hostnames.insert(h->h_name);
+            
+            for (size_t j = 0; h->h_aliases[j]; j++) {
+                _hostnames.insert(h->h_aliases[j]);
+            }
+        }
+    }
+
+    for (std::set<std::string>::iterator it = _hostnames.begin(); it != _hostnames.end(); it++) {
+        Log.debug() << *it << Log.endl;
+    }
+
+    return 1;
+}
+
 #ifdef WS_DAEMON_MODE
 
 void Server::daemonMode(void) {
@@ -133,6 +183,7 @@ void Server::start(void) {
 
     signal(SIGINT, sigint_handler);
 
+    initHostnamesSet();
     createSockets();
     if (!working()) {
         return;

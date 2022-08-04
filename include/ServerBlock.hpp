@@ -14,6 +14,7 @@ class ServerBlock {
 public:
     typedef std::map<std::string, Location>  LocationsMap;
     typedef std::vector<std::string>         ServerNamesVec;
+    typedef std::vector<std::string>         DomainsVec;
 
 private:
     std::string     _blockname;
@@ -22,6 +23,7 @@ private:
     LocationsMap    _locations;
     Location        _locationBase;
     ServerNamesVec  _server_names;
+    DomainsVec      _proxy_domains;
 
 public:
     ServerBlock();
@@ -41,6 +43,8 @@ public:
     LocationsMap        &getLocationsRef(void);
     const LocationsMap  &getLocationsRef(void) const;
     const std::string   &getBlockName(void) const;
+    DomainsVec          &getProxyDomainsRef(void);
+    const DomainsVec    &getProxyDomainsRef(void) const;
     
     bool hasName(const std::string &) const;
     bool hasAddr(const std::string &) const;

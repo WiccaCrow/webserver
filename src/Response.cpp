@@ -71,7 +71,13 @@ void Response::makeResponseForMethod(void) {
 
 void Response::makeResponseForProxy() {
 
-    _proxy = new Proxy(getRequest()->getLocation()->getProxyRef());
+    URI &pass = getRequest()->getLocation()->getProxyPassRef();
+    URI &uri = getRequest()->getUriRef();
+    if (!pass._host.empty() && !pass._port_s.empty()) {
+        _proxy = new Proxy(pass._host, pass._port_s);
+    } else {
+        _proxy = new Proxy(uri._host, uri._port_s);
+    }
 
     if (getRequest()->getFileFd() != -1) {
         if (!getRequest()->mapFile()) {
@@ -185,7 +191,14 @@ void Response::OPTIONS(void) {
 }
 
 void Response::CONNECT(void) {
-    _proxy = new Proxy(getRequest()->getLocation()->getProxyRef());
+
+    URI &pass = getRequest()->getLocation()->getProxyPassRef();
+    URI &uri = getRequest()->getUriRef();
+    if (!pass._host.empty() && !pass._port_s.empty()) {
+        _proxy = new Proxy(pass._host, pass._port_s);
+    } else {
+        _proxy = new Proxy(uri._host, uri._port_s);
+    }
 
     if (!_proxy->pass(getRequest())) {
         setStatus(BAD_GATEWAY);

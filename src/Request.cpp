@@ -243,6 +243,11 @@ Request::checkSL(void) {
         return FORBIDDEN;
     }
 
+    if (!_uri._host.empty() && !isValidProxyDomain(_uri._host) && !g_server->isServerHostname(_uri._host)) {
+        Log.debug() << "Request:: Invalid hostname " << _uri._host << " in SL" << Log.endl;
+        return BAD_REQUEST;
+    }
+
     if (tunnelGuard(!isValidProtocol(getProtocol()))) {
         Log.debug() << "Request::checkSL: protocol " << getProtocol() << " is not valid" << Log.endl;
         return BAD_REQUEST;
@@ -280,27 +285,28 @@ Request::resolvePath(void) {
     Log.debug() << "Request::resolvePath: " << _resolvedPath << Log.endl;
 }
 
-void
-Request::checkProxy(void) {
-    typedef Proxy::DomainsVec Domains;
+bool
+Request::isValidProxyDomain(const std::string &name) {
+    typedef ServerBlock::DomainsVec Domains;
     typedef Domains::const_iterator c_iter;
 
-    Proxy &proxy = getLocation()->getProxyRef();
-    URI &pass = proxy.getPassRef();
-    if (!pass._host.empty() && !pass._port_s.empty()) {
-        Log.debug() << "Request::checkProxy, reverse to " << pass._host << ":" << pass._port << Log.endl;
-        isProxy(true);
-        return ;
-    }
-
-    Log.debug() << "Request::checkProxy for \"" << _uri._host << "\"" << Log.endl;
-    const Domains &domains = proxy.getDomainsRef();
+    const Domains &domains = getServerBlock()->getProxyDomainsRef();
     for (c_iter it = domains.begin(); it != domains.end(); ++it) {
-        if (*it == _uri._host) {
-            Log.debug() << "Request::checkProxy: match " << *it << Log.endl;
+        if (*it == name) {
             isProxy(true);
-            return ;
+            return true;
         }
+    }
+    return false;
+}
+
+void
+Request::checkReverseProxy(void) {
+
+    URI &pass = getLocation()->getProxyPassRef();
+    if (!pass._host.empty() && !pass._port_s.empty()) {
+        Log.debug() << "Request:: reverse proxy to " << pass._host << ":" << pass._port << Log.endl;
+        isProxy(true);
     }
 }
 
@@ -321,14 +327,12 @@ Request::checkHeaders(void) {
     }
 
     if (hasHost) {
-        if (_uri._host.empty() || !isProxy()) {
-            RequestHeader &host = headers[HOST];
-            if (tunnelGuard(host.handle(*this) != CONTINUE)) {
-                return BAD_REQUEST;
-            }
+        RequestHeader &host = headers[HOST];
+        if (tunnelGuard(host.handle(*this) != CONTINUE)) {
+            return BAD_REQUEST;
         }
     }
-
+    
     if (!_servBlock) {
         setServerBlock(getClient()->matchServerBlock(_uri._host));
     }
@@ -338,13 +342,25 @@ Request::checkHeaders(void) {
     }
 
     if (_location) {
-        checkProxy();
-        checkCGI();
+        if (g_server->isServerHostname(_uri._host)) {
+            checkReverseProxy();
+            if (!isProxy()) {
+                checkCGI();
+            }
+        } else if (!isValidProxyDomain(_uri._host)) {
+            Log.debug() << "Request:: Invalid hostname " << _uri._host << Log.endl;
+            return BAD_REQUEST;
+        }
+    
         resolvePath();
     }
 
     // Call each header handler
     for (Headers<RequestHeader>::iterator it = headers.begin(); it != headers.end(); ++it) {
+        if (it->first == HOST) {
+            continue;
+        }
+    
         StatusCode status = it->second.handle(*this);
         if (tunnelGuard(status != CONTINUE)) {
             // Log.debug() << it->second.key << ": " << it->second.value << Log.endl;

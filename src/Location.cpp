@@ -65,14 +65,14 @@ Location::getErrorPagesRef(void) {
     return _errorPages;
 }
 
-Proxy &
-Location::getProxyRef(void) {
-    return _proxy;
+URI &
+Location::getProxyPassRef(void) {
+    return _proxy_pass;
 }
 
-const Proxy &
-Location::getProxy(void) const {
-    return _proxy;
+const URI &
+Location::getProxyPass(void) const {
+    return _proxy_pass;
 }
 
 Headers<ResponseHeader> &

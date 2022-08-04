@@ -50,13 +50,18 @@ class Server {
     typedef std::map<std::string, std::time_t>  SessionsMap;
     typedef SessionsMap::iterator               iter_ssm;
 
+    typedef std::set<std::string>  HostnamesSet;
+    typedef HostnamesSet::iterator iter_hn;
+
     private:
-    ServersMap  _servers;
-    SocketsVec  _sockets;
-    FdIdMap     _connector;
-    ClientsVec  _clients;
-    PollFdVec   _pollfds;
-    SessionsMap _sessions;
+    ServersMap   _servers;
+    SocketsVec   _sockets;
+    FdIdMap      _connector;
+    ClientsVec   _clients;
+    PollFdVec    _pollfds;
+    SessionsMap  _sessions;
+    HostnamesSet _hostnames;
+
 
     bool   _working;
     Worker *_workers;
@@ -113,7 +118,10 @@ class Server {
     bool isActualSession(const std::string &s_id);
     void addSession(const std::string s_id);
 
+    bool isServerHostname(const std::string &);
+
     private:
+    int initHostnamesSet(void);
     void connect(std::size_t servid, int servfd);
 
     void daemonMode(void);

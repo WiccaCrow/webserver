@@ -20,25 +20,31 @@
         "http2": {
             "listen": "172.20.10.2:8080",
             "server_names": [ "webserv.com" ],
-            "error_pages": {
-                "404": "~/error.jpeg"
-            },
-            "cgi": {
-                ".pl": "/usr/bin/perl",
-                ".py": "/usr/bin/python3",
-                ".php": "/opt/homebrew/bin/php-cgi",
-                ".js": "/usr/local/bin/node",
-                ".cgi": ""
-            },
-            "methods_allowed": [ "GET", "PUT", "POST", "TRACE" ],
-            "post_max_body": "1 GiB",
-            "autoindex": true,
-            "index": [ "index.html" ],
-            "add_headers": [
-                "Set-cookie: visit=9de70f6546b2452f6e7b98b46ac36070; Max-Age=86400; SameSite=strict; Path=/",
-                "Set-cookie: key1=val1;"
+            "proxy_domains": [
+                "webserv.com"
             ],
             "locations": {
+                "/": {
+                    "proxy_pass": "",
+                    "error_pages": {
+                        "404": "~/error.jpeg"
+                    },
+                    "cgi": {
+                        ".pl": "/usr/bin/perl",
+                        ".py": "/usr/bin/python3",
+                        ".php": "/opt/homebrew/bin/php-cgi",
+                        ".js": "/usr/local/bin/node",
+                        ".cgi": ""
+                    },
+                    "methods_allowed": [ "GET", "PUT", "POST", "TRACE" ],
+                    "post_max_body": "1 GiB",
+                    "autoindex": true,
+                    "index": [ "index.html" ],
+                    "add_headers": [
+                        "Set-cookie: visit=9de70f6546b2452f6e7b98b46ac36070; Max-Age=86400; SameSite=strict; Path=/",
+                        "Set-cookie: key1=val1;"
+                    ]
+                },
                 "/delete/": {
                     "autoindex": true,
                     "alias": "./pages/cgi/",

@@ -43,7 +43,6 @@ private:
     
     ServerBlock *  _servBlock;
     Location    *  _location;
-    // Client      *  _client;
 
     bool           _useRanges;
     bool           _authorized;
@@ -80,9 +79,6 @@ public:
     virtual StatusCode parseHeader(const std::string &);
     virtual StatusCode checkHeaders(void);
 
-    // virtual StatusCode parseBody(const std::string &);
-    // virtual StatusCode writeBody(const std::string &);
-
     const std::string &getPath(void) const;
     const std::string &getMethod(void) const;
     const std::string &getRawUri(void) const;
@@ -110,7 +106,8 @@ public:
     std::map<std::string, std::string>  &getCookie(void);
     void                                setCookie(std::map<std::string, std::string> cookie);
 
-    void checkProxy(void);
+    bool isValidProxyDomain(const std::string &);
+    void checkReverseProxy(void);
 
     void checkCGI(void);
 
