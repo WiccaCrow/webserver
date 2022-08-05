@@ -93,43 +93,36 @@ Server::isServerHostname(const std::string &name) {
 int
 Server::initHostnamesSet(void) {
 
-    char str[1024] = {0};
-    if (gethostname(str, 1024) < 0) {
-        Log.syserr() << "Server:: gethostname failed" << Log.endl;
-        finish();
-        return 0;
-    }
+    struct hostent *ent = gethostent();
+    while (ent != NULL) {
 
-    hostent *host = gethostbyname(str);
-    if (host == NULL) {
-        Log.syserr() << "Server:: gethostbyname failed" << Log.endl;
-        finish();
-        return 0;
-    }
+        for (size_t j = 0; ent->h_addr_list[j]; j++) {
 
-    _hostnames.insert(host->h_name);
-    for (size_t i = 0; host->h_aliases[i]; i++) {
-        _hostnames.insert(host->h_aliases[i]);
-    }
+            if (ent->h_addrtype != AF_INET || !strcmp(ent->h_name, "broadcasthost")) {
+                continue ;
+            }
 
-    for (size_t i = 0; host->h_addr_list[i]; i++)
-    {
-        char *ip = inet_ntoa(*(in_addr *)host->h_addr_list[i]);
-        if (ip != NULL) {
-            _hostnames.insert(ip);
-        }
-        hostent *h = gethostbyaddr((in_addr *)host->h_addr_list[i], host->h_length, host->h_addrtype);
-        if (h != NULL) {
-            _hostnames.insert(h->h_name);
-            
-            for (size_t j = 0; h->h_aliases[j]; j++) {
-                _hostnames.insert(h->h_aliases[j]);
+            hostent *h = gethostbyaddr((in6_addr *)ent->h_addr_list[j], ent->h_length, ent->h_addrtype);
+            if (h != NULL) {
+
+                _hostnames.insert(h->h_name);
+                
+                for (size_t i = 0; h->h_aliases[i]; i++) {
+                    _hostnames.insert(h->h_aliases[i]);
+                }
+
+                for (size_t i = 0; ent->h_addr_list[i]; i++) {
+                    char str[INET6_ADDRSTRLEN];
+                    if (!inet_ntop(h->h_addrtype, (in6_addr *)ent->h_addr_list[i], str, INET6_ADDRSTRLEN)) {
+                        Log.syserr() << "Server:: inet_ntop failed" << Log.endl;
+                        continue ;
+                    }
+                    _hostnames.insert(str);
+                }
             }
         }
-    }
 
-    for (std::set<std::string>::iterator it = _hostnames.begin(); it != _hostnames.end(); it++) {
-        Log.debug() << *it << Log.endl;
+        ent = gethostent();
     }
 
     return 1;
@@ -182,11 +175,15 @@ void Server::start(void) {
     }
 
     signal(SIGINT, sigint_handler);
-
+    
     initHostnamesSet();
     createSockets();
     if (!working()) {
         return;
+    }
+
+    for (std::set<std::string>::iterator it = _hostnames.begin(); it != _hostnames.end(); it++) {
+        Log.debug() << *it << Log.endl;
     }
 
     startWorkers();
