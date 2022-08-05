@@ -1143,16 +1143,13 @@ loadConfig(const string filename) {
 
     Object *ptr = NULL;
     try {
-        Parser json(filename);
-        ptr = json.parse();
+        Parser jsonp(filename);
+        ptr = jsonp.parse();
         if (ptr == NULL) {
             Log.error() << "Failed to parse " << filename << Log.endl;
             return NULL;
         }
     } catch (std::exception &e) {
-        if (ptr != NULL) {
-            delete ptr;
-        }
         Log.error() << e.what() << " " << filename <<  Log.endl;
         return NULL;
     }
