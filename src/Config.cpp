@@ -1141,7 +1141,7 @@ parseConfig(Object *src, Server *serv) {
 Server *
 loadConfig(const string filename) {
 
-    Object *ptr;
+    Object *ptr = NULL;
     try {
         Parser json(filename);
         ptr = json.parse();
@@ -1150,6 +1150,9 @@ loadConfig(const string filename) {
             return NULL;
         }
     } catch (std::exception &e) {
+        if (ptr != NULL) {
+            delete ptr;
+        }
         Log.error() << e.what() << " " << filename <<  Log.endl;
         return NULL;
     }
