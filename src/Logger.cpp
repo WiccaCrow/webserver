@@ -6,10 +6,10 @@ Logger Log;
 static const std::vector<std::string> initTitles(void) {
     std::vector<std::string> titles(9);
     
+    titles[LOG_SYSERR] = "SYSERR";
+    titles[LOG_ERROR] = "ERROR";
     titles[LOG_INFO] = "INFO";
     titles[LOG_DEBUG] = "DEBUG";
-    titles[LOG_ERROR] = "ERROR";
-    titles[LOG_SYSERR] = "SYSERR";
 
     std::size_t max = 0;
     for (std::size_t i = 0; i < titles.size(); i++) {
@@ -34,7 +34,8 @@ Logger::Logger() : std::ostream(this)
     , _logDir(LOGS_DIR"/")
     , _logToFile(false)
     , _logToStd(true)
-    , _flags(0) {
+    , _curLevel(0)
+    , _askLevel(0) {
     pthread_mutex_init(&_lock_print, NULL);
 }
 
@@ -80,16 +81,16 @@ Logger::logToFile(bool flag) {
 }
 
 void
-Logger::setFlags(uint8_t flags) {
-    _flags = flags;
+Logger::setLevel(uint8_t level) {
+    _curLevel = level;
 }
 
 Logger &
-Logger::print(uint8_t flag) {
+Logger::print(uint8_t level) {
     pthread_mutex_lock(&_lock_print);
-    _flag = flag;
+    _askLevel = level;
 
-    return *this << Time::local() << " " << titles[_flag] << " ";
+    return *this << Time::local() << " " << titles[_askLevel] << " ";
 }
 
 Logger &
@@ -122,12 +123,12 @@ Logger::overflow(int c) {
 
 Logger &
 Logger::operator<<(std::ostream& (*func)(std::ostream &)) {
-    if (_flags & _flag) {
+    if (_askLevel <= _curLevel) {
         if (_logToFile && _out.good()) {
             func(_out);
         }
 
-        if ((_flag & LOG_ERROR) || (_flag & LOG_SYSERR)) {
+        if ((_askLevel == LOG_ERROR) || (_askLevel == LOG_SYSERR)) {
             func(std::cerr);
         } else {
             func(std::cout);
