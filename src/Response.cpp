@@ -180,6 +180,8 @@ void Response::DELETE(void) {
 void Response::HEAD(void) {
     contentForGetHead();
     setBody("");
+    chunked(false);
+    parted(false);
 }
 
 void Response::GET(void) {
