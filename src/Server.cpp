@@ -163,7 +163,7 @@ void Server::daemonMode(void) {
 void
 Server::daemonMode(void) {
     Log.error() << "This version compiled without daemon mode flag." << Log.endl;
-    Log.error() << "To run server as daemon, recompile it with WS_DAEMON_MODE." << Log.endl;
+    Log.error() << "To run server as a daemon, recompile it with \'make daemon\'." << Log.endl;
 }
 
 #endif

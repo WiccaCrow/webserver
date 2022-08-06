@@ -243,15 +243,23 @@ Location::MethodsVec
 getDefaultAllowedMethods(void) {
 
     Location::MethodsVec allowed(9);
+
+    allowed.push_back("GET");
+    allowed.push_back("HEAD");   
+    allowed.push_back("POST");
+    allowed.push_back("OPTIONS");
+
+    return allowed;
+}
+
+Location::MethodsVec
+getDefaultMethods(void) {
+
+    Location::MethodsVec allowed(9);
     for (std::size_t i = 0; validMethods[i]; i++) {
         allowed.push_back(validMethods[i]);   
     }
-
-    // allowed.push_back("GET");
-    // allowed.push_back("HEAD");   
-    // allowed.push_back("POST");
-    // allowed.push_back("OPTIONS");
-
+    
     return allowed;
 }
 
@@ -259,6 +267,7 @@ Location::MethodsVec
 getDefaultCGIMethods(void) {
 
     Location::MethodsVec allowed(9);
+
     allowed.push_back("GET");   
     allowed.push_back("HEAD");   
     allowed.push_back("POST");   
@@ -737,7 +746,7 @@ parseLocation(Object *src, Location &dst, Location &def) {
     if (!getArray(src, KW_METHODS_ALLOWED, dst.getAllowedMethodsRef(), getDefaultAllowedMethods())) {
         conftrace_add(KW_METHODS_ALLOWED);
         return NONE_OR_INV;
-    } else if (!isSubset(getDefaultAllowedMethods(), dst.getAllowedMethodsRef())) {
+    } else if (!isSubset(getDefaultMethods(), dst.getAllowedMethodsRef())) {
         conftrace_add(KW_METHODS_ALLOWED);
         Log.error() << KW_METHODS_ALLOWED << " has unrecognized value" << Log.endl;
         return NONE_OR_INV;
@@ -972,9 +981,9 @@ int parseSettings(Object *src, Settings &sets) {
     if (!getUInteger(obj, KW_WORKERS, sets.workers, def.workers)) {
         conftrace_add(KW_WORKERS);
         return NONE_OR_INV;
-    } else if (sets.workers > 30) {
+    } else if (sets.workers < 1 || sets.workers > 20) {
         conftrace_add(KW_WORKERS);
-        Log.error() << KW_WORKERS << " upper bound is 30" << Log.endl;
+        Log.error() << KW_WORKERS << " bound is [1; 20]" << Log.endl;
         return NONE_OR_INV;
     }
 
