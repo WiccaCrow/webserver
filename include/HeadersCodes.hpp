@@ -32,6 +32,7 @@ enum HeaderCode {
     PROXY_AUTHORIZATION            = 146921266,
     RANGE                          = 2475121225,
     REFERER                        = 1440495237,
+    REFERRER_POLICY                = 741771133,
     TRANSFER_ENCODING              = 1470906230,
     TE                             = 928136154,
     USER_AGENT                     = 2191772431,

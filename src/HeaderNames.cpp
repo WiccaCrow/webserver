@@ -35,6 +35,7 @@ HeaderNames::HeaderNames() {
     _headerNames.insert(std::make_pair(PROXY_AUTHORIZATION, "proxy-authorization"));
     _headerNames.insert(std::make_pair(RANGE, "range"));
     _headerNames.insert(std::make_pair(REFERER, "referer"));
+    _headerNames.insert(std::make_pair(REFERRER_POLICY, "referrer-policy"));
     _headerNames.insert(std::make_pair(TRANSFER_ENCODING, "transfer-encoding"));
     _headerNames.insert(std::make_pair(TE, "te"));
     _headerNames.insert(std::make_pair(USER_AGENT, "user-agent"));

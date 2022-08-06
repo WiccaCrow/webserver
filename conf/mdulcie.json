@@ -3,7 +3,7 @@
         "max_wait_conn": 128,
         "blind_proxy": true,
         "max_requests": 100,
-        "max_client_timeout": 25,
+        "max_client_timeout": 250,
         "max_gateway_timeout": 100,
         "session_lifetime": 86400,
         "max_uri_length": 1024,
@@ -20,18 +20,26 @@
         "http": {
             "listen": "127.0.0.1:8080",
             "server_names": [ "localhost" ],
-            "error_pages": {
-                "404": "./pages/error_pages/404.html",
-                "400": "./pages/error_pages/400.html"
-            },
-            "cgi": {
-                ".py": "/usr/bin/python3.9"
-            },
-            "methods_allowed": [ "GET", "POST", "CONNECT", "HEAD", "OPTIONS" ],
-            "post_max_body": "100B",
-            "autoindex": true,
-            "index": [ "index.html" ],
+            "proxy_domains": [ 
+                    "www.google.com", 
+                    "www.vk.com"
+            ],
             "locations": {
+                "/": {
+                    "proxy_pass": "",
+                    "root": "~",
+                    "error_pages": {
+                        "404": "./pages/error_pages/404.html",
+                        "400": "./pages/error_pages/400.html"
+                    },
+                    "cgi": {
+                        ".py": "/usr/bin/python3.9"
+                    },
+                    "methods_allowed": [ "GET", "POST" ],
+                    "post_max_body": "1GiB",
+                    "autoindex": true,
+                    "index": [ "index.html" ]
+                },
                 "/welcome": {
                     "alias": "./pages/welcome",
                     "cgi": {
@@ -52,7 +60,10 @@
                     "autoindex": true,
                     "index": [ "index.html" ],
                     "post_max_body": "200B",
-                    "methods_allowed": [ "GET", "POST" ]
+                    "methods_allowed": [ "GET", "POST" ],
+                    "cgi": {
+                        ".py": "/usr/bin/python3"
+                    }
                 },
                 "/about": {
                     "alias": "/home/user/Desktop/github/webserver/pages/site",
@@ -73,11 +84,36 @@
                 "/put": {
                     "alias": "/home/user/Desktop/github/webserver/put",
                     "methods_allowed": [ "PUT", "DELETE", "POST" ],
-                    "post_max_body": "21GB"
+                    "post_max_body": "24GB"
                 },
                 "/delete": {
                     "alias": "/home/user/Desktop/github/webserver/put",
                     "methods_allowed": [ "DELETE" ]
+                }
+            }
+        },
+        "http2": {
+            "listen": "127.0.0.2:8080",
+            "server_names": [ "local" ],
+            "locations": {
+                "/": {
+                    "methods_allowed": [ "GET" ],
+                    "root": "/home/user/Desktop/github/webserver/",
+                    "index": [ "index.html" ]
+                }
+            }
+        },
+        "http3": {
+            "listen": "127.0.0.1:8080",
+            "server_names": [ "webserv.com" ],
+            "locations": {
+                "/": {
+                    "methods_allowed": [ "GET" ],
+                    "root": "/home/user/Desktop/github/webserver/pages/site"
+                },
+                "/proxy": {
+                    "alias": "/",
+                    "proxy_pass": "www.google.com:80"
                 }
             }
         }
