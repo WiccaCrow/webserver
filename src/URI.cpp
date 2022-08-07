@@ -34,7 +34,7 @@ void URI::parse(std::string uri) {
 
     // query
     iter_t queryStart = std::find(uri.begin(), fragmentStart, '?');
-    if (queryStart != uri.end()) {
+    if (queryStart != fragmentStart) {
         _query = std::string(queryStart + 1, fragmentStart);
     }
 
