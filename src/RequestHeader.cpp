@@ -527,8 +527,16 @@ RequestHeader::Range(Request &req) {
 StatusCode
 RequestHeader::Referer(Request &req) {
 
-    // OK, but what the hell should I do with it?
-    req.getReferrerRef().parse(value);
+    URI &uri = req.getUriRef();
+    URI ref;
+    
+    ref.parse(value);
+    if (!ref._path.empty() && ref._path != "/") {
+        if (endsWith(ref._path, "/")) {
+            ref._path.erase(ref._path.length() - 1, 1);
+        }
+        uri._path = ref._path + uri._path;
+    }
 
     return CONTINUE;
 }

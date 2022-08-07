@@ -332,6 +332,10 @@ Request::checkHeaders(void) {
         return BAD_REQUEST;
     }
 
+    if (has(REFERER)) {
+        headers[REFERER].handle(*this);
+    }
+
     if (hasHost) {
         RequestHeader &host = headers[HOST];
         if (tunnelGuard(host.handle(*this) != CONTINUE)) {
@@ -363,7 +367,7 @@ Request::checkHeaders(void) {
 
     // Call each header handler
     for (Headers<RequestHeader>::iterator it = headers.begin(); it != headers.end(); ++it) {
-        if (it->first == HOST) {
+        if (it->first == HOST || it->first == REFERER) {
             continue;
         }
     
