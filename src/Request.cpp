@@ -243,9 +243,15 @@ Request::checkSL(void) {
         return FORBIDDEN;
     }
 
-    if (!_uri._host.empty() && !isValidProxyDomain(_uri._host) && !g_server->isServerHostname(_uri._host)) {
-        Log.debug() << "Request:: Invalid hostname " << _uri._host << " in SL" << Log.endl;
-        return BAD_REQUEST;
+    if (tunnelGuard(!_uri._host.empty())) {
+
+        if (!_servBlock) {
+            setServerBlock(getClient()->matchServerBlock(_uri._host));
+        }
+        if (!isValidProxyDomain(_uri._host) && !g_server->isServerHostname(_uri._host)) {
+            Log.debug() << "Request:: Invalid hostname " << _uri._host << " in SL" << Log.endl;
+            return BAD_REQUEST;
+        }
     }
 
     if (tunnelGuard(!isValidProtocol(getProtocol()))) {
