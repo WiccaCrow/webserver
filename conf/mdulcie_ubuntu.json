@@ -27,7 +27,7 @@
             "locations": {
                 "/": {
                     "proxy_pass": "",
-                    "root": "~",
+                    "root": "~/Desktop/github/webserver/",
                     "error_pages": {
                         "404": "./pages/error_pages/404.html",
                         "400": "./pages/error_pages/400.html"
@@ -49,7 +49,7 @@
                     "methods_allowed": [ "GET", "POST" ] 
                 },
                 "/ss": {
-                    "alias": "/home/user/Desktop/github/",
+                    "alias": "../",
                     "autoindex": true,
                     "index": [ "index.html" ],
                     "post_max_body": "200B",
@@ -98,7 +98,7 @@
             "locations": {
                 "/": {
                     "methods_allowed": [ "GET" ],
-                    "root": "/home/user/Desktop/github/webserver/",
+                    "root": "/home/user/Desktop/github/webserver/default",
                     "index": [ "index.html" ]
                 }
             }
