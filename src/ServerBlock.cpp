@@ -19,6 +19,7 @@ ServerBlock::operator=(const ServerBlock &other) {
         _server_names    = other._server_names;
         _locationBase    = other._locationBase;
         _locations       = other._locations;
+        _proxy_domains   = other._proxy_domains;
     }
     return (*this);
 }
