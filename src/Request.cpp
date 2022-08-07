@@ -508,6 +508,10 @@ Request::makeSL(void) {
             } else {
                 _uri._path.erase(pos, pos + locpath.length());
             }
+
+            if (!startsWith(_uri._path, "/")) {
+                _uri._path = "/" + _uri._path;
+            }
         }
     }
 
