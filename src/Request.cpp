@@ -515,8 +515,11 @@ Request::makeSL(void) {
         }
     }
 
-    if (!_uri._host.empty()) {
-        headers[HOST].value = _uri._host + ":" + _uri._port_s;
+    URI &pass = getLocation()->getProxyPassRef();
+    if (!pass._host.empty()) {
+        headers[HOST].value = pass._host + ":" + (pass._port_s.empty() ? "80" : pass._port_s);
+    } else if (!_uri._host.empty()) {
+        headers[HOST].value = _uri._host + ":" + (_uri._port_s.empty() ? "80" : _uri._port_s);
     }
     return getMethod() + " " + _uri._path + " " + SERVER_PROTOCOL + CRLF;
 }
