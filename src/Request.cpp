@@ -499,7 +499,18 @@ Request::makeSL(void) {
         } else {
             _uri._path = "/";
         }
+    } else {
+        const std::string &locpath = getLocation()->getPathRef();
+        if (locpath != "/") {
+            std::size_t pos = _uri._path.find(locpath);
+            if (pos == std::string::npos) {
+                Log.error() << "Location path " << locpath <<  " not found in the uri path " << _uri._path << Log.endl;
+            } else {
+                _uri._path.erase(pos, pos + locpath.length());
+            }
+        }
     }
+
     if (!_uri._host.empty()) {
         headers[HOST].value = _uri._host + ":" + _uri._port_s;
     }
