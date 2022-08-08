@@ -314,6 +314,10 @@ const char * validAuthBasicKeywords[] = {
     KW_REALM, KW_USER_FILE, NULL
 };
 
+const char * validGlobalKeywords[] = {
+    KW_SERVERS, KW_SETTINGS, NULL
+};
+
 bool
 isValidKeyword(const std::string &key, const char *contextKeywords[]) {
 
@@ -528,6 +532,11 @@ parseRedirect(Object *src, Redirect &res) {
     }
 
     Object *obj = src->get(KW_REDIRECT)->toObj();
+
+    if (!isValidKeywords(obj, validRedirectKeywords)) {
+        return NONE_OR_INV;
+    }
+
     std::size_t code = 0;
     if (!getUInteger(obj, KW_CODE, code)) {
         return NONE_OR_INV;
@@ -594,6 +603,10 @@ parseAuth(Object *src, Auth &res) {
     }
 
     Object *obj = src->get(KW_AUTH_BASIC)->toObj();
+
+    if (!isValidKeywords(obj, validAuthBasicKeywords)) {
+        return NONE_OR_INV;
+    }
 
     if (!getString(obj, KW_REALM, res.getRealmRef())) {
         conftrace_add(KW_REALM);
@@ -974,7 +987,6 @@ int parseSettings(Object *src, Settings &sets) {
 
     Object *obj = src->get(KW_SETTINGS)->toObj();
 
-
     if (!isValidKeywords(obj, validSettingsKeywords)) {
         return NONE_OR_INV;
     }
@@ -1135,6 +1147,12 @@ parseServerBlocks(Object *src, Server::ServersMap &servers) {
 
 int
 parseConfig(Object *src, Server *serv) {
+
+    if (!isValidKeywords(src, validGlobalKeywords)) {
+        conftrace_add("conf");
+        Log.error() << "at " << conftrace_path() << Log.endl;
+        return NONE_OR_INV;
+    }
 
     if (!parseServerBlocks(src, serv->getServerBlocks())) {
         conftrace_add(KW_SERVERS);
