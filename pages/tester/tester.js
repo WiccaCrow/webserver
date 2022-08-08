@@ -99,6 +99,15 @@ window.addEventListener("load", function() {
         return status;
     }
 
+    async function onTrace() {
+
+        const reqUri = `${requestUri.value}`;
+        console.log(reqUri);
+
+        let status = await sendRequest(reqUri, method);
+        return status;
+    }
+
     async function onPost() {
 
         const reqUri = `${requestUri.value}`;
@@ -146,6 +155,9 @@ window.addEventListener("load", function() {
                 break;
             case 'OPTIONS':
                 res = await onOptions();
+                break;
+            case 'TRACE':
+                res = await onTrace();
                 break;
             default:
                 console.error(`Unknown method ${method}`);
