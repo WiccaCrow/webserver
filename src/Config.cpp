@@ -561,6 +561,10 @@ isValidProxy(URI &proxy) {
     const std::string &host = proxy._host;
     const std::string &port= proxy._port_s;
 
+    if (endsWith(proxy._path, "/") && proxy._path != "/") {
+        proxy._path.erase(proxy._path.length() - 1, 1);
+    }
+
     if (host.empty()) {
         if (!port.empty()) {
             conftrace_add(KW_PROXY_PASS);

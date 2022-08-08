@@ -527,16 +527,14 @@ RequestHeader::Range(Request &req) {
 StatusCode
 RequestHeader::Referer(Request &req) {
 
-    URI &uri = req.getUriRef();
-    URI ref;
-    
-    ref.parse(value);
-    if (!ref._path.empty() && ref._path != "/") {
-        if (endsWith(ref._path, "/")) {
-            ref._path.erase(ref._path.length() - 1, 1);
-        }
-        uri._path = ref._path + uri._path;
-    }
+    (void)req;
+    // URI ref;    
+    // ref.parse(value);
+    // if (!ref._path.empty() && ref._path != "/") {
+    //     if (endsWith(ref._path, "/")) {
+    //         ref._path.erase(ref._path.length() - 1, 1);
+    //     }
+    // }
 
     return CONTINUE;
 }

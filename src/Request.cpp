@@ -332,10 +332,6 @@ Request::checkHeaders(void) {
         return BAD_REQUEST;
     }
 
-    if (has(REFERER)) {
-        headers[REFERER].handle(*this);
-    }
-
     if (hasHost) {
         RequestHeader &host = headers[HOST];
         if (tunnelGuard(host.handle(*this) != CONTINUE)) {
@@ -497,6 +493,8 @@ Request::checkCGI(void) {
 std::string
 Request::makeSL(void) {
 
+    URI &pass = getLocation()->getProxyPassRef();
+
     if (_uri._path.empty()) {
         if (getMethod() == "OPTIONS") {
             _uri._path = "*";
@@ -516,10 +514,13 @@ Request::makeSL(void) {
             if (!startsWith(_uri._path, "/")) {
                 _uri._path = "/" + _uri._path;
             }
+
+            if (!pass._path.empty() && pass._path != "/") {
+                _uri._path = pass._path + _uri._path;
+            }
         }
     }
 
-    URI &pass = getLocation()->getProxyPassRef();
     if (!pass._host.empty()) {
         headers[HOST].value = pass._host + ":" + (pass._port_s.empty() ? "80" : pass._port_s);
     } else if (!_uri._host.empty()) {
