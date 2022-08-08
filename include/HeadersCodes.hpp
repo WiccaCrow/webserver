@@ -57,7 +57,7 @@ enum HeaderCode {
     // Chrome's non standard header
     PURPOSE = 3095901163,
 
-    // for response
+    // Response header codes
     ACCEPT_PATCH = 108822466,
     ACCEPT_RANGES = 2930364553,
     AGE = 2704281778,

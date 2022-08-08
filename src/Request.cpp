@@ -189,14 +189,6 @@ Request::parseLine(std::string &line) {
     return formed();
 }
 
-// bool
-// Request::tunnelGuard(bool value) {
-//     if (getClient()->isTunnel() && g_server->settings.blind_proxy) {
-//         return false;
-//     }
-//     return value;
-// }
-
 StatusCode
 Request::parseSL(const std::string &line) {
 

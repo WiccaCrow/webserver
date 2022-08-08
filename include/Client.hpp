@@ -56,9 +56,6 @@ public:
     bool shouldBeClosed(void) const;
     void shouldBeClosed(bool);
 
-    // bool shouldBeRemoved(void) const;
-    // void shouldBeRemoved(bool);
-
     bool isTunnel(void) const;
     void isTunnel(bool);
 

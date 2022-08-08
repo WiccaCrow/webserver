@@ -1,5 +1,4 @@
 #include "Worker.hpp"
-
 #include "Server.hpp"
 
 std::size_t Worker::count = 0;
@@ -61,15 +60,6 @@ Worker::_cycle(void *ptr) {
             usleep(g_server->settings.worker_timeout);
             continue;
         }
-
-
-        // if (res == NULL) {
-        //     Log.debug() << "Worker " << w->id() << "::cycle: resp is NULL" << Log.endl;
-        // }
-
-        // if (res->getRequest() == NULL) {
-        //     Log.debug() << "Worker " << w->id() << "::cycle: req is NULL" << Log.endl;
-        // }
 
         res->getClient()->processing(true);
         const std::string path = res->getRequest()->getUriRef()._path;

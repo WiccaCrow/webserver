@@ -43,11 +43,6 @@ namespace Time {
         return gmt(t, format);
     }
 
-    // std::string
-    // gmt(struct tm *t, const char *format) {
-    //     return time2str(t, format);
-    // }
-
     bool
     gmt(const std::string &s, struct tm *t, const char *format) {
         return str2time(s, t, format);

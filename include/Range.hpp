@@ -55,15 +55,9 @@ private:
     std::deque<RangeSet> _ranges;
 
 public:
-    // RangeList(const std::string &);
 
     RangeList(void);
     ~RangeList(void);
-
-    // void push_back();
-    // void pop_back();
-    // void remove();
-    // void insert();
 
     iterator begin();
     iterator end();

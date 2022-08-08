@@ -44,19 +44,16 @@ StatusCode
 RequestHeader::AcceptEncoding(Request &req) {
     (void)req;
 
-    std::vector<std::string> encodings = split(value, ",");
+    // std::vector<std::string> encodings = split(value, ",");
 
     // gzip compress deflate br identity *
-    for (std::size_t i = 0; i < encodings.size(); i++) {
-        
-        trim(encodings[i], SP CRLF);
-        std::string encoding = encodings[i];
-        
-        std::size_t pos = encodings[i].find(';');
-        if (pos == std::string::npos) {
-            encoding = encodings[i].substr(0, pos);
-        }
-
+    // for (std::size_t i = 0; i < encodings.size(); i++) {
+    //     trim(encodings[i], SP CRLF);
+    //     std::string encoding = encodings[i];
+    //     std::size_t pos = encodings[i].find(';');
+    //     if (pos == std::string::npos) {
+    //         encoding = encodings[i].substr(0, pos);
+    //     }
         // if (encoding != "gzip" &&
         //     encoding != "compress" &&
         //     encoding != "deflate" &&
@@ -65,8 +62,7 @@ RequestHeader::AcceptEncoding(Request &req) {
         //     encoding != "*") {
         //     return NOT_ACCEPTABLE;
         // }
-
-    }
+    // }
     return CONTINUE;
 }
 
@@ -116,13 +112,6 @@ RequestHeader::Authorization(Request &req) {
         return NOT_IMPLEMENTED;
     }
 
-    // Remove (become rudimental part as soon as sessions will be implemeted)
-    // uint32_t receivedHash = crc(splitted[1].c_str(), splitted[1].length());
-    // if (!splitted[1].empty() && receivedHash == req.getStoredHash()) {
-    //     Log.debug() << "Authorization::Identical hash detected" << Log.endl;
-    //     return CONTINUE;
-    // }
-
     std::string decoded = Base64::decode(splitted[1]);
     Log.debug() << "Authorization::Decoded Base64:" << decoded << Log.endl;
     if (decoded.empty()) {
@@ -132,7 +121,6 @@ RequestHeader::Authorization(Request &req) {
 
     req.authorized(auth.isAuthorized(decoded, &req));
     if (req.authorized()) {
-        // req.setStoredHash(receivedHash);
         Log.debug() << "Authorization::Succeed" << Log.endl;
     } else {
         Log.debug() << "Authorization::Failed" << Log.endl;

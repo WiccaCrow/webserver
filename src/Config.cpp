@@ -27,10 +27,6 @@ isUInteger(double &num) {
     return (isInteger(num) && num >= 0);
 }
 
-std::ostream &operator<<(std::ostream &out, ExpectedType type) {
-    out << getExpectedTypeName(type);
-    return out;
-}
 
 std::string
 getExpectedTypeName(ExpectedType type) {
@@ -48,6 +44,12 @@ getExpectedTypeName(ExpectedType type) {
         default:
             return "unknown";
     }
+}
+
+std::ostream &
+operator<<(std::ostream &out, ExpectedType type) {
+    out << getExpectedTypeName(type);
+    return out;
 }
 
 int
@@ -1173,5 +1175,3 @@ loadConfig(const string filename) {
     delete ptr;
     return serv;
 }
-
-

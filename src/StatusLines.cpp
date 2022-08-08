@@ -3,12 +3,13 @@
 namespace HTTP {
 
 StatusLines::StatusLines() {
-    // 1xx informational response
 
+    // 1xx informational response
     _statusLines[CONTINUE]            = "100 Continue";
     _statusLines[SWITCHING_PROTOCOLS] = "101 Switching Protocols";
     _statusLines[PROCESSING]          = "102 Processing";
     _statusLines[EARLY_HINTS]         = "103 Early Hints";
+    
     // 2xx success
     _statusLines[OK]                            = "200 OK";
     _statusLines[CREATED]                       = "201 Created";
@@ -20,6 +21,7 @@ StatusLines::StatusLines() {
     _statusLines[MULTI_STATUS]                  = "207 Multi-Status";
     _statusLines[ALREADY_REPORTED]              = "208 Already Reported";
     _statusLines[IM_USED]                       = "226 IM Used";
+    
     // 3xx redirection
     _statusLines[MULTIPLE_CHOICES]   = "300 Multiple Choices";
     _statusLines[MOVED_PERMANENTLY]  = "301 Moved Permanently";
@@ -29,6 +31,7 @@ StatusLines::StatusLines() {
     _statusLines[USE_PROXY]          = "305 Use Proxy";
     _statusLines[TEMPORARY_REDIRECT] = "307 Temporary Redirect";
     _statusLines[PERMANENT_REDIRECT] = "308 Permanent Redirect";
+    
     // 4xx client errors
     _statusLines[BAD_REQUEST]                     = "400 Bad Request";
     _statusLines[UNAUTHORIZED]                    = "401 Unauthorized";
@@ -62,6 +65,7 @@ StatusLines::StatusLines() {
     _statusLines[RETRY_WITH]                      = "449 Retry With";
     _statusLines[UNAVAILABLE_FOR_LEGAL_REASONS]   = "451 Unavailable For Legal Reasons";
     _statusLines[CLIENT_CLOSED_REQUEST]           = "499 Client Closed Request";
+    
     // 5xx server errors
     _statusLines[INTERNAL_SERVER_ERROR]           = "500 Internal Server Error";
     _statusLines[NOT_IMPLEMENTED]                 = "501 Not Implemented";
@@ -75,6 +79,7 @@ StatusLines::StatusLines() {
     _statusLines[BANDWIDTH_LIMIT_EXCEEDED]        = "509 Bandwidth Limit Exceeded";
     _statusLines[NOT_EXTENDED]                    = "510 Not Extended";
     _statusLines[NETWORK_AUTHENTICATION_REQUIRED] = "511 Network Authentication Required";
+    
     // Cloudflare ext
     _statusLines[UNKNOWN_ERROR]           = "520 Web Server Returned an Unknown Error";
     _statusLines[WEB_SERVER_IS_DOWN]      = "521 Web Server Is Down";

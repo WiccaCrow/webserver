@@ -51,10 +51,8 @@ public:
 
     void handle(void);
 
-    //  for errors
     static const std::map<std::string, std::string> MIMEs;
 
-    // methods
     void DELETE(void);
     void HEAD(void);
     void GET(void);
@@ -96,9 +94,6 @@ public:
     void        checkCGIFailure(void);
     
     virtual bool has(uint32_t hash);
-
-    // setters, getters
-    // to send response
 
     const std::string &getStatusLine(void);
 

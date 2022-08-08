@@ -49,7 +49,7 @@ ResponseHeader::Age(Response &res) {
 
 void
 ResponseHeader::Allow(Response &res) {
-    if (res.getRequest()->getMethod() == "OPTIONS") { // What if any other method?
+    if (res.getRequest()->getMethod() == "OPTIONS") {
         value = join(res.getRequest()->getLocation()->getAllowedMethodsRef());
     }
 }

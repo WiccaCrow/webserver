@@ -853,13 +853,6 @@ Response::parseSL(const std::string &line) {
     _rawStatus = getWord(line, " ", pos);
     skipSpaces(line, pos);
 
-    // getWord(line, " ", pos);
-    // skipSpaces(line, pos);
-    // if (line[pos]) {
-    //     Log.debug() << "Forbidden symbols at the end of the SL: " << Log.endl;
-    //     return BAD_GATEWAY;
-    // }
-
     return checkSL();
 }
 

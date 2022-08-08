@@ -284,8 +284,6 @@ void Server::stopWorkers(void) {
 void
 Server::pollin(int fd) {
 
-    // Log.debug() << "Server::pollin [" << fd << "]" << Log.endl;
-
     size_t id = _connector[fd];
 
     if (id < 0 || id >= _clients.size()) {
@@ -308,8 +306,6 @@ Server::pollin(int fd) {
 
 void
 Server::pollout(int fd) {
-
-    // Log.debug() << "Server::pollout [" << fd << "]" << Log.endl;
 
     size_t id = _connector[fd];
 
@@ -348,19 +344,14 @@ Server::pollhup(int fd) {
     }
 
     if (fd == client->getClientIO()->rdFd()) {
-        // client->shouldBeRemoved(true);
         unlink(fd);
 
     } else if (fd == client->getGatewayIO()->wrFd()) {
         unlink(fd);
-        // addToDelFdsQ(client->getGatewayIO()->wrFd());
-        // client->getGatewayIO()->closeWrFd();
 
     } else if (fd == client->getGatewayIO()->rdFd()) {
         client->tryReceiveResponse(fd);
         unlink(fd);
-        // addToDelFdsQ(client->getGatewayIO()->rdFd());
-        // client->getGatewayIO()->closeRdFd();
     }    
 }
 
@@ -380,18 +371,13 @@ Server::pollerr(int fd) {
     }
 
     if (fd == client->getClientIO()->rdFd()) {
-        // client->shouldBeRemoved(true);
         unlink(fd);
 
     } else if (fd == client->getGatewayIO()->wrFd()) {
         unlink(fd);
-        // addToDelFdsQ(client->getGatewayIO()->wrFd());
-        // client->getGatewayIO()->closeWrFd();
 
     } else if (fd == client->getGatewayIO()->rdFd()) {
         unlink(fd);
-        // addToDelFdsQ(client->getGatewayIO()->rdFd());
-        // client->getGatewayIO()->closeRdFd();
     } 
 }
 
@@ -527,12 +513,9 @@ Server::link(int fd, HTTP::Client *client) {
 void
 Server::unlink(int fd) {
 
-    // Log.debug() << "Server::unlink: fd = " << fd << Log.endl;
-
     pthread_mutex_lock(&_m_link);
 
     int id = _connector[fd];
-    // Log.debug() << "Server::unlink: id = " << id << Log.endl;
 
     if (id < 0) {
         pthread_mutex_unlock(&_m_link);
@@ -544,7 +527,6 @@ Server::unlink(int fd) {
         pthread_mutex_unlock(&_m_link);
         return ;
     }
-    // Log.debug() << "Server::unlink: client addr = " << client << Log.endl;
 
     if (fd >= 0) {
         close(fd);
@@ -737,17 +719,7 @@ void Server::emptyDelClientQ(void) {
 
         rmClientFromRespQ(client);
 
-        // int cio_r = client->getClientIO()->rdFd();
-        // int gio_r = client->getGatewayIO()->rdFd();
-        // int gio_w = client->getGatewayIO()->wrFd();
-
         _clients[client->getId()] = NULL;
-
-        // close(cio_r);
-        // close(gio_r);
-        // if (gio_r != gio_w) {
-        //     close(gio_w);
-        // }
 
         Log.debug() << "Server::emptyDelClientQ -> " << client << Log.endl;
 

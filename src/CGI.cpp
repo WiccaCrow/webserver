@@ -65,7 +65,7 @@ bool CGI::setEnv(Request *req) {
     // setValue(_env[0], req->getUriRef()._path);
 
     // PATH_TRANSLATED
-    setValue(_env[1], req->getResolvedPath()); // Definitely not like that!
+    setValue(_env[1], req->getResolvedPath());
 
     const std::string &host = req->getClient()->getDomainName();
     const std::string &addr = req->getClient()->getClientIO()->getAddr();

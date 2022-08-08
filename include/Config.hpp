@@ -65,35 +65,6 @@ enum ConfStatus {
 
 #endif
 
-int isInteger(double &num);
-int isUInteger(double &num);
-
-std::string getExpectedTypeName(ExpectedType);
-int         typeExpected(AType *ptr, ExpectedType);
-
-template <typename T>
-ConfStatus basicCheck(Object *, const std::string &key, ExpectedType, T &res, T def);
-ConfStatus basicCheck(Object *, const std::string &key, ExpectedType);
-
-template <typename T>
-int isSubset(std::vector<T> set, std::vector<T> subset);
-
-// Default values
-Location::MethodsVec getDefaultAllowedMethods();
-
-// Object parsing
 int parseSize(std::string &s, uint64_t &size);
-
-int parseCGI(Object *, Location::CGIsMap &);
-int isValidCGI(Location::CGIsMap &);
-
-int parseErrorPages(Object *, Location::ErrorPagesMap &);
-int isValidErrorPages(Location::ErrorPagesMap &);
-
-int parseLocation(Object *, Location &dst, Location &def);
-int parseLocations(Object *, ServerBlock::LocationsMap &res, Location &base);
-
-int parseServerBlock(Object *, ServerBlock &);
-int parseServerBlocks(Object *, Server::ServersMap &);
 
 Server *loadConfig(const std::string filename);

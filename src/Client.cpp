@@ -21,13 +21,11 @@ Client::Client(void)
 {
     _clientIO = new IO();
     if (_clientIO == NULL) {
-        // shouldBeRemoved(true);
         Log.syserr() << "Client:: Cannot allocate memory for client socket" << Log.endl;
     }
 
     _gatewayIO = new IO();
     if (_gatewayIO == NULL) {
-        // shouldBeRemoved(true);
         Log.syserr() << "Client:: Cannot allocate memory for gateway socket" << Log.endl;
     }
 }
@@ -72,15 +70,6 @@ void Client::shouldBeClosed(bool flag) {
 bool Client::shouldBeClosed(void) const {
     return _shouldBeClosed;
 }
-
-// Remove
-// void Client::shouldBeRemoved(bool flag) {
-//     _shouldBeRemoved = flag;
-// }
-
-// bool Client::shouldBeRemoved(void) const {
-//     return _shouldBeRemoved;
-// }
 
 bool Client::isTunnel(void) const {
     return _isTunnel;
@@ -165,7 +154,6 @@ void Client::addRequest(void) {
     Request *req = new Request(this);
     if (req == NULL) {
         Log.syserr() << "Cannot allocate memory for Request" << Log.endl;
-        // shouldBeRemoved(true);
         return ;
     }
     _requests.push_back(req);
@@ -185,7 +173,6 @@ void Client::addResponse(void) {
 
     if (res == NULL) {
         Log.syserr() << "Cannot allocate memory for Response" << Log.endl;
-        // shouldBeRemoved(true);
         return ;
     }
     _responses.push_back(res);
@@ -356,17 +343,14 @@ void Client::reply(Response *res) {
     } else if (!res->bodySent()) {
 
         if (res->chunked()) {
-            // Log.debug() << "Reply chunked res" << Log.endl;
             if (!io->getDataPos()) {
                 io->setData(res->makeChunk());
             }
         } else if (res->parted()) {
-            // Log.debug() << "Reply parted res" << Log.endl;
             if (!io->getDataPos()) {
                 io->setData(res->makePart());
             }
         } else {
-            // Log.debug() << "Reply regular res" << Log.endl;
             if (!io->getDataPos()) {
                 io->setData(res->getBody());
             }
@@ -423,17 +407,14 @@ void Client::reply(Request *req) {
     } else if (!req->bodySent()) {
 
         if (req->chunked()) {
-            // Log.debug() << "Reply chunked req" << Log.endl;
             if (!io->getDataPos()) {
                 io->setData(req->makeChunk());
             }
         } else if (req->parted()) {
-            // Log.debug() << "Reply parted req" << Log.endl;
             if (!io->getDataPos()) {
                 io->setData(req->makePart());
             }
         } else {
-            // Log.debug() << "Reply regular req" << Log.endl;
             if (!io->getDataPos()) {
                 io->setData(req->getBody());
             }
