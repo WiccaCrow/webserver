@@ -1,4 +1,5 @@
 #include "IO.hpp"
+#include "Server.hpp"
 
 static const std::size_t BUFFER_SIZE = 65536;
 
@@ -177,7 +178,7 @@ IO::listen(const std::string &addr, std::size_t port) {
         Log.syserr() << "IO::bind [" << _fdr << "] ->" << _addr << ":" << _port << Log.endl;
         return -1;
     }
-    if (::listen(_fdr, SOMAXCONN) < 0) {
+    if (::listen(_fdr, g_server->settings.max_wait_conn) < 0) {
         Log.syserr() << "IO::listen [" << _fdr << "] ->" << _addr << ":" << _port << Log.endl;
         return -1;
     }
