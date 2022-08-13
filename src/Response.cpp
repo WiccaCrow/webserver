@@ -541,7 +541,11 @@ getHumanSize(long long bytes, bool si = true) {
 
 static inline std::string
 createLinkLine(const std::string &file) {
-    return "<a href=\"" + file + "\">" + cutFileName(file) + "</a>";
+    std::string trail;
+    if (isDirectory(file) && !endsWith(file, "/")) {
+        trail = "/";
+    }
+    return "<a href=\"" + file + trail + "\">" + cutFileName(file) + "</a>";
 }
 
 std::string
@@ -574,7 +578,7 @@ int Response::listing(const std::string &resourcePath) {
         H1_BEG "Index on " + _req->getPath() + H1_END
         HR TABLE_BEG 
             TR_BEG TH_BEG "Filename" TH_END TH_BEG "Last modified" TH_END TH_BEG "Size" TH_END TR_END
-            TR_BEG TD_BEG "<a href=\"..\">../</a>" TD_END TD_BEG TD_END TD_BEG TD_END TR_END;
+            TR_BEG TD_BEG "<a href=\"../\">../</a>" TD_END TD_BEG TD_END TD_BEG TD_END TR_END;
 
     std::deque<std::string> filenames;
     if (!fillDirContent(filenames, resourcePath)) {
