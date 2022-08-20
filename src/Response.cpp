@@ -307,7 +307,13 @@ int Response::makeResponseForDir(void) {
     const std::string &resourcePath = getRequest()->getResolvedPath();
 
     if (!endsWith(resourcePath, "/")) {
-        return makeResponseForRedirect(MOVED_PERMANENTLY, getRequest()->getRawUri() + "/");
+        std::string redirectPath = getRequest()->getRawUri();
+        if (startsWith(redirectPath, "//")) {
+            size_t pos = redirectPath.find_first_not_of('/');
+            redirectPath.erase(0, pos - 1);
+        }
+        redirectPath += "/";
+        return makeResponseForRedirect(MOVED_PERMANENTLY, redirectPath);
     } else if (indexFileExists(resourcePath)) {
         return makeResponseForFile();
     } else if (getRequest()->getLocation()->getAutoindexRef()) {
