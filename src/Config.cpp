@@ -652,14 +652,14 @@ parseLocation(Object *src, Location &dst, Location &def) {
 
     bool addEndSlash = endsWith(dst.getPathRef(), "/");
 
-    if (&dst != &def) {
+    if (!isValidKeywords(src, validLocationKeywords)) {
+        return NONE_OR_INV;
+    }
+    if (!checkMutualExclusions(src, KW_ALIAS, KW_ROOT)) {
+        return NONE_OR_INV;
+    }
 
-        if (!isValidKeywords(src, validLocationKeywords)) {
-            return NONE_OR_INV;
-        }
-        if (!checkMutualExclusions(src, KW_ALIAS, KW_ROOT)) {
-            return NONE_OR_INV;
-        }
+    if (&dst != &def) {
 
         ConfStatus aliasStatus = (ConfStatus)getString(src, KW_ALIAS, dst.getAliasRef(), "");
         
