@@ -2,9 +2,13 @@
     "servers": {
         "http": {
             "server_names": [ "localhost" ],
-            "autoindex": true,
-            "root": "./default/",
-            "index": [ "index.html" ]
+            "locations": {
+                "/": {
+                    "autoindex": true,
+                    "root": "./default/",
+                    "index": [ "index.html" ]
+                }
+            }
         }
     }
 }

@@ -97,7 +97,7 @@ $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
         -MMD -MF $(patsubst ${OBJS_DIR}/%.o,${DEPS_DIR}/%.d,$@) 
 
 clean:
-	rm -rf ${DEPS_DIR} ${OBJS_DIR} ${LOGS_DIR} ${TMP_DIR} YoupiBanane
+	rm -rf ${DEPS_DIR} ${OBJS_DIR} ${LOGS_DIR} ${TMP_DIR}
 
 fclean: clean
 	rm -rf $(NAME)
@@ -110,10 +110,3 @@ re: fclean all
 
 cgi:
 	gcc ./pages/site/cgi/printenv.c -o ./pages/site/cgi/cgi-bin/printenv.cgi
-
-tester:
-	mkdir -p YoupiBanane/nop YoupiBanane/Yeah
-	touch ./YoupiBanane/youpi.bad_extension ./YoupiBanane/youpi.bla
-	touch ./YoupiBanane/nop/youpi.bad_extension ./YoupiBanane/nop/other.pouic
-	touch ./YoupiBanane/Yeah/not_happy.bad_extension
-
