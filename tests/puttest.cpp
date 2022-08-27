@@ -1,7 +1,7 @@
 // g++ -Wall -Wextra -Werror puttest.cpp -o puttest
-// ./test h:127.0.0.1 p:8080 s:123  m:POST u:/post/
-// ./test h:127.0.0.1 p:8080 s:123M m:POST u:/post/
-// ./test h:127.0.0.1 p:8080 s:123G m:POST u:/post/
+// ./puttest h:127.0.0.1 p:8080 s:123  m:POST u:/post/
+// ./puttest h:127.0.0.1 p:8080 s:123M m:POST u:/post/
+// ./puttest h:127.0.0.1 p:8080 s:123G m:POST u:/post/
 
 
 #include <stdio.h>

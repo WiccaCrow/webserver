@@ -763,6 +763,11 @@ HTTP::Response *Server::rmFromRespQ(void) {
     if (_q_newResponses.begin() != _q_newResponses.end()) {
         res = _q_newResponses.front();
         _q_newResponses.pop_front();
+        if (res->getClient()->links == 0) {
+            res = NULL;
+        } else {
+            res->getClient()->processing(true);
+        }
     }
 
     pthread_mutex_unlock(&_m_new_resp);

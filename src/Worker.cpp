@@ -61,7 +61,7 @@ Worker::_cycle(void *ptr) {
             continue;
         }
 
-        res->getClient()->processing(true);
+        // res->getClient()->processing(true);
         const std::string path = res->getRequest()->getUriRef()._path;
         Log.debug() << "Worker " << w->id() << "::cycle: " << path << " started" << Log.endl;
         res->handle();
